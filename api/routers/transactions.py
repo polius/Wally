@@ -1,0 +1,83 @@
+from fastapi import APIRouter, Depends, HTTPException, Path
+from typing import Annotated
+from uuid import UUID
+from sqlmodel import Session, select, desc
+from datetime import date, datetime
+
+from ..database import get_session
+from ..models.transactions import Transaction, TransactionCreate, TransactionUpdate, TransactionPublic
+
+router = APIRouter(tags=["Transactions"])
+
+@router.get("/transactions/", response_model=list[TransactionPublic])
+def read_transactions(
+    db: Annotated[Session, Depends(get_session)]
+):
+    statement = select(Transaction).order_by(desc(Transaction.created_date))
+    transactions = db.exec(statement).all()
+    return transactions
+
+@router.get("/transactions/id/{transaction_id}", response_model=list[TransactionPublic])
+def get_transaction_by_id(
+    transaction_id: UUID,
+    db: Annotated[Session, Depends(get_session)]
+):
+    transaction = db.get(Transaction, transaction_id)
+    return [transaction] if transaction else []
+
+@router.get("/transactions/date/{year}-{month}", response_model=list[TransactionPublic])
+def read_transactions_by_date(
+    year: Annotated[int, Path(..., ge=1, le=9999)],
+    month: Annotated[int, Path(..., ge=1, le=12)],
+    db: Annotated[Session, Depends(get_session)]
+):
+    first_day = date(year, month, 1)
+    next_month = date(year + (month // 12), (month % 12) + 1, 1)
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.created_date))
+    )
+    results = db.exec(stmt).all()
+    return results
+
+@router.post("/transactions/", response_model=TransactionPublic)
+def create_transaction(
+    transaction: TransactionCreate,
+    db: Annotated[Session, Depends(get_session)]
+):
+    new_transaction = Transaction.model_validate(transaction)
+    db.add(new_transaction)
+    db.commit()
+    db.refresh(new_transaction)
+    return new_transaction
+
+@router.put("/transactions/{transaction_id}", response_model=TransactionPublic)
+def update_transaction(
+    transaction_id: UUID,
+    transaction: TransactionUpdate,
+    db: Annotated[Session, Depends(get_session)]
+):
+    db_transaction = db.get(Transaction, transaction_id)
+    if not db_transaction:
+        raise HTTPException(status_code=404, detail="This transaction does not exist")
+    transaction = transaction.model_dump(exclude_unset=True)
+    db_transaction.sqlmodel_update(transaction)
+    db.add(db_transaction)
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
+
+@router.delete("/transactions/{transaction_id}")
+def delete_transaction(
+    transaction_id: UUID,
+    db: Annotated[Session, Depends(get_session)]
+):
+    transaction = db.get(Transaction, transaction_id)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="This transaction does not exist")
+    db.delete(transaction)
+    db.commit()
+    return {"ok": True}
