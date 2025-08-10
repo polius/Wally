@@ -7,7 +7,10 @@
   <!-- Bootstrap CSS CDN -->
   <link href="css/bootstrap.min.css" rel="stylesheet">
   <!-- AG Grid -->
-  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+  <script src="js/ag-grid-community.min.noStyle.js"></script>
+  <link rel="stylesheet" href="css/tom-select.min.css">
+  <link rel="stylesheet" href="css/tom-select.bootstrap5.min.css">
+  <script src="js/tom-select.complete.min.js"></script>
 
   <style>
     .text-green {
@@ -32,44 +35,6 @@
       font-weight: 600;
     }
 
-    .example-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 15px;
-      border-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin-bottom: 12px;
-    }
-
-    .example-header span {
-      font-weight: 600;
-      color: #333;
-      font-size: 1rem;
-    }
-
-    #filter-text-box {
-      flex-grow: 1;
-      padding: 8px 12px;
-      font-size: 1rem;
-      border: 1.5px solid #ccc;
-      border-radius: 6px;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      outline: none;
-    }
-
-    #filter-text-box:focus {
-      border-color: #4a90e2;
-      box-shadow: 0 0 6px #4a90e2aa;
-    }
-
-    /* Optional: placeholder style */
-    #filter-text-box::placeholder {
-      color: #aaa;
-      font-style: italic;
-    }
-
     .month-navigation {
       display: flex;
       align-items: center;
@@ -79,7 +44,7 @@
     }
 
     .current-month {
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       font-weight: bold;
       min-width: 200px;
       text-align: center;
@@ -106,7 +71,6 @@
       border-color: #4a90e2;      /* blue border on hover */
       color: #004aad;             /* blue icon on hover */
     }
-
   </style>
 </head>
 <body>
@@ -137,6 +101,71 @@
         <p class="lead">This is a sample Bootstrap website template.</p>
       </div> -->
 
+      <!-- Modal -->
+      <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <form id="transactionForm" class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="transactionModalLabel">Add Transaction</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+              <!-- Name -->
+              <div class="mb-3">
+                <label for="nameInput" class="form-label">Name</label>
+                <input type="text" class="form-control" id="nameInput" placeholder="Enter name" required />
+              </div>
+
+              <!-- Category -->
+              <div class="mb-3">
+                <label for="categorySelect" class="form-label">Category</label>
+                <select class="form-select" id="categorySelect" required>
+                  <option value="" selected disabled>Select category</option>
+                  <option>Food</option>
+                  <option>Transport</option>
+                  <option>Entertainment</option>
+                  <option>Utilities</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <!-- Tags -->
+              <div class="mb-3">
+                <label class="form-label">Tags</label>
+                <input id="input-tags" type="text" class="form-control" value="awesome,neat" placeholder="Add a tag and press Enter" autocomplete="off">
+              </div>
+
+              <!-- Amount -->
+              <div class="mb-3">
+                <label for="amountInput" class="form-label">Amount</label>
+                <input type="number" class="form-control" id="amountInput" min="0.01" step="0.01" required />
+              </div>
+
+              <!-- Type -->
+              <div class="mb-3">
+                <label for="typeSelect" class="form-label">Type</label>
+                <select class="form-select" id="typeSelect" required>
+                  <option>Expense</option>
+                  <option>Income</option>
+                </select>
+              </div>
+
+              <!-- Date -->
+              <div class="mb-3">
+                <label for="dateInput" class="form-label">Date</label>
+                <input type="date" class="form-control" id="dateInput" required />
+              </div>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Add Transaction</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div id="monthHeader" class="month-navigation">
         <div id="prevMonth" style="cursor: pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="currentColor">
@@ -151,36 +180,40 @@
         </div>
       </div>
 
-      <div class="mb-2" style="display: flex; justify-content: center;">
-        <label class="d-flex align-items-center justify-content-center rounded border py-2 px-3" style="cursor: pointer; padding-bottom:10px!important">
-          <input id="showAllTransactions" class="form-check-input me-2" type="checkbox" onchange="showTransactions()" />
-          Show all transactions
-        </label>
+      <div class="d-flex justify-content-center align-items-center mt-1 mb-4">
+        <button type="button" class="btn btn-outline-success w-auto" style="font-size: 0.9rem; margin-right:5px;" data-bs-toggle="modal" data-bs-target="#transactionModal">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
+            <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
+          </svg>
+          Add Transaction
+        </button>
+        <div class="d-flex justify-content-center">
+          <label class="btn btn-outline-primary d-flex align-items-center gap-2" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px">
+            <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin-top: 0; margin-bottom: 0; vertical-align: middle;" onchange="showTransactions()" />
+            Show All
+          </label>
+        </div>
       </div>
 
       <!-- Grid Filter -->
-      <div class="example-header">
-        <input type="text" id="filter-text-box" placeholder="Search..." oninput="onFilterTextBoxChanged()"/>
+      <div class="mb-2">
+        <input type="text" class="form-control" id="nameInput" placeholder="Search..."  oninput="onFilterTextBoxChanged()" />
       </div>
 
       <!-- Your Data Grid container -->
       <div id="myGrid" style="height: 500px"></div>
-      <div id="rowCount" class="mt-2" style="text-align: center; font-weight: 600;"></div>
+      <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.9rem; font-weight: 600;"></div>
     </div>
   </main>
 
-  <!-- Footer -->
-  <!-- <footer class="bg-dark text-light py-3 mt-4">
-    <div class="container text-center">
-      <p>&copy; 2024 My Website. All rights reserved.</p>
-    </div>
-  </footer> -->
-
   <!-- Bootstrap JS Bundle with Popper -->
   <script src="js/bootstrap.min.js"></script>
-
+  
   <script>
+    let settings;
+    let gridInstance;
     let gridApi;
+    let theme = 'light';
     let currentDate = new Date();
     const currentMonthElement = document.getElementById('currentMonth');
     
@@ -188,8 +221,8 @@
       // Initialize display
       renderMonth();
       // Initialize the grid with settings
-      const settings = await getSettings();
-      gridApi = await initGrid(settings);
+      settings = await getSettings();
+      gridApi = await initGrid();
     }
 
     async function getCurrentMonth() {
@@ -218,9 +251,27 @@
       return data;
     }
 
-    async function initGrid(settings) {
+    async function initGrid() {
+      let myTheme;
+
+      if (gridInstance) {
+        gridInstance.destroy();
+      }
+
+      if (theme === 'dark') {
+        myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDark);
+      }
+      else {
+        myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
+      }
+
       // Grid Options: Contains all of the Data Grid configurations
+      // let myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDark);
+      // const myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDarkBlue);
+      // const myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
+      // const myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightCold);
       const gridOptions = {
+        theme: myTheme,
         suppressMovableColumns: true,
         rowData: [],
         defaultColDef: {
@@ -407,7 +458,7 @@
 
       // Your Javascript code to create the Data Grid
       const myGridElement = document.querySelector('#myGrid');
-      agGrid.createGrid(myGridElement, gridOptions);
+      gridInstance = agGrid.createGrid(myGridElement, gridOptions);
     }
 
     function renderMonth() {
@@ -463,6 +514,24 @@
 
     // Execute the main function to initialize the grid
     main();
+  </script>
+
+  <script>
+    new TomSelect('#input-tags', {
+      plugins: {
+        remove_button: {
+          title: 'Remove this tag',
+        }
+      },
+      persist: false,
+      create: true,
+    });
+  </script>
+
+  <script>
+    const dateInput = document.getElementById('dateInput');
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    dateInput.value = today;
   </script>
 </body>
 </html>
