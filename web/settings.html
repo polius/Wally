@@ -31,7 +31,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="table.html">Table</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="table.html">Transactions</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="settings.html" style="text-decoration: underline;">Settings</a></li>
           </ul>
         </div>
@@ -93,11 +93,44 @@
       </div>
     </div>
 
-    <div class="card mt-3">
-      <div class="card-header" style="font-weight: 500">Import / Export Data</div>
-      <div class="card-body">
-        <h5 class="card-title">Light card title</h5>
-        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+    <div class="row">
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Users</div>
+          <div class="card-body">
+            <button class="btn btn-sm btn-primary" onclick="deleteCategory(this)">Create a new user</button>
+            <ul class="list-group mt-3" id="categoryList">
+              <li class="list-group-item d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
+                <span title="Admin">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="18" height="18" fill="orange" style="margin-right: 5px" title="Admin">
+                    <path d="M313 87.2c9.2-7.3 15-18.6 15-31.2 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 12.6 5.9 23.9 15 31.2L194.6 194.8c-10 15.7-31.3 19.6-46.2 8.4L88.9 158.7c4.5-6.4 7.1-14.3 7.1-22.7 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 21.8 17.5 39.6 39.2 40L87.8 393.5c4.7 31.3 31.6 54.5 63.3 54.5l273.8 0c31.7 0 58.6-23.2 63.3-54.5L520.8 176c21.7-.4 39.2-18.2 39.2-40 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 8.4 2.6 16.3 7.1 22.7l-59.4 44.6c-14.9 11.2-36.2 7.3-46.2-8.4L313 87.2z"/>
+                  </svg>
+                  admin
+                </span>
+                <div>
+                  <button class="btn btn-sm btn-primary" style="margin-right: 2px" onclick="deleteCategory(this)">Modify</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteCategory(this)">Delete</button>
+                </div>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
+                dummy
+                <div>
+                  <button class="btn btn-sm btn-primary" style="margin-right: 2px" onclick="deleteCategory(this)">Modify</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteCategory(this)">Delete</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Import / Export Data</div>
+          <div class="card-body">
+            <h5 class="card-title">Light card title</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+          </div>
+        </div>
       </div>
     </div>
 
