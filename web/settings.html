@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wally - Settings</title>
+  <link rel="icon" type="image/png" href="assets/wally-transparent.png">
+  <!-- CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/tom-select.min.css" rel="stylesheet">
+  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <!-- JS -->
+  <script src="js/bootstrap.bundle.min.js" defer></script>
+  <script src="js/bootstrap-show-toast.js" defer></script>
+  <script src="js/ag-grid-community.min.noStyle.js" defer></script>
+  <script src="js/tom-select.complete.min.js" defer></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="bg-light">
+    <div class="container">
+      <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand d-flex align-items-center" style="margin-right:40px" href="#">
+          <img src="assets/wally-transparent.png" alt="Wally" width="50" height="50" style="margin-bottom: 5px; margin-right: 8px;">
+          <span style="font-size: 1.8rem; font-weight:600;">Wally</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="table.html">Table</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="settings.html" style="text-decoration: underline;">Settings</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mb-4">
+    <div class="row">
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Categories</div>
+          <div class="card-body d-flex flex-column" style="height: 100%;">
+            <div id="categoryBadges" class="flex-grow-1"></div>
+            <form id="categoryForm" class="modal-content mt-2" onsubmit="addCategory(event)">
+              <div class="input-group">
+                <input type="text" class="form-control" name="category" placeholder="Add new category" style="font-size: 0.9rem;" required />
+                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Tags</div>
+          <div class="card-body d-flex flex-column" style="height: 100%;">
+            <div id="tagBadges" class="flex-grow-1"></div>
+            <form id="tagForm" class="modal-content mt-2" onsubmit="addTag(event)">
+              <div class="input-group">
+                <input type="text" class="form-control" name="tag" placeholder="Add new tag" style="font-size: 0.9rem;" required />
+                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Theme</div>
+          <div class="card-body">
+            <h5 class="card-title">Light card title</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500">Currency</div>
+          <div class="card-body">
+            <h5 class="card-title">Light card title</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header" style="font-weight: 500">Import / Export Data</div>
+      <div class="card-body">
+        <h5 class="card-title">Light card title</h5>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header" style="font-weight: 500">Recurring Transactions</div>
+      <div class="card-body">
+        <h5 class="card-title">Light card title</h5>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Category Modal Delete -->
+  <div class="modal fade" id="categoryModalDelete" tabindex="-1" aria-labelledby="categoryModalDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="deleteCategorySubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModalDeleteLabel">Delete Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this category?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tag Modal Delete -->
+  <div class="modal fade" id="tagModalDelete" tabindex="-1" aria-labelledby="tagModalDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="deleteTagSubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tagModalDeleteLabel">Delete Tag</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this tag?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let settings;
+    let categorySelected;
+    let tagSelected;
+    main();
+
+    async function main() {
+      await getSettings();
+      await renderCategories();
+      await renderTags();
+    }
+
+    async function getSettings() {
+      const response = await fetch('http://192.168.1.79:8000/settings/');
+      settings = await response.json();
+    }
+
+    // --------------
+    // - CATEGORIES -
+    // --------------
+    async function renderCategories() {
+      const container = document.getElementById('categoryBadges');
+      container.innerHTML = ''; // clear previous badges
+
+      if (settings.categories.length == 0) {
+        const empty = document.createElement('span');
+        empty.style.fontSize = '0.9rem'
+        empty.innerText = "No categories have been created yet."
+        empty.style.fontStyle = 'italic';
+        container.appendChild(empty);
+      }
+      else {
+        settings.categories.forEach(category => {
+          // Create badge span
+          const badge = document.createElement('span');
+          badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
+          badge.style.height = '34px';
+
+          // Create inner span for text with padding and font styles
+          const textSpan = document.createElement('span');
+          textSpan.style.paddingLeft = '6px';
+          textSpan.style.paddingRight = '2px';
+          textSpan.style.fontSize = '0.9rem';
+          textSpan.style.fontWeight = '400';
+          textSpan.textContent = category;
+
+          // Create close button
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-close btn-close-dark btn-sm ms-2';
+          btn.setAttribute('aria-label', 'Close');
+          btn.onclick = function() { deleteCategory(category) };
+
+          // Append text and button to badge
+          badge.appendChild(textSpan);
+          badge.appendChild(btn);
+
+          // Append badge to container
+          container.appendChild(badge);
+        });
+      }
+    }
+
+    async function addCategory(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      if (settings['categories'].includes(data.category)) {
+        bootstrap.showToast({body: 'This category already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        return
+      }
+
+      // Add new category
+      settings['categories'].push(data.category)
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/settings/', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          await getSettings();
+          await renderCategories();
+          bootstrap.showToast({body: 'Category added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          document.getElementById('categoryForm').reset();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    function deleteCategory(category) {
+      // Store selected category
+      categorySelected = category;
+
+      // Show modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
+      modal.show();
+    }
+
+    async function deleteCategorySubmit(event) {
+      event.preventDefault();
+
+      // Remove category from settings
+      settings.categories = settings.categories.filter(item => item !== categorySelected);
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/settings/', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalDelete'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Category deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the categories
+          await getSettings();
+          await renderCategories();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    // --------
+    // - TAGS -
+    // --------
+    async function renderTags() {
+      const container = document.getElementById('tagBadges');
+      container.innerHTML = ''; // clear previous badges
+
+      if (settings.tags.length == 0) {
+        const empty = document.createElement('span');
+        empty.style.fontSize = '0.9rem'
+        empty.innerText = "No tags have been created yet."
+        empty.style.fontStyle = 'italic';
+        container.appendChild(empty);
+      }
+      else {
+        settings.tags.forEach(tag => {
+          // Create badge span
+          const badge = document.createElement('span');
+          badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
+          badge.style.height = '34px';
+
+          // Create inner span for text with padding and font styles
+          const textSpan = document.createElement('span');
+          textSpan.style.paddingLeft = '6px';
+          textSpan.style.paddingRight = '2px';
+          textSpan.style.fontSize = '0.9rem';
+          textSpan.style.fontWeight = '400';
+          textSpan.textContent = tag;
+
+          // Create close button
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-close btn-close-dark btn-sm ms-2';
+          btn.setAttribute('aria-label', 'Close');
+          btn.onclick = function() { deleteTag(tag) };
+
+          // Append text and button to badge
+          badge.appendChild(textSpan);
+          badge.appendChild(btn);
+
+          // Append badge to container
+          container.appendChild(badge);
+        });
+      }
+    }
+
+    async function addTag(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      if (settings['tags'].includes(data.tag)) {
+        bootstrap.showToast({body: 'This tag already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        return
+      }
+
+      // Add new tag
+      settings['tags'].push(data.tag)
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/settings/', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          await getSettings();
+          await renderTags();
+          bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          document.getElementById('tagForm').reset();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    function deleteTag(tag) {
+      // Store selected tag
+      tagSelected = tag;
+
+      // Show modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
+      modal.show();
+    }
+
+    async function deleteTagSubmit(event) {
+      event.preventDefault();
+
+      // Remove tag from settings
+      settings.tags = settings.tags.filter(item => item !== tagSelected);
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/settings/', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalDelete'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Tag deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the tags
+          await getSettings();
+          await renderTags();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+  </script>
+</body>
+</html>

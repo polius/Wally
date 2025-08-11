@@ -7,6 +7,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import create_db_and_tables
 from .routers import transactions, recurring_transactions, settings
 
+# Create database and tables
+create_db_and_tables()
+
+# Create default config file if it does not exist
+filename = "config.json"
+default_content = {
+    "categories": ['Entertainment', 'Food', 'Groceries', 'Healthcare', 'Income', 'Miscellaneous', 'Rent', 'Shopping', 'Travel', 'Utilities'],
+    "tags": [],
+    "currency": "eur"
+}
+if not os.path.isfile(filename):
+    with open(filename, "w") as f:
+        json.dump(default_content, f)
+
 # Init FastAPI
 app = FastAPI()
 
@@ -15,6 +29,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://127.0.0.1:5500",
+        "http://192.168.1.79:5500",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -31,30 +46,3 @@ app.include_router(settings.router)
 async def root():
     return {"message": "Hello World!"}
 
-# Initialize sqlite schema if does not exist
-@app.on_event("startup")
-def on_startup():
-    # Create database and tables
-    create_db_and_tables()
-
-    # Create default config file if it does not exist
-    filename = "config.json"
-    default_content = {
-        "categories": [
-            "Food",
-            "Groceries",
-            "Travel",
-            "Rent",
-            "Utilities",
-            "Entertainment",
-            "Healthcare",
-            "Shopping",
-            "Miscellaneous",
-            "Income"
-        ],
-        "currency": "eur"
-    }
-
-    if not os.path.isfile(filename):
-        with open(filename, "w") as f:
-            json.dump(default_content, f)
