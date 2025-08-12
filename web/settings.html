@@ -7,13 +7,10 @@
   <link rel="icon" type="image/png" href="assets/wally-transparent.png">
   <!-- CSS -->
   <link href="css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/tom-select.min.css" rel="stylesheet">
-  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
   <!-- JS -->
   <script src="js/bootstrap.bundle.min.js" defer></script>
   <script src="js/bootstrap-show-toast.js" defer></script>
   <script src="js/ag-grid-community.min.noStyle.js" defer></script>
-  <script src="js/tom-select.complete.min.js" defer></script>
 </head>
 
 <body>
@@ -31,7 +28,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="table.html">Transactions</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="transactions.html">Transactions</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="settings.html" style="text-decoration: underline;">Settings</a></li>
           </ul>
         </div>
@@ -49,7 +46,7 @@
             <div id="categoryBadges" class="flex-grow-1"></div>
             <form id="categoryForm" class="modal-content mt-2" onsubmit="addCategory(event)">
               <div class="input-group">
-                <input type="text" class="form-control" name="category" placeholder="Add new category" style="font-size: 0.9rem;" required />
+                <input type="text" class="form-control" name="name" placeholder="Add new category" style="font-size: 0.9rem;" required />
                 <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
               </div>
             </form>
@@ -63,7 +60,7 @@
             <div id="tagBadges" class="flex-grow-1"></div>
             <form id="tagForm" class="modal-content mt-2" onsubmit="addTag(event)">
               <div class="input-group">
-                <input type="text" class="form-control" name="tag" placeholder="Add new tag" style="font-size: 0.9rem;" required />
+                <input type="text" class="form-control" name="name" placeholder="Add new tag" style="font-size: 0.9rem;" required />
                 <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
               </div>
             </form>
@@ -86,8 +83,11 @@
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500">Currency</div>
           <div class="card-body">
-            <h5 class="card-title">Light card title</h5>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+            <p class="card-text" style="font-size: 0.9rem">Select the currency to be used for transactions.</p>
+            <select class="form-select" id="currencySelect" style="font-size: 0.9rem" onchange="changeCurrency(event)">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
           </div>
         </div>
       </div>
@@ -182,30 +182,48 @@
   </div>
 
   <script>
-    let settings;
     let categorySelected;
     let tagSelected;
-    main();
+    
+    // Execute the main function when DOM has loaded
+    document.addEventListener('DOMContentLoaded', () => main());
 
     async function main() {
-      await getSettings();
-      await renderCategories();
-      await renderTags();
+
+      // Get categories, tags and default currency
+      await Promise.all([
+        getCategories(),
+        getTags(),
+        getCurrency(),
+      ]);
     }
 
-    async function getSettings() {
-      const response = await fetch('http://192.168.1.79:8000/settings/');
-      settings = await response.json();
+    async function getCategories() {
+      const response = await fetch('http://192.168.1.79:8000/categories/');
+      const data = await response.json();
+      await renderCategories(data);
+    }
+
+    async function getTags() {
+      const response = await fetch('http://192.168.1.79:8000/tags/');
+      const data = await response.json();
+      await renderTags(data);
+    }
+
+    async function getCurrency() {
+      const response = await fetch('http://192.168.1.79:8000/currency/');
+      const data = await response.json();
+      await renderCurrency(data);
     }
 
     // --------------
     // - CATEGORIES -
     // --------------
-    async function renderCategories() {
+    async function renderCategories(categories) {
       const container = document.getElementById('categoryBadges');
       container.innerHTML = ''; // clear previous badges
 
-      if (settings.categories.length == 0) {
+      if (categories.length == 0) {
         const empty = document.createElement('span');
         empty.style.fontSize = '0.9rem'
         empty.innerText = "No categories have been created yet."
@@ -213,7 +231,7 @@
         container.appendChild(empty);
       }
       else {
-        settings.categories.forEach(category => {
+        categories.forEach(category => {
           // Create badge span
           const badge = document.createElement('span');
           badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
@@ -251,19 +269,17 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
 
-      if (settings['categories'].includes(data.category)) {
-        bootstrap.showToast({body: 'This category already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-        return
-      }
+      // if (categories.includes(data.category)) {
+      //   bootstrap.showToast({body: 'This category already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      //   return
+      // }
 
       // Add new category
-      settings['categories'].push(data.category)
-
       try {
-        const response = await fetch('http://192.168.1.79:8000/settings/', {
-          method: 'PUT',
+        const response = await fetch('http://192.168.1.79:8000/categories/', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
+          body: JSON.stringify(data),
         });
 
         const json = await response.json()
@@ -272,8 +288,7 @@
           throw new Error("An error occurred.")
         }
         else {
-          await getSettings();
-          await renderCategories();
+          await getCategories();
           bootstrap.showToast({body: 'Category added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
           document.getElementById('categoryForm').reset();
         }
@@ -295,14 +310,9 @@
     async function deleteCategorySubmit(event) {
       event.preventDefault();
 
-      // Remove category from settings
-      settings.categories = settings.categories.filter(item => item !== categorySelected);
-
       try {
-        const response = await fetch('http://192.168.1.79:8000/settings/', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
+        const response = await fetch(`http://192.168.1.79:8000/categories/${categorySelected}`, {
+          method: 'DELETE',
         });
 
         const json = await response.json()
@@ -319,8 +329,7 @@
           bootstrap.showToast({body: 'Category deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the categories
-          await getSettings();
-          await renderCategories();
+          await getCategories();
         }
       }
       catch (error) {
@@ -331,11 +340,11 @@
     // --------
     // - TAGS -
     // --------
-    async function renderTags() {
+    async function renderTags(tags) {
       const container = document.getElementById('tagBadges');
       container.innerHTML = ''; // clear previous badges
 
-      if (settings.tags.length == 0) {
+      if (tags.length == 0) {
         const empty = document.createElement('span');
         empty.style.fontSize = '0.9rem'
         empty.innerText = "No tags have been created yet."
@@ -343,7 +352,7 @@
         container.appendChild(empty);
       }
       else {
-        settings.tags.forEach(tag => {
+        tags.forEach(tag => {
           // Create badge span
           const badge = document.createElement('span');
           badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
@@ -381,19 +390,16 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
 
-      if (settings['tags'].includes(data.tag)) {
-        bootstrap.showToast({body: 'This tag already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-        return
-      }
-
-      // Add new tag
-      settings['tags'].push(data.tag)
+      // if (settings['tags'].includes(data.tag)) {
+      //   bootstrap.showToast({body: 'This tag already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      //   return
+      // }
 
       try {
-        const response = await fetch('http://192.168.1.79:8000/settings/', {
-          method: 'PUT',
+        const response = await fetch('http://192.168.1.79:8000/tags/', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
+          body: JSON.stringify(data),
         });
 
         const json = await response.json()
@@ -402,8 +408,7 @@
           throw new Error("An error occurred.")
         }
         else {
-          await getSettings();
-          await renderTags();
+          await getTags();
           bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
           document.getElementById('tagForm').reset();
         }
@@ -425,14 +430,9 @@
     async function deleteTagSubmit(event) {
       event.preventDefault();
 
-      // Remove tag from settings
-      settings.tags = settings.tags.filter(item => item !== tagSelected);
-
       try {
-        const response = await fetch('http://192.168.1.79:8000/settings/', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
+        const response = await fetch(`http://192.168.1.79:8000/tags/${tagSelected}`, {
+          method: 'DELETE',
         });
 
         const json = await response.json()
@@ -449,8 +449,49 @@
           bootstrap.showToast({body: 'Tag deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the tags
-          await getSettings();
-          await renderTags();
+          await getTags();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    // ------------
+    // - CURRENCY -
+    // ------------
+    async function renderCurrency(currency) {
+      const select = document.getElementById('currencySelect');
+
+      // Clear any existing options
+      select.innerHTML = "";
+
+      // Then your dynamic options
+      currency.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.name;
+        option.textContent = `${c.name} (${c.symbol})`;
+        option.selected = c.selected;
+        select.appendChild(option);
+      });
+    }
+
+    async function changeCurrency(event) {
+      const new_currency = event.target.value
+
+      try {
+        const response = await fetch(`http://192.168.1.79:8000/currency/${new_currency}`, {
+          method: 'PUT',
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Show toast
+          bootstrap.showToast({body: 'Currency changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
         }
       }
       catch (error) {

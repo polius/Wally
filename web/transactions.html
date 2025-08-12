@@ -73,6 +73,27 @@
       border-color: #4a90e2;
       color: #004aad;
     }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: calc(var(--vh, 1vh) * 100);
+    }
+
+    main.container {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    #myGrid {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -90,7 +111,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="table.html" style="text-decoration: underline;">Transactions</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active text-decoration-underline" href="transactions.html">Transactions</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="settings.html">Settings</a></li>
           </ul>
         </div>
@@ -99,7 +120,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="container my-4">
+  <main class="container my-2">
 
     <!-- Month Header -->
     <div id="monthHeader" class="month-navigation">
@@ -121,7 +142,7 @@
     </div>
 
     <!-- Action buttons -->
-    <div class="d-flex justify-content-center align-items-center mt-4 mb-4">
+    <div class="d-flex justify-content-center align-items-center mb-4" style="margin-top: 15px">
       <button type="button" class="btn btn-success" style="font-size: 0.9rem; margin-right:5px; width: 150px; height:40px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
           <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
@@ -142,7 +163,7 @@
     </div>
 
     <!-- AG Grid Table -->
-    <div id="myGrid" style="height: 500px"></div>
+    <div id="myGrid"></div>
 
     <!-- Row count -->
     <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.9rem; font-weight: 600;"></div>
@@ -225,34 +246,50 @@
   </div>
   
   <script>
-    let settings;
+    let categories;
+    let tags;
+    let currency;
+
     let gridInstance;
     let gridApi;
+
     let theme = 'light';
-    let modalMode = 'add'; // 'add' or 'edit'
+    let modalMode = 'add';
     let selectedRow;
+
     let currentDate = new Date();
-    const currentMonthElement = document.getElementById('currentMonth');
     let tagsInput;
+
+    // Execute the main function when DOM has loaded
+    document.addEventListener('DOMContentLoaded', () => main());
     
     async function main() {
       // Show current month
       renderMonth();
 
-      // Initialize the grid with settings
-      settings = await getSettings();
-      gridApi = await initGrid();
-      await loadCategories();
+      // Get categories, tags and default currency
+      [categories, tags, currency] = await Promise.all([
+        getCategories(),
+        getTags(),
+        getCurrency(),
+      ]);
 
-      tagsInput = new TomSelect('#tagsInput', {
-        plugins: {
-          remove_button: {
-            title: 'Remove this tag',
-          }
-        },
-        persist: false,
-        create: true,
-      });
+      // Render categories and tags
+      await renderCategories();
+      await renderTags();
+
+      // Initialize the grid
+      gridApi = await initGrid();
+
+      // Set Viewport Height (for mobile devices)
+      window.addEventListener('load', setViewportHeight);
+      window.addEventListener('resize', setViewportHeight);
+      setViewportHeight();
+    }
+
+    function setViewportHeight() {
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
 
     async function getCurrentMonth() {
@@ -261,27 +298,25 @@
       return date.toLocaleDateString('en-US', options);
     }
 
-    async function getCurrentMonthInfo() {
-      const date = new Date();
-
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const monthName = date.toLocaleString('en-US', { month: 'long' });
-
-      return {
-        year,
-        month,
-        monthName,
-      };
-    }
-
-    async function getSettings() {
-      const response = await fetch('http://192.168.1.79:8000/settings/');
+    async function getCategories() {
+      const response = await fetch('http://192.168.1.79:8000/categories/');
       const data = await response.json();
       return data;
     }
 
-    async function loadCategories() {
+    async function getTags() {
+      const response = await fetch('http://192.168.1.79:8000/tags/');
+      const data = await response.json();
+      return data;
+    }
+
+    async function getCurrency() {
+      const response = await fetch('http://192.168.1.79:8000/currency/');
+      const data = await response.json();
+      return data.filter(x => x.selected)[0];
+    }
+
+    async function renderCategories() {
       const select = document.getElementById('categorySelect');
 
       // Clear any existing options
@@ -296,12 +331,28 @@
       select.appendChild(placeholder);
 
       // Then your dynamic options
-      settings.categories.forEach(category => {
+      categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
         option.textContent = category;
         option.selected = false;
         select.appendChild(option);
+      });
+    }
+
+    async function renderTags() {
+      tagsInput = new TomSelect('#tagsInput', {
+        plugins: {
+          remove_button: {
+            title: 'Remove this tag',
+          }
+        },
+        persist: false,
+        create: true,
+      });
+
+      tags.forEach(tag => {
+        tagsInput.addOption({ value: tag, text: tag }, user_created=false);
       });
     }
 
@@ -343,8 +394,8 @@
           {
             field: "name",
             filter: true,
-            wrapText: true,   // allows line wrapping
-            autoHeight: true,  // row height adjusts to fit
+            wrapText: true,
+            autoHeight: true,
             cellRenderer: (params) => {
               const container = document.createElement('span');
   
@@ -393,32 +444,13 @@
             field: "amount",
             valueFormatter: (params) => {
               const amount = params.value;
-              const type = params.data?.type;
-              const currency = settings.currency;
-              const prefixSign = type === 'expense' ? '-' : '';
-
-              // Currencies with symbol on left
-              const leftCurrencies = ['usd', 'gbp', 'jpy', 'cny', 'krw', 'inr'];
-
-              if (leftCurrencies.includes(currency)) {
-                // symbol on left
-                const symbolMap = {
-                  usd: '$',
-                  gbp: '£',
-                  jpy: '¥',
-                  cny: '¥',
-                  krw: '₩',
-                  inr: '₹',
-                };
-                const symbol = symbolMap[currency] || '';
-                return `${prefixSign}${symbol}${amount}`;
-              } else {
-                // symbol on right (e.g. euro)
-                const symbolMap = {
-                  eur: '€',
-                };
-                const symbol = symbolMap[currency] || '';
-                return `${prefixSign}${amount} ${symbol}`;
+              const sign = params.data?.type === 'expense' ? '-' : '';
+              
+              if (currency.position === 'left') {
+                return `${sign}${currency.symbol}${amount}`;
+              }
+              else {
+                return `${sign}${amount} ${currency.symbol}`;
               }
             },
             cellClass: (params) => {
@@ -532,32 +564,33 @@
     }
 
     function renderMonth() {
-      currentMonthElement.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      document.getElementById('currentMonth').textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
 
     function onFilterTextBoxChanged() {
-      gridApi.setGridOption(
-        "quickFilterText",
-        document.getElementById("searchInput").value,
-      );
+      gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
     }
 
     async function showTransactions() {
       const showAll = document.getElementById('showAllTransactions').checked;
       const monthHeader = document.getElementById('monthHeader');
       const monthHeaderAll = document.getElementById('monthHeaderAll');
+
       if (showAll) {
         monthHeader.style.display = 'none';
         monthHeaderAll.style.display = 'flex';
+
         // Fetch all transactions
         await fetch('http://192.168.1.79:8000/transactions/')
           .then(response => response.json())
           .then(data => gridApi.setGridOption('rowData', data));
-      } else {
+      }
+      else {
         monthHeader.style.display = 'flex';
         monthHeaderAll.style.display = 'none';
+
         // Fetch only current month transactions
-        const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // "01" to "12"
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         const year = currentDate.getFullYear(); // 2025
         await fetch(`http://192.168.1.79:8000/transactions/date/${year}-${month}`)
           .then(response => response.json())
@@ -589,11 +622,6 @@
       document.getElementById('rowCount').innerText = `Rows shown: ${rowCount}`;
     }
 
-    // Execute the main function to initialize the grid
-    document.addEventListener('DOMContentLoaded', () => main());
-  </script>
-
-  <script>
     function addTransaction() {
       modalMode = 'add';
       document.getElementById('transactionModalLabel').textContent = 'Add Transaction';
@@ -613,7 +641,7 @@
       document.getElementById('nameInput').value = selectedRow.name
       document.getElementById('categorySelect').value = selectedRow.category
       selectedRow.tags.forEach(tag => {
-        tagsInput.addOption({ value: tag, text: tag }, user_created=false);
+        tagsInput.addOption({ value: tag, text: tag }, user_created=true);
       });
       tagsInput.setValue(selectedRow.tags);
       document.getElementById('amountInput').value = selectedRow.amount

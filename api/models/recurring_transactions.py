@@ -43,7 +43,7 @@ class RecurringTransactionBase(SQLModel):
         return v
 
 class RecurringTransaction(RecurringTransactionBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     created_date: datetime = Field(default_factory=datetime.now, index=True)
 
 class RecurringTransactionCreate(RecurringTransactionBase):

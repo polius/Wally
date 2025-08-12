@@ -21,7 +21,7 @@ class TransactionBase(SQLModel):
         return v
 
 class Transaction(TransactionBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     recurringID: str = Field(default="", index=True)
     created_date: dt = Field(default_factory=dt.now, index=True)
 
