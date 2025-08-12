@@ -22,7 +22,7 @@ def change_currency(
 ):
     db_currency = db.get(Currency, currency_name)
     if not db_currency:
-        raise HTTPException(status_code=404, detail="This currency does not exist")
+        raise HTTPException(status_code=404, detail="This currency does not exist.")
     
     # Set all currencies selected=False
     db.exec(update(Currency).values(selected=False))

@@ -671,7 +671,6 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
       data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-      console.log('Submitting data:', data);
 
       try {
         const response = await fetch('http://192.168.1.79:8000/transactions/', {
@@ -707,7 +706,6 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
       data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-      console.log('Submitting data:', data);
 
       try {
         const response = await fetch(`http://192.168.1.79:8000/transactions/${selectedRow.id}`, {

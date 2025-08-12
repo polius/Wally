@@ -29,7 +29,7 @@ def create_category(
         return new_category
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="This category already exists")
+        raise HTTPException(status_code=400, detail="This category already exists.")
 
 @router.delete("/categories/{category_name}")
 def delete_category(
@@ -38,7 +38,7 @@ def delete_category(
 ):
     category = db.get(Category, category_name)
     if not category:
-        raise HTTPException(status_code=404, detail="This category does not exist")
+        raise HTTPException(status_code=404, detail="This category does not exist.")
     db.delete(category)
     db.commit()
     return {"ok": True}

@@ -11,11 +11,44 @@
   <script src="js/bootstrap.bundle.min.js" defer></script>
   <script src="js/bootstrap-show-toast.js" defer></script>
   <script src="js/ag-grid-community.min.noStyle.js" defer></script>
+
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'system';
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+      else {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    })();
+  </script>
+
+  <style>
+    :root[data-bs-theme="light"] {
+      --header-bg: #F8F9FA;
+      --pill-bg: #f4f4f7;
+      --pill-color: #000;
+    }
+    :root[data-bs-theme="dark"] {
+      --header-bg: #1E2125;
+      --pill-bg: #282c30;
+      --pill-color: #FFF;
+    }
+    header {
+      background-color: var(--header-bg);
+    }
+    .badge {
+      background-color: var(--pill-bg);
+      color: var(--pill-color);
+    }
+  </style>
 </head>
 
 <body>
   <!-- Header -->
-  <header class="bg-light">
+  <header>
     <div class="container">
       <nav class="navbar navbar-expand-lg navbar-light">
         <a class="navbar-brand d-flex align-items-center" style="margin-right:40px" href="#">
@@ -74,8 +107,12 @@
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500">Theme</div>
           <div class="card-body">
-            <h5 class="card-title">Light card title</h5>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+            <p class="card-text" style="font-size: 0.9rem">Select the theme to be used.</p>
+            <select class="form-select" id="themeSelect" style="font-size: 0.9rem" onchange="changeTheme(event)">
+              <option value="system">System Default</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
           </div>
         </div>
       </div>
@@ -189,7 +226,6 @@
     document.addEventListener('DOMContentLoaded', () => main());
 
     async function main() {
-
       // Get categories, tags and default currency
       await Promise.all([
         getCategories(),
@@ -234,7 +270,7 @@
         categories.forEach(category => {
           // Create badge span
           const badge = document.createElement('span');
-          badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
+          badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
           badge.style.height = '34px';
 
           // Create inner span for text with padding and font styles
@@ -269,11 +305,6 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
 
-      // if (categories.includes(data.category)) {
-      //   bootstrap.showToast({body: 'This category already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      //   return
-      // }
-
       // Add new category
       try {
         const response = await fetch('http://192.168.1.79:8000/categories/', {
@@ -285,7 +316,7 @@
         const json = await response.json()
 
         if (!response.ok) {
-          throw new Error("An error occurred.")
+          throw new Error(json.detail)
         }
         else {
           await getCategories();
@@ -294,7 +325,7 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
@@ -333,7 +364,7 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
@@ -390,11 +421,6 @@
       const formData = new FormData(event.target);
       const data = Object.fromEntries(formData.entries());
 
-      // if (settings['tags'].includes(data.tag)) {
-      //   bootstrap.showToast({body: 'This tag already exists.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      //   return
-      // }
-
       try {
         const response = await fetch('http://192.168.1.79:8000/tags/', {
           method: 'POST',
@@ -405,7 +431,7 @@
         const json = await response.json()
 
         if (!response.ok) {
-          throw new Error("An error occurred.")
+          throw new Error(json.detail)
         }
         else {
           await getTags();
@@ -414,7 +440,7 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
@@ -453,7 +479,7 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
@@ -495,8 +521,33 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
+    }
+
+    // ---------
+    // - THEME -
+    // ---------
+    async function renderTheme() {
+      const currentTheme = localStorage.getItem('theme') || 'system';
+      const select = document.getElementById('currencySelect');
+      select.value = currentTheme;
+    }
+
+    async function changeTheme(event) {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const select = document.getElementById('currencySelect');
+      const theme = event.target.value
+
+      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+      else {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+
+      localStorage.setItem('theme', theme);
+      bootstrap.showToast({body: 'Theme changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
     }
   </script>
 </body>

@@ -29,7 +29,7 @@ def create_tag(
         return new_tag
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="This tag already exists")
+        raise HTTPException(status_code=400, detail="This tag already exists.")
 
 @router.delete("/tags/{tag_name}")
 def delete_tag(
@@ -38,7 +38,7 @@ def delete_tag(
 ):
     tag = db.get(Tag, tag_name)
     if not tag:
-        raise HTTPException(status_code=404, detail="This tag does not exist")
+        raise HTTPException(status_code=404, detail="This tag does not exist.")
     db.delete(tag)
     db.commit()
     return {"ok": True}
