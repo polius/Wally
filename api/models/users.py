@@ -1,6 +1,21 @@
 from datetime import datetime
 from sqlmodel import SQLModel, Field
 
+DEFAULT_USERS = [
+    {
+        "username": "admin",
+        "password": "admin",
+        "admin": True,
+        "created_date": datetime.now(),
+    },
+    {
+        "username": "user",
+        "password": "user",
+        "admin": False,
+        "created_date": datetime.now(),
+    },
+]
+
 class UserBase(SQLModel):
     username: str = Field(primary_key=True)
     password: str

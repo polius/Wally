@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .routers import transactions, recurring_transactions, categories, tags, currency, users
+from .models.users import User, DEFAULT_USERS
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 
@@ -17,6 +18,12 @@ async def lifespan(app: FastAPI):
 
     # Init database session
     with Session(engine) as db:
+        # Create default users
+        if not db.exec(select(User)).first():
+            for user_data in DEFAULT_USERS:
+                user = User(**user_data)
+                db.add(user)
+            db.commit()
         # Create default categories
         if not db.exec(select(Category)).first():
             db.add_all([Category(**data) for data in DEFAULT_CATEGORIES])

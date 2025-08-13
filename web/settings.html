@@ -169,42 +169,8 @@
           </div>
           <div class="card-body">
             <p class="card-text" style="font-size: 0.9rem">Manage and view all registered users.</p>
-            <ul class="list-group mt-3" id="categoryList">
-              <li class="list-group-item d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
-                <span title="Admin">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="18" height="18" fill="orange" style="margin-right: 5px" title="Admin">
-                    <path d="M313 87.2c9.2-7.3 15-18.6 15-31.2 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 12.6 5.9 23.9 15 31.2L194.6 194.8c-10 15.7-31.3 19.6-46.2 8.4L88.9 158.7c4.5-6.4 7.1-14.3 7.1-22.7 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 21.8 17.5 39.6 39.2 40L87.8 393.5c4.7 31.3 31.6 54.5 63.3 54.5l273.8 0c31.7 0 58.6-23.2 63.3-54.5L520.8 176c21.7-.4 39.2-18.2 39.2-40 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 8.4 2.6 16.3 7.1 22.7l-59.4 44.6c-14.9 11.2-36.2 7.3-46.2-8.4L313 87.2z"/>
-                  </svg>
-                  admin
-                </span>
-                <div>
-                  <button class="btn btn-sm btn-primary" style="margin-right: 2px" title="Modify user" onclick="modifyUser(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="margin-bottom: 4px">
-                      <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-                    </svg>
-                  </button>
-                  <button class="btn btn-sm btn-danger" title="Delete user" onclick="deleteUser(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="13" height="13" fill="currentColor" style="margin-bottom: 3px">
-                      <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
-                    </svg>
-                  </button>
-                </div>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
-                dummy
-                <div>
-                  <button class="btn btn-sm btn-primary" style="margin-right: 2px" title="Modify user" onclick="modifyUser(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="margin-bottom: 4px">
-                      <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-                    </svg>
-                  </button>
-                  <button class="btn btn-sm btn-danger" title="Delete user" onclick="deleteUser(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="13" height="13" fill="currentColor" style="margin-bottom: 3px">
-                      <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
-                    </svg>
-                  </button>
-                </div>
-              </li>
+            <ul class="list-group mt-3" id="userList">
+              <!-- User items will be dynamically added here -->
             </ul>
           </div>
         </div>
@@ -414,6 +380,7 @@
         getTags(),
         getCurrency(),
         renderTheme(),
+        getUsers(),
       ]);
 
       // Initialize the grid
@@ -752,6 +719,85 @@
 
           // Update the grid with the new currency
           gridApi.refreshCells();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    // ---------
+    // - USERS -
+    // ---------
+    async function getUsers() {
+      try {
+        const response = await fetch('http://192.168.1.79:8000/users/', {
+          method: 'GET',
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          const userList = document.getElementById('userList');
+          userList.innerHTML = '';
+
+          if (json.length === 0) {
+            const empty = document.createElement('span');
+            empty.style.fontSize = '0.9rem'
+            empty.innerText = "No users have been created yet."
+            empty.style.fontStyle = 'italic';
+            userList.appendChild(empty);
+          }
+          else {
+            json.forEach(user => {
+              const li = document.createElement('li');
+              li.className = 'list-group-item d-flex justify-content-between align-items-center';
+              li.style.fontSize = '0.9rem';
+
+              if (user.admin) {
+                const span = document.createElement('span');
+                span.title = "Admin";
+                span.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="18" height="18" fill="orange" style="margin-right: 5px" title="Admin">
+                    <path d="M313 87.2c9.2-7.3 15-18.6 15-31.2 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 12.6 5.9 23.9 15 31.2L194.6 194.8c-10 15.7-31.3 19.6-46.2 8.4L88.9 158.7c4.5-6.4 7.1-14.3 7.1-22.7 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 21.8 17.5 39.6 39.2 40L87.8 393.5c4.7 31.3 31.6 54.5 63.3 54.5l273.8 0c31.7 0 58.6-23.2 63.3-54.5L520.8 176c21.7-.4 39.2-18.2 39.2-40 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 8.4 2.6 16.3 7.1 22.7l-59.4 44.6c-14.9 11.2-36.2 7.3-46.2-8.4L313 87.2z"/>
+                  </svg>
+                  ${user.username}
+                `;
+                li.appendChild(span);
+              }
+              else {
+                li.textContent = user.username;
+              }
+
+              const btnGroup = document.createElement('div');
+
+              const modifyBtn = document.createElement('button');
+              modifyBtn.className = 'btn btn-sm btn-primary me-2';
+              modifyBtn.title = 'Modify user';
+              modifyBtn.onclick = () => modifyUser(user);
+              modifyBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="margin-bottom: 4px">
+                  <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
+                </svg>
+              `;
+              btnGroup.appendChild(modifyBtn);
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'btn btn-sm btn-danger';
+              deleteBtn.title = 'Delete user';
+              deleteBtn.onclick = () => deleteUser(user);
+              deleteBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="13" height="13" fill="currentColor" style="margin-bottom: 3px">
+                  <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
+                </svg>
+              `;
+              btnGroup.appendChild(deleteBtn);
+              li.appendChild(btnGroup);
+              userList.appendChild(li);
+            });
+          }
         }
       }
       catch (error) {
