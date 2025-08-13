@@ -87,7 +87,7 @@
           <ul class="navbar-nav">
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="transactions.html">Transactions</a></li>
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="settings.html" style="color: #fd7e14">Settings</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="settings.html" style="font-weight: 500">Settings</a></li>
           </ul>
         </div>
       </nav>
@@ -160,7 +160,7 @@
         <div class="card h-100">
           <div class="card-header d-flex align-items-center" style="font-weight: 500">
             <span>Users</span>
-            <button class="btn btn-sm btn-success ms-auto" title="Add new user" onclick="addUser()" style="width: 80px;">
+            <button class="btn btn-sm btn-success ms-auto" title="Add new user" style="width: 80px" data-bs-toggle="modal" data-bs-target="#userModal" onclick="addUser()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; padding-bottom: 2px">
                 <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
               </svg>
@@ -354,10 +354,68 @@
     </div>
   </div>
 
+  <!-- Users Modal (Add) -->
+  <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="userForm" class="modal-content" onsubmit="submitUser(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalLabel">Add User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Username -->
+          <div class="mb-3">
+            <label for="usernameInput" class="form-label">Username</label>
+            <input type="text" class="form-control" id="usernameInput" name="username" placeholder="Enter username" required />
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <label for="passwordInput" class="form-label">Password</label>
+            <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Enter password" required />
+          </div>
+
+          <!-- Admin -->
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="adminCheck" name="admin" />
+            <label class="form-check-label" for="adminCheck">
+              Admin
+            </label>
+            <p class="card-text" style="font-size: 0.85rem">An admin user can manage users and import transactions from CSV.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-success" id="userModalSubmitButton" style="width: 120px">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Modal Delete -->
+  <div class="modal fade" id="userModalDelete" tabindex="-1" aria-labelledby="UserModalDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="submitUser(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalDeleteLabel">Delete User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="userModal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this user?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     let categories;
     let tags;
     let currency;
+    let users;
 
     let categorySelected;
     let tagSelected;
@@ -367,6 +425,9 @@
 
     let modalMode = 'add';
     let selectedRow;
+    
+    let userModalMode = 'add';
+    let userSelectedRow;
 
     let tagsInput;
 
@@ -375,12 +436,12 @@
 
     async function main() {
       // Get categories, tags and default currency
-      [categories, tags, currency] = await Promise.all([
+      [categories, tags, currency, users] = await Promise.all([
         getCategories(),
         getTags(),
         getCurrency(),
-        renderTheme(),
         getUsers(),
+        renderTheme(),
       ]);
 
       // Initialize the grid
@@ -729,6 +790,10 @@
     // ---------
     // - USERS -
     // ---------
+    document.getElementById('userModal').addEventListener('shown.bs.modal', () => {
+      document.getElementById('usernameInput').focus()
+    });
+
     async function getUsers() {
       try {
         const response = await fetch('http://192.168.1.79:8000/users/', {
@@ -741,6 +806,7 @@
           throw new Error("An error occurred.")
         }
         else {
+          users = json;
           const userList = document.getElementById('userList');
           userList.innerHTML = '';
 
@@ -774,16 +840,16 @@
 
               const btnGroup = document.createElement('div');
 
-              const modifyBtn = document.createElement('button');
-              modifyBtn.className = 'btn btn-sm btn-primary me-2';
-              modifyBtn.title = 'Modify user';
-              modifyBtn.onclick = () => modifyUser(user);
-              modifyBtn.innerHTML = `
+              const editBtn = document.createElement('button');
+              editBtn.className = 'btn btn-sm btn-primary me-2';
+              editBtn.title = 'Edit user';
+              editBtn.onclick = () => editUser(user);
+              editBtn.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="margin-bottom: 4px">
                   <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
                 </svg>
               `;
-              btnGroup.appendChild(modifyBtn);
+              btnGroup.appendChild(editBtn);
               const deleteBtn = document.createElement('button');
               deleteBtn.className = 'btn btn-sm btn-danger';
               deleteBtn.title = 'Delete user';
@@ -802,6 +868,160 @@
       }
       catch (error) {
         bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    function addUser() {
+      userModalMode = 'add';
+      document.getElementById('userModalLabel').textContent = 'Add User';
+      document.getElementById('userModalSubmitButton').textContent = 'Add';
+      document.getElementById('userForm').reset();
+      document.getElementById('passwordInput').required = true
+      document.getElementById('passwordInput').placeholder = 'Enter password';
+    }
+
+    function editUser(user) {
+      // Store selected user
+      userSelectedRow = user;
+
+      // Set modal mode to edit
+      userModalMode = 'edit';
+      document.getElementById('userModalLabel').textContent = 'Edit User';
+      document.getElementById('userModalSubmitButton').textContent = 'Edit';
+
+      // Assign values
+      document.getElementById('usernameInput').value = userSelectedRow.username
+      document.getElementById('passwordInput').value = ''
+      document.getElementById('passwordInput').required = false
+      document.getElementById('passwordInput').placeholder = 'Enter a new password (leave empty to keep current)'
+
+      document.getElementById('adminCheck').checked = userSelectedRow.admin
+      document.getElementById('adminCheck').value = userSelectedRow.admin
+
+      // Open modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal'));
+      modal.show();
+    }
+
+    function deleteUser(user) {
+      // Store selected user
+      userSelectedRow = user;
+
+      // Set modal mode to delete
+      userModalMode = 'delete';
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('userModalDelete'));
+      modal.show();
+    }
+
+    function submitUser(event) {
+      if (userModalMode === 'add') submitUserAdd(event);
+      else if (userModalMode === 'edit') submitUserEdit(event);
+      else if (userModalMode === 'delete') submitUserDelete(event);
+    }
+
+    async function submitUserAdd(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      data.admin = document.getElementById('adminCheck').checked;
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/users/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error(json.detail)
+        }
+        else {
+          users = await getUsers();
+
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          
+          // Reset the form
+          document.getElementById('userForm').reset();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    async function submitUserEdit(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      data.admin = document.getElementById('adminCheck').checked;
+
+      try {
+        const response = await fetch(`http://192.168.1.79:8000/users/${userSelectedRow.username}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error(json.detail || "An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'User edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          users = await getUsers();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    async function submitUserDelete(event) {
+      event.preventDefault();
+
+      try {
+        const response = await fetch(`http://192.168.1.79:8000/users/${userSelectedRow.username}`, {
+          method: 'DELETE'
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error(json.detail || "An error occurred.")
+        }
+        else {
+          // Show toast
+          bootstrap.showToast({body: 'User deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          users = await getUsers();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+      finally {
+        // Hide the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('userModalDelete'));
+        modal.hide();
       }
     }
 
@@ -1255,7 +1475,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Recurring transaction added.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Recurring transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getRecurring();
@@ -1296,7 +1516,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Recurring transaction edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Recurring transaction edited.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getRecurring();
@@ -1325,7 +1545,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Recurring transaction deleted.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Recurring transaction deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getRecurring();

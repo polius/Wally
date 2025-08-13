@@ -1,6 +1,8 @@
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
 from ..models.users import User, UserCreate, UserUpdate, UserPublic
@@ -11,7 +13,7 @@ router = APIRouter(tags=["Users"])
 def read_users(
     db: Annotated[Session, Depends(get_session)]
 ):
-    statement = select(User).order_by(User.created_date)
+    statement = select(User).order_by(User.username)
     users = db.exec(statement).all()
     return users
 
@@ -22,9 +24,13 @@ def create_user(
 ):
     new_user = User.model_validate(user)
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    try:
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="This username already exists.")
 
 @router.put("/users/{username}", response_model=UserPublic)
 def update_user(
@@ -34,10 +40,26 @@ def update_user(
 ):
     db_user = db.get(User, username)
     if not db_user:
-        raise HTTPException(status_code=404, detail="This user does not exist")
-    user = user.model_dump(exclude_unset=True)
-    db_user.sqlmodel_update(user)
-    db.add(db_user)
+        raise HTTPException(status_code=404, detail="This user does not exist.")
+
+    update_data = user.model_dump(exclude_unset=True)
+
+    # Prevent updating the last admin user to non-admin
+    if db_user.admin and not user.admin and len(list(db.exec(select(User).where(User.admin == True)))) == 1:
+        raise HTTPException(status_code=400, detail="Cannot remove admin status from the last admin user.")
+
+    # Handle username change separately
+    new_username = update_data.get("username")
+    if new_username and new_username != username:
+        # Ensure the new username is not already taken
+        if db.get(User, new_username):
+            raise HTTPException(status_code=400, detail="New username already exists.")
+        db_user.username = new_username
+    
+    # If password is provided, hash it
+    if "password" in update_data and update_data["password"]:
+        db_user.password = bcrypt.hashpw(update_data["password"].encode('utf-8'), bcrypt.gensalt()).decode()
+
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -50,6 +72,11 @@ def delete_user(
     user = db.get(User, username)
     if not user:
         raise HTTPException(status_code=404, detail="This user does not exist")
+    
+    # Prevent deletion of the last admin user
+    if user.admin and len(list(db.exec(select(User).where(User.admin == True)))) == 1:
+        raise HTTPException(status_code=400, detail="Cannot delete the last admin user.")
+
     db.delete(user)
     db.commit()
     return {"ok": True}

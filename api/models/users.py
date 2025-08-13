@@ -1,5 +1,4 @@
 import bcrypt
-from datetime import datetime
 from sqlmodel import SQLModel, Field
 
 DEFAULT_USERS = [
@@ -7,13 +6,11 @@ DEFAULT_USERS = [
         "username": "admin",
         "password": bcrypt.hashpw('admin'.encode('utf-8'), bcrypt.gensalt()).decode(),
         "admin": True,
-        "created_date": datetime.now(),
     },
     {
         "username": "user",
         "password": bcrypt.hashpw('user'.encode('utf-8'), bcrypt.gensalt()).decode(),
         "admin": False,
-        "created_date": datetime.now(),
     },
 ]
 
@@ -21,20 +18,18 @@ class UserBase(SQLModel):
     username: str = Field(primary_key=True)
     password: str
     admin: bool = Field(default=False, index=True)
-    created_date: datetime = Field(default_factory=datetime.now, index=True)
 
 class User(UserBase, table=True):
     pass
 
-class UserCreate(SQLModel):
-    username: str
-    password: str
-    admin: bool = False
+class UserCreate(UserBase):
+    pass
 
-class UserUpdate(SQLModel):
-    password: str
+class UserUpdate(UserBase):
+    username: str
+    password: str | None = None
+    admin: bool = False
 
 class UserPublic(SQLModel):
     username: str
     admin: bool
-    created_date: datetime
