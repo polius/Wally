@@ -30,12 +30,12 @@
 
   <style>
     :root[data-bs-theme="light"] {
-      --header-bg: #F8F9FA;
+      --header-bg: #f8f8f8;
       --pill-bg: #f4f4f7;
       --pill-color: #000;
     }
     :root[data-bs-theme="dark"] {
-      --header-bg: #1E2226;
+      --header-bg: #262a2e;
       --pill-bg: #282c30;
       --pill-color: #FFF;
     }
@@ -159,7 +159,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active text-decoration-underline" href="transactions.html">Transactions</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="transactions.html" style="color: #fd7e14">Transactions</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="settings.html">Settings</a></li>
           </ul>
         </div>
@@ -261,14 +261,52 @@
           </div>
 
           <!-- Date -->
-          <div class="mb-3">
+          <div>
             <label for="dateInput" class="form-label">Date</label>
             <input type="date" class="form-control" id="dateInput" name="date" required />
           </div>
+
+          <!-- Recurring -->
+          <div id="recurringElement" class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
+            <label class="form-check-label" for="recurringCheck">
+              Recurring
+            </label>
+          </div>
+
+          <div id="recurringDiv" class="card mt-3" style="display: none;">
+            <div class="card-body">
+              <div class="row">
+                <!-- Start Date -->
+                <div class="col-6 mb-3">
+                  <label for="startDateInput" class="form-label">Start Date</label>
+                  <input type="date" class="form-control" id="startDateInput" name="startDate" />
+                </div>
+                <!-- End Date -->
+                <div class="col-6 mb-3">
+                  <label for="endDateInput" class="form-label">End Date</label>
+                  <input type="date" class="form-control" id="endDateInput" name="endDate" />
+                </div>
+              </div>
+
+              <!-- Frequency -->
+              <div>
+                <label for="frequencySelect" class="form-label">Frequency</label>
+                <select class="form-select" id="frequencySelect" name="frequency">
+                  <option value="" disabled selected>Select frequency</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px">Add Transaction</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px">Add</button>
         </div>
       </form>
     </div>
@@ -692,13 +730,17 @@
       document.getElementById('transactionForm').reset();
       document.getElementById('categorySelect').value = "";
       tagsInput.setValue([]);
-      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0]; // Set to today
+      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('recurringElement').style.display = 'block';
+      toggleRecurring(false);
     }
 
     function editTransaction() {
       modalMode = 'edit';
       document.getElementById('transactionModalLabel').textContent = 'Edit Transaction';
       document.getElementById('modalSubmitButton').textContent = 'Edit';
+      document.getElementById('recurringElement').style.display = 'none';
+      toggleRecurring(false);
 
       // Assign values
       document.getElementById('nameInput').value = selectedRow.name
@@ -723,9 +765,54 @@
     }
 
     function submitTransaction(event) {
-      if (modalMode === 'add') submitTransactionAdd(event);
+      if (modalMode === 'add') {
+        if (event.target.recurringCheck.checked) submitRecurringAdd(event);
+        else submitTransactionAdd(event);
+      }
       else if (modalMode === 'edit') submitTransactionEdit(event);
       else if (modalMode === 'delete') submitTransactionDelete(event);
+    }
+
+     async function submitRecurringAdd(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
+
+      // Check if startDate is before endDate
+      if (new Date(data.startDate) >= new Date(data.endDate)) {
+        bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+        return;
+      }
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/recurring/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Recurring transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          getTransactions();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
     }
 
     async function submitTransactionAdd(event) {
@@ -753,7 +840,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Transaction added.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getTransactions();
@@ -788,7 +875,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Transaction edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Transaction edited.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getTransactions();
@@ -817,7 +904,7 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Transaction deleted.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Transaction deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
           getTransactions();
@@ -825,6 +912,29 @@
       }
       catch (error) {
         bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    function toggleRecurring(enabled) {
+      const recurringDiv = document.getElementById('recurringDiv');
+      const date = document.getElementById('dateInput');
+      const startDate = document.getElementById('startDateInput');
+      const endDate = document.getElementById('endDateInput');
+      const frequencySelect = document.getElementById('frequencySelect');
+
+      if (enabled) {
+        recurringDiv.style.display = 'block';
+        date.disabled = true;
+        startDate.value = new Date().toISOString().split('T')[0];
+        startDate.required = true;
+        endDate.required = true;
+        frequencySelect.required = true;
+      } else {
+        recurringDiv.style.display = 'none';
+        date.disabled = false;
+        startDate.required = false;
+        endDate.required = false;
+        frequencySelect.required = false;
       }
     }
   </script>
