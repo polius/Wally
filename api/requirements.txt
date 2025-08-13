@@ -1,3 +1,4 @@
 fastapi[standard]
 sqlmodel
 python-dateutil
+bcrypt

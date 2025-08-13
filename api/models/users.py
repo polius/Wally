@@ -1,16 +1,17 @@
+import bcrypt
 from datetime import datetime
 from sqlmodel import SQLModel, Field
 
 DEFAULT_USERS = [
     {
         "username": "admin",
-        "password": "admin",
+        "password": bcrypt.hashpw('admin'.encode('utf-8'), bcrypt.gensalt()).decode(),
         "admin": True,
         "created_date": datetime.now(),
     },
     {
         "username": "user",
-        "password": "user",
+        "password": bcrypt.hashpw('user'.encode('utf-8'), bcrypt.gensalt()).decode(),
         "admin": False,
         "created_date": datetime.now(),
     },
