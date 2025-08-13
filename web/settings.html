@@ -749,6 +749,9 @@
         
           // Refresh the currency
           currency = await getCurrency();
+
+          // Update the grid with the new currency
+          gridApi.refreshCells();
         }
       }
       catch (error) {
