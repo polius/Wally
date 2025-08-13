@@ -7,10 +7,14 @@
   <link rel="icon" type="image/png" href="assets/wally-transparent.png">
   <!-- CSS -->
   <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/tom-select.min.css" rel="stylesheet">
+  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
   <!-- JS -->
   <script src="js/bootstrap.bundle.min.js" defer></script>
   <script src="js/bootstrap-show-toast.js" defer></script>
   <script src="js/ag-grid-community.min.noStyle.js" defer></script>
+  <script src="js/tom-select.complete.min.js" defer></script>
+  <script src="js/papaparse.min.js" defer></script>
 
   <script>
     (function() {
@@ -39,9 +43,30 @@
     header {
       background-color: var(--header-bg);
     }
+    input, .option {
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item {
+      background-color: var(--pill-bg)!important;
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item .remove {
+      border-color: var(--header-bg)!important;
+    }
+
     .badge {
       background-color: var(--pill-bg);
       color: var(--pill-color);
+    }
+
+    .text-green {
+      color: #198754;
+    }
+
+    .text-red {
+      color: #dc3545;
     }
   </style>
 </head>
@@ -133,15 +158,17 @@
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Users</div>
-          <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem">Manage and view all registered users.</p>
-            <button class="btn btn-sm btn-primary" onclick="createUser()" style="width: 160px">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; margin-bottom: 1px">
+          <div class="card-header d-flex align-items-center" style="font-weight: 500">
+            <span>Users</span>
+            <button class="btn btn-sm btn-success ms-auto" title="Add new user" onclick="addUser()" style="width: 80px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; padding-bottom: 2px">
                 <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
               </svg>
-              Create a new user
+              Add
             </button>
+          </div>
+          <div class="card-body">
+            <p class="card-text" style="font-size: 0.9rem">Manage and view all registered users.</p>
             <ul class="list-group mt-3" id="categoryList">
               <li class="list-group-item d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
                 <span title="Admin">
@@ -193,7 +220,8 @@
               </svg>
               Export to CSV
             </button>
-            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 155px">
+            <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
+            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 155px" onclick="csvInput.click()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M214.6 17.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 117.3 160 488c0 17.7 14.3 32 32 32s32-14.3 32-32l0-370.7 105.4 105.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/>
               </svg>
@@ -205,10 +233,24 @@
     </div>
 
     <div class="card mt-3">
-      <div class="card-header" style="font-weight: 500">Recurring Transactions</div>
+      <div class="card-header d-flex align-items-center" style="font-weight: 500">
+        <span>Recurring Transactions</span>
+        <button class="btn btn-sm btn-success ms-auto" title="Add new recurring transaction" style="width: 80px" data-bs-toggle="modal" data-bs-target="#recurringModal" onclick="addRecurring()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; padding-bottom: 2px">
+            <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
+          </svg>
+          Add
+        </button>
+      </div>
       <div class="card-body">
-        <h5 class="card-title">Light card title</h5>
-        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+        <!-- Grid Filter -->
+        <div class="mb-2">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search..." style="font-size: 0.9rem;" oninput="onFilterTextBoxChanged()" />
+        </div>
+        <!-- AG Grid Table -->
+        <div id="myGrid" style="height: 500px;"></div>
+        <!-- Row count -->
+        <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.85rem; font-weight: 600;"></div>
       </div>
     </div>
   </main>
@@ -251,39 +293,168 @@
     </div>
   </div>
 
+  <!-- Recurring Modal (Add and Edit) -->
+  <div class="modal fade" id="recurringModal" tabindex="-1" aria-labelledby="recurringModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="recurringForm" class="modal-content" onsubmit="submitRecurring(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="recurringModalLabel">Add Recurring Transaction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Name -->
+          <div class="mb-3">
+            <label for="nameInput" class="form-label">Name</label>
+            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" required />
+          </div>
+
+          <!-- Category -->
+          <div class="mb-3">
+            <label for="categorySelect" class="form-label">Category</label>
+            <select class="form-select" id="categorySelect" name="category" required></select>
+          </div>
+
+          <!-- Tags -->
+          <div class="mb-3">
+            <label class="form-label">Tags</label>
+            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" autocomplete="off">
+          </div>
+
+          <!-- Amount -->
+          <div class="mb-3">
+            <label for="amountInput" class="form-label">Amount</label>
+            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" required />
+          </div>
+
+          <!-- Type -->
+          <div class="mb-3">
+            <label for="typeSelect" class="form-label">Type</label>
+            <select class="form-select" id="typeSelect" name="type" required>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <!-- Start Date -->
+            <div class="col-6 mb-3">
+              <label for="startDateInput" class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="startDateInput" name="startDate" required />
+            </div>
+            <!-- End Date -->
+            <div class="col-6 mb-3">
+              <label for="endDateInput" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="endDateInput" name="endDate" required />
+            </div>
+          </div>
+
+          <!-- Frequency -->
+          <div class="mb-3">
+            <label for="frequencySelect" class="form-label">Frequency</label>
+            <select class="form-select" id="frequencySelect" name="frequency" required>
+              <option value="" disabled selected>Select frequency</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Recurring Modal Delete -->
+  <div class="modal fade" id="recurringModalDelete" tabindex="-1" aria-labelledby="recurringModalDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="submitRecurring(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="recurringModalDeleteLabel">Delete Recurring Transaction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this recurring transaction?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    let categories;
+    let tags;
+    let currency;
+
     let categorySelected;
     let tagSelected;
-    
+
+    let gridInstance;
+    let gridApi;
+
+    let modalMode = 'add';
+    let selectedRow;
+
+    let tagsInput;
+
     // Execute the main function when DOM has loaded
     document.addEventListener('DOMContentLoaded', () => main());
 
     async function main() {
       // Get categories, tags and default currency
-      await Promise.all([
+      [categories, tags, currency] = await Promise.all([
         getCategories(),
         getTags(),
         getCurrency(),
         renderTheme(),
       ]);
+
+      // Initialize the grid
+      gridApi = await initGrid();
+
+      // Init Tom Select for tags input
+      tagsInput = new TomSelect('#tagsInput', {
+        plugins: {
+          remove_button: {
+            title: 'Remove this tag',
+          }
+        },
+        persist: false,
+        create: true,
+        render: {
+          no_results: function(data, escape) {
+            return '';
+          },
+        }
+      });
     }
 
     async function getCategories() {
       const response = await fetch('http://192.168.1.79:8000/categories/');
       const data = await response.json();
       await renderCategories(data);
+      return categories
     }
 
     async function getTags() {
       const response = await fetch('http://192.168.1.79:8000/tags/');
       const data = await response.json();
       await renderTags(data);
+      return data;
     }
 
     async function getCurrency() {
       const response = await fetch('http://192.168.1.79:8000/currency/');
       const data = await response.json();
       await renderCurrency(data);
+      return data.filter(x => x.selected)[0];
     }
 
     // --------------
@@ -330,6 +501,29 @@
           container.appendChild(badge);
         });
       }
+
+      // Update the select dropdown in recurring transactions
+      const select = document.getElementById('categorySelect');
+
+      // Clear any existing options
+      select.innerHTML = "";
+
+      // First static placeholder option
+      const placeholder = document.createElement('option');
+      placeholder.value = "";
+      placeholder.textContent = "Select category";
+      placeholder.selected = true;
+      placeholder.disabled = true;
+      select.appendChild(placeholder);
+
+      // Then your dynamic options
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        option.selected = false;
+        select.appendChild(option);
+      });
     }
 
     async function addCategory(event) {
@@ -353,7 +547,7 @@
           throw new Error(json.detail)
         }
         else {
-          await getCategories();
+          categories = await getCategories();
           bootstrap.showToast({body: 'Category added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
           document.getElementById('categoryForm').reset();
         }
@@ -394,7 +588,7 @@
           bootstrap.showToast({body: 'Category deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the categories
-          await getCategories();
+          categories = await getCategories();
         }
       }
       catch (error) {
@@ -468,7 +662,7 @@
           throw new Error(json.detail)
         }
         else {
-          await getTags();
+          tags = await getTags();
           bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
           document.getElementById('tagForm').reset();
         }
@@ -509,7 +703,7 @@
           bootstrap.showToast({body: 'Tag deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the tags
-          await getTags();
+          tags = await getTags();
         }
       }
       catch (error) {
@@ -552,6 +746,9 @@
         else {
           // Show toast
           bootstrap.showToast({body: 'Currency changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+        
+          // Refresh the currency
+          currency = await getCurrency();
         }
       }
       catch (error) {
@@ -573,6 +770,10 @@
       const select = document.getElementById('themeSelect');
       const theme = event.target.value
 
+      // Store the selected theme in localStorage
+      localStorage.setItem('theme', theme);
+
+      // Apply the theme to bootstrap elements
       if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
         document.documentElement.setAttribute('data-bs-theme', 'light');
       }
@@ -580,7 +781,10 @@
         document.documentElement.setAttribute('data-bs-theme', 'dark');
       }
 
-      localStorage.setItem('theme', theme);
+      // Recreate the AG Grid with the new theme
+      initGrid();
+
+      // Show confirmation message
       bootstrap.showToast({body: 'Theme changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
     }
 
@@ -599,30 +803,19 @@
           throw new Error("An error occurred.")
         }
         else {
-          console.log(json)
           if (!json.length) {
             bootstrap.showToast({body: "There are no transactions", delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
             return;
           }
 
-          // Extract headers from object keys
-          const headers = Object.keys(json[0]).filter(x => x !== 'recurringID');
-
-          // Convert objects to CSV rows
-          const csvRows = [
-            headers.join(','), // header row
-            ...json.map(obj =>
-              headers.map(header =>
-                `"${String(obj[header] ?? "").replace(/"/g, '""')}"`
-              ).join(',')
-            )
-          ];
-
-          // Create CSV content
-          const csvContent = csvRows.join('\n');
+          // Generate CSV only with mandatory columns
+          const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
+          const csv = Papa.unparse(json, {
+            columns: mandatoryColumns
+          });
 
           // Create Blob and trigger download
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const link = document.createElement('a');
           const url = URL.createObjectURL(blob);
           link.setAttribute('href', url);
@@ -635,6 +828,462 @@
       }
       catch (error) {
         bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    async function importFromCSV() {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Read file content
+      const csvText = await file.text();
+
+      // Parse CSV to JSON using PapaParse
+      const { data, errors, meta } = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transform: (value, column) => {
+          if (column === "tags") return value && value.trim() !== "" ? value.split(",").map(tag => tag.trim()) : [];
+          return value;
+        }
+      });
+
+      // Check for missing mandatory columns
+      const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
+      const missing = mandatoryColumns.filter(col => !meta.fields.includes(col));
+      if (missing.length > 0) {
+        errors.unshift({message: `Missing CSV columns: ${missing.join(", ")}`});
+      }
+
+      if (errors.length) {
+        bootstrap.showToast({body: errors[0].message, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+        return;
+      }
+
+      // Send data
+      try {
+        const response = await fetch('http://192.168.1.79:8000/transactions/import/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error(json.error || "An error occurred while importing.");
+        }
+        else {
+          // Show confirmation message
+          bootstrap.showToast({body: 'Transactions imported.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
+    // --------------------------
+    // - RECURRING TRANSACTIONS -
+    // --------------------------
+    document.getElementById('recurringModal').addEventListener('shown.bs.modal', () => {
+      document.getElementById('nameInput').focus()
+    });
+
+    document.getElementById('amountInput').addEventListener('input', (event) => {
+      if (event.target.value.includes(',')) {
+        event.target.value = event.target.value.replace(',', '.');
+      }
+    });
+
+    async function getRecurring() {
+      await fetch('http://192.168.1.79:8000/recurring/')
+        .then(response => response.json())
+        .then(data => gridApi.setGridOption('rowData', data));
+      updateRowCount(gridApi);
+    }
+
+    async function initGrid() {
+      let myTheme;
+      const theme = localStorage.getItem('theme') || 'system';
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
+        myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
+      }
+      else {
+        myTheme = agGrid.themeQuartz.withParams({
+          backgroundColor: '#212529',
+          foregroundColor: '#b5b9bd',
+          headerTextColor: '#b5b9bd',
+          headerBackgroundColor: '#272b30',
+          oddRowBackgroundColor: '#272b30',
+          headerColumnResizeHandleColor: '#b5b9bd',
+        });
+      }
+
+      const gridOptions = {
+        theme: myTheme,
+        suppressMovableColumns: true,
+        rowData: [],
+        defaultColDef: {
+          flex: 1,
+          minWidth: 150,
+        },
+        onGridReady: params => {
+          gridApi = params.api;
+          getRecurring();
+        },
+        onFilterChanged: params => {
+          updateRowCount(params.api);
+        },
+        columnDefs: [
+          {
+            field: "name",
+            filter: true,
+            wrapText: true,
+            autoHeight: true,
+            cellRenderer: (params) => {
+              const container = document.createElement('span');
+  
+              if (params.data?.recurringID) {
+                // SVG icon
+                container.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="vertical-align: middle; margin-right: 6px;">
+                    <path d="M488 192l-144 0c-9.7 0-18.5-5.8-22.2-14.8s-1.7-19.3 5.2-26.2l46.7-46.7c-75.3-58.6-184.3-53.3-253.5 15.9-75 75-75 196.5 0 271.5s196.5 75 271.5 0c8.2-8.2 15.5-16.9 21.9-26.1 10.1-14.5 30.1-18 44.6-7.9s18 30.1 7.9 44.6c-8.5 12.2-18.2 23.8-29.1 34.7-100 100-262.1 100-362 0S-25 175 75 75c94.3-94.3 243.7-99.6 344.3-16.2L471 7c6.9-6.9 17.2-8.9 26.2-5.2S512 14.3 512 24l0 144c0 13.3-10.7 24-24 24z"/>
+                  </svg>
+                `;
+                // Add the name text after the SVG
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = params.data?.name;
+                container.appendChild(nameSpan);
+              } else {
+                // Just the name if no recurringID
+                container.textContent = params.data?.name;
+              }
+              return container;
+            }
+          },
+          {
+            field: "category",
+            filter: true,
+          },
+          {
+            field: "tags",
+            filter: true,
+            valueFormatter: (params) => {
+              return params.value ? params.value.join(", ") : "";
+            },
+          },
+          {
+            field: "startDate",
+            filter: true,
+          },
+          {
+            field: "endDate",
+            filter: true,
+          },
+          {
+            field: "frequency",
+            filter: true,
+          },
+          {
+            field: "amount",
+            valueFormatter: (params) => {
+              const amount = params.value;
+              const sign = params.data?.type === 'expense' ? '-' : '';
+              
+              if (currency.position === 'left') {
+                return `${sign}${currency.symbol}${amount}`;
+              }
+              else {
+                return `${sign}${amount} ${currency.symbol}`;
+              }
+            },
+            cellClass: (params) => {
+              if (params.data?.type === 'income') return 'text-green';
+              if (params.data?.type === 'expense') return 'text-red';
+            },
+            comparator: (valueA, valueB, nodeA, nodeB, isInverted) => {             
+              const aData = nodeA.data;
+              const bData = nodeB.data;
+              
+              // Calculate "sort value" for aData.amount based on type
+              const aVal = (aData.type === 'expense' ? -aData.amount : aData.amount);
+              const bVal = (bData.type === 'expense' ? -bData.amount : bData.amount);
+
+              // Normal numeric compare
+              if (aVal < bVal) return -1;
+              if (aVal > bVal) return 1;
+              return 0;
+            }
+          },
+          { 
+            field: "actions",
+            width: 100,
+            cellRenderer: (params) => {
+              const container = document.createElement("div");
+              container.style.display = "flex";
+              container.style.alignItems = "center";
+
+              // Edit button
+              const editButton = document.createElement("span");
+              editButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16.5" height="16.5" fill="currentColor" style="display: inline-block; vertical-align: middle;">
+                  <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
+                </svg>
+              `;
+              editButton.style.display = "flex";
+              editButton.style.justifyContent = "center";
+              editButton.style.alignItems = "center";
+              editButton.style.width = "35px";
+              editButton.style.height = "35px";
+              editButton.style.borderRadius = "50%";
+              editButton.style.cursor = "pointer";
+              editButton.style.marginRight = "1px";
+              editButton.style.color = "#007AFF"; // black
+              editButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
+              editButton.style.backgroundColor = "transparent";
+              editButton.style.lineHeight = "0";
+              editButton.style.filter = "opacity(0.8)";
+              editButton.title = "Edit Recurring Transaction";
+
+              editButton.addEventListener("mouseenter", () => {
+                editButton.style.color = "#0051CC";
+                editButton.style.backgroundColor = "#cce4ff";
+              });
+              editButton.addEventListener("mouseleave", () => {
+                editButton.style.color = "#007AFF" // "black";
+                editButton.style.backgroundColor = "transparent";
+              });
+              editButton.addEventListener("click", () => {
+                selectedRow = params.data;
+                editRecurring()
+              });
+
+              // Delete button
+              const deleteButton = document.createElement("span");
+              deleteButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
+                  <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
+                </svg>
+              `;
+              deleteButton.style.display = "flex";
+              deleteButton.style.justifyContent = "center";
+              deleteButton.style.alignItems = "center";
+              deleteButton.style.width = "35px";
+              deleteButton.style.height = "35px";
+              deleteButton.style.borderRadius = "50%";
+              deleteButton.style.cursor = "pointer";
+              deleteButton.style.marginLeft = "1px";
+              deleteButton.style.color = "#FF3B30" // "black";
+              deleteButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
+              deleteButton.style.backgroundColor = "transparent";
+              deleteButton.style.lineHeight = "0";
+              deleteButton.style.filter = "opacity(0.8)";
+              deleteButton.title = "Delete Recurring Transaction";
+
+              deleteButton.addEventListener("mouseenter", () => {
+                deleteButton.style.color = "red";
+                deleteButton.style.backgroundColor = "#ffc9c9";
+              });
+              deleteButton.addEventListener("mouseleave", () => {
+                deleteButton.style.color = "#FF3B30" // "black";
+                deleteButton.style.backgroundColor = "transparent";
+              });
+              deleteButton.addEventListener("click", () => {
+                selectedRow = params.data;
+                deleteRecurring()
+              });
+
+              container.appendChild(editButton);
+              container.appendChild(deleteButton);
+
+              return container;
+            }
+          }
+        ]
+      }
+
+      // Destroy existing grid instance if it exists
+      if (gridInstance) {
+        gridInstance.destroy();
+      }
+
+      // Creating the AG Grid
+      const myGridElement = document.querySelector('#myGrid');
+      gridInstance = agGrid.createGrid(myGridElement, gridOptions);
+    }
+
+    function updateRowCount(api) {
+      const rowCount = api.getDisplayedRowCount();
+      document.getElementById('rowCount').innerText = `Rows shown: ${rowCount}`;
+    }
+
+    function onFilterTextBoxChanged() {
+      gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
+    }
+
+    function addRecurring() {
+      modalMode = 'add';
+      document.getElementById('recurringModalLabel').textContent = 'Add Recurring Transaction';
+      document.getElementById('modalSubmitButton').textContent = 'Add';
+      document.getElementById('recurringForm').reset();
+      document.getElementById('categorySelect').value = "";
+      document.getElementById('frequencySelect').value = "";
+      tagsInput.clearOptions();
+      tags.forEach(tag => {
+        tagsInput.addOption({ value: tag, text: tag }, user_created=false);
+      });
+      tagsInput.setValue([]);
+      document.getElementById('startDateInput').value = new Date().toISOString().split('T')[0]; // Set to today
+    }
+
+    function editRecurring() {
+      modalMode = 'edit';
+      document.getElementById('recurringModalLabel').textContent = 'Edit Recurring Transaction';
+      document.getElementById('modalSubmitButton').textContent = 'Edit';
+
+      // Assign values
+      document.getElementById('nameInput').value = selectedRow.name
+      document.getElementById('categorySelect').value = selectedRow.category
+      tagsInput.clearOptions();
+      selectedRow.tags.forEach(tag => {
+        tagsInput.addOption({ value: tag, text: tag }, user_created=true);
+      });
+      tagsInput.setValue(selectedRow.tags);
+      document.getElementById('amountInput').value = selectedRow.amount
+      document.getElementById('typeSelect').value = selectedRow.type
+      document.getElementById('startDateInput').value = selectedRow.startDate
+      document.getElementById('endDateInput').value = selectedRow.endDate
+      document.getElementById('frequencySelect').value = selectedRow.frequency
+
+      // Open modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModal'));
+      modal.show();
+    }
+
+    function deleteRecurring() {
+      modalMode = 'delete';
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModalDelete'));
+      modal.show();
+    }
+
+    function submitRecurring(event) {
+      if (modalMode === 'add') submitRecurringAdd(event);
+      else if (modalMode === 'edit') submitRecurringEdit(event);
+      else if (modalMode === 'delete') submitRecurringDelete(event);
+    }
+
+    async function submitRecurringAdd(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
+
+      // Check if startDate is before endDate
+      if (new Date(data.startDate) >= new Date(data.endDate)) {
+        bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+        return;
+      }
+
+      try {
+        const response = await fetch('http://192.168.1.79:8000/recurring/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Recurring transaction added.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          getRecurring();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+    async function submitRecurringEdit(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
+
+      // Check if startDate is before endDate
+      if (new Date(data.startDate) >= new Date(data.endDate)) {
+        bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://192.168.1.79:8000/recurring/${selectedRow.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Recurring transaction edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          getRecurring();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+    async function submitRecurringDelete(event) {
+      event.preventDefault();
+
+      try {
+        const response = await fetch(`http://192.168.1.79:8000/recurring/${selectedRow.id}`, {
+          method: 'DELETE'
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModalDelete'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: 'Recurring transaction deleted.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the grid
+          getRecurring();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
   </script>

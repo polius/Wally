@@ -65,11 +65,11 @@
     }
 
     .text-green {
-      color: green;
+      color: #198754;
     }
 
     .text-red {
-      color: red;
+      color: #dc3545;
     }
 
     .ag-cell {
@@ -199,7 +199,7 @@
       </button>
       <div class="d-flex justify-content-center">
         <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px; width: 150px; height:40px">
-          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; margin-right:2px;" onchange="showTransactions()" />
+          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; margin-right:2px;" onchange="getTransactions()" />
           Show All
         </label>
       </div>
@@ -397,8 +397,8 @@
         persist: false,
         create: true,
         render: {
-          no_results:function(data,escape){
-            return ''; // <div class="no-results">No results found for "'+escape(data.input)+'"</div>';
+          no_results: function(data, escape) {
+            return '';
           },
         }
       });
@@ -422,15 +422,10 @@
           foregroundColor: '#b5b9bd',
           headerTextColor: '#b5b9bd',
           headerBackgroundColor: '#272b30',
-          oddRowBackgroundColor: '#000003',
+          oddRowBackgroundColor: '#272b30',
           headerColumnResizeHandleColor: '#b5b9bd',
         });
       }
-
-      // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDark);
-      // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDarkBlue);
-      // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
-      // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightCold);
 
       const gridOptions = {
         theme: myTheme,
@@ -442,7 +437,7 @@
         },
         onGridReady: params => {
           gridApi = params.api;
-          showTransactions();
+          getTransactions();
         },
         onFilterChanged: params => {
           updateRowCount(params.api);
@@ -633,7 +628,7 @@
       gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
     }
 
-    async function showTransactions() {
+    async function getTransactions() {
       const showAll = document.getElementById('showAllTransactions').checked;
       const monthHeader = document.getElementById('monthHeader');
       const monthHeaderAll = document.getElementById('monthHeaderAll');
@@ -665,14 +660,14 @@
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() - 1);
       renderMonth();
-      showTransactions();
+      getTransactions();
     });
 
     // Next month button
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() + 1);
       renderMonth();
-      showTransactions();
+      getTransactions();
     });
 
     document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
@@ -761,7 +756,7 @@
           bootstrap.showToast({body: 'Transaction added.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
-          showTransactions();
+          getTransactions();
         }
       }
       catch (error) {
@@ -796,7 +791,7 @@
           bootstrap.showToast({body: 'Transaction edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
-          showTransactions();
+          getTransactions();
         }
       }
       catch (error) {
@@ -825,7 +820,7 @@
           bootstrap.showToast({body: 'Transaction deleted.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the grid
-          showTransactions();
+          getTransactions();
         }
       }
       catch (error) {

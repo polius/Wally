@@ -20,7 +20,7 @@ def read_recurring_transactions(
     recurring_transactions = db.exec(statement).all()
     return recurring_transactions
 
-@router.get("/recurring/{transaction_id}", response_model=list[RecurringTransactionPublic])
+@router.get("/recurring/{recurring_transaction_id}", response_model=list[RecurringTransactionPublic])
 def get_recurring_transaction_by_id(
     recurring_transaction_id: UUID,
     db: Annotated[Session, Depends(get_session)]
@@ -49,7 +49,7 @@ def create_recurring_transaction(
     # Return the created Recurring Transaction
     return new_recurring_transaction
 
-@router.put("/recurring/{transaction_id}", response_model=RecurringTransactionPublic)
+@router.put("/recurring/{recurring_transaction_id}", response_model=RecurringTransactionPublic)
 def update_recurring_transaction(
     recurring_transaction_id: UUID,
     recurring_transaction: RecurringTransactionUpdate,
@@ -80,7 +80,7 @@ def update_recurring_transaction(
     # Return the updated Recurring Transaction
     return db_recurring_transaction
 
-@router.delete("/recurring/{transaction_id}")
+@router.delete("/recurring/{recurring_transaction_id}")
 def delete_recurring_transaction(
     recurring_transaction_id: UUID,
     db: Annotated[Session, Depends(get_session)]
@@ -108,7 +108,7 @@ def create_transactions_from_recurring(
 ):
     start_date = recurring_transaction.startDate
     end_date = recurring_transaction.endDate
-    interval = recurring_transaction.interval
+    frequency = recurring_transaction.frequency
     current_date = start_date
 
     while current_date <= end_date:
@@ -123,14 +123,14 @@ def create_transactions_from_recurring(
         )
         db.add(transaction)
 
-        # Increment date based on interval
-        if interval == "daily":
+        # Increment date based on frequency
+        if frequency == "daily":
             current_date += timedelta(days=1)
-        elif interval == "weekly":
+        elif frequency == "weekly":
             current_date += timedelta(weeks=1)
-        elif interval == "monthly":
+        elif frequency == "monthly":
             current_date += relativedelta(months=1)
-        elif interval == "yearly":
+        elif frequency == "yearly":
             current_date += relativedelta(years=1)
 
 def delete_transactions_from_recurring(

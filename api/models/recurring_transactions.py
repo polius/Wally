@@ -15,7 +15,7 @@ class RecurringTransactionBase(SQLModel):
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     startDate: date = Field(default_factory=date.today, index=True)
     endDate: date = Field(default_factory=date.today, index=True)
-    interval: Literal["daily","weekly","monthly","yearly"] = Field(sa_type=String, default="daily", index=True)
+    frequency: Literal["daily","weekly","monthly","yearly"] = Field(sa_type=String, default="daily", index=True)
 
     @field_validator("amount")
     def amount_must_be_positive(cls, v: Decimal) -> Decimal:
@@ -57,7 +57,7 @@ class RecurringTransactionUpdate(SQLModel):
     type: Literal["expense", "income"] | None = None
     startDate: date | None = None
     endDate: date | None = None
-    interval: Literal["daily","weekly","monthly","yearly"] | None = None
+    frequency: Literal["daily","weekly","monthly","yearly"] | None = None
 
 class RecurringTransactionPublic(SQLModel):
     id: UUID
@@ -68,4 +68,4 @@ class RecurringTransactionPublic(SQLModel):
     type: Literal["expense", "income"]
     startDate: date
     endDate: date
-    interval: Literal["daily","weekly","monthly","yearly"]
+    frequency: Literal["daily","weekly","monthly","yearly"]

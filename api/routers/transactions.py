@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from typing import Annotated
 from uuid import UUID
-from sqlmodel import Session, select, desc
+from sqlmodel import Session, select, desc, insert
 from datetime import date
 
 from ..database import get_session
@@ -96,4 +96,3 @@ def import_transactions(
 
     db.commit()
     return {"ok": True}
-
