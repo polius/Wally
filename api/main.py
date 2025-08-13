@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
-from .routers import transactions, recurring_transactions, categories, tags, currency
+from .routers import transactions, recurring_transactions, categories, tags, currency, users
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 
@@ -55,8 +55,14 @@ app.include_router(recurring_transactions.router)
 app.include_router(categories.router)
 app.include_router(tags.router)
 app.include_router(currency.router)
+app.include_router(users.router)
 
 # Add root route
-@app.get("/", tags=["Test"])
+@app.get("/", tags=["Root"])
 async def root():
-    return {"message": "Hello World!"}
+    return {"message": "Welcome to Wally API!"}
+
+# Add health check route
+@app.get("/health", tags=["Health Check"])
+async def health_check():
+    return {"status": "ok", "message": "Wally API is running!"}
