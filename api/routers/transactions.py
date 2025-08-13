@@ -81,3 +81,19 @@ def delete_transaction(
     db.delete(transaction)
     db.commit()
     return {"ok": True}
+
+@router.post("/transactions/import")
+def import_transactions(
+    transactions: list[TransactionCreate],
+    db: Annotated[Session, Depends(get_session)]
+):
+    if not transactions:
+        raise HTTPException(status_code=400, detail="No transactions to import")
+    
+    for transaction in transactions:
+        new_transaction = Transaction.model_validate(transaction)
+        db.add(new_transaction)
+
+    db.commit()
+    return {"ok": True}
+

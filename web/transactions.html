@@ -35,7 +35,7 @@
       --pill-color: #000;
     }
     :root[data-bs-theme="dark"] {
-      --header-bg: #1E2125;
+      --header-bg: #1E2226;
       --pill-bg: #282c30;
       --pill-color: #FFF;
     }
@@ -43,12 +43,22 @@
       background-color: var(--header-bg);
     }
 
-    /* :root[data-bs-theme="dark"] .tom-select-single,
-    :root[data-bs-theme="dark"] .tom-select-multi {
-      background-color: #2c2f33;
-      color: #e0e0e0;
-      border: 1px solid #444;
-    } */
+    input, .option {
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item {
+      background-color: var(--pill-bg)!important;
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item .remove {
+      border-color: var(--header-bg)!important;
+    }
+
+    #tagsInput-ts-dropdown .create, #tagsInput-ts-dropdown .no-results {
+      color: var(--pill-color)!important;
+    }
 
     .form-check-input {
       background-color: white;
@@ -98,7 +108,7 @@
       height: 40px;
       border-radius: 24px;
       cursor: pointer;
-      color: black;
+      color: var(--pill-color);
       position: relative;
       /* No border or background */
       border: 2px solid transparent;
@@ -238,7 +248,7 @@
           <!-- Amount -->
           <div class="mb-3">
             <label for="amountInput" class="form-label">Amount</label>
-            <input type="number" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" required />
+            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" required />
           </div>
 
           <!-- Type -->
@@ -291,7 +301,6 @@
     let gridInstance;
     let gridApi;
 
-    let theme = 'light';
     let modalMode = 'add';
     let selectedRow;
 
@@ -387,6 +396,11 @@
         },
         persist: false,
         create: true,
+        render: {
+          no_results:function(data,escape){
+            return ''; // <div class="no-results">No results found for "'+escape(data.input)+'"</div>';
+          },
+        }
       });
 
       tags.forEach(tag => {
@@ -396,23 +410,28 @@
 
     async function initGrid() {
       let myTheme;
+      const theme = localStorage.getItem('theme') || 'system';
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-      if (gridInstance) {
-        gridInstance.destroy();
-      }
-
-      if (theme === 'dark') {
-        myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDark);
-      }
-      else {
+      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
         myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
       }
+      else {
+        myTheme = agGrid.themeQuartz.withParams({
+          backgroundColor: 'rgb(249, 245, 227)',
+          foregroundColor: 'rgb(126, 46, 132)',
+          headerTextColor: 'rgb(204, 245, 172)',
+          headerBackgroundColor: 'rgb(209, 64, 129)',
+          oddRowBackgroundColor: 'rgb(0, 0, 0, 0.03)',
+          headerColumnResizeHandleColor: 'rgb(126, 46, 132)',
+        });
+      }
 
-      // Grid Options: Contains all of the Data Grid configurations
       // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDark);
       // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeDarkBlue);
       // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
       // myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightCold);
+
       const gridOptions = {
         theme: myTheme,
         suppressMovableColumns: true,
@@ -596,6 +615,11 @@
         ]
       }
 
+      // Destroy existing grid instance if it exists
+      if (gridInstance) {
+        gridInstance.destroy();
+      }
+
       // Creating the AG Grid
       const myGridElement = document.querySelector('#myGrid');
       gridInstance = agGrid.createGrid(myGridElement, gridOptions);
@@ -653,6 +677,12 @@
 
     document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
       document.getElementById('nameInput').focus()
+    });
+
+    document.getElementById('amountInput').addEventListener('input', (event) => {
+      if (event.target.value.includes(',')) {
+        event.target.value = event.target.value.replace(',', '.');
+      }
     });
 
     function updateRowCount(api) {

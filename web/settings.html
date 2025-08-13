@@ -187,7 +187,7 @@
           <div class="card-header" style="font-weight: 500">Import / Export Transactions</div>
           <div class="card-body">
             <p class="card-text" style="font-size: 0.9rem;">Export or import transactions quickly using CSV files.</p>
-            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 140px">
+            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 140px" onclick="exportToCSV()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/>
               </svg>
@@ -420,7 +420,7 @@
         tags.forEach(tag => {
           // Create badge span
           const badge = document.createElement('span');
-          badge.className = 'badge rounded-pill text-bg-light me-2 d-inline-flex align-items-center mb-2';
+          badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
           badge.style.height = '34px';
 
           // Create inner span for text with padding and font styles
@@ -582,6 +582,60 @@
 
       localStorage.setItem('theme', theme);
       bootstrap.showToast({body: 'Theme changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+    }
+
+    // -------------------
+    // - IMPORT / EXPORT -
+    // -------------------
+    async function exportToCSV() {
+      try {
+        const response = await fetch('http://192.168.1.79:8000/transactions/', {
+          method: 'GET',
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          console.log(json)
+          if (!json.length) {
+            bootstrap.showToast({body: "There are no transactions", delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+            return;
+          }
+
+          // Extract headers from object keys
+          const headers = Object.keys(json[0]).filter(x => x !== 'recurringID');
+
+          // Convert objects to CSV rows
+          const csvRows = [
+            headers.join(','), // header row
+            ...json.map(obj =>
+              headers.map(header =>
+                `"${String(obj[header] ?? "").replace(/"/g, '""')}"`
+              ).join(',')
+            )
+          ];
+
+          // Create CSV content
+          const csvContent = csvRows.join('\n');
+
+          // Create Blob and trigger download
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', 'transactions.csv');
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
     }
   </script>
 </body>
