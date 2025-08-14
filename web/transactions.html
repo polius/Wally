@@ -14,6 +14,7 @@
   <script src="js/bootstrap-show-toast.js" defer></script>
   <script src="js/ag-grid-community.min.noStyle.js" defer></script>
   <script src="js/tom-select.complete.min.js" defer></script>
+  <script src="js/decimal.min.js" defer></script>
 
   <script>
     (function() {
@@ -148,7 +149,7 @@
   <header>
     <div class="container">
       <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand d-flex align-items-center" style="margin-right:30px" href="index.html">
+        <a class="navbar-brand d-flex align-items-center" style="margin-left:10px; margin-right:30px" href="index.html">
           <img src="assets/wally-transparent.png" alt="Wally" width="50" height="50" style="margin-bottom: 5px; margin-right: 8px;">
           <span style="font-size: 1.8rem; font-weight:600;">Wally</span>
         </a>
@@ -212,8 +213,10 @@
     <!-- AG Grid Table -->
     <div id="myGrid"></div>
 
-    <!-- Row count -->
-    <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.9rem; font-weight: 600;"></div>
+    <!-- AG Grid Table Footer -->
+    <div id="myGridFooter" class="mt-3" style="text-align: center; font-size: 0.9rem; font-weight: 400">
+      Rows: <span id="rowCount" style="font-weight: 500; color:#007AFF">0</span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> Income: <span id="incomeAmount" style="font-weight: 500; color: #198754">0</span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> Expense: <span id="expenseAmount" style="font-weight: 500; color:#ea4152">0</span>
+    </div>
   </main>
 
   <!-- Transaction Modal (Add and Edit) -->
@@ -471,7 +474,7 @@
           getTransactions();
         },
         onFilterChanged: params => {
-          updateRowCount(params.api);
+          updateFooter(params.api);
         },
         columnDefs: [
           {
@@ -684,7 +687,7 @@
           .then(response => response.json())
           .then(data => gridApi.setGridOption('rowData', data));
       }
-      updateRowCount(gridApi);
+      updateFooter(gridApi);
     }
 
     // Prev month button
@@ -711,9 +714,30 @@
       }
     });
 
-    function updateRowCount(api) {
+    function updateFooter(api) {
       const rowCount = api.getDisplayedRowCount();
-      document.getElementById('rowCount').innerText = `Rows shown: ${rowCount}`;
+
+      // Get total expense amount using AG Grid API
+      let income = 0;
+      let expense = 0;
+      api.forEachNodeAfterFilterAndSort(node => {
+        if (node.data.type === 'income') income = Decimal.add(income, node.data.amount).toNumber();
+        else if (node.data.type === 'expense') expense = Decimal.add(expense, node.data.amount).toNumber();
+      });
+
+      if (currency.position === 'left') {
+        income = `${currency.symbol}${income}`;
+        expense = `${currency.symbol}${expense}`;
+      }
+      else {
+        income = `${income} ${currency.symbol}`;
+        expense = `${expense} ${currency.symbol}`;
+      }
+
+      // Update footer values
+      document.getElementById('rowCount').innerText = rowCount;
+      document.getElementById('incomeAmount').innerText = income;
+      document.getElementById('expenseAmount').innerText = expense;
     }
 
     function addTransaction() {
