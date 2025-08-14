@@ -749,7 +749,7 @@
         const categoryData = labelMap.get(label);
         const color = chartSelected.range === 'oneMonth'
           ? chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)]
-          :  chart.data.datasets.find(x => x.label === label).backgroundColor;
+          :  chart.data.datasets.find(x => x.label === label)?.backgroundColor;
         const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
         const amount = categoryData ? formatCurrency(categoryData.total) : '';
 
