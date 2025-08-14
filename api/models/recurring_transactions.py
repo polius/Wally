@@ -64,7 +64,7 @@ class RecurringTransactionPublic(SQLModel):
     name: str
     category: str
     tags: List[str]
-    amount: Decimal
+    amount: float
     type: Literal["expense", "income"]
     startDate: date
     endDate: date

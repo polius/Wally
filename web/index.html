@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wally - Table</title>
+  <link rel="icon" type="image/png" href="assets/wally-transparent.png">
+  <!-- CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/tom-select.min.css" rel="stylesheet">
+  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <!-- JS -->
+  <script src="js/bootstrap.bundle.min.js" defer></script>
+  <script src="js/bootstrap-show-toast.js" defer></script>
+  <script src="js/ag-grid-community.min.noStyle.js" defer></script>
+  <script src="js/tom-select.complete.min.js" defer></script>
+  <script src="js/chart.umd.min.js" defer></script>
+
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'system';
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+      else {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    })();
+  </script>
+
+  <style>
+    :root[data-bs-theme="light"] {
+      --header-bg: #f8f8f8;
+      --pill-bg: #f4f4f7;
+      --pill-color: #000;
+    }
+    :root[data-bs-theme="dark"] {
+      --header-bg: #262a2e;
+      --pill-bg: #282c30;
+      --pill-color: #FFF;
+    }
+    header {
+      background-color: var(--header-bg);
+    }
+
+    input, .option {
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item {
+      background-color: var(--pill-bg)!important;
+      color: var(--pill-color)!important;
+    }
+
+    .ts-control .item .remove {
+      border-color: var(--header-bg)!important;
+    }
+
+    #tagsInput-ts-dropdown .create, #tagsInput-ts-dropdown .no-results {
+      color: var(--pill-color)!important;
+    }
+
+    .form-check-input {
+      background-color: white;
+    }
+
+    .month-navigation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .current-month {
+      font-size: 1.6rem;
+      font-weight: bold;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    #prevMonth, #nextMonth {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 40px;
+      border-radius: 24px;
+      cursor: pointer;
+      color: var(--pill-color);
+      position: relative;
+      /* No border or background */
+      border: 2px solid transparent;
+      background-color: transparent;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    #prevMonth:hover, #nextMonth:hover {
+      background-color: #cce4ff;
+      border-color: #4a90e2;
+      color: #004aad;
+    }
+
+    main.container {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    /* Chart styles */
+    .chart-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      background-color: var(--header-bg);
+      border-radius: 8px;
+      min-height: 450px;
+      align-items: center;
+    }
+
+    .chart-box {
+      height: 380px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .chart-box canvas {
+      max-height: 380px;
+    }
+
+    .legend-box {
+      flex: 1;
+      padding: 1rem 2rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .legend-text {
+      display: flex;
+      justify-content: space-between;
+      flex: 1;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .legend-item.disabled .color-box {
+      background-color: #808080 !important;
+      position: relative;
+    }
+
+    .legend-item.disabled .color-box::after {
+      content: '×';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-primary);
+      font-weight: bold;
+    }
+
+    .legend-item.disabled .legend-text {
+      opacity: 0.5;
+    }
+
+    .color-box {
+      width: 16px;
+      height: 16px;
+      margin-right: 1rem;
+      border-radius: 3px;
+      transition: background-color 0.3s ease;
+    }
+
+    .amount {
+      font-family: monospace;
+      color: #b3b3b3;
+      font-size: 0.85rem;
+    }
+
+    .no-data {
+      text-align: center;
+      font-style: italic;
+      padding: 2rem;
+    }
+
+    /* Cashflow styles */
+    .cashflow-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: stretch;
+    }
+
+    .cashflow-item {
+      flex: 1;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .cashflow-item.income {
+      background-color: rgba(52, 211, 153, 0.1);
+    }
+
+    .cashflow-item.expenses {
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .cashflow-item.balance {
+      background-color: rgba(251, 191, 36, 0.1);
+    }
+
+    .cashflow-label {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .cashflow-value {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .cashflow-value.positive {
+      color: #2EAB7D;
+    }
+
+    .cashflow-value.negative {
+      color: #EF4444;
+    }
+
+    @media (max-width: 768px) {
+      .chart-container {
+        flex-direction: column;
+        min-height: auto;
+        padding: 1rem;
+      }
+
+      .chart-box {
+        max-height: 180px;
+        margin-top: 20px;
+      }
+
+      .chart-box canvas {
+        max-height: 300px;
+      }
+
+      .legend-box {
+        width: 100%;
+        padding: 0.5rem;
+        padding-top: 1rem;
+      }
+
+      .legend-item {
+        margin-bottom: 0.5rem;
+      }
+
+      .month-navigation {
+        gap: 0.2rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .container {
+        padding: 0.5rem;
+      }
+
+      .chart-container {
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+      }
+
+      .cashflow-container {
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+        flex-direction: row;
+        justify-content: space-around;
+      }
+      
+      .cashflow-item {
+        padding: 0.5rem;
+      }
+      
+      .cashflow-value {
+        font-size: 1rem;
+      }
+
+      .cashflow-label {
+        margin-bottom: 0.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand d-flex align-items-center" style="margin-right:40px" href="#">
+          <img src="assets/wally-transparent.png" alt="Wally" width="50" height="50" style="margin-bottom: 5px; margin-right: 8px;">
+          <span style="font-size: 1.8rem; font-weight:600;">Wally</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="dashboard.html" style="font-weight: 500">Dashboard</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="transactions.html">Transactions</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="settings.html">Settings</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container my-2">
+
+    <!-- Month Header -->
+    <div id="monthHeader" class="month-navigation">
+      <div id="prevMonth" style="cursor: pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="currentColor">
+          <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 288 480 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-370.7 0 105.4-105.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
+        </svg>
+      </div>
+      <div id="currentMonth" class="current-month"></div>
+      <div id="nextMonth" style="cursor: pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="currentColor">
+          <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l370.7 0-105.4 105.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="monthHeaderAll" class="month-navigation" style="display: none">
+      <div class="current-month">All Transactions</div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="d-flex justify-content-center align-items-center mb-4" style="margin-top: 31px">
+      <button type="button" class="btn btn-success" style="font-size: 0.9rem; margin-right:5px; width: 150px; height:40px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
+          <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
+        </svg>
+        Add
+      </button>
+      <div class="d-flex justify-content-center">
+        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px; width: 150px; height:40px; border-radius: 100px">
+          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; margin-right:2px;" onchange="getTransactions()" />
+          Show All
+        </label>
+      </div>
+    </div>
+
+    <div class="row chart-container">
+      <div id="noDataMessage" class="no-data" style="display: none; width: 100%;">No expenses recorded this month.</div>
+      <div class="col-lg-6 chart-box">
+        <canvas id="categoryPieChart"></canvas>
+      </div>
+      <div class="col-lg-6 legend-box" id="customLegend">
+      </div>
+    </div>
+
+    <div id="cashflow-section" class="cashflow-container">
+      <div class="cashflow-item income">
+        <div class="cashflow-label">Income</div>
+        <div class="cashflow-value" id="cashflow-income"></div>
+      </div>
+      <div class="cashflow-item expenses">
+        <div class="cashflow-label">Expenses</div>
+        <div class="cashflow-value" id="cashflow-expenses"></div>
+      </div>
+      <div class="cashflow-item balance">
+        <div class="cashflow-label">Balance</div>
+        <div class="cashflow-value" id="cashflow-balance"></div>
+      </div>
+    </div>
+
+  </main>
+</body>
+<script>
+  let currentDate = new Date();
+  let categories;
+  let tags;
+  let currency;
+  
+  let pieChart;
+  let disabledCategories = new Set();
+
+  // Execute the main function when DOM has loaded
+  document.addEventListener('DOMContentLoaded', () => main());
+  
+  async function main() {
+    [categories, tags, currency] = await Promise.all([
+      getCategories(),
+      getTags(),
+      getCurrency(),
+      renderMonth(),
+    ]);
+    updateChartAndLegend();
+  }
+
+  async function getCategories() {
+    const response = await fetch('http://192.168.1.79:8000/categories/');
+    const data = await response.json();
+    return data;
+  }
+
+  async function getTags() {
+    const response = await fetch('http://192.168.1.79:8000/tags/');
+    const data = await response.json();
+    return data;
+  }
+
+  async function getCurrency() {
+    const response = await fetch('http://192.168.1.79:8000/currency/');
+    const data = await response.json();
+    return data.filter(x => x.selected)[0];
+  }
+
+  async function getTransactions() {
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const year = currentDate.getFullYear();
+
+    try {
+      const response = await fetch(`http://192.168.1.79:8000/transactions/date/${year}-${month}`, {
+        method: 'GET',
+      });
+
+      const json = await response.json()
+
+      if (!response.ok) throw new Error("An error occurred.")
+      else return json;
+    }
+    catch (error) {
+      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+    }
+  }
+
+  function renderMonth() {
+    document.getElementById('currentMonth').textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  // Prev month button
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderMonth();
+    updateChartAndLegend();
+  });
+
+  // Next month button
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderMonth();
+    updateChartAndLegend();
+  });
+
+  function calculateCategoryBreakdown(transactions) {
+    const { totals, totalAmount } = transactions.reduce(
+      (acc, { type, category, amount }) => {
+        if (type === 'expense' && !disabledCategories.has(category)) {
+          acc.totals[category] = (acc.totals[category] || 0) + amount;
+          acc.totalAmount += amount;
+        }
+        return acc;
+      },
+      { totals: {}, totalAmount: 0 }
+    );
+
+    return Object.entries(totals)
+      .map(([category, total]) => ({
+        category,
+        total,
+        percentage: totalAmount ? (total / totalAmount) * 100 : 0
+      }))
+      .sort((a, b) => b.total - a.total);
+  }
+
+  async function updateChartAndLegend() {
+    const transactions = await getTransactions();
+    const chartBox = document.querySelector('.chart-box');
+    const legendBox = document.getElementById('customLegend');
+    const cashflowSection = document.getElementById('cashflow-section');
+    const noDataMessage = document.getElementById('noDataMessage');
+    const hasExpenses = transactions.some(t => t.type === 'expense');
+
+    if (!hasExpenses) {
+      if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+      }
+      chartBox.style.display = 'none';
+      legendBox.style.display = 'none';
+      cashflowSection.style.display = 'none';
+      noDataMessage.style.display = 'block';
+    }
+    else {
+      chartBox.style.display = 'flex';
+      legendBox.style.display = 'flex';
+      cashflowSection.style.display = 'flex';
+      noDataMessage.style.display = 'none';
+      
+      const categoryData = calculateCategoryBreakdown(transactions);
+      updateCashflow(transactions);
+      createPieChart(categoryData);
+      updateLegend(transactions, categoryData);
+    }
+  }
+
+  function updateCashflow(transactions) {
+    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const balance = income - expense;
+
+    document.getElementById('cashflow-income').textContent = formatCurrency(income);
+    document.getElementById('cashflow-expenses').textContent = formatCurrency(expense);
+    document.getElementById('cashflow-balance').textContent = formatCurrency(balance);
+
+    const balanceElement = document.getElementById('cashflow-balance');
+    if (balance >= 0) {
+        balanceElement.classList.add('positive');
+        balanceElement.classList.remove('negative');
+    } else {
+        balanceElement.classList.add('negative');
+        balanceElement.classList.remove('positive');
+    }
+  }
+
+  function createPieChart(categoryData) {
+    // Chart.defaults.color = '#b3b3b3';
+    // Chart.defaults.borderColor = '#606060';
+    // Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart('categoryPieChart', {
+      type: 'doughnut',
+      data: {
+        labels: categoryData.map(c => c.category),
+        datasets: [{
+          data: categoryData.map(c => c.total),
+          borderColor: '#1a1a1a',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          colors: {
+            forceOverride: true
+          },
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const value = context.raw;
+                const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateLegend(transactions, categoryData) {
+    const legendContainer = document.getElementById('customLegend');
+    legendContainer.innerHTML = '';
+    const monthExpenses = transactions.filter(t => t.type == 'expense');
+    const currentMonthCategories = [...new Set(monthExpenses.map(exp => exp.category))];
+    const categoryMap = new Map(categoryData.map(cat => [cat.category, cat]));
+    
+    currentMonthCategories.sort((a, b) => {
+      const dataA = categoryMap.get(a);
+      const dataB = categoryMap.get(b);
+      if (dataA && dataB) return dataB.total - dataA.total;
+      if (dataA) return -1;
+      if (dataB) return 1;
+      return a.localeCompare(b);
+    }).forEach(category => {
+      const item = document.createElement('div');
+      item.className = `legend-item${disabledCategories.has(category) ? ' disabled' : ''}`;
+      const color = pieChart.data.datasets[0].backgroundColor[pieChart.data.labels.indexOf(category)];
+      const categoryDataItem = categoryMap.get(category);
+      const percentage = categoryDataItem ? ` (${categoryDataItem.percentage.toFixed(1)}%)` : '';
+      const amount = categoryDataItem ? formatCurrency(categoryDataItem.total) : '';
+      item.innerHTML = `
+          <div class="color-box" style="background-color: ${color}"></div>
+          <div class="legend-text">
+              <span>${category}${percentage}</span>
+              <span class="amount">${amount}</span>
+          </div>
+      `;
+      item.addEventListener('click', () => toggleCategory(category));
+      legendContainer.appendChild(item);
+    });
+
+    const activeTotalExpenses = monthExpenses
+      .filter(exp => !disabledCategories.has(exp.category))
+      .reduce((sum, exp) => sum + exp.amount, 0);
+
+    const totalsHtml = `
+      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--bs-border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Total:</span>
+          <span class="amount">
+            ${formatCurrency(activeTotalExpenses)}
+          </span>
+        </div>
+      </div>
+    `;
+    legendContainer.insertAdjacentHTML('beforeend', totalsHtml);
+  }
+
+  function formatCurrency(amount) {  
+    if (currency.position === 'left') return `${currency.symbol}${amount}`;
+    else return `${amount} ${currency.symbol}`;
+  }
+
+  function toggleCategory(category) {
+    if (disabledCategories.has(category)) disabledCategories.delete(category);
+    else disabledCategories.add(category);
+    updateChartAndLegend();
+  }
+
+</script>
+</html>

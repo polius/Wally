@@ -158,7 +158,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+            <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="index.html">Dashboard</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link active" href="transactions.html" style="font-weight: 500">Transactions</a></li>
             <li class="nav-item" style="margin-right: 10px"><a class="nav-link" href="settings.html">Settings</a></li>
           </ul>
@@ -185,20 +185,20 @@
       </div>
     </div>
 
-    <div id="monthHeaderAll" class="month-navigation">
+    <div id="monthHeaderAll" class="month-navigation" style="display: none">
       <div class="current-month">All Transactions</div>
     </div>
 
     <!-- Action buttons -->
     <div class="d-flex justify-content-center align-items-center mb-4" style="margin-top: 15px">
-      <button type="button" class="btn btn-success" style="font-size: 0.9rem; margin-right:5px; width: 150px; height:40px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
+      <button type="button" class="btn btn-success" style="font-size: 0.9rem; margin-right:5px; width: 150px; height:40px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
           <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
         </svg>
         Add
       </button>
       <div class="d-flex justify-content-center">
-        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px; width: 150px; height:40px">
+        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px; width: 150px; height:40px; border-radius: 100px">
           <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; margin-right:2px;" onchange="getTransactions()" />
           Show All
         </label>
@@ -375,12 +375,6 @@
     function setViewportHeight() {
       let vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
-
-    async function getCurrentMonth() {
-      const date = new Date();
-      const options = { month: 'long', year: 'numeric' };
-      return date.toLocaleDateString('en-US', options);
     }
 
     async function getCategories() {
