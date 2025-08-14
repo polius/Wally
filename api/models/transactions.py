@@ -42,6 +42,6 @@ class TransactionPublic(SQLModel):
     name: str
     category: str
     tags: List[str]
-    amount: float
+    amount: Decimal
     type: Literal["expense", "income"]
     date: d

@@ -37,9 +37,9 @@ async def lifespan(app: FastAPI):
     yield  # App is running
 
     # Optional: Clean up database file on shutdown
-    db_file = Path("wally.db")
-    if db_file.exists():
-        db_file.unlink()
+    # db_file = Path("wally.db")
+    # if db_file.exists():
+    #     db_file.unlink()
 
 # Init FastAPI
 app = FastAPI(lifespan=lifespan)
