@@ -34,11 +34,13 @@
       --header-bg: #f8f8f8;
       --pill-bg: #f4f4f7;
       --pill-color: #000;
+      --amount-color: var(--bs-gray-800);
     }
     :root[data-bs-theme="dark"] {
       --header-bg: #262a2e;
       --pill-bg: #282c30;
       --pill-color: #FFF;
+      --amount-color: var(--bs-gray-500);
     }
     header {
       background-color: var(--header-bg);
@@ -179,7 +181,7 @@
 
     .amount {
       font-family: monospace;
-      color: #b3b3b3;
+      color: var(--amount-color);
       font-size: 0.85rem;
     }
 
@@ -244,10 +246,11 @@
         flex-direction: column;
         min-height: auto;
         padding: 1rem;
+        padding-top: 0;
       }
 
       .chart-box {
-        max-height: 180px;
+        max-height: 250px;
         margin-top: 20px;
       }
 
@@ -305,7 +308,7 @@
   <header>
     <div class="container">
       <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand d-flex align-items-center" style="margin-right:40px" href="#">
+        <a class="navbar-brand d-flex align-items-center" style="margin-right:40px" href="index.html">
           <img src="assets/wally-transparent.png" alt="Wally" width="50" height="50" style="margin-bottom: 5px; margin-right: 8px;">
           <span style="font-size: 1.8rem; font-weight:600;">Wally</span>
         </a>
