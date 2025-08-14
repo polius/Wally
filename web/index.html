@@ -397,45 +397,29 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <!-- Range -->
-            <label class="form-label" style="font-weight: 500">Range</label>
+            <p>Select a dashboard to view:</p>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="rangeRadio" value="oneMonth" id="oneMonthRadio" checked>
               <label class="form-check-label" for="oneMonthRadio">
-                One month
+                One Month
               </label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="rangeRadio" value="lastYear" id="lastYearRadio">
               <label class="form-check-label" for="lastYearRadio">
-                Last 12 months
+                Last 12 Months
               </label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="rangeRadio" value="yearToDate" id="yearToDateRadio">
               <label class="form-check-label" for="yearToDateRadio">
-                Year to date
+                Year to Date
               </label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="rangeRadio" value="allData" id="allDataRadio">
               <label class="form-check-label" for="allDataRadio">
-                All data
-              </label>
-            </div>
-
-            <!-- Group -->
-            <label class="form-label mt-3" style="font-weight: 500">Group by</label>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="groupRadio" value="category" id="groupByCategoryRadio" checked>
-              <label class="form-check-label" for="groupByCategoryRadio">
-                Category
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="groupRadio" value="tag" id="groupByTagRadio">
-              <label class="form-check-label" for="groupByTagRadio">
-                Tag
+                All Data
               </label>
             </div>
           </div>
@@ -456,7 +440,7 @@
   let currency;
 
   let chart;
-  let chartSelected = {"range": "oneMonth", "group": "category"};
+  let chartSelected = "oneMonth";
   let chartDisabledFields = new Set();
 
   // Execute the main function when DOM has loaded
@@ -532,7 +516,7 @@
     const breakdownMap = {};
 
     for (const { type, amount, date, ...rest } of transactions) {
-      const groupValue = rest[chartSelected.group];
+      const groupValue = rest.category;
 
       if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
         if (!breakdownMap[groupValue]) {
@@ -607,7 +591,7 @@
   function updateChart(data) {
     if (chart) chart.destroy();
 
-    if (chartSelected.range == 'oneMonth') {
+    if (chartSelected == 'oneMonth') {
       chart = new Chart('chartCanvas', {
         type: 'doughnut',
         data: {
@@ -645,9 +629,9 @@
     else {
       // Compute labels based on the selected range
       let range;
-      if (chartSelected.range === 'lastYear') range = getLast12Months();
-      else if (chartSelected.range === 'yearToDate') range = getYearToDate();
-      else if (chartSelected.range === 'allData') range = getAllMonths(data);
+      if (chartSelected === 'lastYear') range = getLast12Months();
+      else if (chartSelected === 'yearToDate') range = getYearToDate();
+      else if (chartSelected === 'allData') range = getAllMonths(data);
 
       chart = new Chart('chartCanvas', {
         type: 'line',
@@ -694,7 +678,7 @@
     const breakdownMap = {};
 
     for (const { type, amount, date, ...rest } of transactions) {
-      const groupValue = rest[chartSelected.group];
+      const groupValue = rest.category;
 
       if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
         if (!breakdownMap[groupValue]) {
@@ -737,7 +721,7 @@
     const labelMap = new Map(data.map(x => [x.name, x]));
 
     monthExpenses
-      .map(exp => exp[chartSelected.group])
+      .map(exp => exp.category)
       .sort((a, b) => {
         const da = labelMap.get(a), db = labelMap.get(b);
         if (da && db) return db.total - da.total;
@@ -747,7 +731,7 @@
       })
       .forEach(label => {
         const categoryData = labelMap.get(label);
-        const color = chartSelected.range === 'oneMonth'
+        const color = chartSelected === 'oneMonth'
           ? chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)]
           :  chart.data.datasets.find(x => x.label === label)?.backgroundColor;
         const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
@@ -767,7 +751,7 @@
       });
 
     const activeTotal = monthExpenses
-      .filter(x => !chartDisabledFields.has(x[chartSelected.group]))
+      .filter(x => !chartDisabledFields.has(x.category))
       .reduce((sum, x) => sum + x.amount, 0);
 
     legendContainer.insertAdjacentHTML('beforeend', `
@@ -799,10 +783,7 @@
     const data = Object.fromEntries(formData.entries());
 
     // Store the selected range and group in the global variable
-    chartSelected = {
-      range: data.rangeRadio,
-      group: data.groupRadio
-    };
+    chartSelected = data.rangeRadio;
 
     // Load the chart with the new selection
     chartDisabledFields = new Set();
