@@ -463,6 +463,7 @@
   document.addEventListener('DOMContentLoaded', () => main());
   
   async function main() {
+    document.getElementById('dashboardForm').reset();
     [categories, tags, currency] = await Promise.all([
       getCategories(),
       getTags(),
@@ -528,26 +529,32 @@
   });
 
   function calculateBreakdown(transactions) {
-    const { totals, totalAmount } = transactions.reduce(
-      (acc, transaction) => {
-        const { type, amount } = transaction;
-        const groupValue = transaction[chartSelected.group];
+    const breakdownMap = {};
 
-        if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
-          acc.totals[groupValue] = (acc.totals[groupValue] || 0) + amount;
-          acc.totalAmount += amount;
+    for (const { type, amount, date, ...rest } of transactions) {
+      const groupValue = rest[chartSelected.group];
+
+      if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
+        if (!breakdownMap[groupValue]) {
+          breakdownMap[groupValue] = { total: 0, months: {} };
         }
-        return acc;
-      },
-      { totals: {}, totalAmount: 0 }
-    );
 
-    return Object.entries(totals)
-      .map(([name, total]) => ({
-        name: name,
-        total,
-        percentage: totalAmount ? (total / totalAmount) * 100 : 0
-      }))
+        const monthKey = date.slice(0, 7); // YYYY-MM
+        breakdownMap[groupValue].total += amount;
+        breakdownMap[groupValue].months[monthKey] = (breakdownMap[groupValue].months[monthKey] || 0) + amount;
+      }
+    }
+
+    return Object.entries(breakdownMap)
+      .map(([name, { total, months }]) => {
+        const sortedMonths = Object.keys(months).sort();
+        return {
+          name,
+          total,
+          dates: sortedMonths,
+          amounts: sortedMonths.map(m => months[m])
+        };
+      })
       .sort((a, b) => b.total - a.total);
   }
 
@@ -636,21 +643,26 @@
       });
     }
     else {
+      // Compute labels based on the selected range
+      let range;
+      if (chartSelected.range === 'lastYear') range = getLast12Months();
+      else if (chartSelected.range === 'yearToDate') range = getYearToDate();
+      else if (chartSelected.range === 'allData') range = getAllMonths(data);
+
       chart = new Chart('chartCanvas', {
         type: 'line',
         data: {
-          labels: months({count: 12}),
-          datasets: [{
-            data: data.map(c => c.total),
+          labels: range.map(x => formatDate(x)),
+          datasets: data.map(item => ({
+            label: item.name,
+            data: range.map(m => {
+              const idx = item.dates.indexOf(m);
+              return idx !== -1 ? item.amounts[idx] : 0;
+            }),
+            fill: false,
             borderColor: '#1a1a1a',
-            borderWidth: 1
-
-            // label: 'My First Dataset',
-            // data: [65, 59, 80, 81, 56, 55, 40],
-            // fill: false,
-            // borderColor: 'rgb(75, 192, 192)',
-            // tension: 0.1
-          }]
+            tension: 0.1,
+          })),
         },
         options: {
           responsive: true,
@@ -668,7 +680,7 @@
                   const value = context.raw;
                   const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
                   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                  return `${formatCurrency(value)} (${percentage}%)`;
+                  return `${context.dataset.label}: ${formatCurrency(value)} (${percentage}%)`;
                 }
               }
             }
@@ -676,6 +688,45 @@
         }
       });
     }
+  }
+
+  function calculateBreakdown(transactions) {
+    const breakdownMap = {};
+
+    for (const { type, amount, date, ...rest } of transactions) {
+      const groupValue = rest[chartSelected.group];
+
+      if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
+        if (!breakdownMap[groupValue]) {
+          breakdownMap[groupValue] = { total: 0, months: {} };
+        }
+
+        const monthKey = date.slice(0, 7); // YYYY-MM
+        breakdownMap[groupValue].total += amount;
+        breakdownMap[groupValue].months[monthKey] =
+          (breakdownMap[groupValue].months[monthKey] || 0) + amount;
+      }
+    }
+
+    const result = Object.entries(breakdownMap)
+      .map(([name, { total, months }]) => {
+        const sortedMonths = Object.keys(months).sort();
+        return {
+          name,
+          total,
+          dates: sortedMonths,
+          amounts: sortedMonths.map(m => months[m])
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    const grandTotal = result.reduce((sum, item) => sum + item.total, 0);
+
+    // Add percentage field
+    return result.map(item => ({
+      ...item,
+      percentage: grandTotal ? (item.total / grandTotal) * 100 : 0
+    }));
   }
 
   function updateLegend(transactions, data) {
@@ -696,7 +747,9 @@
       })
       .forEach(label => {
         const categoryData = labelMap.get(label);
-        const color = chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)];
+        const color = chartSelected.range === 'oneMonth'
+          ? chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)]
+          :  chart.data.datasets.find(x => x.label === label).backgroundColor;
         const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
         const amount = categoryData ? formatCurrency(categoryData.total) : '';
 
@@ -738,35 +791,6 @@
     loadChart();
   }
 
-  function months(config) {
-    const MONTHS = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    var cfg = config || {};
-    var count = cfg.count || 12;
-    var section = cfg.section;
-    var values = [];
-    var i, value;
-
-    for (i = 0; i < count; ++i) {
-      value = MONTHS[Math.ceil(i) % 12];
-      values.push(value.substring(0, section));
-    }
-
-    return values;
-  }
-
   function submitDashboard(event) {
     event.preventDefault();
 
@@ -789,5 +813,69 @@
     modal.hide();
   }
 
+  function getLast12Months() {
+    // Generate previous 12 months including current month
+    const months = [];
+    const today = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      months.push(`${d.getFullYear()}-${month}`);
+    }
+
+    return months
+  }
+
+  function getYearToDate() {
+    const months = [];
+    const today = new Date();
+    const year = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-indexed
+
+    for (let m = 0; m <= currentMonth; m++) {
+      const month = String(m + 1).padStart(2, '0');
+      months.push(`${year}-${month}`);
+    }
+    return months;
+  }
+
+  function getAllMonths(data) {
+    let minDate = null;
+    let maxDate = null;
+
+    data.forEach(item => {
+      item.dates.forEach(d => {
+        const [year, month] = d.split('-').map(Number);
+        const date = new Date(year, month - 1);
+        if (!minDate || date < minDate) minDate = date;
+        if (!maxDate || date > maxDate) maxDate = date;
+      });
+    });
+
+    const result = [];
+    let current = new Date(minDate.getTime());
+
+    while (current <= maxDate) {
+      const monthStr = current.getMonth() + 1; // 1-12
+      const yearStr = current.getFullYear();
+      result.push(`${yearStr}-${monthStr.toString().padStart(2, '0')}`);
+      current.setMonth(current.getMonth() + 1);
+    }
+    return result;
+  }
+
+  function alignData(dateArrays, amountArrays, refMonths) {
+    return refMonths.map(m => {
+      const idx = dateArrays.indexOf(m);
+      return idx !== -1 ? amountArrays[idx] : 0;
+    });
+  }
+
+  function formatDate(yyyymm) {
+    const [year, month] = yyyymm.split('-').map(Number);
+    const date = new Date(year, month - 1);
+    return date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  }
 </script>
 </html>
