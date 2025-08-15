@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 from uuid import UUID
 from sqlmodel import Session, select, desc
-from sqlalchemy import delete
-from datetime import timedelta
+from sqlalchemy import update, delete
+from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
 
 from ..database import get_session
 from ..models.transactions import Transaction
-from ..models.recurring_transactions import RecurringTransaction, RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionPublic
+from ..models.recurring_transactions import RecurringTransaction, RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionDelete, RecurringTransactionPublic
 
 router = APIRouter(tags=["Recurring Transactions"])
 
@@ -33,7 +33,6 @@ def create_recurring_transaction(
     recurring_transaction: RecurringTransactionCreate,
     db: Annotated[Session, Depends(get_session)]
 ):
-    # Create Recurring Transaction
     new_recurring_transaction = RecurringTransaction.model_validate(recurring_transaction)
     db.add(new_recurring_transaction)
 
@@ -61,15 +60,10 @@ def update_recurring_transaction(
         raise HTTPException(status_code=404, detail="This recurring transaction does not exist")
 
     # Modify the existing Recurring Transaction
-    recurring_transaction = recurring_transaction.model_dump(exclude_unset=True)
-    db_recurring_transaction.sqlmodel_update(recurring_transaction)
-    db.add(db_recurring_transaction)
+    db_recurring_transaction.sqlmodel_update(recurring_transaction.model_dump(exclude_unset=True))
 
-    # Delete old transactions associated with this recurring transaction
-    delete_transactions_from_recurring(recurring_transaction_id, db)
-
-    # Create new transactions based on the updated Recurring Transaction
-    create_transactions_from_recurring(db_recurring_transaction, db)
+    # Update new transactions based on the updated Recurring Transaction
+    update_transactions_from_recurring(recurring_transaction_id, recurring_transaction, db)
 
     # Commit the changes to the database
     db.commit()
@@ -83,18 +77,19 @@ def update_recurring_transaction(
 @router.delete("/recurring/{recurring_transaction_id}")
 def delete_recurring_transaction(
     recurring_transaction_id: UUID,
+    recurring_transaction: RecurringTransactionDelete,
     db: Annotated[Session, Depends(get_session)]
 ):
     # Get the Recurring Transaction to delete
-    recurring_transaction = db.get(RecurringTransaction, recurring_transaction_id)
-    if not recurring_transaction:
+    db_recurring_transaction = db.get(RecurringTransaction, recurring_transaction_id)
+    if not db_recurring_transaction:
         raise HTTPException(status_code=404, detail="This recurring transaction does not exist")
 
     # Delete the Recurring Transaction
-    db.delete(recurring_transaction)
+    db.delete(db_recurring_transaction)
 
-    # Delete all transactions associated with this recurring transaction
-    delete_transactions_from_recurring(recurring_transaction_id, db)
+    # Delete transactions associated with this recurring transaction
+    delete_transactions_from_recurring(recurring_transaction_id, recurring_transaction, db)
 
     # Commit the changes to the database
     db.commit()
@@ -133,9 +128,50 @@ def create_transactions_from_recurring(
         elif frequency == "yearly":
             current_date += relativedelta(years=1)
 
-def delete_transactions_from_recurring(
+def update_transactions_from_recurring(
     recurring_transaction_id: UUID,
+    recurring_transaction: RecurringTransactionUpdate,
     db: Session
 ):
+    # Get transactions associated with the recurring transaction
+    stmt = select(Transaction).where(Transaction.recurringID == str(recurring_transaction_id))
+    if recurring_transaction.applyTo == 'future':
+        stmt = stmt.where(Transaction.date > date.today())
+
+    transactions = db.exec(stmt).all()
+
+    # Convert the update object to a dict of only provided fields
+    updates = recurring_transaction.model_dump(exclude_unset=True)
+
+    # Get all valid Transaction fields
+    transaction_fields = set(Transaction.__fields__.keys())
+
+    # Apply only the provided fields that exist on Transaction
+    for transaction in transactions:
+        for key, value in updates.items():
+            if key in transaction_fields:
+                setattr(transaction, key, value)
+
+def delete_transactions_from_recurring(
+    recurring_transaction_id: UUID,
+    recurring_transaction: RecurringTransactionDelete,
+    db: Session
+):
+    # Get the current date
+    today = date.today()
+
+    # Prepare the query to delete transactions associated with the recurring transaction
     stmt = delete(Transaction).where(Transaction.recurringID == str(recurring_transaction_id))
-    db.execute(stmt)
+    if recurring_transaction.applyTo == 'future':
+        stmt = stmt.where(Transaction.date > today)
+    db.exec(stmt)
+
+    # If only deleting future transactions, remove recurringID from past transactions
+    if recurring_transaction.applyTo == 'future':
+        stmt_update = (
+            update(Transaction)
+            .where(Transaction.recurringID == str(recurring_transaction_id))
+            .where(Transaction.date <= today)
+            .values(recurringID="")
+        )
+        db.exec(stmt_update)

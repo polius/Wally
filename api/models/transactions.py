@@ -2,7 +2,7 @@ from typing import List, Literal
 from uuid import UUID, uuid4
 from datetime import date as d, datetime as dt
 from decimal import Decimal
-from pydantic import field_validator
+from pydantic import model_validator
 from sqlalchemy import Column, JSON, Numeric
 from sqlmodel import SQLModel, Field, String
 
@@ -14,11 +14,12 @@ class TransactionBase(SQLModel):
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     date: d = Field(default_factory=d.today, index=True)
 
-    @field_validator("amount")
-    def amount_must_be_positive(cls, v: Decimal) -> Decimal:
-        if v <= 0:
-            raise ValueError("amount must be positive")
-        return v
+    @model_validator(mode='after')
+    def check_model(self):
+        # Check amount
+        if self.amount <= 0:
+            raise ValueError("amount must be positive")    
+        return self
 
 class Transaction(TransactionBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)

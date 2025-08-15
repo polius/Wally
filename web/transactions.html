@@ -173,19 +173,19 @@
     <!-- Month Header -->
     <div id="monthHeader" class="month-navigation">
       <div id="prevMonth" style="cursor: pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor">
           <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 288 480 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-370.7 0 105.4-105.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
         </svg>
       </div>
       <div id="currentMonth" class="current-month"></div>
       <div id="nextMonth" style="cursor: pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor">
           <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l370.7 0-105.4 105.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/>
         </svg>
       </div>
     </div>
 
-    <div id="monthHeaderAll" class="month-navigation" style="display: none">
+    <div id="monthHeaderAll" class="month-navigation" style="display: none; height: 40px">
       <div class="current-month">All Transactions</div>
     </div>
 
@@ -334,6 +334,8 @@
   </div>
   
   <script>
+    const API_URL = 'http://127.0.0.1:8000';
+
     let categories;
     let tags;
     let currency;
@@ -380,19 +382,19 @@
     }
 
     async function getCategories() {
-      const response = await fetch('http://192.168.1.79:8000/categories/');
+      const response = await fetch(`${API_URL}/categories/`);
       const data = await response.json();
       return data;
     }
 
     async function getTags() {
-      const response = await fetch('http://192.168.1.79:8000/tags/');
+      const response = await fetch(`${API_URL}/tags/`);
       const data = await response.json();
       return data;
     }
 
     async function getCurrency() {
-      const response = await fetch('http://192.168.1.79:8000/currency/');
+      const response = await fetch(`${API_URL}/currency/`);
       const data = await response.json();
       return data.filter(x => x.selected)[0];
     }
@@ -672,7 +674,7 @@
         monthHeaderAll.style.display = 'flex';
 
         // Fetch all transactions
-        await fetch('http://192.168.1.79:8000/transactions/')
+        await fetch(`${API_URL}/transactions/`)
           .then(response => response.json())
           .then(data => gridApi.setGridOption('rowData', data));
       }
@@ -683,7 +685,7 @@
         // Fetch only current month transactions
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         const year = currentDate.getFullYear(); // 2025
-        await fetch(`http://192.168.1.79:8000/transactions/date/${year}-${month}`)
+        await fetch(`${API_URL}/transactions/date/${year}-${month}`)
           .then(response => response.json())
           .then(data => gridApi.setGridOption('rowData', data));
       }
@@ -804,7 +806,7 @@
       }
 
       try {
-        const response = await fetch('http://192.168.1.79:8000/recurring/', {
+        const response = await fetch(`${API_URL}/recurring/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
@@ -813,6 +815,7 @@
         const json = await response.json()
 
         if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
           throw new Error("An error occurred.")
         }
         else {
@@ -840,7 +843,7 @@
       data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
 
       try {
-        const response = await fetch('http://192.168.1.79:8000/transactions/', {
+        const response = await fetch(`${API_URL}/transactions/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
@@ -849,6 +852,7 @@
         const json = await response.json()
 
         if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
           throw new Error("An error occurred.")
         }
         else {
@@ -867,6 +871,7 @@
         bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
+
     async function submitTransactionEdit(event) {
       event.preventDefault();
 
@@ -875,7 +880,7 @@
       data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
 
       try {
-        const response = await fetch(`http://192.168.1.79:8000/transactions/${selectedRow.id}`, {
+        const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
@@ -884,6 +889,7 @@
         const json = await response.json()
 
         if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
           throw new Error("An error occurred.")
         }
         else {
@@ -902,17 +908,19 @@
         bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
+
     async function submitTransactionDelete(event) {
       event.preventDefault();
 
       try {
-        const response = await fetch(`http://192.168.1.79:8000/transactions/${selectedRow.id}`, {
+        const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
           method: 'DELETE'
         });
 
         const json = await response.json()
 
         if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
           throw new Error("An error occurred.")
         }
         else {

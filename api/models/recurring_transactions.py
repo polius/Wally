@@ -1,8 +1,8 @@
 from typing import List, Literal
 from uuid import UUID, uuid4
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
-from pydantic import field_validator
+from pydantic import model_validator
 from sqlalchemy import Column, JSON, Numeric
 from sqlmodel import SQLModel, Field, String
 from dateutil.relativedelta import relativedelta
@@ -15,32 +15,23 @@ class RecurringTransactionBase(SQLModel):
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     startDate: date = Field(default_factory=date.today, index=True)
     endDate: date = Field(default_factory=date.today, index=True)
-    frequency: Literal["daily","weekly","monthly","yearly"] = Field(sa_type=String, default="daily", index=True)
-
-    @field_validator("amount")
-    def amount_must_be_positive(cls, v: Decimal) -> Decimal:
-        if v <= 0:
+    frequency: Literal["daily", "weekly", "monthly", "yearly"] = Field(sa_type=String, default="daily", index=True)
+    
+    @model_validator(mode='after')
+    def check_model(self):
+        # Check amount
+        if self.amount <= 0:
             raise ValueError("amount must be positive")
-        return v
 
-    @field_validator("startDate")
-    def check_start_date(cls, v: date) -> date:
-        today = date.today()
-        if v < today:
-            raise ValueError("startDate must be today or later")
-        return v
-
-    @field_validator("endDate")
-    def check_end_date(cls, v: date, info) -> date:
-        start_date = info.data["startDate"]
-        if v <= start_date:
+        # Check endDate
+        if self.endDate <= self.startDate:
             raise ValueError("endDate must be after startDate")
 
-        max_end = start_date + relativedelta(years=100)
-        if v > max_end:
+        if self.endDate > (self.startDate + relativedelta(years=100)):
             raise ValueError("endDate cannot be more than 100 years after startDate")
 
-        return v
+        # Return self        
+        return self
 
 class RecurringTransaction(RecurringTransactionBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -56,8 +47,11 @@ class RecurringTransactionUpdate(SQLModel):
     amount: Decimal | None = None
     type: Literal["expense", "income"] | None = None
     startDate: date | None = None
-    endDate: date | None = None
-    frequency: Literal["daily","weekly","monthly","yearly"] | None = None
+    frequency: Literal["daily", "weekly", "monthly", "yearly"] | None = None
+    applyTo: Literal["future", "all"] = Field(default="future")
+
+class RecurringTransactionDelete(SQLModel):
+    applyTo: Literal["future", "all"] = Field(default="future")
 
 class RecurringTransactionPublic(SQLModel):
     id: UUID
@@ -68,4 +62,4 @@ class RecurringTransactionPublic(SQLModel):
     type: Literal["expense", "income"]
     startDate: date
     endDate: date
-    frequency: Literal["daily","weekly","monthly","yearly"]
+    frequency: Literal["daily", "weekly", "monthly", "yearly"]

@@ -63,9 +63,7 @@ def update_transaction(
     db_transaction = db.get(Transaction, transaction_id)
     if not db_transaction:
         raise HTTPException(status_code=404, detail="This transaction does not exist")
-    transaction = transaction.model_dump(exclude_unset=True)
-    db_transaction.sqlmodel_update(transaction)
-    db.add(db_transaction)
+    db_transaction.sqlmodel_update(transaction.model_dump(exclude_unset=True))
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
