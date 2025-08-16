@@ -19,8 +19,8 @@ class Login(BaseModel):
 class LoginPassword(BaseModel):
     password: str | None
 
-ACCESS_EXPIRE_MINUTES = 1
-REFRESH_EXPIRE_DAYS = 30
+ACCESS_EXPIRE_MINUTES = 5
+REFRESH_EXPIRE_DAYS = 365
 
 # Initialize FastAPI router
 router = APIRouter(tags=["Auth"])

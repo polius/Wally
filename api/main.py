@@ -73,6 +73,6 @@ async def root():
     return {"message": "Welcome to Wally API!"}
 
 # Add health check route
-@app.get("/health", tags=["Health Check"])
+@app.get("/health", tags=["Root"])
 async def health_check():
     return {"status": "ok", "message": "Wally API is running!"}

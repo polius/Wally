@@ -170,8 +170,9 @@
           </div>
           <div class="card-body">
             <p class="card-text mb-3" style="font-size: 0.9rem">Enable the login page. Off allows access without signing in.</p>
-            <button class="btn btn-primary" id="toggleLoginBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="toggleLogin()">Enable Login</button>
-            <button class="btn btn-primary" id="changePasswordBtn" style="width: 150px; font-size: 0.9rem; display: none;" onclick="changeLoginPassword()">Change Password</button>
+            <button class="btn btn-primary" id="loginEnableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalEnable" onclick="enableLogin()">Enable Login</button>
+            <button class="btn btn-danger" id="loginDisableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalDisable">Disable Login</button>
+            <button class="btn btn-primary" id="loginChangeBtn" style="width: 150px; font-size: 0.9rem; display: none;"  data-bs-toggle="modal" data-bs-target="#loginModalChange" onclick="changeLogin()">Change Password</button>
           </div>
         </div>
       </div>
@@ -395,33 +396,33 @@
     </div>
   </div>
 
-  <!-- Login Page Enable Modal & Change Password-->
-  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <!-- Login Page Enable -->
+  <div id="loginModalEnable" class="modal fade">
     <div class="modal-dialog modal-dialog-centered">
-      <form id="loginForm" class="modal-content" onsubmit="loginSubmit(event, true)">
+      <form id="loginFormEnable" class="modal-content" onsubmit="loginSubmit(event, 'enable')">
         <div class="modal-header">
-          <h5 class="modal-title" id="loginModalLabel">Enable Login Page</h5>
+          <h5 class="modal-title">Enable Login Page</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="loginPasswordInput" class="form-label">Password</label>
-          <input type="text" class="form-control" id="loginPasswordInput" name="password" placeholder="Enter a password" required />
+          <label for="loginEnablePasswordInput" class="form-label">Password</label>
+          <input type="text" class="form-control" id="loginEnablePasswordInput" name="password" placeholder="Enter a password" required />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="loginModalSubmitButton" style="width: 120px">Enable</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px">Enable</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Login Page Disable Modal -->
-  <div class="modal fade" id="loginModalDisable" tabindex="-1" aria-labelledby="loginModalDisableLabel" aria-hidden="true">
+  <!-- Login Page Disable -->
+  <div id="loginModalDisable" class="modal fade">
     <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="loginSubmit(event, false)">
+      <form class="modal-content" onsubmit="loginSubmit(event, 'disable')">
         <div class="modal-header">
-          <h5 class="modal-title" id="userModalDeleteLabel">Disable Login Page</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="userModal" aria-label="Close"></button>
+          <h5 class="modal-title">Disable Login Page</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           Are you sure you want to disable the login page?
@@ -429,6 +430,26 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
           <button type="submit" class="btn btn-danger" style="width: 120px">Disable</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Login Page Change Password-->
+  <div id="loginModalChange" class="modal fade">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="loginFormChange" class="modal-content" onsubmit="loginSubmit(event, 'change')">
+        <div class="modal-header">
+          <h5 class="modal-title">Change Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="loginChangePasswordInput" class="form-label">Password</label>
+          <input type="text" class="form-control" id="loginChangePasswordInput" name="password" placeholder="Enter a password" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px">Change</button>
         </div>
       </form>
     </div>
@@ -468,8 +489,8 @@
         renderTheme(),
       ]);
 
-      // Adapt Login UX
-      loginUX()
+      // Render Login elements
+      renderLogin();
 
       // Initialize the grid
       gridApi = await initGrid();
@@ -925,51 +946,47 @@
     // --------------
     // - LOGIN PAGE -
     // --------------
-    document.getElementById('loginModal').addEventListener('shown.bs.modal', () => {
-      document.getElementById('loginPasswordInput').focus();
+    document.getElementById('loginModalEnable').addEventListener('shown.bs.modal', () => {
+      document.getElementById('loginEnablePasswordInput').focus();
+    });
+    document.getElementById('loginModalChange').addEventListener('shown.bs.modal', () => {
+      document.getElementById('loginChangePasswordInput').focus();
     });
 
-    async function toggleLogin() {
-      document.getElementById('loginForm').reset()
-      document.getElementById('loginModalLabel').innerText = 'Enable Login Page'
-      document.getElementById('loginModalSubmitButton').innerText = 'Enable'
-      
+    function enableLogin() {
+      document.getElementById('loginFormEnable').reset();
     }
-    
-    async function changeLoginPassword() {
-      document.getElementById('loginForm').reset()
-      document.getElementById('loginModalLabel').innerText = 'Change Login Password'
-      document.getElementById('loginModalSubmitButton').innerText = 'Change'
+    function changeLogin() {
+      document.getElementById('loginFormChange').reset();
     }
 
-    function loginUX() {
-      const toggleLoginBtn = document.getElementById('toggleLoginBtn')
-      const changePasswordBtn = document.getElementById('changePasswordBtn')
+    function renderLogin() {
+      const loginEnableBtn = document.getElementById('loginEnableBtn')
+      const loginDisableBtn = document.getElementById('loginDisableBtn')
+      const loginChangeBtn = document.getElementById('loginChangeBtn')
 
       if (login) {
-        toggleLoginBtn.innerText = 'Disable Login'
-        toggleLoginBtn.classList.replace('btn-primary', 'btn-danger');
-        changePasswordBtn.style.display = 'inline'
+        loginEnableBtn.style.display = 'none'
+        loginDisableBtn.style.display = 'inline'
+        loginChangeBtn.style.display = 'inline'
       }
       else {
-        toggleLoginBtn.innerText = 'Enable Login'
-        toggleLoginBtn.classList.replace('btn-danger', 'btn-primary');
-        changePasswordBtn.style.display = 'none'
+        loginEnableBtn.style.display = 'inline'
+        loginDisableBtn.style.display = 'none'
+        loginChangeBtn.style.display = 'none'
       }
     }
 
-    async function loginSubmit(event, enable) {
+    async function loginSubmit(event, mode) {
       event.preventDefault();
 
-      let data;
-      if (enable) {
-        // Get form data
+      let data = {"password": ""};
+      if (mode != 'disable') {
         const formData = new FormData(event.target);
         data = Object.fromEntries(formData.entries());
       }
-      else data = {"password": ""}
 
-      // Add new category
+      // Enable login and change password
       try {
         const response = await fetch(`${API_URL}/login/password/`, {
           method: 'POST',
@@ -990,16 +1007,50 @@
           throw new Error("An error occurred.")
         }
         else {
+          let modalID;
+          let message;
+
+          if (mode == 'enable') {
+            modalID = 'loginModalEnable'
+            message = 'Login page enabled.'
+            login = true
+          }
+          else if (mode == 'disable') {
+            modalID = 'loginModalDisable'
+            message = 'Login page disabled.'
+            login = false
+          }
+          else if (mode == 'change') {
+            modalID = 'loginModalChange'
+            message = 'Password changed.'
+          }
+
+          // If mode is enable, login automatically
+          if (mode == 'enable') {
+            await fetch(`${API_URL}/login/`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            document.getElementById('logoutButton').style.display = 'block'
+          }
+
+          // If mode is disable, logout automatically
+          else if (mode == 'disable') {
+            await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+            document.getElementById('logoutButton').style.display = 'none'
+          }
+
           // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+          const modal = bootstrap.Modal.getInstance(document.getElementById(modalID));
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: `Login page ${enable ? 'enabled' : 'disabled'}.`, delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: message, delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
-          // Refresh the data and UX
-          login = getLogin();
-          loginUX()
+          // Refresh UX
+          renderLogin();
         }
       }
       catch (error) {
