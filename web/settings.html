@@ -1010,6 +1010,11 @@
           return;
         }
 
+        if (response.status === 405) {
+          bootstrap.showToast({body: "This action is not available in the demo.", delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+          return;
+        }
+
         const json = await response.json()
 
         if (!response.ok) {

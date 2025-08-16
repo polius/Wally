@@ -130,6 +130,9 @@ def set_login_password(
     db: Annotated[Session, Depends(get_session)],
     _ = Depends(check_login),
 ):
+    # Check if demo
+    if int(db.get(AppConfig, "IS_DEMO").value):
+        raise HTTPException(status_code=405, detail="Operation not allowed. IS_DEMO=True")
 
     if not login.password:
         db.get(AppConfig, "LOGIN_PAGE").value = False

@@ -101,7 +101,7 @@ DEFAULT_CONFIG = [
     {"key": 'LOGIN_PAGE', "value": False},
     {"key": 'LOGIN_PASSWORD', "value": ''},
     {"key": 'LOGIN_TOKEN', "value": ''},
-    {"key": 'LOGIN_DISABLED', "value": True},
+    {"key": 'IS_DEMO', "value": True},
 ]
 
 CATEGORY_TAGS = {

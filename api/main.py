@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
             db.add(AppConfig(key="LOGIN_PAGE", value=False))
             db.add(AppConfig(key="LOGIN_PASSWORD", value=''))
             db.add(AppConfig(key="LOGIN_TOKEN", value=''))
+            db.add(AppConfig(key="IS_DEMO", value=False))
             db.commit()
 
         # Create default categories
