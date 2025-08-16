@@ -1,13 +1,14 @@
 from pathlib import Path
 from contextlib import asynccontextmanager
+import secrets
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
-from .routers import transactions, recurring_transactions, categories, tags, currency, users
-from .models.users import User, DEFAULT_USERS
+from .routers import transactions, recurring_transactions, categories, tags, currency, auth
+from .models.app import AppConfig
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 
@@ -18,12 +19,14 @@ async def lifespan(app: FastAPI):
 
     # Init database session
     with Session(engine) as db:
-        # Create default users
-        if not db.exec(select(User)).first():
-            for user_data in DEFAULT_USERS:
-                user = User(**user_data)
-                db.add(user)
+        # Create default settings
+        if not db.get(AppConfig, "SECRET_KEY"):
+            db.add(AppConfig(key="SECRET_KEY", value=secrets.token_hex(32)))
+            db.add(AppConfig(key="LOGIN_PAGE", value=False))
+            db.add(AppConfig(key="LOGIN_PASSWORD", value=''))
+            db.add(AppConfig(key="LOGIN_TOKEN", value=''))
             db.commit()
+
         # Create default categories
         if not db.exec(select(Category)).first():
             db.add_all([Category(**data) for data in DEFAULT_CATEGORIES])
@@ -42,7 +45,7 @@ async def lifespan(app: FastAPI):
     #     db_file.unlink()
 
 # Init FastAPI
-app = FastAPI(title='Wally API', version='1.0.0', lifespan=lifespan)
+app = FastAPI(title='Wally API', version='1.0.0', root_path="/api", lifespan=lifespan)
 
 # Allow your dev frontend origin
 app.add_middleware(
@@ -62,7 +65,7 @@ app.include_router(recurring_transactions.router)
 app.include_router(categories.router)
 app.include_router(tags.router)
 app.include_router(currency.router)
-app.include_router(users.router)
+app.include_router(auth.router)
 
 # Add root route
 @app.get("/", tags=["Root"])

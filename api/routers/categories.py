@@ -5,8 +5,9 @@ from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
 from ..models.categories import Category, CategoryCreate, CategoryPublic
+from .auth import check_login
 
-router = APIRouter(tags=["Categories"])
+router = APIRouter(tags=["Categories"], dependencies=[Depends(check_login)])
 
 @router.get("/categories/", response_model=list[str])
 def read_categories(

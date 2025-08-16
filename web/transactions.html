@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally - Transactions</title>
+  <title>Wally | Transactions</title>
   <link rel="icon" type="image/png" href="assets/wally-transparent.png">
   <!-- CSS -->
   <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -161,6 +161,13 @@
             <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="index.html">Dashboards</a></li>
             <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="transactions.html" style="font-weight: 500">Transactions</a></li>
             <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="settings.html">Settings</a></li>
+          </ul>
+          <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
+            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" onclick="logout()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24">
+                <path d="M160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0zM502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z"/>
+              </svg>
+            </li>
           </ul>
         </div>
       </nav>
@@ -353,6 +360,8 @@
     document.addEventListener('DOMContentLoaded', () => main());
     
     async function main() {
+      await checkLogin();
+
       // Show current month
       renderMonth();
 
@@ -382,19 +391,46 @@
     }
 
     async function getCategories() {
-      const response = await fetch(`${API_URL}/categories/`);
+      const response = await fetch(`${API_URL}/categories/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       return data;
     }
 
     async function getTags() {
-      const response = await fetch(`${API_URL}/tags/`);
+      const response = await fetch(`${API_URL}/tags/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       return data;
     }
 
     async function getCurrency() {
-      const response = await fetch(`${API_URL}/currency/`);
+      const response = await fetch(`${API_URL}/currency/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       return data.filter(x => x.selected)[0];
     }
@@ -674,9 +710,18 @@
         monthHeaderAll.style.display = 'flex';
 
         // Fetch all transactions
-        await fetch(`${API_URL}/transactions/`)
-          .then(response => response.json())
-          .then(data => gridApi.setGridOption('rowData', data));
+        const response = await fetch(`${API_URL}/transactions/`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const data = await response.json()
+        gridApi.setGridOption('rowData', data)
       }
       else {
         monthHeader.style.display = 'flex';
@@ -685,9 +730,18 @@
         // Fetch only current month transactions
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         const year = currentDate.getFullYear(); // 2025
-        await fetch(`${API_URL}/transactions/date/${year}-${month}`)
-          .then(response => response.json())
-          .then(data => gridApi.setGridOption('rowData', data));
+        const response = await fetch(`${API_URL}/transactions/date/${year}-${month}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const data = await response.json()
+        gridApi.setGridOption('rowData', data)
       }
       updateFooter(gridApi);
     }
@@ -808,9 +862,15 @@
       try {
         const response = await fetch(`${API_URL}/recurring/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -845,9 +905,15 @@
       try {
         const response = await fetch(`${API_URL}/transactions/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -882,9 +948,15 @@
       try {
         const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -914,8 +986,14 @@
 
       try {
         const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -961,6 +1039,29 @@
         endDate.required = false;
         frequencySelect.required = false;
       }
+    }
+
+    // --------
+    // - AUTH -
+    // --------
+    async function checkLogin() {
+      const response = await fetch(`${API_URL}/login/check/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const enabled = await response.json()
+      if (enabled) document.getElementById('logoutButton').style.display = 'block'
+    }
+
+    async function logout() {
+      await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
     }
   </script>
 </body>

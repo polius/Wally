@@ -4,8 +4,9 @@ from sqlmodel import Session, select, update
 
 from ..database import get_session
 from ..models.currency import Currency, CurrencyPublic
+from .auth import check_login
 
-router = APIRouter(tags=["Currency"])
+router = APIRouter(tags=["Currency"], dependencies=[Depends(check_login)])
 
 @router.get("/currency/", response_model=list[CurrencyPublic])
 def read_currency(

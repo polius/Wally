@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally - Settings</title>
+  <title>Wally | Settings</title>
   <link rel="icon" type="image/png" href="assets/wally-transparent.png">
   <!-- CSS -->
   <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -89,6 +89,13 @@
             <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="transactions.html">Transactions</a></li>
             <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="settings.html" style="font-weight: 500">Settings</a></li>
           </ul>
+          <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
+            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" onclick="logout()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24">
+                <path d="M160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0zM502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z"/>
+              </svg>
+            </li>
+          </ul>
         </div>
       </nav>
     </div>
@@ -158,20 +165,13 @@
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header d-flex align-items-center" style="font-weight: 500">
-            <span>Users</span>
-            <button class="btn btn-sm btn-success ms-auto" title="Add new user" style="width: 80px" data-bs-toggle="modal" data-bs-target="#userModal" onclick="addUser()">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; padding-bottom: 2px">
-                <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
-              </svg>
-              Add
-            </button>
+          <div class="card-header" style="font-weight: 500">
+            <span>Login</span>
           </div>
           <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem">Manage all registered users.</p>
-            <ul class="list-group mt-3" id="userList">
-              <!-- User items will be dynamically added here -->
-            </ul>
+            <p class="card-text mb-3" style="font-size: 0.9rem">Enable the login page. Off allows access without signing in.</p>
+            <button class="btn btn-primary" id="toggleLoginBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="toggleLogin()">Enable Login</button>
+            <button class="btn btn-primary" id="changePasswordBtn" style="width: 150px; font-size: 0.9rem; display: none;" onclick="changeLoginPassword()">Change Password</button>
           </div>
         </div>
       </div>
@@ -180,14 +180,14 @@
           <div class="card-header" style="font-weight: 500">Import / Export Transactions</div>
           <div class="card-body">
             <p class="card-text" style="font-size: 0.9rem;">Export or import transactions quickly using CSV files.</p>
-            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 140px" onclick="exportToCSV()">
+            <button class="btn btn-sm btn-primary" style="margin-right: 1px; width: 140px" onclick="exportToCSV()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/>
               </svg>
               Export to CSV
             </button>
             <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
-            <button class="btn btn-sm btn-primary" style="margin-right: 3px; width: 155px" onclick="csvInput.click()">
+            <button class="btn btn-sm btn-primary" style="width: 155px" onclick="csvInput.click()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M214.6 17.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 117.3 160 488c0 17.7 14.3 32 32 32s32-14.3 32-32l0-370.7 105.4 105.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/>
               </svg>
@@ -395,58 +395,40 @@
     </div>
   </div>
 
-  <!-- Users Modal (Add) -->
-  <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
+  <!-- Login Page Enable Modal & Change Password-->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <form id="userForm" class="modal-content" onsubmit="submitUser(event)">
+      <form id="loginForm" class="modal-content" onsubmit="loginSubmit(event, true)">
         <div class="modal-header">
-          <h5 class="modal-title" id="userModalLabel">Add User</h5>
+          <h5 class="modal-title" id="loginModalLabel">Enable Login Page</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <!-- Username -->
-          <div class="mb-3">
-            <label for="usernameInput" class="form-label">Username</label>
-            <input type="text" class="form-control" id="usernameInput" name="username" placeholder="Enter username" required />
-          </div>
-
-          <!-- Password -->
-          <div class="mb-3">
-            <label for="passwordInput" class="form-label">Password</label>
-            <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Enter password" required />
-          </div>
-
-          <!-- Admin -->
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="adminCheck" name="admin" />
-            <label class="form-check-label" for="adminCheck">
-              Admin
-            </label>
-            <p class="card-text" style="font-size: 0.85rem">An admin user can manage users and import transactions from CSV.</p>
-          </div>
+          <label for="loginPasswordInput" class="form-label">Password</label>
+          <input type="text" class="form-control" id="loginPasswordInput" name="password" placeholder="Enter a password" required />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-success" id="userModalSubmitButton" style="width: 120px">Add</button>
+          <button type="submit" class="btn btn-primary" id="loginModalSubmitButton" style="width: 120px">Enable</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- User Modal Delete -->
-  <div class="modal fade" id="userModalDelete" tabindex="-1" aria-labelledby="UserModalDeleteLabel" aria-hidden="true">
+  <!-- Login Page Disable Modal -->
+  <div class="modal fade" id="loginModalDisable" tabindex="-1" aria-labelledby="loginModalDisableLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="submitUser(event)">
+      <form class="modal-content" onsubmit="loginSubmit(event, false)">
         <div class="modal-header">
-          <h5 class="modal-title" id="userModalDeleteLabel">Delete User</h5>
+          <h5 class="modal-title" id="userModalDeleteLabel">Disable Login Page</h5>
           <button type="button" class="btn-close" data-bs-dismiss="userModal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Are you sure you want to delete this user?
+          Are you sure you want to disable the login page?
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Disable</button>
         </div>
       </form>
     </div>
@@ -458,7 +440,7 @@
     let categories;
     let tags;
     let currency;
-    let users;
+    let login;
 
     let categorySelected;
     let tagSelected;
@@ -468,9 +450,6 @@
 
     let modalMode = 'add';
     let selectedRow;
-    
-    let userModalMode = 'add';
-    let userSelectedRow;
 
     let tagsInput;
 
@@ -478,14 +457,19 @@
     document.addEventListener('DOMContentLoaded', () => main());
 
     async function main() {
+      await checkLogin();
+
       // Get categories, tags and default currency
-      [categories, tags, currency, users] = await Promise.all([
+      [categories, tags, currency, login] = await Promise.all([
         getCategories(),
         getTags(),
         getCurrency(),
-        getUsers(),
+        getLogin(),
         renderTheme(),
       ]);
+
+      // Adapt Login UX
+      loginUX()
 
       // Initialize the grid
       gridApi = await initGrid();
@@ -508,24 +492,65 @@
     }
 
     async function getCategories() {
-      const response = await fetch(`${API_URL}/categories/`);
+      const response = await fetch(`${API_URL}/categories/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       await renderCategories(data);
       return categories
     }
 
     async function getTags() {
-      const response = await fetch(`${API_URL}/tags/`);
+      const response = await fetch(`${API_URL}/tags/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       await renderTags(data);
       return data;
     }
 
     async function getCurrency() {
-      const response = await fetch(`${API_URL}/currency/`);
+      const response = await fetch(`${API_URL}/currency/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       const data = await response.json();
       await renderCurrency(data);
       return data.filter(x => x.selected)[0];
+    }
+
+    async function getLogin() {
+      const response = await fetch(`${API_URL}/login/check/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      return await response.json()
     }
 
     // --------------
@@ -608,9 +633,15 @@
       try {
         const response = await fetch(`${API_URL}/categories/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -644,7 +675,13 @@
       try {
         const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
           method: 'DELETE',
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -725,9 +762,15 @@
       try {
         const response = await fetch(`${API_URL}/tags/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -761,7 +804,13 @@
       try {
         const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
           method: 'DELETE',
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -811,7 +860,13 @@
       try {
         const response = await fetch(`${API_URL}/currency/${new_currency}`, {
           method: 'PUT',
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -832,247 +887,6 @@
       }
       catch (error) {
         bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // ---------
-    // - USERS -
-    // ---------
-    document.getElementById('userModal').addEventListener('shown.bs.modal', () => {
-      document.getElementById('usernameInput').focus()
-    });
-
-    async function getUsers() {
-      try {
-        const response = await fetch(`${API_URL}/users/`, {
-          method: 'GET',
-        });
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          throw new Error("An error occurred while fetching users.")
-        }
-        else {
-          users = json;
-          const userList = document.getElementById('userList');
-          userList.innerHTML = '';
-
-          if (json.length === 0) {
-            const empty = document.createElement('span');
-            empty.style.fontSize = '0.9rem'
-            empty.innerText = "No users have been created yet."
-            empty.style.fontStyle = 'italic';
-            userList.appendChild(empty);
-          }
-          else {
-            json.forEach(user => {
-              const li = document.createElement('li');
-              li.className = 'list-group-item d-flex justify-content-between align-items-center';
-              li.style.fontSize = '0.9rem';
-
-              if (user.admin) {
-                const span = document.createElement('span');
-                span.title = "Admin";
-                span.innerHTML = `
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="18" height="18" fill="orange" style="margin-right: 5px" title="Admin">
-                    <path d="M313 87.2c9.2-7.3 15-18.6 15-31.2 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 12.6 5.9 23.9 15 31.2L194.6 194.8c-10 15.7-31.3 19.6-46.2 8.4L88.9 158.7c4.5-6.4 7.1-14.3 7.1-22.7 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 21.8 17.5 39.6 39.2 40L87.8 393.5c4.7 31.3 31.6 54.5 63.3 54.5l273.8 0c31.7 0 58.6-23.2 63.3-54.5L520.8 176c21.7-.4 39.2-18.2 39.2-40 0-22.1-17.9-40-40-40s-40 17.9-40 40c0 8.4 2.6 16.3 7.1 22.7l-59.4 44.6c-14.9 11.2-36.2 7.3-46.2-8.4L313 87.2z"/>
-                  </svg>
-                  ${user.username}
-                `;
-                li.appendChild(span);
-              }
-              else {
-                li.textContent = user.username;
-              }
-
-              const btnGroup = document.createElement('div');
-
-              const editBtn = document.createElement('button');
-              editBtn.className = 'btn btn-sm btn-primary me-2';
-              editBtn.title = 'Edit user';
-              editBtn.onclick = () => editUser(user);
-              editBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="margin-bottom: 4px">
-                  <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-                </svg>
-              `;
-              btnGroup.appendChild(editBtn);
-              const deleteBtn = document.createElement('button');
-              deleteBtn.className = 'btn btn-sm btn-danger';
-              deleteBtn.title = 'Delete user';
-              deleteBtn.onclick = () => deleteUser(user);
-              deleteBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="13" height="13" fill="currentColor" style="margin-bottom: 3px">
-                  <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
-                </svg>
-              `;
-              btnGroup.appendChild(deleteBtn);
-              li.appendChild(btnGroup);
-              userList.appendChild(li);
-            });
-          }
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    function addUser() {
-      userModalMode = 'add';
-      document.getElementById('userModalLabel').textContent = 'Add User';
-      document.getElementById('userModalSubmitButton').textContent = 'Add';
-      document.getElementById('userForm').reset();
-      document.getElementById('passwordInput').required = true
-      document.getElementById('passwordInput').placeholder = 'Enter password';
-    }
-
-    function editUser(user) {
-      // Store selected user
-      userSelectedRow = user;
-
-      // Set modal mode to edit
-      userModalMode = 'edit';
-      document.getElementById('userModalLabel').textContent = 'Edit User';
-      document.getElementById('userModalSubmitButton').textContent = 'Edit';
-
-      // Assign values
-      document.getElementById('usernameInput').value = userSelectedRow.username
-      document.getElementById('passwordInput').value = ''
-      document.getElementById('passwordInput').required = false
-      document.getElementById('passwordInput').placeholder = 'Enter a new password (leave empty to keep current)'
-
-      document.getElementById('adminCheck').checked = userSelectedRow.admin
-      document.getElementById('adminCheck').value = userSelectedRow.admin
-
-      // Open modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal'));
-      modal.show();
-    }
-
-    function deleteUser(user) {
-      // Store selected user
-      userSelectedRow = user;
-
-      // Set modal mode to delete
-      userModalMode = 'delete';
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('userModalDelete'));
-      modal.show();
-    }
-
-    function submitUser(event) {
-      if (userModalMode === 'add') submitUserAdd(event);
-      else if (userModalMode === 'edit') submitUserEdit(event);
-      else if (userModalMode === 'delete') submitUserDelete(event);
-    }
-
-    async function submitUserAdd(event) {
-      event.preventDefault();
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-      data.admin = document.getElementById('adminCheck').checked;
-
-      try {
-        const response = await fetch(`${API_URL}/users/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          throw new Error("An error occurred.")
-        }
-        else {
-          users = await getUsers();
-
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-          
-          // Reset the form
-          document.getElementById('userForm').reset();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    async function submitUserEdit(event) {
-      event.preventDefault();
-
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-      data.admin = document.getElementById('adminCheck').checked;
-
-      try {
-        const response = await fetch(`${API_URL}/users/${userSelectedRow.username}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'User edited.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the grid
-          users = await getUsers();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    async function submitUserDelete(event) {
-      event.preventDefault();
-
-      try {
-        const response = await fetch(`${API_URL}/users/${userSelectedRow.username}`, {
-          method: 'DELETE'
-        });
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Show toast
-          bootstrap.showToast({body: 'User deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the grid
-          users = await getUsers();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-      finally {
-        // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('userModalDelete'));
-        modal.hide();
       }
     }
 
@@ -1108,6 +922,91 @@
       bootstrap.showToast({body: 'Theme changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
     }
 
+    // --------------
+    // - LOGIN PAGE -
+    // --------------
+    document.getElementById('loginModal').addEventListener('shown.bs.modal', () => {
+      document.getElementById('loginPasswordInput').focus();
+    });
+
+    async function toggleLogin() {
+      document.getElementById('loginForm').reset()
+      document.getElementById('loginModalLabel').innerText = 'Enable Login Page'
+      document.getElementById('loginModalSubmitButton').innerText = 'Enable'
+      
+    }
+    
+    async function changeLoginPassword() {
+      document.getElementById('loginForm').reset()
+      document.getElementById('loginModalLabel').innerText = 'Change Login Password'
+      document.getElementById('loginModalSubmitButton').innerText = 'Change'
+    }
+
+    function loginUX() {
+      const toggleLoginBtn = document.getElementById('toggleLoginBtn')
+      const changePasswordBtn = document.getElementById('changePasswordBtn')
+
+      if (login) {
+        toggleLoginBtn.innerText = 'Disable Login'
+        toggleLoginBtn.classList.replace('btn-primary', 'btn-danger');
+        changePasswordBtn.style.display = 'inline'
+      }
+      else {
+        toggleLoginBtn.innerText = 'Enable Login'
+        toggleLoginBtn.classList.replace('btn-danger', 'btn-primary');
+        changePasswordBtn.style.display = 'none'
+      }
+    }
+
+    async function loginSubmit(event, enable) {
+      event.preventDefault();
+
+      let data;
+      if (enable) {
+        // Get form data
+        const formData = new FormData(event.target);
+        data = Object.fromEntries(formData.entries());
+      }
+      else data = {"password": ""}
+
+      // Add new category
+      try {
+        const response = await fetch(`${API_URL}/login/password/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+          modal.hide();
+
+          // Show toast
+          bootstrap.showToast({body: `Login page ${enable ? 'enabled' : 'disabled'}.`, delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the data and UX
+          login = getLogin();
+          loginUX()
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+
     // -------------------
     // - IMPORT / EXPORT -
     // -------------------
@@ -1115,7 +1014,13 @@
       try {
         const response = await fetch(`${API_URL}/transactions/`, {
           method: 'GET',
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -1184,9 +1089,15 @@
       try {
         const response = await fetch(`${API_URL}/transactions/import/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -1218,10 +1129,18 @@
     });
 
     async function getRecurring() {
-      await fetch(`${API_URL}/recurring/`)
-        .then(response => response.json())
-        .then(data => gridApi.setGridOption('rowData', data));
-      updateRowCount(gridApi);
+      const response = await fetch(`${API_URL}/recurring/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const data = await response.json()
+      gridApi.setGridOption('rowData', data)        
     }
 
     async function initGrid() {
@@ -1529,9 +1448,15 @@
       try {
         const response = await fetch(`${API_URL}/recurring/`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -1571,9 +1496,15 @@
       try {
         const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -1606,9 +1537,15 @@
       try {
         const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
           method: 'DELETE',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
+
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
 
         const json = await response.json()
 
@@ -1631,6 +1568,29 @@
       catch (error) {
         bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
+    }
+
+    // --------
+    // - AUTH -
+    // --------
+    async function checkLogin() {
+      const response = await fetch(`${API_URL}/login/check/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const enabled = await response.json()
+      if (enabled) document.getElementById('logoutButton').style.display = 'block'
+    }
+
+    async function logout() {
+      await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
     }
   </script>
 </body>

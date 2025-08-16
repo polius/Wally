@@ -5,8 +5,9 @@ from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
 from ..models.tags import Tag, TagCreate, TagPublic
+from .auth import check_login
 
-router = APIRouter(tags=["Tags"])
+router = APIRouter(tags=["Tags"], dependencies=[Depends(check_login)])
 
 @router.get("/tags/", response_model=list[str])
 def read_tags(

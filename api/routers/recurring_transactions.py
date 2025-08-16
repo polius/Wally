@@ -9,8 +9,9 @@ from dateutil.relativedelta import relativedelta
 from ..database import get_session
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction, RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionDelete, RecurringTransactionPublic
+from .auth import check_login
 
-router = APIRouter(tags=["Recurring Transactions"])
+router = APIRouter(tags=["Recurring Transactions"], dependencies=[Depends(check_login)])
 
 @router.get("/recurring/", response_model=list[RecurringTransactionPublic])
 def read_recurring_transactions(

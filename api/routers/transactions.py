@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from typing import Annotated
 from uuid import UUID
-from sqlmodel import Session, select, desc, insert
+from sqlmodel import Session, select, desc
 from datetime import date
 
 from ..database import get_session
 from ..models.transactions import Transaction, TransactionCreate, TransactionUpdate, TransactionPublic
+from .auth import check_login
 
-router = APIRouter(tags=["Transactions"])
+router = APIRouter(tags=["Transactions"], dependencies=[Depends(check_login)])
 
 @router.get("/transactions/", response_model=list[TransactionPublic])
 def read_transactions(

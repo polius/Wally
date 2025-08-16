@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/wally-transparent.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/wally-transparent.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/wally-transparent.png" />
+    <link rel="shortcut icon" href="assets/wally-transparent.png" />
+    <meta name="theme-color" content="#212529" />
+    <title>Wally | Login</title>
+    <meta name="robots" content="index,follow" />
+    <meta name="description" content="A simple finance app for managing your income and expenses." />
+    <meta property="og:title" content="Wally" />
+    <meta property="og:description" content="A simple finance app for managing your income and expenses." />
+    <meta property="og:image" content="assets/wally-transparent.png" />
+    <meta property="og:image:alt" content="Wally" />
+    <meta property="og:image:width" content="640" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:site_name" content="Wally" />
+    <meta property="author" content="Pol Alzina" />
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/bootstrap.bundle.min.js" defer></script>
+    <script src="js/bootstrap-show-toast.js" defer></script>
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme') || 'system';
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
+          document.documentElement.setAttribute('data-bs-theme', 'light');
+        }
+        else {
+          document.documentElement.setAttribute('data-bs-theme', 'dark');
+        }
+      })();
+    </script>
+    <style>
+      body {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        min-height: 100vh;
+        flex-direction: column;
+        padding-bottom: 20vh;
+      }
+      .form-signin {
+        max-width: 330px;
+        padding: 15px;
+      }
+      .form-signin .form-floating:focus-within {
+        z-index: 2;
+      }
+  </style>
+</head>
+
+<body class="text-center">
+  <main class="form-signin w-100 m-auto">
+    <form onsubmit="login(event)" >
+      <div href="/" class="text-center d-block" style="cursor: default">
+        <img src="assets/wally-transparent.png" alt="Wally Logo" width="100" height="110" class="mb-3">
+        <div class="fw-semibold" style="font-size: 2.8rem;">Wally</div>
+        <div class="fw-medium fs-6 mt-1">LOGIN</div>
+      </div>
+      <div class="form-floating" style="margin-top: 40px">
+        <input id="password" name="password" type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password" autofocus required>
+        <label for="floatingPassword">Password</label>
+      </div>
+      <button id="submit" type="submit" class="w-100 btn btn-lg btn-primary mt-2 mb-4">
+      <span id="loading" class="spinner-border spinner-border-sm"  style="display: none; border-width: 2px; margin-right: 5px; margin-bottom: 1px" aria-hidden="true"></span>
+        Log in
+      </button>
+    </form>
+    <a href="" onclick="recoverPassword(event)" style="text-decoration: none">Forgot password</a>
+  </main>
+  <script>
+    const API_URL = 'http://127.0.0.1:8000';
+    checkLogin();
+
+    async function checkLogin() {
+      const response = await fetch(`${API_URL}/login/check/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (response.ok) window.location.href = '/index.html';
+    }
+
+    async function login(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      // Perform login
+      try {
+        const response = await fetch(`${API_URL}/login/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          if (response.status === 401) throw new Error(json.detail)
+          throw new Error("An error occurred.")
+        }
+        else {
+          window.location.href = '/index.html';
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+    
+    async function recoverPassword(event) {
+      event.preventDefault()
+      
+      try {
+        const response = await fetch(`${API_URL}/login/recover`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        const json = await response.json()
+        
+        if (!response.ok) {
+          throw new Error("An error occurred.")
+        }
+        else {
+          bootstrap.showToast({body: `A temporary recovery password has been created.<br><br>${json.file}`, delay: 30000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-primary"});
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
+  </script>
+</body>
+</html>
