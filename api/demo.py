@@ -124,7 +124,7 @@ def random_date_for_month(year: int, month: int):
     last_day = calendar.monthrange(year, month)[1]
     return d(year, month, random.randint(1, last_day))
 
-def generate_month_transactions(year: int, month: int, n: int = 100):
+def generate_month_transactions(year: int, month: int, n: int):
     """Generate ~n transactions but normalize amounts to realistic monthly totals."""
 
     txs = []
@@ -184,12 +184,12 @@ if __name__ == "__main__":
         session.commit()
 
         current_year = d.today().year
-        years = [current_year - 2, current_year, current_year + 2]
+        years = [current_year - 2, current_year - 1, current_year, current_year + 1, current_year + 2]
 
         for year in years:
             for month in range(1, 12 + 1):
-                txs = generate_month_transactions(year, month, n=100)
+                txs = generate_month_transactions(year, month, n=random.randint(50, 100))
                 session.add_all(txs)
                 session.commit()
 
-    print("✅ Database 'wally.db' created with realistic monthly totals (≈3 years of data)")
+    print("✅ Database 'wally.db' created.")

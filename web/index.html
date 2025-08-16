@@ -359,6 +359,7 @@
         </svg>
       </div>
     </div>
+    <div id="monthHeaderAll" class="month-navigation current-month" style="display: none; height: 40px"></div>
 
     <!-- Action buttons -->
     <div class="d-flex justify-content-center align-items-center mb-4" style="margin-top: 25px">
@@ -412,25 +413,25 @@
           <div class="modal-body">
             <p>Select a dashboard to view:</p>
             <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="rangeRadio" value="oneMonth" id="oneMonthRadio" checked>
+              <input class="form-check-input" type="radio" name="range" value="oneMonth" id="oneMonthRadio" checked>
               <label class="form-check-label" for="oneMonthRadio">
                 One Month
               </label>
             </div>
             <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="rangeRadio" value="lastYear" id="lastYearRadio">
+              <input class="form-check-input" type="radio" name="range" value="lastYear" id="lastYearRadio">
               <label class="form-check-label" for="lastYearRadio">
                 Last 12 Months
               </label>
             </div>
             <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="rangeRadio" value="yearToDate" id="yearToDateRadio">
+              <input class="form-check-input" type="radio" name="range" value="yearToDate" id="yearToDateRadio">
               <label class="form-check-label" for="yearToDateRadio">
                 Year to Date
               </label>
             </div>
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="rangeRadio" value="allData" id="allDataRadio">
+              <input class="form-check-input" type="radio" name="range" value="allData" id="allDataRadio">
               <label class="form-check-label" for="allDataRadio">
                 All Data
               </label>
@@ -954,7 +955,25 @@
     const data = Object.fromEntries(formData.entries());
 
     // Store the selected range and group in the global variable
-    chartSelected = data.rangeRadio;
+    chartSelected = data.range;
+
+    // Update header
+    const monthHeader = document.getElementById('monthHeader');
+    const monthHeaderAll = document.getElementById('monthHeaderAll');
+    if (chartSelected == 'oneMonth') {
+      monthHeader.style.display = 'flex';
+      monthHeaderAll.style.display = 'none';
+    }
+    else {
+      monthHeader.style.display = 'none';
+      monthHeaderAll.style.display = 'flex';
+      const mapRange = {
+        "lastYear": "Last 12 Months",
+        "yearToDate": "Year to Date",
+        "allData": "All Data"
+      }
+      monthHeaderAll.innerText = mapRange[chartSelected]
+    }
 
     // Load the chart with the new selection
     chartDisabledFields = new Set();
