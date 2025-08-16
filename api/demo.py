@@ -125,7 +125,7 @@ def random_date_for_month(year: int, month: int):
     return d(year, month, random.randint(1, last_day))
 
 def generate_month_transactions(year: int, month: int, n: int):
-    """Generate ~n transactions but normalize amounts to realistic monthly totals."""
+    """Generate ~n transactions with realistic amounts and mostly positive balances."""
 
     txs = []
     for _ in range(n):
@@ -134,7 +134,8 @@ def generate_month_transactions(year: int, month: int, n: int):
             weights=[0.08, 0.2, 0.25, 0.05, 0.08, 0.04, 0.1, 0.1, 0.05, 0.05]
         )[0]
         t_type = "income" if category == "Income" else "expense"
-        amount = random.uniform(1, 200)  # temporary placeholder
+        # smaller amounts for more realistic transactions
+        amount = random.uniform(5, 100) if t_type == "expense" else random.uniform(500, 1500)
         possible_tags = CATEGORY_TAGS.get(category, []) + ["online", "special", "urgent"]
         tags = random.sample(possible_tags, k=random.randint(0, min(2, len(possible_tags))))
         tx_date = random_date_for_month(year, month)
@@ -152,17 +153,20 @@ def generate_month_transactions(year: int, month: int, n: int):
     expenses = [t for t in txs if t.type == "expense"]
     incomes = [t for t in txs if t.type == "income"]
 
-    def normalize(group, target_min, target_max):
+    # Set monthly targets so income is usually >= expenses
+    expense_target = random.uniform(2000, 4000)
+    income_target = expense_target * random.uniform(1.0, 1.5)  # income ≥ expenses most months
+
+    def normalize(group, target_sum):
         if not group: 
             return
         current_sum = sum(float(t.amount) for t in group)
-        target_sum = random.uniform(target_min, target_max)
         scale = target_sum / current_sum if current_sum > 0 else 1
         for t in group:
             t.amount = Decimal(str(round(float(t.amount) * scale, 2)))
 
-    normalize(expenses, 2000, 5000)   # total expenses per month
-    normalize(incomes, 1200, 4000)    # total incomes per month
+    normalize(expenses, expense_target)
+    normalize(incomes, income_target)
 
     return txs
 

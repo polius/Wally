@@ -642,11 +642,24 @@
   }
 
   async function getTransactions() {
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const year = currentDate.getFullYear();
+    let endpoint;
+    if (chartSelected == 'oneMonth') {
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const year = currentDate.getFullYear();
+      endpoint = `${API_URL}/transactions/date/${year}-${month}`;
+    }
+    else if (chartSelected == 'lastYear') {
+      endpoint = `${API_URL}/transactions/past-year/`;
+    }
+    else if (chartSelected == 'yearToDate') {
+      endpoint = `${API_URL}/transactions/year-to-date/`;
+    }
+    else if (chartSelected == 'allData') {
+      endpoint = `${API_URL}/transactions/`;
+    }
 
     try {
-      const response = await fetch(`${API_URL}/transactions/date/${year}-${month}`, {
+      const response = await fetch(endpoint, {
         method: 'GET',
         credentials: 'include',
       });
@@ -683,36 +696,6 @@
     renderMonth();
     loadChart();
   });
-
-  function calculateBreakdown(transactions) {
-    const breakdownMap = {};
-
-    for (const { type, amount, date, ...rest } of transactions) {
-      const groupValue = rest.category;
-
-      if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
-        if (!breakdownMap[groupValue]) {
-          breakdownMap[groupValue] = { total: 0, months: {} };
-        }
-
-        const monthKey = date.slice(0, 7); // YYYY-MM
-        breakdownMap[groupValue].total += amount;
-        breakdownMap[groupValue].months[monthKey] = (breakdownMap[groupValue].months[monthKey] || 0) + amount;
-      }
-    }
-
-    return Object.entries(breakdownMap)
-      .map(([name, { total, months }]) => {
-        const sortedMonths = Object.keys(months).sort();
-        return {
-          name,
-          total,
-          dates: sortedMonths,
-          amounts: sortedMonths.map(m => months[m])
-        };
-      })
-      .sort((a, b) => b.total - a.total);
-  }
 
   async function loadChart() {
     const transactions = await getTransactions();

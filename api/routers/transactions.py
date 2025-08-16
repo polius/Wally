@@ -3,6 +3,7 @@ from typing import Annotated
 from uuid import UUID
 from sqlmodel import Session, select, desc
 from datetime import date
+from dateutil.relativedelta import relativedelta
 
 from ..database import get_session
 from ..models.transactions import Transaction, TransactionCreate, TransactionUpdate, TransactionPublic
@@ -34,6 +35,39 @@ def read_transactions_by_date(
 ):
     first_day = date(year, month, 1)
     next_month = date(year + (month // 12), (month % 12) + 1, 1)
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.created_date))
+    )
+    results = db.exec(stmt).all()
+    return results
+
+@router.get("/transactions/past-year/", response_model=list[TransactionPublic])
+def get_transactions_past_year(
+    db: Annotated[Session, Depends(get_session)]
+):
+    today = date.today()
+    first_day = (today.replace(day=1) - relativedelta(years=1))
+    next_month = (today.replace(day=1) + relativedelta(months=1))
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.date))
+    )
+    return db.exec(stmt).all()
+
+@router.get("/transactions/year-to-date/", response_model=list[TransactionPublic])
+def get_transactions_ytd(
+    db: Annotated[Session, Depends(get_session)]
+):
+    today = date.today()
+    first_day = date(today.year, 1, 1)
+    next_month = (today.replace(day=1) + relativedelta(months=1))
 
     stmt = (
         select(Transaction)
