@@ -59,7 +59,7 @@
         <label for="floatingPassword">Password</label>
       </div>
       <button id="submit" type="submit" class="w-100 btn btn-lg btn-primary mt-2 mb-4">
-      <span id="loading" class="spinner-border spinner-border-sm"  style="display: none; border-width: 2px; margin-right: 5px; margin-bottom: 1px" aria-hidden="true"></span>
+        <span id="loading" class="spinner-border spinner-border-sm"  style="display: none; border-width: 2px; margin-right: 5px; margin-bottom: 1px" aria-hidden="true"></span>
         Log in
       </button>
     </form>
@@ -79,6 +79,12 @@
 
     async function login(event) {
       event.preventDefault();
+
+      // Disable the submit button
+      const submitButton = document.getElementById("submit");
+      const submitLoading = document.getElementById("loading");
+      submitButton.setAttribute("disabled", "");
+      submitLoading.style.display = 'inline-flex';
 
       // Get form data
       const formData = new FormData(event.target);
@@ -104,7 +110,12 @@
         }
       }
       catch (error) {
+        // Show error message
         bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        
+        // Enable login button
+        submitButton.removeAttribute("disabled");
+        submitLoading.style.display = 'none';
       }
     }
     
