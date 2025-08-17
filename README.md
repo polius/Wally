@@ -1,5 +1,5 @@
 <p align="center">
-<img src="/web/assets/wally.png" alt="Wally Logo" width="200" height="200" /><br>
+<img src="/web/assets/wally.png" alt="Wally Logo" width="100" height="100" /><br>
 </p>
 
 <h1 align="center">Wally</h1><br>
@@ -16,7 +16,7 @@
 
 <br>
 
-# Screenshots
+### Screenshots
 
 Dashboard Showcase:
 
@@ -39,11 +39,11 @@ Dashboard Showcase:
 
 </details>
 
-## 🚀 Installation
+### 🚀 Installation
 
 The recommended installation method is **Docker**.  
 
-### Run with Docker CLI
+#### Run with Docker CLI
 
 ```bash
 docker run -d \
@@ -57,7 +57,7 @@ docker run -d \
 - The `-v` flag ensures your data persists when the container restarts or is updated.
 - Replace `/path/to/data` with the folder on your host where you want Wally to store its database.
 
-### Run with Docker Compose
+#### Run with Docker Compose
 
 ```yaml
 services:
@@ -74,14 +74,12 @@ services:
       DEMO: "true"
 ```
 
-## 📖 Usage
-
 Once deployed, open Wally in your browser:
 
 http://localhost/
 
 
-## 📂 Data Import / Export
+### 📂 Data Import / Export
 
 Wally supports CSV import/export. The file must contain the following columns:
 
@@ -100,15 +98,11 @@ An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
 - `type` can be `income` or `expense`.
 - `tags` are optional and can be multiple, separated by commas.
 
-## 💾 Data Persistence
+### 💾 Data Persistence
 
 - By default, the database is stored in `/wally/data` inside the container.
 - Mount a host directory using `-v /path/to/data:/wally/data` to ensure your data persists across container updates or restarts.
 
-## 🙏 Acknowledgements
+### 🙏 Acknowledgements
 
-This project would not have been possible without ExpenseOwl. Wally has been built using ExpenseOwl as an inspiration, and many ideas were derived from that project.
-
-## 🛠 Support
-
-If you encounter issues or have questions, please open an issue on the repository or contact the maintainer.
+This project would not have been possible without ExpenseOwl. Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
