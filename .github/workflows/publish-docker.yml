@@ -38,6 +38,7 @@ jobs:
         run: |
           SHORT_TAG="${GITHUB_REF_NAME:2}"
           echo "SHORT_TAG=$SHORT_TAG" >> $GITHUB_ENV
+          echo $SHORT_TAG
 
       - name: Build and push Docker image
         id: push
