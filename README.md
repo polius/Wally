@@ -1,5 +1,5 @@
 <p align="center">
-<img src="/web/assets/wally.png" alt="Wally Logo" width="100" height="100" /><br>
+<img src="/web/assets/wally.png" alt="Wally Logo" width="120" height="120" /><br>
 </p>
 
 <h1 align="center">Wally</h1><br>
@@ -15,10 +15,6 @@
 </p>
 
 <br>
-
-### Screenshots
-
-Dashboard Showcase:
 
 | | Desktop View | Mobile View |
 | --- | --- | --- |
@@ -39,7 +35,7 @@ Dashboard Showcase:
 
 </details>
 
-### 🚀 Installation
+## Installation
 
 The recommended installation method is **Docker**.  
 
@@ -74,12 +70,16 @@ services:
       DEMO: "true"
 ```
 
-Once deployed, open Wally in your browser:
+Once deployed, use the web interface to do everything. Access it through your browser:
 
-http://localhost/
+[http://localhost/](http://localhost/)
 
+## Data Persistence
 
-### 📂 Data Import / Export
+- By default, the database is stored in `/wally/data` inside the container.
+- Mount a host directory using `-v /path/to/data:/wally/data` to ensure your data persists across container updates or restarts.
+
+## Data Import / Export
 
 Wally supports CSV import/export. The file must contain the following columns:
 
@@ -98,11 +98,6 @@ An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
 - `type` can be `income` or `expense`.
 - `tags` are optional and can be multiple, separated by commas.
 
-### 💾 Data Persistence
-
-- By default, the database is stored in `/wally/data` inside the container.
-- Mount a host directory using `-v /path/to/data:/wally/data` to ensure your data persists across container updates or restarts.
-
-### 🙏 Acknowledgements
+## Acknowledgements
 
 This project would not have been possible without ExpenseOwl. Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
