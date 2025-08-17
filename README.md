@@ -95,6 +95,6 @@ An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
 
 This can be done directly from the **Settings** page.
 
-## Acknowledgements
+## Acknowledgement
 
 Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
