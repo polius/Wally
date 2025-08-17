@@ -196,4 +196,4 @@ if __name__ == "__main__":
                 session.add_all(txs)
                 session.commit()
 
-    print("✅ Database 'wally.db' created.")
+    print(f"✅ Database 'wally.db' created in {db_path.resolve()}.")

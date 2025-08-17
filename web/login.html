@@ -66,7 +66,7 @@
     <a href="" onclick="recoverPassword(event)" style="text-decoration: none">Forgot password</a>
   </main>
   <script>
-    const API_URL = 'http://127.0.0.1:8000';
+    const API_URL = '/api'; // 'http://127.0.0.1:8000';
     checkLogin();
 
     async function checkLogin() {
@@ -74,7 +74,7 @@
         method: 'GET',
         credentials: 'include',
       });
-      if (response.ok) window.location.href = '/index.html';
+      if (response.ok) window.location.href = '//';
     }
 
     async function login(event) {
@@ -106,7 +106,7 @@
           throw new Error("An error occurred.")
         }
         else {
-          window.location.href = '/index.html';
+          window.location.href = '//';
         }
       }
       catch (error) {

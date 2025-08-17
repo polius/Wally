@@ -1,7 +1,7 @@
 from sqlmodel import Session, SQLModel, create_engine
 
 # Create the engine to connect to the SQLite database
-engine = create_engine("sqlite:///wally.db", connect_args={"check_same_thread": False})
+engine = create_engine("sqlite:///data/wally.db", connect_args={"check_same_thread": False})
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

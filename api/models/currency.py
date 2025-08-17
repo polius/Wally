@@ -19,6 +19,7 @@ DEFAULT_CURRENCIES = [
     {"name": "INR", "symbol": "₹", "position": "left", "selected": False},
     {"name": "JPY", "symbol": "¥", "position": "left", "selected": False},
     {"name": "KRW", "symbol": "₩", "position": "left", "selected": False},
+    {"name": "MAD", "symbol": "DH", "position": "right", "selected": False},
     {"name": "MXN", "symbol": "Mex$", "position": "left", "selected": False},
     {"name": "MYR", "symbol": "RM", "position": "left", "selected": False},
     {"name": "NZD", "symbol": "NZ$", "position": "left", "selected": False},

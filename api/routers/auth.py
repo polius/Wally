@@ -75,7 +75,7 @@ def login(
     response = JSONResponse(f"Welcome back!", status_code=200)
 
     # Set the access token as a secure HTTP-only cookie (can't be accessed via JavaScript)
-    response.set_cookie(key="access_token", value=access_token, httponly=True) # samesite="Strict"
+    response.set_cookie(key="access_token", value=access_token, httponly=True, samesite='strict')
 
     # Return the response with access token and refresh token in the cookie
     return response
@@ -111,7 +111,7 @@ def check_login(
             else:
                 # Issue new access token
                 new_access_token = jwt.encode({"sub": "admin", "exp": datetime.now(timezone.utc) + timedelta(minutes=ACCESS_EXPIRE_MINUTES)}, secret_key, algorithm='HS512')
-                response.set_cookie("access_token", new_access_token, httponly=True) # samesite="strict"
+                response.set_cookie("access_token", new_access_token, httponly=True, samesite='strict')
 
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid access token.")
