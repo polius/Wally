@@ -74,7 +74,7 @@
         method: 'GET',
         credentials: 'include',
       });
-      if (response.ok) window.location.href = '//';
+      if (response.ok) window.location.href = '/';
     }
 
     async function login(event) {
@@ -106,7 +106,7 @@
           throw new Error("An error occurred.")
         }
         else {
-          window.location.href = '//';
+          window.location.href = '/';
         }
       }
       catch (error) {
