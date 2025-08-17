@@ -920,7 +920,10 @@
   }
 
   function formatCurrency(amount) {  
-    if (currency.position === 'left') return `${currency.symbol}${amount}`;
+    if (currency.position === 'left') {
+      if (Decimal(amount) < 0) return `-${currency.symbol}${Decimal(amount).abs()}`;
+      else return `${currency.symbol}${amount}`;
+    }
     else return `${amount} ${currency.symbol}`;
   }
 

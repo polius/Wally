@@ -46,7 +46,7 @@ class RecurringTransactionUpdate(SQLModel):
     tags: List[str] | None = None
     amount: Decimal | None = None
     type: Literal["expense", "income"] | None = None
-    startDate: date | None = None
+    endDate: date | None = None
     frequency: Literal["daily", "weekly", "monthly", "yearly"] | None = None
     applyTo: Literal["future", "all"] = Field(default="future")
 
