@@ -8,6 +8,12 @@ jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -25,7 +31,7 @@ jobs:
           images: poliuscorp/wally
           tags: |
             latest 
-            ${{ github.ref_name }}
+            ${{ github.ref_name[1:] }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
