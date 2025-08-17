@@ -1,56 +1,16 @@
 from pathlib import Path
-from sqlmodel import SQLModel, Field, Session, create_engine
-from uuid import UUID, uuid4
-from typing import List, Literal
-from datetime import date as d, datetime
+from sqlmodel import SQLModel, Session, create_engine
+from datetime import date
 from decimal import Decimal
-from sqlalchemy import Column, JSON, Numeric, String
 import random
 import calendar
 import secrets
 
-# ------------------------
-# Models
-# ------------------------
-class Transaction(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    recurringID: str | None = Field(default="", index=True) 
-    name: str = Field(index=True)
-    category: str = Field(index=True)
-    tags: List[str] = Field(default_factory=list, sa_column=Column(JSON))
-    amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
-    type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
-    date: d = Field(default_factory=d.today, index=True)
-    created_date: datetime = Field(default_factory=datetime.now, index=True)
-
-class RecurringTransaction(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(index=True)
-    category: str = Field(index=True)
-    tags: List[str] = Field(default_factory=list, sa_column=Column(JSON))
-    amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
-    type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
-    startDate: d = Field(default_factory=d.today, index=True)
-    endDate: d = Field(default_factory=d.today, index=True)
-    frequency: Literal["daily", "weekly", "monthly", "yearly"] = Field(sa_type=String, default="daily", index=True)
-    created_date: datetime = Field(default_factory=datetime.now, index=True)
-    
-
-class Category(SQLModel, table=True):
-    name: str = Field(primary_key=True)
-
-class Tag(SQLModel, table=True):
-    name: str = Field(primary_key=True)
-
-class Currency(SQLModel, table=True):
-    name: str = Field(primary_key=True)
-    symbol: str
-    position: Literal["left", "right"] = Field(sa_type=String, index=True)
-    selected: bool = Field(index=True)
-
-class AppConfig(SQLModel, table=True):
-    key: str = Field(primary_key=True)
-    value: str
+from .models.transactions import Transaction
+from .models.categories import Category
+from .models.tags import Tag
+from .models.currency import Currency
+from .models.app import AppConfig
 
 # ------------------------
 # Defaults
@@ -101,7 +61,6 @@ DEFAULT_CONFIG = [
     {"key": 'LOGIN_PAGE', "value": False},
     {"key": 'LOGIN_PASSWORD', "value": ''},
     {"key": 'LOGIN_TOKEN', "value": ''},
-    {"key": 'IS_DEMO', "value": True},
 ]
 
 CATEGORY_TAGS = {
@@ -122,7 +81,7 @@ CATEGORY_TAGS = {
 # ------------------------
 def random_date_for_month(year: int, month: int):
     last_day = calendar.monthrange(year, month)[1]
-    return d(year, month, random.randint(1, last_day))
+    return date(year, month, random.randint(1, last_day))
 
 def generate_month_transactions(year: int, month: int, n: int):
     """Generate ~n transactions with realistic amounts and mostly positive balances."""
@@ -173,11 +132,11 @@ def generate_month_transactions(year: int, month: int, n: int):
 # ------------------------
 # Main
 # ------------------------
-if __name__ == "__main__":
-    db_path = Path("wally.db")
+def generate_demo():
+    db_path = Path("data/wally.db")
     db_path.unlink(missing_ok=True)
 
-    engine = create_engine("sqlite:///wally.db")
+    engine = create_engine(f"sqlite:///{db_path}")
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
@@ -187,7 +146,7 @@ if __name__ == "__main__":
         session.add_all([AppConfig(**c) for c in DEFAULT_CONFIG])
         session.commit()
 
-        current_year = d.today().year
+        current_year = date.today().year
         years = [current_year - 2, current_year - 1, current_year, current_year + 1, current_year + 2]
 
         for year in years:
@@ -197,3 +156,6 @@ if __name__ == "__main__":
                 session.commit()
 
     print(f"✅ Database 'wally.db' created in {db_path.resolve()}.")
+
+if __name__ == "__main__":
+    generate_demo()

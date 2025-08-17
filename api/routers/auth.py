@@ -1,3 +1,4 @@
+import os
 import jwt
 import bcrypt
 import random
@@ -86,7 +87,7 @@ def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
 
-def check_login(
+def check_login (
     request: Request,
     response: Response,
     db: Annotated[Session, Depends(get_session)],
@@ -131,8 +132,8 @@ def set_login_password(
     _ = Depends(check_login),
 ):
     # Check if demo
-    if int(db.get(AppConfig, "IS_DEMO").value):
-        raise HTTPException(status_code=405, detail="Operation not allowed. IS_DEMO=True")
+    if os.getenv("DEMO", "false").lower() == "true":
+        raise HTTPException(status_code=405, detail="This feature is restricted in the Demo version.")
 
     if not login.password:
         db.get(AppConfig, "LOGIN_PAGE").value = False

@@ -13,7 +13,7 @@ from .auth import check_login
 
 router = APIRouter(tags=["Recurring Transactions"], dependencies=[Depends(check_login)])
 
-@router.get("/recurring/", response_model=list[RecurringTransactionPublic])
+@router.get("/recurring", response_model=list[RecurringTransactionPublic])
 def read_recurring_transactions(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -29,7 +29,7 @@ def get_recurring_transaction_by_id(
     recurring_transaction = db.get(RecurringTransaction, recurring_transaction_id)
     return [recurring_transaction] if recurring_transaction else []
 
-@router.post("/recurring/", response_model=RecurringTransactionPublic)
+@router.post("/recurring", response_model=RecurringTransactionPublic)
 def create_recurring_transaction(
     recurring_transaction: RecurringTransactionCreate,
     db: Annotated[Session, Depends(get_session)]
@@ -98,7 +98,7 @@ def delete_recurring_transaction(
     # Return a success message
     return {"ok": True}
 
-def create_transactions_from_recurring(
+def create_transactions_from_recurring (
     recurring_transaction: RecurringTransaction,
     db: Session
 ):
@@ -129,7 +129,7 @@ def create_transactions_from_recurring(
         elif frequency == "yearly":
             current_date += relativedelta(years=1)
 
-def update_transactions_from_recurring(
+def update_transactions_from_recurring (
     recurring_transaction_id: UUID,
     recurring_transaction: RecurringTransactionUpdate,
     db: Session
@@ -153,7 +153,7 @@ def update_transactions_from_recurring(
             if key in transaction_fields:
                 setattr(transaction, key, value)
 
-def delete_transactions_from_recurring(
+def delete_transactions_from_recurring (
     recurring_transaction_id: UUID,
     recurring_transaction: RecurringTransactionDelete,
     db: Session

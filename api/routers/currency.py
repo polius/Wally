@@ -8,7 +8,7 @@ from .auth import check_login
 
 router = APIRouter(tags=["Currency"], dependencies=[Depends(check_login)])
 
-@router.get("/currency/", response_model=list[CurrencyPublic])
+@router.get("/currency", response_model=list[CurrencyPublic])
 def read_currency(
     db: Annotated[Session, Depends(get_session)]
 ):

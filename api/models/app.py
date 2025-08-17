@@ -6,7 +6,6 @@ DEFAULT_CONFIG = {
     "LOGIN_PAGE": False,
     "LOGIN_PASSWORD": "",
     "LOGIN_TOKEN": "",
-    "IS_DEMO": False,
 }
 
 class AppConfig(SQLModel, table=True):

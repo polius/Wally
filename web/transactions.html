@@ -400,7 +400,7 @@
     }
 
     async function getCategories() {
-      const response = await fetch(`${API_URL}/categories/`, {
+      const response = await fetch(`${API_URL}/categories`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -415,7 +415,7 @@
     }
 
     async function getTags() {
-      const response = await fetch(`${API_URL}/tags/`, {
+      const response = await fetch(`${API_URL}/tags`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -430,7 +430,7 @@
     }
 
     async function getCurrency() {
-      const response = await fetch(`${API_URL}/currency/`, {
+      const response = await fetch(`${API_URL}/currency`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -719,7 +719,7 @@
         monthHeaderAll.style.display = 'flex';
 
         // Fetch all transactions
-        const response = await fetch(`${API_URL}/transactions/`, {
+        const response = await fetch(`${API_URL}/transactions`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -869,7 +869,7 @@
       }
 
       try {
-        const response = await fetch(`${API_URL}/recurring/`, {
+        const response = await fetch(`${API_URL}/recurring`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -912,7 +912,7 @@
       data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
 
       try {
-        const response = await fetch(`${API_URL}/transactions/`, {
+        const response = await fetch(`${API_URL}/transactions`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -1054,7 +1054,7 @@
     // - AUTH -
     // --------
     async function checkLogin() {
-      const response = await fetch(`${API_URL}/login/check/`, {
+      const response = await fetch(`${API_URL}/login/check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -1069,7 +1069,7 @@
     }
 
     async function logout() {
-      await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
       window.location.href = '/login';
     }
   </script>

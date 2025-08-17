@@ -1,9 +1,11 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
 from .database import create_db_and_tables, engine
+from .demo import generate_demo
 from .routers import transactions, recurring_transactions, categories, tags, currency, auth
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
@@ -11,28 +13,34 @@ from .models.currency import Currency, DEFAULT_CURRENCIES
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create database and tables
-    create_db_and_tables()
+    # Demo version
+    if os.getenv("DEMO", "false").lower() == "true":
+        generate_demo()
 
-    # Init database session
-    with Session(engine) as db:
-        # Create default settings
-        for key, value in DEFAULT_CONFIG.items():
-            if not db.get(AppConfig, key):
-                db.add(AppConfig(key=key, value=value))
-        db.commit()
+    # Live version
+    else:
+        # Create database and tables
+        create_db_and_tables()
 
-        # Create default categories
-        for item in DEFAULT_CATEGORIES:
-            if not db.get(Category, item['name']):
-                db.add(Category(**item))
-        db.commit()
+        # Init database session
+        with Session(engine) as db:
+            # Create default settings
+            for key, value in DEFAULT_CONFIG.items():
+                if not db.get(AppConfig, key):
+                    db.add(AppConfig(key=key, value=value))
+            db.commit()
 
-        # Create default currencies
-        for item in DEFAULT_CURRENCIES:
-            if not db.get(Currency, item['name']):
-                db.add(Currency(**item))
-        db.commit()
+            # Create default categories
+            for item in DEFAULT_CATEGORIES:
+                if not db.get(Category, item['name']):
+                    db.add(Category(**item))
+            db.commit()
+
+            # Create default currencies
+            for item in DEFAULT_CURRENCIES:
+                if not db.get(Currency, item['name']):
+                    db.add(Currency(**item))
+            db.commit()
 
     yield  # App is running
 

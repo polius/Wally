@@ -9,7 +9,7 @@ from .auth import check_login
 
 router = APIRouter(tags=["Categories"], dependencies=[Depends(check_login)])
 
-@router.get("/categories/", response_model=list[str])
+@router.get("/categories", response_model=list[str])
 def read_categories(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -17,7 +17,7 @@ def read_categories(
     categories = db.exec(statement).all()
     return sorted([c.name for c in categories], key=str.lower)
 
-@router.post("/categories/", response_model=CategoryPublic)
+@router.post("/categories", response_model=CategoryPublic)
 def create_category(
     category: CategoryCreate,
     db: Annotated[Session, Depends(get_session)]

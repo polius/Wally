@@ -31,7 +31,7 @@ jobs:
           images: poliuscorp/wally
           tags: |
             latest 
-            github.ref_name
+            ${{ github.ref_name }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,9 +47,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: index.docker.io/poliuscorp/wally
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v2
+      #   with:
+      #     subject-name: index.docker.io/poliuscorp/wally
+      #     subject-digest: ${{ steps.push.outputs.digest }}
+      #     push-to-registry: true

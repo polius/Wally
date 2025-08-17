@@ -597,7 +597,7 @@
   }
 
   async function getCategories() {
-    const response = await fetch(`${API_URL}/categories/`, {
+    const response = await fetch(`${API_URL}/categories`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -612,7 +612,7 @@
   }
 
   async function getTags() {
-    const response = await fetch(`${API_URL}/tags/`, {
+    const response = await fetch(`${API_URL}/tags`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -627,7 +627,7 @@
   }
 
   async function getCurrency() {
-    const response = await fetch(`${API_URL}/currency/`, {
+    const response = await fetch(`${API_URL}/currency`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -649,13 +649,13 @@
       endpoint = `${API_URL}/transactions/date/${year}-${month}`;
     }
     else if (chartSelected == 'lastYear') {
-      endpoint = `${API_URL}/transactions/past-year/`;
+      endpoint = `${API_URL}/transactions/past-year`;
     }
     else if (chartSelected == 'yearToDate') {
-      endpoint = `${API_URL}/transactions/year-to-date/`;
+      endpoint = `${API_URL}/transactions/year-to-date`;
     }
     else if (chartSelected == 'allData') {
-      endpoint = `${API_URL}/transactions/`;
+      endpoint = `${API_URL}/transactions`;
     }
 
     try {
@@ -1118,7 +1118,7 @@
     }
 
     try {
-      const response = await fetch(`${API_URL}/recurring/`, {
+      const response = await fetch(`${API_URL}/recurring`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -1161,7 +1161,7 @@
     data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
 
     try {
-      const response = await fetch(`${API_URL}/transactions/`, {
+      const response = await fetch(`${API_URL}/transactions`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -1223,7 +1223,7 @@
   // - AUTH -
   // --------
   async function checkLogin() {
-    const response = await fetch(`${API_URL}/login/check/`, {
+    const response = await fetch(`${API_URL}/login/check`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -1238,7 +1238,7 @@
   }
 
   async function logout() {
-    await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+    await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
     window.location.href = '/login';
   }
 </script>

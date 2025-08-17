@@ -531,7 +531,7 @@
     }
 
     async function getCategories() {
-      const response = await fetch(`${API_URL}/categories/`, {
+      const response = await fetch(`${API_URL}/categories`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -547,7 +547,7 @@
     }
 
     async function getTags() {
-      const response = await fetch(`${API_URL}/tags/`, {
+      const response = await fetch(`${API_URL}/tags`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -563,7 +563,7 @@
     }
 
     async function getCurrency() {
-      const response = await fetch(`${API_URL}/currency/`, {
+      const response = await fetch(`${API_URL}/currency`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -579,7 +579,7 @@
     }
 
     async function getLogin() {
-      const response = await fetch(`${API_URL}/login/check/`, {
+      const response = await fetch(`${API_URL}/login/check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -670,7 +670,7 @@
 
       // Add new category
       try {
-        const response = await fetch(`${API_URL}/categories/`, {
+        const response = await fetch(`${API_URL}/categories`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -799,7 +799,7 @@
       const data = Object.fromEntries(formData.entries());
 
       try {
-        const response = await fetch(`${API_URL}/tags/`, {
+        const response = await fetch(`${API_URL}/tags`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -1006,7 +1006,7 @@
 
       // Enable login and change password
       try {
-        const response = await fetch(`${API_URL}/login/password/`, {
+        const response = await fetch(`${API_URL}/login/password`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -1050,7 +1050,7 @@
 
           // If mode is enable, login automatically
           if (mode == 'enable') {
-            await fetch(`${API_URL}/login/`, {
+            await fetch(`${API_URL}/login`, {
               method: 'POST',
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
@@ -1061,7 +1061,7 @@
 
           // If mode is disable, logout automatically
           else if (mode == 'disable') {
-            await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+            await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
             document.getElementById('logoutButton').style.display = 'none'
           }
 
@@ -1086,7 +1086,7 @@
     // -------------------
     async function exportToCSV() {
       try {
-        const response = await fetch(`${API_URL}/transactions/`, {
+        const response = await fetch(`${API_URL}/transactions`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -1161,7 +1161,7 @@
 
       // Send data
       try {
-        const response = await fetch(`${API_URL}/transactions/import/`, {
+        const response = await fetch(`${API_URL}/transactions/import`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -1203,7 +1203,7 @@
     });
 
     async function getRecurring() {
-      const response = await fetch(`${API_URL}/recurring/`, {
+      const response = await fetch(`${API_URL}/recurring`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -1520,7 +1520,7 @@
       }
 
       try {
-        const response = await fetch(`${API_URL}/recurring/`, {
+        const response = await fetch(`${API_URL}/recurring`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -1648,7 +1648,7 @@
     // - AUTH -
     // --------
     async function checkLogin() {
-      const response = await fetch(`${API_URL}/login/check/`, {
+      const response = await fetch(`${API_URL}/login/check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -1663,7 +1663,7 @@
     }
 
     async function logout() {
-      await fetch(`${API_URL}/logout/`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
       window.location.href = '/login';
     }
   </script>

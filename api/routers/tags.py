@@ -9,7 +9,7 @@ from .auth import check_login
 
 router = APIRouter(tags=["Tags"], dependencies=[Depends(check_login)])
 
-@router.get("/tags/", response_model=list[str])
+@router.get("/tags", response_model=list[str])
 def read_tags(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -17,7 +17,7 @@ def read_tags(
     tags = db.exec(statement).all()
     return sorted([t.name for t in tags], key=str.lower)
 
-@router.post("/tags/", response_model=TagPublic)
+@router.post("/tags", response_model=TagPublic)
 def create_tag(
     tag: TagCreate,
     db: Annotated[Session, Depends(get_session)]

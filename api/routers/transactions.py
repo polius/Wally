@@ -11,7 +11,7 @@ from .auth import check_login
 
 router = APIRouter(tags=["Transactions"], dependencies=[Depends(check_login)])
 
-@router.get("/transactions/", response_model=list[TransactionPublic])
+@router.get("/transactions", response_model=list[TransactionPublic])
 def read_transactions(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -45,7 +45,7 @@ def read_transactions_by_date(
     results = db.exec(stmt).all()
     return results
 
-@router.get("/transactions/past-year/", response_model=list[TransactionPublic])
+@router.get("/transactions/past-year", response_model=list[TransactionPublic])
 def get_transactions_past_year(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -61,7 +61,7 @@ def get_transactions_past_year(
     )
     return db.exec(stmt).all()
 
-@router.get("/transactions/year-to-date/", response_model=list[TransactionPublic])
+@router.get("/transactions/year-to-date", response_model=list[TransactionPublic])
 def get_transactions_ytd(
     db: Annotated[Session, Depends(get_session)]
 ):
@@ -78,7 +78,7 @@ def get_transactions_ytd(
     results = db.exec(stmt).all()
     return results
 
-@router.post("/transactions/", response_model=TransactionPublic)
+@router.post("/transactions", response_model=TransactionPublic)
 def create_transaction(
     transaction: TransactionCreate,
     db: Annotated[Session, Depends(get_session)]

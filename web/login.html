@@ -70,7 +70,7 @@
     checkLogin();
 
     async function checkLogin() {
-      const response = await fetch(`${API_URL}/login/check/`, {
+      const response = await fetch(`${API_URL}/login/check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -92,7 +92,7 @@
 
       // Perform login
       try {
-        const response = await fetch(`${API_URL}/login/`, {
+        const response = await fetch(`${API_URL}/login`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
