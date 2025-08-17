@@ -37,7 +37,7 @@ jobs:
         id: tag
         run: |
           SHORT_TAG="${GITHUB_REF_NAME:2}"
-          echo "SHORT_TAG=$SHORT_TAG" >> $GITHUB_ENV
+          echo "SHORT_TAG=$SHORT_TAG" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         id: push
@@ -48,7 +48,7 @@ jobs:
           push: true
           tags: |
             poliuscorp/wally:latest 
-            poliuscorp/wally:${{ env.SHORT_TAG }}
+            poliuscorp/wally:${{ steps.tag.outputs.short_tag }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
