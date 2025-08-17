@@ -1,5 +1,4 @@
 # docker buildx build --platform linux/arm64 -t wally:latest --compress --load .
-# docker run -d --name=wally -p 80:80 -v .:/wally/data wally
 
 # ==============================
 # Stage 1: Build Python dependencies
