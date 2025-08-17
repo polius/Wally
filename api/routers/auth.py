@@ -131,10 +131,6 @@ def set_login_password(
     db: Annotated[Session, Depends(get_session)],
     _ = Depends(check_login),
 ):
-    # Check if demo
-    if os.getenv("DEMO", "false").lower() == "true":
-        raise HTTPException(status_code=405, detail="This feature is restricted in the Demo version.")
-
     if not login.password:
         db.get(AppConfig, "LOGIN_PAGE").value = False
     else:
