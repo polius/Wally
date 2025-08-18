@@ -10,7 +10,7 @@
 <br>
 
 <p align="center">
-<b>Wally</b> is a lightweight, self-hosted expense tracker to easily manage your finances.
+<b>Wally</b> is a lightweight, self-hosted expense tracker that makes it easy to manage your finances.
 </p>
 
 <br>
