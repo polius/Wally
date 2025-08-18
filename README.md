@@ -1,8 +1,7 @@
 <p align="center">
-<img src="/web/assets/wally.png" alt="Wally Logo" width="140" height="150" /><br>
+<img src="/web/assets/wally.png" alt="Wally Logo" width="120" height="120" /><br>
+<h1 align="center" style="margin:0">Wally</h1>
 </p>
-
-<h1 align="center">Wally</h1><br>
 
 <p align="center">
 <a href="https://github.com/polius/Wally/actions/workflows/release.yml"><img src="https://github.com/polius/Wally/actions/workflows/release.yml/badge.svg" alt="Release"></a>&nbsp;<a href="https://github.com/polius/Wally/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/polius/Wally"></a>&nbsp;<a href="https://hub.docker.com/r/poliuscorp/wally"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/poliuscorp/wally"></a>
