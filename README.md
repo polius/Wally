@@ -1,6 +1,6 @@
 <div align="center">
-<img src="/web/assets/wally.png" alt="Wally Logo" width="120" height="120" /><br>
-<h1 align="center" style="margin:0">Wally</h1>
+<img src="/web/assets/wally.png" alt="Wally Logo" width="120" height="120" />
+<h1 align="center">Wally</h1>
 </div>
 
 <p align="center">
