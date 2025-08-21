@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     yield  # App is running
 
 # Init FastAPI
-app = FastAPI(title='Wally API', version='1.0.0', lifespan=lifespan, root_path="/api")
+app = FastAPI(title='Wally API', version='1.1', lifespan=lifespan, root_path="/api")
 
 # Allow your dev frontend origin
 app.add_middleware(
