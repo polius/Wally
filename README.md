@@ -73,6 +73,15 @@ Once deployed, use the web interface to do everything. Access it through your br
 
 [http://localhost/](http://localhost/)
 
+## Environment variables
+
+Wally supports the following environment variables:
+
+| Variable | Sample Value | Details |
+| --- | --- | --- |
+| DEMO | true | Pre-loads the app with random demo data |
+| HTTPS | true | Restricts authenticated API access to HTTPS only, ensuring authentication tokens are never sent over HTTP |
+
 ## Data Import / Export
 
 Wally supports CSV import/export. The file must contain the following columns:
