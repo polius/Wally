@@ -106,3 +106,19 @@ This can be done directly from the **Settings** page.
 ## Acknowledgement
 
 Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
+
+### Key Differences
+
+- **Login page**: An optional login page was added. This enhancement provides an additional layer of security for those who prefer to protect Wally with authentication.
+
+- **Dashboards page**: A "Change" button was introduced to switch between different graphs. Users can now view expense trends not only on a monthly basis but also across an entire year. This replaces the doughnut chart with a line graph, allowing tracking of a specific category (like Restaurants) over time.
+
+- **Transactions page**: The table was replaced with one built using AG Grid, adding search, column sorting, and per-column filtering. A footer was also added to display the total number of rows, total income, and total expenses for the current view.
+
+- **Recurring transactions**: Editing and deletion were enhanced, allowing users to specify whether changes apply to all existing transactions or only future ones.
+
+- **Backend rewrite**: The backend was rewritten from Go to Python using FastAPI. This change provides a built-in API with interactive documentation at http://localhost/api/docs, making it easier to integrate external tools or automate tasks.
+
+- **Dark theme improvements**: The dark mode color palette was refined for improved visual consistency and better contrast, resulting in a more balanced and neutral appearance.
+
+- **Storage changes**: Wally uses SQLite as its data storage solution, while ExpenseOwl offers either JSON files or PostgreSQL. For the type and scale of data this application handles, SQLite was selected as a more suitable and efficient choice.
