@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .demo import generate_demo
@@ -10,6 +10,8 @@ from .routers import transactions, recurring_transactions, categories, tags, cur
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
+
+VERSION = "1.2"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,11 +32,10 @@ async def lifespan(app: FastAPI):
                     db.add(AppConfig(key=key, value=value))
             db.commit()
 
-            # Create default categories
-            for item in DEFAULT_CATEGORIES:
-                if not db.get(Category, item['name']):
-                    db.add(Category(**item))
-            db.commit()
+            # Create default categories if table is empty
+            if not db.exec(select(Category).limit(1)).first():
+                db.bulk_insert_mappings(Category, DEFAULT_CATEGORIES)
+                db.commit()
 
             # Create default currencies
             for item in DEFAULT_CURRENCIES:
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI):
     yield  # App is running
 
 # Init FastAPI
-app = FastAPI(title='Wally API', version='1.1', lifespan=lifespan, root_path="/api")
+app = FastAPI(title='Wally API', version=VERSION, lifespan=lifespan, root_path="/api")
 
 # Allow your dev frontend origin
 app.add_middleware(
@@ -70,6 +71,11 @@ async def root():
     return {"message": "Welcome to Wally API!"}
 
 # Add health check route
-@app.get("/health/", tags=["Root"])
+@app.get("/health", tags=["Root"])
 async def health_check():
     return {"status": "ok", "message": "Wally API is running!"}
+
+# Add health check route
+@app.get("/version", tags=["Root"])
+async def version():
+    return {"version": VERSION}
