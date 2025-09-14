@@ -564,7 +564,8 @@
           {
             field: "date",
             valueFormatter: (params) => {
-              const date = new Date(params.value);
+              const [year, month, day] = params.value.split("-");
+              const date = new Date(Number(year), Number(month) - 1, Number(day));
               return new Intl.DateTimeFormat('en-US', {
                 weekday: 'short',  // "Mon"
                 month: 'short',    // "Aug"
@@ -812,7 +813,7 @@
       document.getElementById('transactionForm').reset();
       document.getElementById('categorySelect').value = "";
       tagsInput.setValue([]);
-      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
       document.getElementById('recurringElement').style.display = 'block';
       toggleRecurring(false);
     }
@@ -1037,7 +1038,7 @@
       if (enabled) {
         recurringDiv.style.display = 'block';
         date.disabled = true;
-        startDate.value = new Date().toISOString().split('T')[0];
+        startDate.value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
         startDate.required = true;
         endDate.required = true;
         frequencySelect.required = true;
