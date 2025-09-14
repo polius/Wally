@@ -1499,7 +1499,7 @@
         tagsInput.addOption({ value: tag, text: tag }, user_created=false);
       });
       tagsInput.setValue([]);
-      document.getElementById('startDateInput').value = new Date().toISOString().split('T')[0]; // Set to today
+      document.getElementById('startDateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
       document.getElementById('startDateInput').disabled = false;
       document.getElementById('recurringModalApplyTo').style.display = 'none';
     }
