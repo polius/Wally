@@ -113,7 +113,7 @@
 
     main.container {
       padding-top: 1rem;
-      padding-bottom: 1rem;
+      padding-bottom: 0rem;
     }
 
     /* Chart styles */
@@ -218,21 +218,21 @@
     }
 
     .cashflow-item.income {
-      background-color: rgba(52, 211, 153, 0.1);
+      background-color: rgba(52, 211, 153, 0.15);
     }
 
     .cashflow-item.expenses {
-      background-color: rgba(239, 68, 68, 0.1);
+      background-color: rgba(239, 68, 68, 0.15);
     }
 
     .cashflow-item.balance {
-      background-color: rgba(251, 191, 36, 0.1);
+      background-color: rgba(244, 162, 22, 0.17);
     }
 
     .cashflow-label {
       font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
     }
 
     .cashflow-value {
@@ -245,7 +245,7 @@
     }
 
     .cashflow-value.negative {
-      color: #EF4444;
+      color: #f34c4c;
     }
 
     @media (max-width: 768px) {
@@ -305,7 +305,7 @@
       }
 
       .cashflow-label {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0rem;
       }
     }
   </style>
@@ -390,14 +390,17 @@
     <div id="cashflow-section" class="cashflow-container" style="display: none">
       <div class="cashflow-item income">
         <div class="cashflow-label">Income</div>
+        <hr style="margin: 0.5rem 0; border: none; height: 1px; background-color: #34d399;">
         <div class="cashflow-value" id="cashflow-income"></div>
       </div>
       <div class="cashflow-item expenses">
         <div class="cashflow-label">Expenses</div>
+        <hr style="margin: 0.5rem 0; border: none; height: 1px; background-color: #ef4444;">
         <div class="cashflow-value" id="cashflow-expenses"></div>
       </div>
       <div class="cashflow-item balance">
         <div class="cashflow-label">Balance</div>
+        <hr style="margin: 0.5rem 0; border: none; height: 1px; background-color: #ffa200;">
         <div class="cashflow-value" id="cashflow-balance"></div>
       </div>
     </div>
@@ -413,9 +416,21 @@
           <div class="modal-body">
             <p>Select a dashboard to view:</p>
             <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="oneMonth" id="oneMonthRadio" checked>
-              <label class="form-check-label" for="oneMonthRadio">
-                One Month
+              <input class="form-check-input" type="radio" name="range" value="currentMonth" id="currentMonthRadio" checked>
+              <label class="form-check-label" for="currentMonthRadio">
+                Current Month
+              </label>
+            </div>
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="radio" name="range" value="lastThreeMonths" id="lastThreeMonthsRadio">
+              <label class="form-check-label" for="lastThreeMonthsRadio">
+                Last 3 Months
+              </label>
+            </div>
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="radio" name="range" value="lastSixMonths" id="lastSixMonthsRadio">
+              <label class="form-check-label" for="lastSixMonthsRadio">
+                Last 6 Months
               </label>
             </div>
             <div class="form-check mb-1">
@@ -569,7 +584,7 @@
   let currency;
 
   let chart;
-  let chartSelected = "oneMonth";
+  let chartSelected = "currentMonth";
   let chartDisabledFields = new Set();
 
   let tagsInput;
@@ -643,10 +658,16 @@
 
   async function getTransactions() {
     let endpoint;
-    if (chartSelected == 'oneMonth') {
+    if (chartSelected == 'currentMonth') {
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const year = currentDate.getFullYear();
       endpoint = `${API_URL}/transactions/date/${year}-${month}`;
+    }
+    else if (chartSelected == 'lastThreeMonths') {
+      endpoint = `${API_URL}/transactions/past-3-months`;
+    }
+    else if (chartSelected == 'lastSixMonths') {
+      endpoint = `${API_URL}/transactions/past-6-months`;
     }
     else if (chartSelected == 'lastYear') {
       endpoint = `${API_URL}/transactions/past-year`;
@@ -655,7 +676,7 @@
       endpoint = `${API_URL}/transactions/year-to-date`;
     }
     else if (chartSelected == 'allData') {
-      endpoint = `${API_URL}/transactions`;
+      endpoint = `${API_URL}/transactions/to-date`;
     }
 
     try {
@@ -746,7 +767,7 @@
   function updateChart(data) {
     if (chart) chart.destroy();
 
-    if (chartSelected == 'oneMonth') {
+    if (chartSelected == 'currentMonth') {
       chart = new Chart('chartCanvas', {
         type: 'doughnut',
         data: {
@@ -784,7 +805,9 @@
     else {
       // Compute labels based on the selected range
       let range;
-      if (chartSelected === 'lastYear') range = getLast12Months();
+      if (chartSelected === 'lastThreeMonths') range = getLastNMonths(3);
+      else if (chartSelected === 'lastSixMonths') range = getLastNMonths(6);
+      else if (chartSelected === 'lastYear') range = getLastNMonths(12);
       else if (chartSelected === 'yearToDate') range = getYearToDate();
       else if (chartSelected === 'allData') range = getAllMonths(data);
 
@@ -886,7 +909,7 @@
       })
       .forEach(label => {
         const categoryData = labelMap.get(label);
-        const color = chartSelected === 'oneMonth'
+        const color = chartSelected === 'currentMonth'
           ? chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)]
           :  chart.data.datasets.find(x => x.label === label)?.backgroundColor;
         const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
@@ -911,9 +934,8 @@
 
     legendContainer.insertAdjacentHTML('beforeend', `
       <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--bs-border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span>Total:</span>
-          <span class="amount">${formatCurrency(activeTotal)}</span>
+        <div style="display: flex; justify-content: flex-end; align-items: center;">
+          <span class="amount">Total: <span style="font-weight: bold">${formatCurrency(activeTotal)}</span></span>
         </div>
       </div>
     `);
@@ -946,7 +968,7 @@
     // Update header
     const monthHeader = document.getElementById('monthHeader');
     const monthHeaderAll = document.getElementById('monthHeaderAll');
-    if (chartSelected == 'oneMonth') {
+    if (chartSelected == 'currentMonth') {
       monthHeader.style.display = 'flex';
       monthHeaderAll.style.display = 'none';
     }
@@ -954,6 +976,8 @@
       monthHeader.style.display = 'none';
       monthHeaderAll.style.display = 'flex';
       const mapRange = {
+        "lastThreeMonths": "Last 3 Months",
+        "lastSixMonths": "Last 6 Months",
         "lastYear": "Last 12 Months",
         "yearToDate": "Year to Date",
         "allData": "All Data"
@@ -970,18 +994,17 @@
     modal.hide();
   }
 
-  function getLast12Months() {
-    // Generate previous 12 months including current month
+  function getLastNMonths(n) {
+    // Generate previous n months including current month
     const months = [];
     const today = new Date();
-    
-    for (let i = 11; i >= 0; i--) {
+
+    for (let i = n - 1; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const month = String(d.getMonth() + 1).padStart(2, '0');
       months.push(`${d.getFullYear()}-${month}`);
     }
-
-    return months
+    return months;
   }
 
   function getYearToDate() {

@@ -45,6 +45,38 @@ def read_transactions_by_date(
     results = db.exec(stmt).all()
     return results
 
+@router.get("/transactions/past-3-months", response_model=list[TransactionPublic])
+def get_transactions_past_3_months(
+    db: Annotated[Session, Depends(get_session)]
+):
+    today = date.today()
+    first_day = (today.replace(day=1) - relativedelta(months=3))
+    next_month = (today.replace(day=1) + relativedelta(months=1))
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.date))
+    )
+    return db.exec(stmt).all()
+
+@router.get("/transactions/past-6-months", response_model=list[TransactionPublic])
+def get_transactions_past_6_months(
+    db: Annotated[Session, Depends(get_session)]
+):
+    today = date.today()
+    first_day = (today.replace(day=1) - relativedelta(months=6))
+    next_month = (today.replace(day=1) + relativedelta(months=1))
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.date))
+    )
+    return db.exec(stmt).all()
+
 @router.get("/transactions/past-year", response_model=list[TransactionPublic])
 def get_transactions_past_year(
     db: Annotated[Session, Depends(get_session)]
@@ -72,6 +104,21 @@ def get_transactions_ytd(
     stmt = (
         select(Transaction)
         .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.created_date))
+    )
+    results = db.exec(stmt).all()
+    return results
+
+@router.get("/transactions/to-date", response_model=list[TransactionPublic])
+def get_transactions_to_date(
+    db: Annotated[Session, Depends(get_session)]
+):
+    today = date.today()
+    next_month = (today.replace(day=1) + relativedelta(months=1))
+
+    stmt = (
+        select(Transaction)
         .where(Transaction.date < next_month)
         .order_by(desc(Transaction.created_date))
     )
@@ -122,7 +169,7 @@ def import_transactions(
 ):
     if not transactions:
         raise HTTPException(status_code=400, detail="No transactions to import")
-    
+
     for transaction in transactions:
         new_transaction = Transaction.model_validate(transaction)
         db.add(new_transaction)
