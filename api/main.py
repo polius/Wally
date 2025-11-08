@@ -11,7 +11,7 @@ from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 
-VERSION = "1.4"
+VERSION = "1.5"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

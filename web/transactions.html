@@ -89,6 +89,20 @@
       padding-bottom: 4px;
     }
 
+    /* Hide button text on small screens */
+    @media (max-width: 768px) {
+      .action-button-text {
+        display: none !important;
+      }
+      .action-button-mobile {
+        width: 32px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-right: 4px !important;
+        margin-left: 4px !important;
+      }
+    }
+
     .ag-header-cell-label {
       font-weight: 600;
     }
@@ -149,6 +163,47 @@
       min-height: 0;
       width: 100%;
     }
+
+    .btn-action {
+      font-size: 0.9rem;
+      height: 40px;
+      border-radius: 100px;
+      white-space: nowrap;
+      width: 150px;
+    }
+
+    .btn-action svg {
+      margin-right: 8px;
+    }
+
+    /* Mobile: Compact when delete button is shown */
+    @media (max-width: 767px) {
+      .compact-buttons .btn-action {
+        font-size: 0.8rem;
+        height: 36px;
+        width: 120px;
+      }
+
+      .compact-buttons .btn-action svg {
+        width: 13px;
+        height: 13px;
+        margin-right: 6px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .compact-buttons .btn-action {
+        font-size: 0.75rem;
+        height: 34px;
+        width: 105px;
+      }
+
+      .compact-buttons .btn-action svg {
+        width: 12px;
+        height: 12px;
+        margin-right: 5px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -206,17 +261,26 @@
     </div>
 
     <!-- Action buttons -->
-    <div class="d-flex justify-content-center align-items-center mb-4" style="margin-top: 25px">
-      <button type="button" class="btn btn-success" style="font-size: 0.9rem; margin-right:5px; width: 150px; height:40px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
+    <div id="actionButtonsContainer" class="d-flex flex-wrap justify-content-center align-items-center mb-4" style="margin-top: 20px; gap: 5px;">
+      <button type="button" class="btn btn-success d-flex align-items-center justify-content-center btn-action" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor">
           <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
         </svg>
-        Add
+        <span class="btn-text">Add</span>
+      </button>
+      <button id="deleteSelectedBtn" type="button" class="btn btn-danger align-items-center justify-content-center btn-action" style="display:none;" onclick="deleteSelectedTransactions()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor">
+          <path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/>
+        </svg>
+        <span class="btn-text">Delete (</span><span id="selectedCount">0</span><span class="btn-text">)</span>
       </button>
       <div class="d-flex justify-content-center">
-        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center" style="user-select:none; cursor:pointer; font-size: 0.9rem; margin-left:5px; width: 150px; height:40px; border-radius: 100px">
-          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; margin-right:2px;" onchange="getTransactions()" />
-          Show All
+        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center btn-action" style="user-select:none; cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
+            <path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/>
+          </svg>
+          <span class="btn-text">Show All</span>
+          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; display: none;" onchange="getTransactions()" />
         </label>
       </div>
     </div>
@@ -231,7 +295,7 @@
 
     <!-- AG Grid Table Footer -->
     <div id="myGridFooter" class="mt-3" style="text-align: center; font-size: 0.9rem; font-weight: 400">
-      Rows: <span id="rowCount" style="font-weight: 500; color:#007AFF">0</span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> Income: <span id="incomeAmount" style="font-weight: 500; color: #198754">0</span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> Expense: <span id="expenseAmount" style="font-weight: 500; color:#ea4152">0</span>
+      <span style="white-space: nowrap;">Rows: <span id="rowCount" style="font-weight: 500; color:#007AFF">0</span></span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> <span style="white-space: nowrap;">Income: <span id="incomeAmount" style="font-weight: 500; color: #198754">0</span></span> <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span> <span style="white-space: nowrap;">Expense: <span id="expenseAmount" style="font-weight: 500; color:#ea4152">0</span></span>
     </div>
   </main>
 
@@ -340,6 +404,25 @@
         </div>
         <div class="modal-body">
           Are you sure you want to delete this transaction?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transaction Modal Delete Multiple -->
+  <div class="modal fade" id="transactionModalDeleteMultiple" tabindex="-1" aria-labelledby="transactionModalDeleteMultipleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="submitTransactionDeleteMultiple(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="transactionModalDeleteMultipleLabel">Delete Transactions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete <strong><span id="deleteMultipleCount">0</span></strong> transaction<span id="deleteMultiplePlural">s</span>?
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
@@ -512,6 +595,8 @@
         theme: myTheme,
         suppressMovableColumns: true,
         rowData: [],
+        rowSelection: 'multiple',
+        suppressRowClickSelection: true,
         defaultColDef: {
           flex: 1,
           minWidth: 150,
@@ -523,7 +608,20 @@
         onFilterChanged: params => {
           updateFooter(params.api);
         },
+        onSelectionChanged: () => {
+          updateDeleteButton();
+        },
         columnDefs: [
+          {
+            headerCheckboxSelection: true,
+            checkboxSelection: true,
+            width: 50,
+            minWidth: 50,
+            maxWidth: 50,
+            suppressMenu: true,
+            filter: false,
+            resizable: false,
+          },
           {
             field: "name",
             filter: true,
@@ -615,32 +713,34 @@
 
               // Edit button
               const editButton = document.createElement("span");
+              editButton.className = "action-button-mobile";
               editButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16.5" height="16.5" fill="currentColor" style="display: inline-block; vertical-align: middle;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
                   <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
                 </svg>
+                <span class="action-button-text" style="margin-left: 6px; font-size: 14px;">Edit</span>
               `;
               editButton.style.display = "flex";
               editButton.style.justifyContent = "center";
               editButton.style.alignItems = "center";
-              editButton.style.width = "35px";
-              editButton.style.height = "35px";
-              editButton.style.borderRadius = "50%";
+              editButton.style.height = "32px";
+              editButton.style.paddingLeft = "8px";
+              editButton.style.paddingRight = "10px";
+              editButton.style.borderRadius = "6px";
               editButton.style.cursor = "pointer";
-              editButton.style.marginRight = "1px";
-              editButton.style.color = "#007AFF"; // black
-              editButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
+              editButton.style.marginRight = "8px";
+              editButton.style.color = "#3d8bfd";
+              editButton.style.transition = "all 0.2s ease";
               editButton.style.backgroundColor = "transparent";
               editButton.style.lineHeight = "0";
-              editButton.style.filter = "opacity(0.8)";
               editButton.title = "Edit Transaction";
 
               editButton.addEventListener("mouseenter", () => {
-                editButton.style.color = "#0051CC";
-                editButton.style.backgroundColor = "#cce4ff";
+                editButton.style.color = "#0d6efd";
+                editButton.style.backgroundColor = "rgba(13, 110, 253, 0.15)";
               });
               editButton.addEventListener("mouseleave", () => {
-                editButton.style.color = "#007AFF" // "black";
+                editButton.style.color = "#3d8bfd";
                 editButton.style.backgroundColor = "transparent";
               });
               editButton.addEventListener("click", () => {
@@ -650,32 +750,34 @@
 
               // Delete button
               const deleteButton = document.createElement("span");
+              deleteButton.className = "action-button-mobile";
               deleteButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="15" height="15" fill="currentColor" style="display: inline-block; vertical-align: middle;">
                   <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
                 </svg>
+                <span class="action-button-text" style="margin-left: 6px; font-size: 14px;">Delete</span>
               `;
               deleteButton.style.display = "flex";
               deleteButton.style.justifyContent = "center";
               deleteButton.style.alignItems = "center";
-              deleteButton.style.width = "35px";
-              deleteButton.style.height = "35px";
-              deleteButton.style.borderRadius = "50%";
+              deleteButton.style.height = "32px";
+              deleteButton.style.paddingLeft = "8px";
+              deleteButton.style.paddingRight = "10px";
+              deleteButton.style.borderRadius = "6px";
               deleteButton.style.cursor = "pointer";
-              deleteButton.style.marginLeft = "1px";
-              deleteButton.style.color = "#ea4152" // "black";
-              deleteButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
+              deleteButton.style.marginLeft = "8px";
+              deleteButton.style.color = "#e35d6a";
+              deleteButton.style.transition = "all 0.2s ease";
               deleteButton.style.backgroundColor = "transparent";
               deleteButton.style.lineHeight = "0";
-              deleteButton.style.filter = "opacity(0.8)";
               deleteButton.title = "Delete Transaction";
 
               deleteButton.addEventListener("mouseenter", () => {
-                deleteButton.style.color = "red";
-                deleteButton.style.backgroundColor = "#ffc9c9";
+                deleteButton.style.color = "#dc3545";
+                deleteButton.style.backgroundColor = "rgba(220, 53, 69, 0.15)";
               });
               deleteButton.addEventListener("mouseleave", () => {
-                deleteButton.style.color = "#FF3B30" // "black";
+                deleteButton.style.color = "#e35d6a";
                 deleteButton.style.backgroundColor = "transparent";
               });
               deleteButton.addEventListener("click", () => {
@@ -1048,6 +1150,82 @@
         startDate.required = false;
         endDate.required = false;
         frequencySelect.required = false;
+      }
+    }
+
+    function updateDeleteButton() {
+      const selectedRows = gridApi.getSelectedRows();
+      const deleteBtn = document.getElementById('deleteSelectedBtn');
+      const selectedCount = document.getElementById('selectedCount');
+      const container = document.getElementById('actionButtonsContainer');
+      
+      if (selectedRows.length > 0) {
+        deleteBtn.classList.add('d-flex');
+        deleteBtn.style.display = '';
+        selectedCount.textContent = selectedRows.length;
+        container.classList.add('compact-buttons');
+      } else {
+        deleteBtn.classList.remove('d-flex');
+        deleteBtn.style.display = 'none';
+        container.classList.remove('compact-buttons');
+      }
+    }
+
+    function deleteSelectedTransactions() {
+      const selectedRows = gridApi.getSelectedRows();
+      const count = selectedRows.length;
+      
+      document.getElementById('deleteMultipleCount').textContent = count;
+      document.getElementById('deleteMultiplePlural').textContent = count === 1 ? '' : 's';
+      
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModalDeleteMultiple'));
+      modal.show();
+    }
+
+    async function submitTransactionDeleteMultiple(event) {
+      event.preventDefault();
+
+      const selectedRows = gridApi.getSelectedRows();
+      const transactionIds = selectedRows.map(row => row.id);
+
+      try {
+        const deletePromises = transactionIds.map(id =>
+          fetch(`${API_URL}/transactions/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+          })
+        );
+
+        const responses = await Promise.all(deletePromises);
+
+        // Check if any request failed
+        const failedResponse = responses.find(r => !r.ok);
+        if (failedResponse) {
+          if (failedResponse.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+          throw new Error("An error occurred while deleting transactions.");
+        }
+
+        // Hide the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDeleteMultiple'));
+        modal.hide();
+
+        // Show toast
+        const count = transactionIds.length;
+        bootstrap.showToast({
+          body: `${count} transaction${count === 1 ? '' : 's'} deleted.`,
+          delay: 1000,
+          position: "top-0 start-50 translate-middle-x",
+          toastClass: "text-bg-success"
+        });
+
+        // Refresh the grid
+        getTransactions();
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 

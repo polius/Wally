@@ -22,5 +22,8 @@ class Category(CategoryBase, table=True):
 class CategoryCreate(CategoryBase):
     pass
 
+class CategoryUpdate(CategoryBase):
+    pass
+
 class CategoryPublic(CategoryBase):
     pass

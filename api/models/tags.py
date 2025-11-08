@@ -9,5 +9,8 @@ class Tag(TagBase, table=True):
 class TagCreate(TagBase):
     pass
 
+class TagUpdate(TagBase):
+    pass
+
 class TagPublic(TagBase):
     pass

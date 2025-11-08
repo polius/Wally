@@ -75,6 +75,25 @@
     .text-red {
       color: #dc3545;
     }
+
+    /* Toast width customization */
+    .toast {
+      min-width: 250px;
+      max-width: 350px;
+    }
+
+    /* Wider toasts for error messages */
+    .toast.text-bg-danger {
+      min-width: 400px;
+      max-width: 600px;
+      width: max-content;
+    }
+
+    /* Ensure toast body wraps text properly */
+    .toast-body {
+      word-wrap: break-word;
+      white-space: normal;
+    }
   </style>
 </head>
 
@@ -240,6 +259,56 @@
     </div>
   </main>
 
+  <!-- Category Modal Actions -->
+  <div class="modal fade" id="categoryModalActions" tabindex="-1" aria-labelledby="categoryModalActionsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModalActionsLabel">
+            <strong id="categoryModalActionsName"></strong>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-primary" style="flex: 1;" onclick="openEditCategoryModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+                <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
+              </svg>
+              Edit
+            </button>
+            <button type="button" class="btn btn-danger" style="flex: 1;" onclick="openDeleteCategoryModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+                <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal Edit -->
+  <div class="modal fade" id="categoryModalEdit" tabindex="-1" aria-labelledby="categoryModalEditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="editCategorySubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModalEditLabel">Edit Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="categoryEditInput" class="form-label">Category Name</label>
+          <input type="text" class="form-control" id="categoryEditInput" name="name" placeholder="Enter new name" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Category Modal Delete -->
   <div class="modal fade" id="categoryModalDelete" tabindex="-1" aria-labelledby="categoryModalDeleteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -249,11 +318,67 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Are you sure you want to delete this category?
+          <p>Are you sure you want to delete the category <strong id="categoryModalDeleteName"></strong>?</p>
+          <div class="alert alert-light mb-0" style="font-size: 0.9rem; border: 1px solid #dee2e6;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="#6c757d" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+              <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+            </svg>
+            This will only work if there are no transactions using this category.
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
           <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tag Modal Actions -->
+  <div class="modal fade" id="tagModalActions" tabindex="-1" aria-labelledby="tagModalActionsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tagModalActionsLabel">
+            <strong id="tagModalActionsName"></strong>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-primary" style="flex: 1;" onclick="openEditTagModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+                <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
+              </svg>
+              Edit
+            </button>
+            <button type="button" class="btn btn-danger" style="flex: 1;" onclick="openDeleteTagModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+                <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tag Modal Edit -->
+  <div class="modal fade" id="tagModalEdit" tabindex="-1" aria-labelledby="tagModalEditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="editTagSubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tagModalEditLabel">Edit Tag</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="tagEditInput" class="form-label">Tag Name</label>
+          <input type="text" class="form-control" id="tagEditInput" name="name" placeholder="Enter new name" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px">Update</button>
         </div>
       </form>
     </div>
@@ -268,7 +393,13 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Are you sure you want to delete this tag?
+          <p>Are you sure you want to delete the tag <strong id="tagModalDeleteName"></strong>?</p>
+          <div class="alert alert-light mb-0" style="font-size: 0.9rem; border: 1px solid #dee2e6;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="#6c757d" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
+              <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+            </svg>
+            This tag will be removed from all transactions.
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
@@ -635,6 +766,90 @@
     // --------------
     // - CATEGORIES -
     // --------------
+    document.getElementById('categoryModalEdit').addEventListener('shown.bs.modal', () => {
+      document.getElementById('categoryEditInput').focus();
+    });
+
+    function openCategoryActionsModal(category) {
+      // Store selected category
+      categorySelected = category;
+
+      // Update modal with category name
+      document.getElementById('categoryModalActionsName').textContent = category;
+
+      // Show modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalActions'));
+      modal.show();
+    }
+
+    function openEditCategoryModal() {
+      // Hide actions modal
+      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
+      actionsModal.hide();
+
+      // Set the current name in the edit input
+      document.getElementById('categoryEditInput').value = categorySelected;
+
+      // Show edit modal
+      const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalEdit'));
+      editModal.show();
+    }
+
+    function openDeleteCategoryModal() {
+      // Hide actions modal
+      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
+      actionsModal.hide();
+
+      // Update delete modal with category name
+      document.getElementById('categoryModalDeleteName').textContent = categorySelected;
+
+      // Show delete modal
+      const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
+      deleteModal.show();
+    }
+
+    async function editCategorySubmit(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalEdit'));
+          modal.hide();
+
+          // Show toast with info about transaction updates
+          bootstrap.showToast({body: 'Category updated successfully.', delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the categories
+          categories = await getCategories();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
     async function renderCategories(categories) {
       const container = document.getElementById('categoryBadges');
       container.innerHTML = ''; // clear previous badges
@@ -652,25 +867,26 @@
           const badge = document.createElement('span');
           badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
           badge.style.height = '34px';
+          badge.style.paddingLeft = '12px';
+          badge.style.paddingRight = '12px';
+          badge.style.fontSize = '0.9rem';
+          badge.style.fontWeight = '400';
+          badge.style.cursor = 'pointer';
+          badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
+          badge.textContent = category;
 
-          // Create inner span for text with padding and font styles
-          const textSpan = document.createElement('span');
-          textSpan.style.paddingLeft = '6px';
-          textSpan.style.paddingRight = '2px';
-          textSpan.style.fontSize = '0.9rem';
-          textSpan.style.fontWeight = '400';
-          textSpan.textContent = category;
+          // Add hover effect
+          badge.addEventListener('mouseenter', function() {
+            badge.style.opacity = '0.8';
+            badge.style.transform = 'scale(1.05)';
+          });
+          badge.addEventListener('mouseleave', function() {
+            badge.style.opacity = '1';
+            badge.style.transform = 'scale(1)';
+          });
 
-          // Create close button
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn-close btn-close-dark btn-sm ms-2';
-          btn.setAttribute('aria-label', 'Close');
-          btn.onclick = function() { deleteCategory(category) };
-
-          // Append text and button to badge
-          badge.appendChild(textSpan);
-          badge.appendChild(btn);
+          // Open actions modal on click
+          badge.onclick = function() { openCategoryActionsModal(category) };
 
           // Append badge to container
           container.appendChild(badge);
@@ -743,6 +959,9 @@
       // Store selected category
       categorySelected = category;
 
+      // Update delete modal with category name
+      document.getElementById('categoryModalDeleteName').textContent = categorySelected;
+
       // Show modal
       const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
       modal.show();
@@ -766,6 +985,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          if (response.status === 400) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -781,13 +1001,97 @@
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
     // --------
     // - TAGS -
     // --------
+    document.getElementById('tagModalEdit').addEventListener('shown.bs.modal', () => {
+      document.getElementById('tagEditInput').focus();
+    });
+
+    function openTagActionsModal(tag) {
+      // Store selected tag
+      tagSelected = tag;
+
+      // Update modal with tag name
+      document.getElementById('tagModalActionsName').textContent = tag;
+
+      // Show modal
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalActions'));
+      modal.show();
+    }
+
+    function openEditTagModal() {
+      // Hide actions modal
+      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
+      actionsModal.hide();
+
+      // Set the current name in the edit input
+      document.getElementById('tagEditInput').value = tagSelected;
+
+      // Show edit modal
+      const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalEdit'));
+      editModal.show();
+    }
+
+    function openDeleteTagModal() {
+      // Hide actions modal
+      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
+      actionsModal.hide();
+
+      // Update delete modal with tag name
+      document.getElementById('tagModalDeleteName').textContent = tagSelected;
+
+      // Show delete modal
+      const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
+      deleteModal.show();
+    }
+
+    async function editTagSubmit(event) {
+      event.preventDefault();
+
+      // Get form data
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const json = await response.json()
+
+        if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
+          throw new Error("An error occurred.")
+        }
+        else {
+          // Hide the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalEdit'));
+          modal.hide();
+
+          // Show toast with info about transaction updates
+          bootstrap.showToast({body: 'Tag updated successfully.', delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+
+          // Refresh the tags
+          tags = await getTags();
+        }
+      }
+      catch (error) {
+        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+      }
+    }
     async function renderTags(tags) {
       const container = document.getElementById('tagBadges');
       container.innerHTML = ''; // clear previous badges
@@ -805,25 +1109,26 @@
           const badge = document.createElement('span');
           badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
           badge.style.height = '34px';
+          badge.style.paddingLeft = '12px';
+          badge.style.paddingRight = '12px';
+          badge.style.fontSize = '0.9rem';
+          badge.style.fontWeight = '400';
+          badge.style.cursor = 'pointer';
+          badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
+          badge.textContent = tag;
 
-          // Create inner span for text with padding and font styles
-          const textSpan = document.createElement('span');
-          textSpan.style.paddingLeft = '6px';
-          textSpan.style.paddingRight = '2px';
-          textSpan.style.fontSize = '0.9rem';
-          textSpan.style.fontWeight = '400';
-          textSpan.textContent = tag;
+          // Add hover effect
+          badge.addEventListener('mouseenter', function() {
+            badge.style.opacity = '0.8';
+            badge.style.transform = 'scale(1.05)';
+          });
+          badge.addEventListener('mouseleave', function() {
+            badge.style.opacity = '1';
+            badge.style.transform = 'scale(1)';
+          });
 
-          // Create close button
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn-close btn-close-dark btn-sm ms-2';
-          btn.setAttribute('aria-label', 'Close');
-          btn.onclick = function() { deleteTag(tag) };
-
-          // Append text and button to badge
-          badge.appendChild(textSpan);
-          badge.appendChild(btn);
+          // Open actions modal on click
+          badge.onclick = function() { openTagActionsModal(tag) };
 
           // Append badge to container
           container.appendChild(badge);
@@ -872,6 +1177,9 @@
       // Store selected tag
       tagSelected = tag;
 
+      // Update delete modal with tag name
+      document.getElementById('tagModalDeleteName').textContent = tagSelected;
+
       // Show modal
       const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
       modal.show();
@@ -895,6 +1203,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          if (response.status === 400) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -903,14 +1212,14 @@
           modal.hide();
 
           // Show toast
-          bootstrap.showToast({body: 'Tag deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+          bootstrap.showToast({body: 'Tag deleted.', delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
           // Refresh the tags
           tags = await getTags();
         }
       }
       catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+        bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
       }
     }
 
