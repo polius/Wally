@@ -1,4 +1,6 @@
-# docker buildx build --platform linux/arm64 -t wally:latest --compress --load .
+# Development
+# docker buildx build -t wally:latest --compress --load .
+# docker run --rm -v $(pwd)/api:/wally/api -v $(pwd)/web:/wally/web -e DEMO=true -p 80:80 wally
 
 # ==============================
 # Stage 1: Build Python dependencies

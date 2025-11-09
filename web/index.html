@@ -41,6 +41,11 @@
     body {
       margin: 0;
       padding: 0;
+      overflow-x: hidden;
+    }
+
+    html {
+      overflow-x: hidden;
     }
 
     :root[data-bs-theme="light"] {
@@ -211,6 +216,7 @@
       margin-top: 1rem;
       margin-bottom: 0rem;
       align-items: stretch;
+      padding: 0;
     }
 
     .cashflow-item {
@@ -348,6 +354,7 @@
       .chart-box {
         max-height: 250px;
         margin-top: 20px;
+        width: 100%;
       }
 
       .chart-box canvas {
@@ -370,12 +377,18 @@
       }
 
       .container {
-        padding: 0.5rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        max-width: 100%;
+        overflow-x: hidden;
       }
 
       .chart-container {
         margin-bottom: 0rem;
         gap: 0.5rem;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
       }
 
       .cashflow-container {
@@ -383,19 +396,35 @@
         margin-bottom: 0rem;
         gap: 0.5rem;
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: space-between;
+        width: 100%;
+        overflow-x: hidden;
+        padding: 0;
       }
-      
+
       .cashflow-item {
-        padding: 0.75rem 0.5rem;
+        padding: 0.75rem 0.25rem;
+        min-width: 0;
+        flex: 1;
+        max-width: calc(33.333% - 0.35rem);
       }
-      
+
       .cashflow-value {
         font-size: 1rem;
       }
 
       .cashflow-label {
         margin-bottom: 0rem;
+        font-size: 0.9rem;
+      }
+
+      .cashflow-header {
+        padding: 0.4rem 0.5rem;
+        gap: 0;
+      }
+
+      .cashflow-icon {
+        display: none;
       }
     }
   </style>
