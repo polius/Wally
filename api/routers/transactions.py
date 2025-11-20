@@ -50,7 +50,7 @@ def get_transactions_past_3_months(
     db: Annotated[Session, Depends(get_session)]
 ):
     today = date.today()
-    first_day = (today.replace(day=1) - relativedelta(months=3))
+    first_day = (today.replace(day=1) - relativedelta(months=2))
     next_month = (today.replace(day=1) + relativedelta(months=1))
 
     stmt = (
@@ -66,7 +66,7 @@ def get_transactions_past_6_months(
     db: Annotated[Session, Depends(get_session)]
 ):
     today = date.today()
-    first_day = (today.replace(day=1) - relativedelta(months=6))
+    first_day = (today.replace(day=1) - relativedelta(months=5))
     next_month = (today.replace(day=1) + relativedelta(months=1))
 
     stmt = (
@@ -77,12 +77,12 @@ def get_transactions_past_6_months(
     )
     return db.exec(stmt).all()
 
-@router.get("/transactions/past-year", response_model=list[TransactionPublic])
-def get_transactions_past_year(
+@router.get("/transactions/past-12-months", response_model=list[TransactionPublic])
+def get_transactions_past_12_months(
     db: Annotated[Session, Depends(get_session)]
 ):
     today = date.today()
-    first_day = (today.replace(day=1) - relativedelta(years=1))
+    first_day = (today.replace(day=1) - relativedelta(months=11))
     next_month = (today.replace(day=1) + relativedelta(months=1))
 
     stmt = (
