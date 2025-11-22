@@ -831,7 +831,11 @@
 
       const json = await response.json()
 
-      if (!response.ok) throw new Error("An error occurred.")
+      if (!response.ok) {
+        if (response.status === 422) throw new Error(json.detail[0].msg)
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
+        throw new Error("An error occurred.")
+      }
       return json;
     }
     catch (error) {
@@ -1104,14 +1108,11 @@
         if (db) return 1;
         return a.localeCompare(b);
       })
-      .forEach(label => {
+      .forEach((label, index) => {
         const categoryData = labelMap.get(label);
-        const color = chartSelected === 'currentMonth'
-          ? chart.data.datasets[0].backgroundColor[chart.data.labels.indexOf(label)]
-          :  chart.data.datasets.find(x => x.label === label)?.backgroundColor;
+        const color = chartColors[index % chartColors.length];
         const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
         const amount = categoryData ? formatCurrency(categoryData.total) : '';
-
         const item = document.createElement('div');
         item.className = `legend-item${chartDisabledFields.has(label) ? ' disabled' : ''}`;
         item.innerHTML = `
@@ -1357,6 +1358,7 @@
 
       if (!response.ok) {
         if (response.status === 422) throw new Error(json.detail[0].msg)
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
         throw new Error("An error occurred.")
       }
       else {
@@ -1400,6 +1402,7 @@
 
       if (!response.ok) {
         if (response.status === 422) throw new Error(json.detail[0].msg)
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
         throw new Error("An error occurred.")
       }
       else {

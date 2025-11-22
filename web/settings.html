@@ -832,6 +832,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -942,6 +943,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -985,7 +987,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
-          if (response.status === 400) throw new Error(json.detail)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1074,6 +1076,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1160,6 +1163,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1203,7 +1207,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
-          if (response.status === 400) throw new Error(json.detail)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1260,6 +1264,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1382,6 +1387,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1454,6 +1460,8 @@
         const json = await response.json()
 
         if (!response.ok) {
+          if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1532,7 +1540,8 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
-          throw new Error(json.error || "An error occurred while importing.");
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
+          throw new Error("An error occurred.")
         }
         else {
           // Show confirmation message
@@ -1894,6 +1903,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1942,6 +1952,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
@@ -1983,6 +1994,7 @@
 
         if (!response.ok) {
           if (response.status === 422) throw new Error(json.detail[0].msg)
+          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
           throw new Error("An error occurred.")
         }
         else {
