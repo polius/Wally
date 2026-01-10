@@ -125,6 +125,26 @@ def get_transactions_to_date(
     results = db.exec(stmt).all()
     return results
 
+@router.get("/transactions/range/{from_year}-{from_month}/{to_year}-{to_month}", response_model=list[TransactionPublic])
+def get_transactions_by_range(
+    from_year: Annotated[int, Path(..., ge=1, le=9999)],
+    from_month: Annotated[int, Path(..., ge=1, le=12)],
+    to_year: Annotated[int, Path(..., ge=1, le=9999)],
+    to_month: Annotated[int, Path(..., ge=1, le=12)],
+    db: Annotated[Session, Depends(get_session)]
+):
+    first_day = date(from_year, from_month, 1)
+    next_month = date(to_year + (to_month // 12), (to_month % 12) + 1, 1)
+
+    stmt = (
+        select(Transaction)
+        .where(Transaction.date >= first_day)
+        .where(Transaction.date < next_month)
+        .order_by(desc(Transaction.created_date))
+    )
+    results = db.exec(stmt).all()
+    return results
+
 @router.post("/transactions", response_model=TransactionPublic)
 def create_transaction(
     transaction: TransactionCreate,

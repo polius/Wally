@@ -85,6 +85,37 @@
       background-color: white;
     }
 
+    .custom-range-inputs {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: var(--pill-bg);
+      border-radius: 0.375rem;
+    }
+
+    .custom-range-inputs.active {
+      display: block;
+    }
+
+    .custom-range-inputs label {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .custom-range-inputs input[type="month"] {
+      background-color: var(--bs-body-bg);
+      border: 1px solid var(--bs-border-color);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .custom-range-inputs input[type="month"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 1;
+      width: 20px;
+      height: 20px;
+    }
+
     .month-navigation {
       display: flex;
       align-items: center;
@@ -590,6 +621,64 @@
                 All Data
               </label>
             </div>
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="radio" name="range" value="customRange" id="customRangeRadio">
+              <label class="form-check-label" for="customRangeRadio">
+                Custom Range
+              </label>
+            </div>
+            <div id="customRangeInputs" class="custom-range-inputs">
+              <div class="mb-3">
+                <label class="form-label d-block mb-2">From</label>
+                <div class="row g-2">
+                  <div class="col-7">
+                    <select class="form-select" id="fromMonthSelect" required>
+                      <option value="">Select month</option>
+                      <option value="01">January</option>
+                      <option value="02">February</option>
+                      <option value="03">March</option>
+                      <option value="04">April</option>
+                      <option value="05">May</option>
+                      <option value="06">June</option>
+                      <option value="07">July</option>
+                      <option value="08">August</option>
+                      <option value="09">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                  <div class="col-5">
+                    <input type="number" class="form-control" id="fromYearSelect" placeholder="Year" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label d-block mb-2">To</label>
+                <div class="row g-2">
+                  <div class="col-7">
+                    <select class="form-select" id="toMonthSelect" required>
+                      <option value="">Select month</option>
+                      <option value="01">January</option>
+                      <option value="02">February</option>
+                      <option value="03">March</option>
+                      <option value="04">April</option>
+                      <option value="05">May</option>
+                      <option value="06">June</option>
+                      <option value="07">July</option>
+                      <option value="08">August</option>
+                      <option value="09">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                  <div class="col-5">
+                    <input type="number" class="form-control" id="toYearSelect" placeholder="Year" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
@@ -748,6 +837,24 @@
     // Render categories and tags
     await renderCategories();
     await renderTags();
+
+    // Populate year dropdowns for custom range
+    populateYearDropdowns();
+
+    // Add event listeners for custom range toggle
+    const customRangeRadio = document.getElementById('customRangeRadio');
+    const customRangeInputs = document.getElementById('customRangeInputs');
+    const rangeRadios = document.querySelectorAll('input[name="range"]');
+    
+    rangeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (customRangeRadio.checked) {
+          customRangeInputs.classList.add('active');
+        } else {
+          customRangeInputs.classList.remove('active');
+        }
+      });
+    });
   }
 
   async function getCategories() {
@@ -813,6 +920,11 @@
     }
     else if (chartSelected == 'yearToDate') {
       endpoint = `${API_URL}/transactions/year-to-date`;
+    }
+    else if (chartSelected == 'customRange') {
+      const fromParts = window.customRangeFrom.split('-');
+      const toParts = window.customRangeTo.split('-');
+      endpoint = `${API_URL}/transactions/range/${fromParts[0]}-${fromParts[1]}/${toParts[0]}-${toParts[1]}`;
     }
     else if (chartSelected == 'allData') {
       endpoint = `${API_URL}/transactions/to-date`;
@@ -974,6 +1086,7 @@
       else if (chartSelected === 'lastSixMonths') range = getLastNMonths(6);
       else if (chartSelected === 'lastYear') range = getLastNMonths(12);
       else if (chartSelected === 'yearToDate') range = getYearToDate();
+      else if (chartSelected === 'customRange') range = getCustomMonthRange(window.customRangeFrom, window.customRangeTo);
       else if (chartSelected === 'allData') range = getAllMonths(data);
 
       chart = new Chart('chartCanvas', {
@@ -1181,6 +1294,18 @@
     loadChart();
   }
 
+  function populateYearDropdowns() {
+    const currentYear = new Date().getFullYear();
+    const now = new Date();
+    const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // Set current month and year as defaults
+    document.getElementById('fromMonthSelect').value = currentMonth;
+    document.getElementById('fromYearSelect').value = currentYear;
+    document.getElementById('toMonthSelect').value = currentMonth;
+    document.getElementById('toYearSelect').value = currentYear;
+  }
+
   function submitDashboard(event) {
     event.preventDefault();
 
@@ -1190,6 +1315,29 @@
 
     // Store the selected range and group in the global variable
     chartSelected = data.range;
+
+    // Validate custom range if selected
+    if (chartSelected === 'customRange') {
+      const fromMonth = document.getElementById('fromMonthSelect').value;
+      const fromYear = document.getElementById('fromYearSelect').value;
+      const toMonth = document.getElementById('toMonthSelect').value;
+      const toYear = document.getElementById('toYearSelect').value;
+      
+      // Parse values
+      const fromYearNum = parseInt(fromYear);
+      const toYearNum = parseInt(toYear);
+      const fromMonthStr = `${fromYear}-${fromMonth}`;
+      const toMonthStr = `${toYear}-${toMonth}`;
+      
+      if (fromMonthStr > toMonthStr) {
+        alert('From month must be before or equal to the to month.');
+        return;
+      }
+      
+      // Store custom range values globally
+      window.customRangeFrom = fromMonthStr;
+      window.customRangeTo = toMonthStr;
+    }
 
     // Update header
     const monthHeader = document.getElementById('monthHeader');
@@ -1207,8 +1355,10 @@
         "lastYear": "Last 12 Months",
         "yearToDate": "Year to Date",
         "allData": "All Data"
-      }
-      monthHeaderAll.innerText = mapRange[chartSelected]
+      };
+      monthHeaderAll.innerText = chartSelected === 'customRange' 
+        ? `${formatDate(window.customRangeFrom)} - ${formatDate(window.customRangeTo)}`
+        : mapRange[chartSelected];
     }
 
     // Load the chart with the new selection
@@ -1243,6 +1393,28 @@
       const month = String(m + 1).padStart(2, '0');
       months.push(`${year}-${month}`);
     }
+    return months;
+  }
+
+  function getCustomMonthRange(fromMonth, toMonth) {
+    const months = [];
+    const [fromYear, fromMonthNum] = fromMonth.split('-').map(Number);
+    const [toYear, toMonthNum] = toMonth.split('-').map(Number);
+    
+    let currentYear = fromYear;
+    let currentMonth = fromMonthNum;
+    
+    while (currentYear < toYear || (currentYear === toYear && currentMonth <= toMonthNum)) {
+      const monthStr = String(currentMonth).padStart(2, '0');
+      months.push(`${currentYear}-${monthStr}`);
+      
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+    }
+    
     return months;
   }
 
