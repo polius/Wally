@@ -937,6 +937,16 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              const index = elements[0].index;
+              const category = data[index].name;
+              window.location.href = `transactions?category=${encodeURIComponent(category)}`;
+            }
+          },
           plugins: {
             legend: {
               display: false

@@ -285,6 +285,43 @@
       </div>
     </div>
 
+    <!-- Category Filter Indicator -->
+    <div id="categoryFilterIndicator" class="justify-content-center mb-3" style="display: none;">
+      <button type="button" class="btn d-flex align-items-center gap-2 category-filter-btn" onclick="clearCategoryFilter()" style="border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; height: 40px; background-color: transparent; transition: all 0.2s ease;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="flex-shrink: 0;">
+          <path d="M3.9 54.9C10.5 40.9 24.5 32 40 32l432 0c15.5 0 29.5 8.9 36.1 22.9s4.6 30.5-5.2 42.5L320 320.9 320 448c0 12.1-6.8 23.2-17.7 28.6s-23.8 4.3-33.5-3l-64-48c-8.1-6-12.8-15.5-12.8-25.6l0-79.1L9.1 97.3C-.7 85.4-2.8 68.8 3.9 54.9z"/>
+        </svg>
+        <span id="filteredCategoryName" style="font-weight: 500; line-height: 1;"></span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="currentColor" style="flex-shrink: 0; opacity: 0.8;">
+          <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
+        </svg>
+      </button>
+    </div>
+
+    <style>
+      :root[data-bs-theme="light"] .category-filter-btn {
+        border: 1.5px solid #6c757d;
+        color: var(--pill-color);
+      }
+      
+      :root[data-bs-theme="dark"] .category-filter-btn {
+        border: 1.5px solid #adb5bd;
+        color: var(--pill-color);
+      }
+      
+      :root[data-bs-theme="light"] .category-filter-btn:hover {
+        background-color: rgba(108, 117, 125, 0.1) !important;
+        border-color: #495057 !important;
+        color: var(--pill-color) !important;
+      }
+      
+      :root[data-bs-theme="dark"] .category-filter-btn:hover {
+        background-color: rgba(173, 181, 189, 0.15) !important;
+        border-color: #dee2e6 !important;
+        color: var(--pill-color) !important;
+      }
+    </style>
+
     <!-- Grid Filter -->
     <div class="mb-2">
       <input type="text" class="form-control" id="searchInput" placeholder="Search..."  oninput="onFilterTextBoxChanged()" />
@@ -447,12 +484,20 @@
 
     let currentDate = new Date();
     let tagsInput;
+    let activeCategoryFilter = null;
 
     // Execute the main function when DOM has loaded
     document.addEventListener('DOMContentLoaded', () => main());
     
     async function main() {
       await checkLogin();
+
+      // Check for category filter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const categoryParam = urlParams.get('category');
+      if (categoryParam) {
+        activeCategoryFilter = decodeURIComponent(categoryParam);
+      }
 
       // Show current month
       renderMonth();
@@ -601,9 +646,14 @@
           flex: 1,
           minWidth: 150,
         },
-        onGridReady: params => {
+        onGridReady: async params => {
           gridApi = params.api;
-          getTransactions();
+          await getTransactions();
+          
+          // Apply category filter if present from URL
+          if (activeCategoryFilter) {
+            applyCategoryFilter(activeCategoryFilter);
+          }
         },
         onFilterChanged: params => {
           updateFooter(params.api);
@@ -810,6 +860,59 @@
 
     function onFilterTextBoxChanged() {
       gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
+    }
+
+    function applyCategoryFilter(category) {
+      activeCategoryFilter = category;
+      
+      // Show filter indicator
+      const indicator = document.getElementById('categoryFilterIndicator');
+      indicator.style.display = 'flex';
+      indicator.classList.add('d-flex');
+      document.getElementById('filteredCategoryName').textContent = category;
+      
+      // Apply the filter model
+      gridApi.setFilterModel({
+        category: {
+          filterType: 'text',
+          type: 'equals',
+          filter: category
+        }
+      });
+      
+      // Disable category column filtering
+      const column = gridApi.getColumn('category');
+      if (column) {
+        const colDef = column.getColDef();
+        colDef.filter = false;
+        gridApi.refreshHeader();
+      }
+    }
+
+    function clearCategoryFilter() {
+      activeCategoryFilter = null;
+      
+      // Hide filter indicator
+      const indicator = document.getElementById('categoryFilterIndicator');
+      indicator.style.display = 'none';
+      indicator.classList.remove('d-flex');
+      document.getElementById('filteredCategoryName').textContent = '';
+      
+      // Re-enable category column filtering
+      const column = gridApi.getColumn('category');
+      if (column) {
+        const colDef = column.getColDef();
+        colDef.filter = true;
+        gridApi.refreshHeader();
+      }
+      
+      // Clear grid filter
+      gridApi.setFilterModel(null);
+      
+      // Remove URL parameter
+      const url = new URL(window.location);
+      url.searchParams.delete('category');
+      window.history.replaceState({}, '', url);
     }
 
     async function getTransactions() {
