@@ -942,6 +942,8 @@
               display: false
             },
             tooltip: {
+              boxPadding: 3,
+              usePointStyle: true,
               callbacks: {
                 label: (context) => {
                   const value = context.raw;
@@ -1037,13 +1039,29 @@
                 size: 13
               },
               bodySpacing: 6,
+              footerFont: {
+                size: 13,
+              },
+              footerMarginTop: 8,
+              footerSpacing: 4,
+              displayColors: true,
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
               usePointStyle: true,
+              boxPadding: 6,
               callbacks: {
                 label: (context) => {
                   const value = context.raw;
                   const total = context.dataset.data.reduce((sum, val) => Decimal.add(sum, val).toNumber(), 0);
                   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                   return `${context.dataset.label}: ${formatCurrency(value)} (${percentage}%)`;
+                },
+                beforeFooter: () => {
+                  return '─'.repeat(20);
+                },
+                footer: (tooltipItems) => {
+                  const total = tooltipItems.reduce((sum, item) => Decimal.add(sum, item.raw).toNumber(), 0);
+                  return `Total: ${formatCurrency(total)}`;
                 }
               }
             }
