@@ -13,16 +13,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="assets/wally.png" />
   <!-- CSS -->
-  <link href="css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/tom-select.min.css" rel="stylesheet">
-  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
+  <link href="css/vendors/tom-select.min.css" rel="stylesheet">
+  <link href="css/vendors/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <link href="css/index.css" rel="stylesheet">
   <!-- JS -->
-  <script src="js/bootstrap.bundle.min.js" defer></script>
-  <script src="js/bootstrap-show-toast.js" defer></script>
-  <script src="js/ag-grid-community.min.noStyle.js" defer></script>
-  <script src="js/tom-select.complete.min.js" defer></script>
-  <script src="js/chart.umd.min.js" defer></script>
-  <script src="js/decimal.min.js" defer></script>
+  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
+  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
+  <script src="js/vendors/ag-grid-community.min.noStyle.js" defer></script>
+  <script src="js/vendors/tom-select.complete.min.js"></script>
+  <script src="js/vendors/chart.umd.min.js" defer></script>
+  <script src="js/vendors/decimal.min.js" defer></script>
+  <script src="js/i18n.js"></script>
 
   <script>
     (function() {
@@ -37,430 +39,8 @@
     })();
   </script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-
-    html {
-      overflow-x: hidden;
-    }
-
-    :root[data-bs-theme="light"] {
-      --header-bg: #f8f8f8;
-      --pill-bg: #f4f4f7;
-      --pill-color: #000;
-      --amount-color: var(--bs-gray-800);
-    }
-    :root[data-bs-theme="dark"] {
-      --header-bg: #262a2e;
-      --pill-bg: #282c30;
-      --pill-color: #FFF;
-      --amount-color: var(--bs-gray-500);
-    }
-    header {
-      background-color: var(--header-bg);
-    }
-
-    input, .option {
-      color: var(--pill-color)!important;
-    }
-
-    .ts-control .item {
-      background-color: var(--pill-bg)!important;
-      color: var(--pill-color)!important;
-    }
-
-    .ts-control .item .remove {
-      border-color: var(--header-bg)!important;
-    }
-
-    #tagsInput-ts-dropdown .create, #tagsInput-ts-dropdown .no-results {
-      color: var(--pill-color)!important;
-    }
-
-    .form-check-input {
-      background-color: white;
-    }
-
-    .custom-range-inputs {
-      display: none;
-      margin-top: 1rem;
-      padding: 1rem;
-      background-color: var(--pill-bg);
-      border-radius: 0.375rem;
-    }
-
-    .custom-range-inputs.active {
-      display: block;
-    }
-
-    .custom-range-inputs label {
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .custom-range-inputs input[type="month"] {
-      background-color: var(--bs-body-bg);
-      border: 1px solid var(--bs-border-color);
-      cursor: pointer;
-      position: relative;
-    }
-
-    .custom-range-inputs input[type="month"]::-webkit-calendar-picker-indicator {
-      cursor: pointer;
-      opacity: 1;
-      width: 20px;
-      height: 20px;
-    }
-
-    .month-navigation {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-    }
-
-    .current-month {
-      font-size: 1.6rem;
-      font-weight: bold;
-      min-width: 200px;
-      text-align: center;
-    }
-
-    #prevMonth, #nextMonth {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 40px;
-      border-radius: 24px;
-      cursor: pointer;
-      color: var(--pill-color);
-      position: relative;
-      /* No border or background */
-      border: 2px solid transparent;
-      background-color: transparent;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    #prevMonth:hover, #nextMonth:hover {
-      background-color: #cce4ff;
-      border-color: #4a90e2;
-      color: #004aad;
-    }
-
-    main.container {
-      padding-top: 1rem;
-      padding-bottom: 0rem;
-    }
-
-    /* Chart styles */
-    .chart-container {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 0rem;
-      background-color: var(--header-bg);
-      border-radius: 8px;
-      min-height: 450px;
-      align-items: center;
-    }
-
-    .chart-box {
-      height: 380px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .chart-box canvas {
-      max-height: 380px;
-    }
-
-    .legend-box {
-      flex: 1;
-      padding: 1rem 2rem 1rem 1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .legend-text {
-      display: flex;
-      justify-content: space-between;
-      flex: 1;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 1rem;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .legend-item.disabled .color-box {
-      background-color: #808080 !important;
-      position: relative;
-    }
-
-    .legend-item.disabled .color-box::after {
-      content: '×';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: var(--text-primary);
-      font-weight: bold;
-    }
-
-    .legend-item.disabled .legend-text {
-      opacity: 0.5;
-    }
-
-    .color-box {
-      width: 16px;
-      height: 16px;
-      margin-right: 1rem;
-      border-radius: 3px;
-      transition: background-color 0.3s ease;
-    }
-
-    .amount {
-      font-family: monospace;
-      color: var(--amount-color);
-      font-size: 0.85rem;
-    }
-
-    .no-data {
-      text-align: center;
-      font-style: italic;
-      padding: 2rem;
-    }
-
-    /* Cashflow styles */
-    .cashflow-container {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 1rem;
-      margin-bottom: 0rem;
-      align-items: stretch;
-      padding: 0;
-    }
-
-    .cashflow-item {
-      position: relative;
-      flex: 1;
-      padding: 1rem 1rem;
-      border-radius: 8px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      background: var(--header-bg);
-      border: 1px solid var(--bs-border-color);
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .cashflow-item::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      transition: height 0.2s ease;
-    }
-
-    .cashflow-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .cashflow-item:hover::before {
-      height: 5px;
-    }
-
-    .cashflow-item.income::before {
-      background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-    }
-
-    .cashflow-item.expenses::before {
-      background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-    }
-
-    .cashflow-item.balance::before {
-      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    }
-
-    .cashflow-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 0.6rem;
-      line-height: 1;
-      padding: 0.5rem 0.75rem;
-      border-radius: 8px;
-      display: inline-flex;
-    }
-
-    .cashflow-item.income .cashflow-header {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.15) 100%);
-    }
-
-    .cashflow-item.expenses .cashflow-header {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(248, 113, 113, 0.15) 100%);
-    }
-
-    .cashflow-item.balance .cashflow-header {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.15) 100%);
-    }
-
-    .cashflow-icon {
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .cashflow-icon svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .cashflow-item.income .cashflow-icon svg {
-      stroke: #10b981;
-    }
-
-    .cashflow-item.expenses .cashflow-icon svg {
-      stroke: #ef4444;
-    }
-
-    .cashflow-item.balance .cashflow-icon svg {
-      stroke: #f59e0b;
-    }
-
-    .cashflow-label {
-      font-size: 0.95rem;
-      margin-bottom: 0rem;
-      font-weight: 600;
-      line-height: 1;
-    }
-
-    .cashflow-value {
-      font-size: 1.4rem;
-      font-weight: bold;
-    }
-
-    .cashflow-item.income .cashflow-value {
-      color: #10b981;
-    }
-
-    .cashflow-item.expenses .cashflow-value {
-      color: #ef4444;
-    }
-
-    .cashflow-value.positive {
-      color: #10b981;
-    }
-
-    .cashflow-value.negative {
-      color: #ef4444;
-    }
-
-    @media (max-width: 768px) {
-      .chart-container {
-        flex-direction: column;
-        min-height: auto;
-        padding: 1rem;
-        padding-top: 0;
-      }
-
-      .chart-box {
-        max-height: 250px;
-        margin-top: 20px;
-        width: 100%;
-      }
-
-      .chart-box canvas {
-        max-height: 300px;
-      }
-
-      .legend-box {
-        width: 100%;
-        padding: 0.5rem;
-        padding-top: 1rem;
-      }
-
-      .legend-item {
-        margin-bottom: 0.5rem;
-      }
-
-      .month-navigation {
-        gap: 0.2rem;
-        margin-bottom: 0.75rem;
-      }
-
-      .container {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-        max-width: 100%;
-        overflow-x: hidden;
-      }
-
-      .chart-container {
-        margin-bottom: 0rem;
-        gap: 0.5rem;
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-      }
-
-      .cashflow-container {
-        margin-top: 0.5rem;
-        margin-bottom: 0rem;
-        gap: 0.5rem;
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-        overflow-x: hidden;
-        padding: 0;
-      }
-
-      .cashflow-item {
-        padding: 0.75rem 0.25rem;
-        min-width: 0;
-        flex: 1;
-        max-width: calc(33.333% - 0.35rem);
-      }
-
-      .cashflow-value {
-        font-size: 1rem;
-      }
-
-      .cashflow-label {
-        margin-bottom: 0rem;
-        font-size: 0.9rem;
-      }
-
-      .cashflow-header {
-        padding: 0.4rem 0.5rem;
-        gap: 0;
-      }
-
-      .cashflow-icon {
-        display: none;
-      }
-    }
-  </style>
 </head>
-<body>
+<body data-i18n-document-title="dashboard.title">
   <!-- Header -->
   <header>
     <div class="container">
@@ -474,12 +54,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="/" style="font-weight: 500">Dashboards</a></li>
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="transactions">Transactions</a></li>
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="settings">Settings</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="/" style="font-weight: 500" data-i18n="nav.dashboards">Dashboards</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="settings" data-i18n="nav.settings">Settings</a></li>
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
-            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" onclick="logout()">
+            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--pill-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
                 <path d="M9 12h12l-3 -3" />
@@ -517,19 +97,19 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
           <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
         </svg>
-        Add
+        <span data-i18n="dashboard.add">Add</span>
       </button>
       <button type="button" class="btn btn-primary" style="font-size: 0.9rem; margin-left:5px; width: 150px; height:40px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#dashboardModal">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor" style="margin-right: 2px; padding-bottom: 2px">
           <path d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64L0 400c0 44.2 35.8 80 80 80l400 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L80 416c-8.8 0-16-7.2-16-16L64 64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7 262.6 153.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l73.4-73.4 57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z"/>
         </svg>
-        Change
+        <span data-i18n="dashboard.filter">Filter</span>
       </button>
     </div>
 
     <!-- Chart & Legend Box -->
     <div class="row chart-container">
-      <div id="noDataMessage" class="no-data" style="display: none; width: 100%;">There are no expenses.</div>
+      <div id="noDataMessage" class="no-data" style="display: none; width: 100%;" data-i18n="dashboard.no_expenses">There are no expenses.</div>
       <div class="col-lg-6 chart-box">
         <canvas id="chartCanvas"></canvas>
       </div>
@@ -545,7 +125,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
             </svg>
           </div>
-          <div class="cashflow-label">Income</div>
+          <div class="cashflow-label" data-i18n="dashboard.cashflow.income">Income</div>
         </div>
         <div class="cashflow-value" id="cashflow-income"></div>
       </div>
@@ -556,7 +136,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 4.306 6.43l.776 2.898m0 0 3.182-5.511m-3.182 5.51-5.511-3.181" />
             </svg>
           </div>
-          <div class="cashflow-label">Expenses</div>
+          <div class="cashflow-label" data-i18n="dashboard.cashflow.expenses">Expenses</div>
         </div>
         <div class="cashflow-value" id="cashflow-expenses"></div>
       </div>
@@ -567,7 +147,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </div>
-          <div class="cashflow-label">Balance</div>
+          <div class="cashflow-label" data-i18n="dashboard.cashflow.balance">Balance</div>
         </div>
         <div class="cashflow-value" id="cashflow-balance"></div>
       </div>
@@ -580,109 +160,109 @@
       <div class="modal-dialog modal-dialog-centered">
         <form id="dashboardForm" class="modal-content" onsubmit="submitDashboard(event)">
           <div class="modal-header">
-            <h5 class="modal-title" id="dashboardModalLabel">Change Dashboard</h5>
+            <h5 class="modal-title" id="dashboardModalLabel" data-i18n="dashboard.modal.title">Change Dashboard</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Select a dashboard to view:</p>
+            <p data-i18n="dashboard.modal.select_prompt">Select a dashboard to view:</p>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="currentMonth" id="currentMonthRadio" checked>
-              <label class="form-check-label" for="currentMonthRadio">
+              <label class="form-check-label" for="currentMonthRadio" data-i18n="dashboard.modal.current_month">
                 Current Month
               </label>
             </div>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="lastThreeMonths" id="lastThreeMonthsRadio">
-              <label class="form-check-label" for="lastThreeMonthsRadio">
+              <label class="form-check-label" for="lastThreeMonthsRadio" data-i18n="dashboard.modal.past_3_months">
                 Last 3 Months
               </label>
             </div>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="lastSixMonths" id="lastSixMonthsRadio">
-              <label class="form-check-label" for="lastSixMonthsRadio">
+              <label class="form-check-label" for="lastSixMonthsRadio" data-i18n="dashboard.modal.past_6_months">
                 Last 6 Months
               </label>
             </div>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="lastYear" id="lastYearRadio">
-              <label class="form-check-label" for="lastYearRadio">
+              <label class="form-check-label" for="lastYearRadio" data-i18n="dashboard.modal.past_12_months">
                 Last 12 Months
               </label>
             </div>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="yearToDate" id="yearToDateRadio">
-              <label class="form-check-label" for="yearToDateRadio">
+              <label class="form-check-label" for="yearToDateRadio" data-i18n="dashboard.modal.year_to_date">
                 Year to Date
               </label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="range" value="allData" id="allDataRadio">
-              <label class="form-check-label" for="allDataRadio">
+              <label class="form-check-label" for="allDataRadio" data-i18n="dashboard.modal.to_date">
                 All Data
               </label>
             </div>
             <div class="form-check mb-1">
               <input class="form-check-input" type="radio" name="range" value="customRange" id="customRangeRadio">
-              <label class="form-check-label" for="customRangeRadio">
+              <label class="form-check-label" for="customRangeRadio" data-i18n="dashboard.modal.custom_range">
                 Custom Range
               </label>
             </div>
             <div id="customRangeInputs" class="custom-range-inputs">
               <div class="mb-3">
-                <label class="form-label d-block mb-2">From</label>
+                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.from">From</label>
                 <div class="row g-2">
                   <div class="col-7">
                     <select class="form-select" id="fromMonthSelect" required>
-                      <option value="">Select month</option>
-                      <option value="01">January</option>
-                      <option value="02">February</option>
-                      <option value="03">March</option>
-                      <option value="04">April</option>
-                      <option value="05">May</option>
-                      <option value="06">June</option>
-                      <option value="07">July</option>
-                      <option value="08">August</option>
-                      <option value="09">September</option>
-                      <option value="10">October</option>
-                      <option value="11">November</option>
-                      <option value="12">December</option>
+                      <option value="" data-i18n="common.months.select_month">Select month</option>
+                      <option value="01" data-i18n="common.months.january">January</option>
+                      <option value="02" data-i18n="common.months.february">February</option>
+                      <option value="03" data-i18n="common.months.march">March</option>
+                      <option value="04" data-i18n="common.months.april">April</option>
+                      <option value="05" data-i18n="common.months.may">May</option>
+                      <option value="06" data-i18n="common.months.june">June</option>
+                      <option value="07" data-i18n="common.months.july">July</option>
+                      <option value="08" data-i18n="common.months.august">August</option>
+                      <option value="09" data-i18n="common.months.september">September</option>
+                      <option value="10" data-i18n="common.months.october">October</option>
+                      <option value="11" data-i18n="common.months.november">November</option>
+                      <option value="12" data-i18n="common.months.december">December</option>
                     </select>
                   </div>
                   <div class="col-5">
-                    <input type="number" class="form-control" id="fromYearSelect" placeholder="Year" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
+                    <input type="number" class="form-control" id="fromYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
                   </div>
                 </div>
               </div>
               <div class="mb-2">
-                <label class="form-label d-block mb-2">To</label>
+                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.to">To</label>
                 <div class="row g-2">
                   <div class="col-7">
                     <select class="form-select" id="toMonthSelect" required>
-                      <option value="">Select month</option>
-                      <option value="01">January</option>
-                      <option value="02">February</option>
-                      <option value="03">March</option>
-                      <option value="04">April</option>
-                      <option value="05">May</option>
-                      <option value="06">June</option>
-                      <option value="07">July</option>
-                      <option value="08">August</option>
-                      <option value="09">September</option>
-                      <option value="10">October</option>
-                      <option value="11">November</option>
-                      <option value="12">December</option>
+                      <option value="" data-i18n="common.months.select_month">Select month</option>
+                      <option value="01" data-i18n="common.months.january">January</option>
+                      <option value="02" data-i18n="common.months.february">February</option>
+                      <option value="03" data-i18n="common.months.march">March</option>
+                      <option value="04" data-i18n="common.months.april">April</option>
+                      <option value="05" data-i18n="common.months.may">May</option>
+                      <option value="06" data-i18n="common.months.june">June</option>
+                      <option value="07" data-i18n="common.months.july">July</option>
+                      <option value="08" data-i18n="common.months.august">August</option>
+                      <option value="09" data-i18n="common.months.september">September</option>
+                      <option value="10" data-i18n="common.months.october">October</option>
+                      <option value="11" data-i18n="common.months.november">November</option>
+                      <option value="12" data-i18n="common.months.december">December</option>
                     </select>
                   </div>
                   <div class="col-5">
-                    <input type="number" class="form-control" id="toYearSelect" placeholder="Year" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
+                    <input type="number" class="form-control" id="toYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="dashboardModalSubmitButton" style="width: 120px">Change</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="dashboardModalSubmitButton" style="width: 120px" data-i18n="dashboard.modal.apply">Change</button>
           </div>
         </form>
       </div>
@@ -694,54 +274,54 @@
     <div class="modal-dialog modal-dialog-centered">
       <form id="transactionForm" class="modal-content" onsubmit="submitTransaction(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalLabel">Add Transaction</h5>
+          <h5 class="modal-title" id="transactionModalLabel" data-i18n="transactions.modal_add_title">Add Transaction</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
 
           <!-- Name -->
           <div class="mb-3">
-            <label for="nameInput" class="form-label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" required />
+            <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
+            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" data-i18n-placeholder="transactions.name_placeholder" required />
           </div>
 
           <!-- Category -->
           <div class="mb-3">
-            <label for="categorySelect" class="form-label">Category</label>
+            <label for="categorySelect" class="form-label" data-i18n="transactions.category_label">Category</label>
             <select class="form-select" id="categorySelect" name="category" required></select>
           </div>
 
           <!-- Tags -->
           <div class="mb-3">
-            <label class="form-label">Tags</label>
-            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" autocomplete="off">
+            <label class="form-label" data-i18n="transactions.tags_label">Tags</label>
+            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="transactions.tags_placeholder" autocomplete="off">
           </div>
 
           <!-- Amount -->
           <div class="mb-3">
-            <label for="amountInput" class="form-label">Amount</label>
-            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" required />
+            <label for="amountInput" class="form-label" data-i18n="transactions.amount_label">Amount</label>
+            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" placeholder="0.00" data-i18n-placeholder="transactions.amount_placeholder" required />
           </div>
 
           <!-- Type -->
           <div class="mb-3">
-            <label for="typeSelect" class="form-label">Type</label>
+            <label for="typeSelect" class="form-label" data-i18n="transactions.type_label">Type</label>
             <select class="form-select" id="typeSelect" name="type" required>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
+              <option value="expense" data-i18n="transactions.type_expense">Expense</option>
+              <option value="income" data-i18n="transactions.type_income">Income</option>
             </select>
           </div>
 
           <!-- Date -->
           <div>
-            <label for="dateInput" class="form-label">Date</label>
+            <label for="dateInput" class="form-label" data-i18n="transactions.date_label">Date</label>
             <input type="date" class="form-control" id="dateInput" name="date" required />
           </div>
 
           <!-- Recurring -->
           <div id="recurringElement" class="form-check mt-3">
             <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
-            <label class="form-check-label" for="recurringCheck">
+            <label class="form-check-label" for="recurringCheck" data-i18n="transactions.recurring_label">
               Recurring
             </label>
           </div>
@@ -751,25 +331,25 @@
               <div class="row">
                 <!-- Start Date -->
                 <div class="col-6 mb-3">
-                  <label for="startDateInput" class="form-label">Start Date</label>
+                  <label for="startDateInput" class="form-label" data-i18n="transactions.start_date_label">Start Date</label>
                   <input type="date" class="form-control" id="startDateInput" name="startDate" />
                 </div>
                 <!-- End Date -->
                 <div class="col-6 mb-3">
-                  <label for="endDateInput" class="form-label">End Date</label>
+                  <label for="endDateInput" class="form-label" data-i18n="transactions.end_date_label">End Date</label>
                   <input type="date" class="form-control" id="endDateInput" name="endDate" />
                 </div>
               </div>
 
               <!-- Frequency -->
               <div>
-                <label for="frequencySelect" class="form-label">Frequency</label>
+                <label for="frequencySelect" class="form-label" data-i18n="transactions.frequency_label">Frequency</label>
                 <select class="form-select" id="frequencySelect" name="frequency">
-                  <option value="" disabled selected>Select frequency</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
+                  <option value="" disabled selected data-i18n="transactions.frequency_placeholder">Select frequency</option>
+                  <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
+                  <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
+                  <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
+                  <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
                 </select>
               </div>
             </div>
@@ -777,8 +357,8 @@
 
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px">Add</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px" data-i18n="transactions.add">Add</button>
         </div>
       </form>
     </div>
@@ -789,883 +369,19 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="submitTransaction(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalDeleteLabel">Delete Transaction</h5>
+          <h5 class="modal-title" id="transactionModalDeleteLabel" data-i18n="transactions.modal_delete_title">Delete Transaction</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" data-i18n="transactions.delete_confirm">
           Are you sure you want to delete this transaction?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
     </div>
   </div>
+  <script src="js/index.js"></script>
 </body>
-<script>
-  const API_URL = '/api'; // 'http://127.0.0.1:8000';
-
-  let currentDate = new Date();
-  let categories;
-  let tags;
-  let currency;
-
-  let chart;
-  let chartSelected = "currentMonth";
-  let chartDisabledFields = new Set();
-
-  let tagsInput;
-
-  // Execute the main function when DOM has loaded
-  document.addEventListener('DOMContentLoaded', () => main());
-  
-  async function main() {
-    await checkLogin();
-
-    document.getElementById('dashboardForm').reset();
-    [categories, tags, currency] = await Promise.all([
-      getCategories(),
-      getTags(),
-      getCurrency(),
-      renderMonth(),
-    ]);
-
-    // Load chart
-    await loadChart();
-
-    // Render categories and tags
-    await renderCategories();
-    await renderTags();
-
-    // Populate year dropdowns for custom range
-    populateYearDropdowns();
-
-    // Add event listeners for custom range toggle
-    const customRangeRadio = document.getElementById('customRangeRadio');
-    const customRangeInputs = document.getElementById('customRangeInputs');
-    const rangeRadios = document.querySelectorAll('input[name="range"]');
-    
-    rangeRadios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        if (customRangeRadio.checked) {
-          customRangeInputs.classList.add('active');
-        } else {
-          customRangeInputs.classList.remove('active');
-        }
-      });
-    });
-  }
-
-  async function getCategories() {
-    const response = await fetch(`${API_URL}/categories`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const data = await response.json();
-    return data;
-  }
-
-  async function getTags() {
-    const response = await fetch(`${API_URL}/tags`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const data = await response.json();
-    return data;
-  }
-
-  async function getCurrency() {
-    const response = await fetch(`${API_URL}/currency`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const data = await response.json();
-    return data.filter(x => x.selected)[0];
-  }
-
-  async function getTransactions() {
-    let endpoint;
-    if (chartSelected == 'currentMonth') {
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const year = currentDate.getFullYear();
-      endpoint = `${API_URL}/transactions/date/${year}-${month}`;
-    }
-    else if (chartSelected == 'lastThreeMonths') {
-      endpoint = `${API_URL}/transactions/past-3-months`;
-    }
-    else if (chartSelected == 'lastSixMonths') {
-      endpoint = `${API_URL}/transactions/past-6-months`;
-    }
-    else if (chartSelected == 'lastYear') {
-      endpoint = `${API_URL}/transactions/past-12-months`;
-    }
-    else if (chartSelected == 'yearToDate') {
-      endpoint = `${API_URL}/transactions/year-to-date`;
-    }
-    else if (chartSelected == 'customRange') {
-      const fromParts = window.customRangeFrom.split('-');
-      const toParts = window.customRangeTo.split('-');
-      endpoint = `${API_URL}/transactions/range/${fromParts[0]}-${fromParts[1]}/${toParts[0]}-${toParts[1]}`;
-    }
-    else if (chartSelected == 'allData') {
-      endpoint = `${API_URL}/transactions/to-date`;
-    }
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const json = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 422) throw new Error(json.detail[0].msg)
-        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-        throw new Error("An error occurred.")
-      }
-      return json;
-    }
-    catch (error) {
-      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-    }
-  }
-
-  function renderMonth() {
-    document.getElementById('currentMonth').textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }
-
-  // Prev month button
-  document.getElementById('prevMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() - 1);
-    renderMonth();
-    loadChart();
-  });
-
-  // Next month button
-  document.getElementById('nextMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderMonth();
-    loadChart();
-  });
-
-  async function loadChart() {
-    const transactions = await getTransactions();
-    const chartBox = document.querySelector('.chart-box');
-    const legendBox = document.getElementById('customLegend');
-    const cashflowSection = document.getElementById('cashflow-section');
-    const noDataMessage = document.getElementById('noDataMessage');
-    const hasExpenses = transactions.some(t => t.type === 'expense');
-
-    if (!hasExpenses) {
-      chartBox.style.display = 'none';
-      legendBox.style.display = 'none';
-      cashflowSection.style.display = 'none';
-      noDataMessage.style.display = 'block';
-    }
-    else {
-      chartBox.style.display = 'flex';
-      legendBox.style.display = 'flex';
-      cashflowSection.style.display = 'flex';
-      noDataMessage.style.display = 'none';
-      
-      const data = calculateBreakdown(transactions);
-      updateChart(data);
-      updateLegend(transactions, data);
-      updateCashflow(transactions);
-    }
-  }
-
-  function updateCashflow(transactions) {
-    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => Decimal.add(acc, t.amount).toNumber(), 0);
-    const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => Decimal.add(acc, t.amount).toNumber(), 0);
-    const balance = Decimal.sub(income, expense);
-
-    document.getElementById('cashflow-income').textContent = formatCurrency(income);
-    document.getElementById('cashflow-expenses').textContent = formatCurrency(expense);
-    document.getElementById('cashflow-balance').textContent = formatCurrency(balance);
-
-    const balanceElement = document.getElementById('cashflow-balance');
-    if (balance >= 0) {
-      balanceElement.classList.add('positive');
-      balanceElement.classList.remove('negative');
-    } else {
-      balanceElement.classList.add('negative');
-      balanceElement.classList.remove('positive');
-    }
-  }
-
-  const chartColors = [
-    '#FF6B6B',
-    '#FFA94D',
-    '#FFE066',
-    '#8CE99A',
-    '#66D9E8',
-    '#74C0FC',
-    '#9775FA',
-    '#F783AC',
-    '#E9ECEF'
-  ];
-
-  function updateChart(data) {
-    if (chart) chart.destroy();
-
-    if (chartSelected == 'currentMonth') {
-      chart = new Chart('chartCanvas', {
-        type: 'doughnut',
-        data: {
-          labels: data.map(x => x.name),
-          datasets: [{
-            data: data.map(x => x.total),
-            backgroundColor: chartColors,
-            borderColor: '#1a1a1a',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          onHover: (event, elements) => {
-            event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
-          },
-          onClick: (event, elements) => {
-            if (elements.length > 0) {
-              const index = elements[0].index;
-              const category = data[index].name;
-              window.location.href = `transactions?category=${encodeURIComponent(category)}`;
-            }
-          },
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              boxPadding: 3,
-              usePointStyle: true,
-              callbacks: {
-                label: (context) => {
-                  const value = context.raw;
-                  const total = context.dataset.data.reduce((sum, val) => Decimal.add(sum, val).toNumber(), 0);
-                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                  return `${formatCurrency(value)} (${percentage}%)`;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-    else {
-      // Compute labels based on the selected range
-      let range;
-      if (chartSelected === 'lastThreeMonths') range = getLastNMonths(3);
-      else if (chartSelected === 'lastSixMonths') range = getLastNMonths(6);
-      else if (chartSelected === 'lastYear') range = getLastNMonths(12);
-      else if (chartSelected === 'yearToDate') range = getYearToDate();
-      else if (chartSelected === 'customRange') range = getCustomMonthRange(window.customRangeFrom, window.customRangeTo);
-      else if (chartSelected === 'allData') range = getAllMonths(data);
-
-      chart = new Chart('chartCanvas', {
-        type: 'line',
-        data: {
-          labels: range.map(x => formatDate(x)),
-          datasets: data.map((item, index) => ({
-            label: item.name,
-            data: range.map(m => {
-              const idx = item.dates.indexOf(m);
-              return idx !== -1 ? item.amounts[idx] : 0;
-            }),
-            fill: false,
-            backgroundColor: chartColors[index % chartColors.length],
-            borderColor: chartColors[index % chartColors.length],
-            borderWidth: 2.5,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: chartColors[index % chartColors.length],
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: chartColors[index % chartColors.length],
-            pointHoverBorderWidth: 2,
-            tension: 0.3,
-          })),
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          scales: {
-            x: {
-              grid: {
-                display: true,
-                drawOnChartArea: true,
-                drawTicks: true,
-                color: 'rgba(0, 0, 0, 0.05)',
-              },
-              ticks: {
-                maxRotation: 45,
-                minRotation: 0,
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: {
-                display: true,
-                color: 'rgba(0, 0, 0, 0.05)',
-              },
-              ticks: {
-                callback: function(value) {
-                  return formatCurrency(value);
-                }
-              }
-            }
-          },
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              padding: 12,
-              titleFont: {
-                size: 14,
-                weight: 'bold'
-              },
-              bodyFont: {
-                size: 13
-              },
-              bodySpacing: 6,
-              footerFont: {
-                size: 13,
-              },
-              footerMarginTop: 8,
-              footerSpacing: 4,
-              displayColors: true,
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 1,
-              usePointStyle: true,
-              boxPadding: 6,
-              callbacks: {
-                label: (context) => {
-                  const value = context.raw;
-                  const total = context.dataset.data.reduce((sum, val) => Decimal.add(sum, val).toNumber(), 0);
-                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                  return `${context.dataset.label}: ${formatCurrency(value)} (${percentage}%)`;
-                },
-                beforeFooter: () => {
-                  return '─'.repeat(20);
-                },
-                footer: (tooltipItems) => {
-                  const total = tooltipItems.reduce((sum, item) => Decimal.add(sum, item.raw).toNumber(), 0);
-                  return `Total: ${formatCurrency(total)}`;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-  }
-
-  function calculateBreakdown(transactions) {
-    const breakdownMap = {};
-
-    for (const { type, amount, date, ...rest } of transactions) {
-      const groupValue = rest.category;
-
-      if (type === 'expense' && !chartDisabledFields.has(groupValue)) {
-        if (!breakdownMap[groupValue]) {
-          breakdownMap[groupValue] = { total: 0, months: {} };
-        }
-
-        const monthKey = date.slice(0, 7); // YYYY-MM
-        breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, amount).toNumber();
-        breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), amount).toNumber();
-      }
-    }
-
-    const result = Object.entries(breakdownMap)
-      .map(([name, { total, months }]) => {
-        const sortedMonths = Object.keys(months).sort();
-        return {
-          name,
-          total,
-          dates: sortedMonths,
-          amounts: sortedMonths.map(m => months[m])
-        };
-      })
-      .sort((a, b) => b.total - a.total);
-
-    const grandTotal = result.reduce((sum, item) => Decimal.add(sum, item.total).toNumber(), 0);
-
-    // Add percentage field
-    return result.map(item => ({
-      ...item,
-      percentage: grandTotal ? (item.total / grandTotal) * 100 : 0
-    }));
-  }
-
-  function updateLegend(transactions, data) {
-    const legendContainer = document.getElementById('customLegend');
-    legendContainer.innerHTML = '';
-
-    const monthExpenses = transactions.filter(t => t.type === 'expense');
-    const labelMap = new Map(data.map(x => [x.name, x]));
-
-    monthExpenses
-      .map(exp => exp.category)
-      .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
-      .sort((a, b) => {
-        const da = labelMap.get(a), db = labelMap.get(b);
-        if (da && db) return db.total - da.total;
-        if (da) return -1;
-        if (db) return 1;
-        return a.localeCompare(b);
-      })
-      .forEach((label, index) => {
-        const categoryData = labelMap.get(label);
-        const color = chartColors[index % chartColors.length];
-        const percentage = categoryData ? ` (${categoryData.percentage.toFixed(1)}%)` : '';
-        const amount = categoryData ? formatCurrency(categoryData.total) : '';
-        const item = document.createElement('div');
-        item.className = `legend-item${chartDisabledFields.has(label) ? ' disabled' : ''}`;
-        item.innerHTML = `
-          <div class="color-box" style="background-color: ${color}"></div>
-          <div class="legend-text">
-            <span>${label}${percentage}</span>
-            <span class="amount">${amount}</span>
-          </div>
-        `;
-        item.addEventListener('click', () => toggleLegend(label));
-        legendContainer.appendChild(item);
-      });
-
-    const activeTotal = monthExpenses
-      .filter(x => !chartDisabledFields.has(x.category))
-      .reduce((sum, x) => Decimal.add(sum, x.amount).toNumber(), 0);
-
-    legendContainer.insertAdjacentHTML('beforeend', `
-      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--bs-border-color);">
-        <div style="display: flex; justify-content: flex-end; align-items: center;">
-          <span class="amount">Total: <span style="font-weight: bold">${formatCurrency(activeTotal)}</span></span>
-        </div>
-      </div>
-    `);
-  }
-
-  function formatCurrency(amount) {  
-    if (currency.position === 'left') {
-      if (Decimal(amount) < 0) return `-${currency.symbol}${Decimal(amount).abs()}`;
-      else return `${currency.symbol}${amount}`;
-    }
-    else return `${amount} ${currency.symbol}`;
-  }
-
-  function toggleLegend(label) {
-    if (chartDisabledFields.has(label)) chartDisabledFields.delete(label);
-    else chartDisabledFields.add(label);
-    loadChart();
-  }
-
-  function populateYearDropdowns() {
-    const currentYear = new Date().getFullYear();
-    const now = new Date();
-    const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-    
-    // Set current month and year as defaults
-    document.getElementById('fromMonthSelect').value = currentMonth;
-    document.getElementById('fromYearSelect').value = currentYear;
-    document.getElementById('toMonthSelect').value = currentMonth;
-    document.getElementById('toYearSelect').value = currentYear;
-  }
-
-  function submitDashboard(event) {
-    event.preventDefault();
-
-    // Get form data
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
-
-    // Store the selected range and group in the global variable
-    chartSelected = data.range;
-
-    // Validate custom range if selected
-    if (chartSelected === 'customRange') {
-      const fromMonth = document.getElementById('fromMonthSelect').value;
-      const fromYear = document.getElementById('fromYearSelect').value;
-      const toMonth = document.getElementById('toMonthSelect').value;
-      const toYear = document.getElementById('toYearSelect').value;
-      
-      // Parse values
-      const fromYearNum = parseInt(fromYear);
-      const toYearNum = parseInt(toYear);
-      const fromMonthStr = `${fromYear}-${fromMonth}`;
-      const toMonthStr = `${toYear}-${toMonth}`;
-      
-      if (fromMonthStr > toMonthStr) {
-        alert('From month must be before or equal to the to month.');
-        return;
-      }
-      
-      // Store custom range values globally
-      window.customRangeFrom = fromMonthStr;
-      window.customRangeTo = toMonthStr;
-    }
-
-    // Update header
-    const monthHeader = document.getElementById('monthHeader');
-    const monthHeaderAll = document.getElementById('monthHeaderAll');
-    if (chartSelected == 'currentMonth') {
-      monthHeader.style.display = 'flex';
-      monthHeaderAll.style.display = 'none';
-    }
-    else {
-      monthHeader.style.display = 'none';
-      monthHeaderAll.style.display = 'flex';
-      const mapRange = {
-        "lastThreeMonths": "Last 3 Months",
-        "lastSixMonths": "Last 6 Months",
-        "lastYear": "Last 12 Months",
-        "yearToDate": "Year to Date",
-        "allData": "All Data"
-      };
-      monthHeaderAll.innerText = chartSelected === 'customRange' 
-        ? `${formatDate(window.customRangeFrom)} - ${formatDate(window.customRangeTo)}`
-        : mapRange[chartSelected];
-    }
-
-    // Load the chart with the new selection
-    chartDisabledFields = new Set();
-    loadChart();
-
-    // Hide the modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('dashboardModal'));
-    modal.hide();
-  }
-
-  function getLastNMonths(n) {
-    // Generate previous n months including current month
-    const months = [];
-    const today = new Date();
-
-    for (let i = n - 1; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      months.push(`${d.getFullYear()}-${month}`);
-    }
-    return months;
-  }
-
-  function getYearToDate() {
-    const months = [];
-    const today = new Date();
-    const year = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-indexed
-
-    for (let m = 0; m <= currentMonth; m++) {
-      const month = String(m + 1).padStart(2, '0');
-      months.push(`${year}-${month}`);
-    }
-    return months;
-  }
-
-  function getCustomMonthRange(fromMonth, toMonth) {
-    const months = [];
-    const [fromYear, fromMonthNum] = fromMonth.split('-').map(Number);
-    const [toYear, toMonthNum] = toMonth.split('-').map(Number);
-    
-    let currentYear = fromYear;
-    let currentMonth = fromMonthNum;
-    
-    while (currentYear < toYear || (currentYear === toYear && currentMonth <= toMonthNum)) {
-      const monthStr = String(currentMonth).padStart(2, '0');
-      months.push(`${currentYear}-${monthStr}`);
-      
-      currentMonth++;
-      if (currentMonth > 12) {
-        currentMonth = 1;
-        currentYear++;
-      }
-    }
-    
-    return months;
-  }
-
-  function getAllMonths(data) {
-    let minDate = null;
-    let maxDate = null;
-
-    data.forEach(item => {
-      item.dates.forEach(d => {
-        const [year, month] = d.split('-').map(Number);
-        const date = new Date(year, month - 1);
-        if (!minDate || date < minDate) minDate = date;
-        if (!maxDate || date > maxDate) maxDate = date;
-      });
-    });
-
-    const result = [];
-    let current = new Date(minDate.getTime());
-
-    while (current <= maxDate) {
-      const monthStr = current.getMonth() + 1; // 1-12
-      const yearStr = current.getFullYear();
-      result.push(`${yearStr}-${monthStr.toString().padStart(2, '0')}`);
-      current.setMonth(current.getMonth() + 1);
-    }
-    return result;
-  }
-
-  function alignData(dateArrays, amountArrays, refMonths) {
-    return refMonths.map(m => {
-      const idx = dateArrays.indexOf(m);
-      return idx !== -1 ? amountArrays[idx] : 0;
-    });
-  }
-
-  function formatDate(yyyymm) {
-    const [year, month] = yyyymm.split('-').map(Number);
-    const date = new Date(year, month - 1);
-    return date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-  }
-
-  // ----------------
-  // - Transactions -
-  // ----------------
-  document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
-    document.getElementById('nameInput').focus()
-  });
-
-  document.getElementById('amountInput').addEventListener('input', (event) => {
-    if (event.target.value.includes(',')) {
-      event.target.value = event.target.value.replace(',', '.');
-    }
-  });
-
-  async function renderTags() {
-    tagsInput = new TomSelect('#tagsInput', {
-      plugins: {
-        remove_button: {
-          title: 'Remove this tag',
-        }
-      },
-      persist: false,
-      create: true,
-      render: {
-        no_results: function(data, escape) {
-          return '';
-        },
-      }
-    });
-
-    tags.forEach(tag => {
-      tagsInput.addOption({ value: tag, text: tag }, user_created=false);
-    });
-  }
-
-  async function renderCategories() {
-    const select = document.getElementById('categorySelect');
-
-    // Clear any existing options
-    select.innerHTML = "";
-
-    // First static placeholder option
-    const placeholder = document.createElement('option');
-    placeholder.value = "";
-    placeholder.textContent = "Select category";
-    placeholder.selected = true;
-    placeholder.disabled = true;
-    select.appendChild(placeholder);
-
-    // Then your dynamic options
-    categories.forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      option.textContent = category;
-      option.selected = false;
-      select.appendChild(option);
-    });
-  }
-
-  function addTransaction() {
-    document.getElementById('transactionForm').reset();
-    document.getElementById('categorySelect').value = "";
-    tagsInput.setValue([]);
-    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-    document.getElementById('recurringElement').style.display = 'block';
-    toggleRecurring(false);
-  }
-
-  function submitTransaction(event) {
-    if (event.target.recurringCheck.checked) submitRecurringAdd(event);
-    else submitTransactionAdd(event);
-  }
-
-  async function submitRecurringAdd(event) {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
-    data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-    // Check if startDate is before endDate
-    if (new Date(data.startDate) >= new Date(data.endDate)) {
-      bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/recurring`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const json = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 422) throw new Error(json.detail[0].msg)
-        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-        throw new Error("An error occurred.")
-      }
-      else {
-        // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-        modal.hide();
-
-        // Show toast
-        bootstrap.showToast({body: 'Recurring transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-        // Refresh the chart
-        loadChart();
-      }
-    }
-    catch (error) {
-      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-    }
-  }
-
-  async function submitTransactionAdd(event) {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
-    data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-    try {
-      const response = await fetch(`${API_URL}/transactions`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const json = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 422) throw new Error(json.detail[0].msg)
-        else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-        throw new Error("An error occurred.")
-      }
-      else {
-        // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-        modal.hide();
-
-        // Show toast
-        bootstrap.showToast({body: 'Transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-        // Refresh the chart
-        loadChart();
-      }
-    }
-    catch (error) {
-      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-    }
-  }
-
-  function toggleRecurring(enabled) {
-    const recurringDiv = document.getElementById('recurringDiv');
-    const date = document.getElementById('dateInput');
-    const startDate = document.getElementById('startDateInput');
-    const endDate = document.getElementById('endDateInput');
-    const frequencySelect = document.getElementById('frequencySelect');
-
-    if (enabled) {
-      recurringDiv.style.display = 'block';
-      date.disabled = true;
-      startDate.value = new Date().toISOString().split('T')[0];
-      startDate.required = true;
-      endDate.required = true;
-      frequencySelect.required = true;
-    } else {
-      recurringDiv.style.display = 'none';
-      date.disabled = false;
-      startDate.required = false;
-      endDate.required = false;
-      frequencySelect.required = false;
-    }
-  }
-
-  // --------
-  // - AUTH -
-  // --------
-  async function checkLogin() {
-    const response = await fetch(`${API_URL}/login/check`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const enabled = await response.json()
-    if (enabled) document.getElementById('logoutButton').style.display = 'block'
-  }
-
-  async function logout() {
-    await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-    window.location.href = '/login';
-  }
-</script>
 </html>

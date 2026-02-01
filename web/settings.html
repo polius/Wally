@@ -13,15 +13,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="assets/wally.png" />
   <!-- CSS -->
-  <link href="css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/tom-select.min.css" rel="stylesheet">
-  <link href="css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
+  <link href="css/vendors/tom-select.min.css" rel="stylesheet">
+  <link href="css/vendors/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <link href="css/settings.css" rel="stylesheet">
   <!-- JS -->
-  <script src="js/bootstrap.bundle.min.js" defer></script>
-  <script src="js/bootstrap-show-toast.js" defer></script>
-  <script src="js/ag-grid-community.min.noStyle.js" defer></script>
-  <script src="js/tom-select.complete.min.js" defer></script>
-  <script src="js/papaparse.min.js" defer></script>
+  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
+  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
+  <script src="js/vendors/ag-grid-community.min.noStyle.js" defer></script>
+  <script src="js/vendors/tom-select.complete.min.js" defer></script>
+  <script src="js/vendors/papaparse.min.js" defer></script>
+  <script src="js/i18n.js"></script>
+
 
   <script>
     (function() {
@@ -35,69 +38,9 @@
       }
     })();
   </script>
-
-  <style>
-    :root[data-bs-theme="light"] {
-      --header-bg: #f8f8f8;
-      --pill-bg: #f4f4f7;
-      --pill-color: #000;
-    }
-    :root[data-bs-theme="dark"] {
-      --header-bg: #262a2e;
-      --pill-bg: #282c30;
-      --pill-color: #FFF;
-    }
-    header {
-      background-color: var(--header-bg);
-    }
-    input, .option {
-      color: var(--pill-color)!important;
-    }
-
-    .ts-control .item {
-      background-color: var(--pill-bg)!important;
-      color: var(--pill-color)!important;
-    }
-
-    .ts-control .item .remove {
-      border-color: var(--header-bg)!important;
-    }
-
-    .badge {
-      background-color: var(--pill-bg);
-      color: var(--pill-color);
-    }
-
-    .text-green {
-      color: #198754;
-    }
-
-    .text-red {
-      color: #dc3545;
-    }
-
-    /* Toast width customization */
-    .toast {
-      min-width: 250px;
-      max-width: 350px;
-    }
-
-    /* Wider toasts for error messages */
-    .toast.text-bg-danger {
-      min-width: 400px;
-      max-width: 600px;
-      width: max-content;
-    }
-
-    /* Ensure toast body wraps text properly */
-    .toast-body {
-      word-wrap: break-word;
-      white-space: normal;
-    }
-  </style>
 </head>
 
-<body>
+<body data-i18n-document-title="settings.title">
   <!-- Header -->
   <header>
     <div class="container">
@@ -111,12 +54,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="/">Dashboards</a></li>
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="transactions">Transactions</a></li>
-            <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="settings" style="font-weight: 500">Settings</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="/" data-i18n="nav.dashboards">Dashboards</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
+            <li class="nav-item" style="margin-left: 10px"><a class="nav-link active" href="settings" style="font-weight: 500" data-i18n="nav.settings">Settings</a></li>
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
-            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" onclick="logout()">
+            <li class="nav-item nav-link" style="margin-left: 10px; cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--pill-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
                 <path d="M9 12h12l-3 -3" />
@@ -133,23 +76,23 @@
   <main class="container mb-4">
     <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; font-size: 0.9rem; color: var(--pill-color); font-weight: 300;">
       <a href="https://github.com/polius/Wally/releases/latest" target="_blank" style="text-decoration: none; color: inherit;">
-        Version: <span id="version" style="text-decoration: underline; font-weight: 400;"></span>
+        <span data-i18n="settings.version">Version:</span> <span id="version" style="text-decoration: underline; font-weight: 400;"></span>
       </a>
       <span style="padding-left: 3px; padding-right:3px; font-weight: 100">|</span>
-      <a href="/api/docs" target="_blank" style="text-decoration: underline; color: inherit; font-weight: 400;">
+      <a href="/api/docs" target="_blank" style="text-decoration: underline; color: inherit; font-weight: 400;" data-i18n="settings.api_docs">
         API Docs
       </a>
     </div>
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Categories</div>
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.categories.title">Categories</div>
           <div class="card-body d-flex flex-column" style="height: 100%;">
             <div id="categoryBadges" class="flex-grow-1"></div>
             <form id="categoryForm" class="modal-content mt-2" onsubmit="addCategory(event)">
               <div class="input-group">
-                <input type="text" class="form-control" name="name" placeholder="Add new category" style="font-size: 0.9rem;" required />
-                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
+                <input type="text" class="form-control" name="name" placeholder="Add new category" data-i18n-placeholder="settings.categories.placeholder" style="font-size: 0.9rem;" required />
+                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;" data-i18n="settings.categories.add">Add</button>
               </div>
             </form>
           </div>
@@ -157,13 +100,13 @@
       </div>
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Tags</div>
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.tags.title">Tags</div>
           <div class="card-body d-flex flex-column" style="height: 100%;">
             <div id="tagBadges" class="flex-grow-1"></div>
             <form id="tagForm" class="modal-content mt-2" onsubmit="addTag(event)">
               <div class="input-group">
-                <input type="text" class="form-control" name="name" placeholder="Add new tag" style="font-size: 0.9rem;" required />
-                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;">Add</button>
+                <input type="text" class="form-control" name="name" placeholder="Add new tag" data-i18n-placeholder="settings.tags.placeholder" style="font-size: 0.9rem;" required />
+                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;" data-i18n="settings.tags.add">Add</button>
               </div>
             </form>
           </div>
@@ -174,26 +117,34 @@
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Theme</div>
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.theme.title">Theme</div>
           <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem">Select the theme to be used.</p>
+            <p class="card-text" style="font-size: 0.9rem" data-i18n="settings.theme.description">Select the theme to be used.</p>
             <select class="form-select" id="themeSelect" style="font-size: 0.9rem" onchange="changeTheme(event)">
-              <option value="system">System Default</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system" data-i18n="settings.theme.system">System Default</option>
+              <option value="light" data-i18n="settings.theme.light">Light</option>
+              <option value="dark" data-i18n="settings.theme.dark">Dark</option>
             </select>
           </div>
         </div>
       </div>
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Currency</div>
+          <div class="card-header d-flex align-items-center" style="font-weight: 500">
+            <span data-i18n="settings.currency.title">Currency</span>
+            <button class="btn btn-sm btn-primary ms-auto" style="width: 80px" data-bs-toggle="modal" data-bs-target="#currencyModal" data-i18n="settings.currency.manage">Manage</button>
+          </div>
           <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem">Select the currency to be used for transactions.</p>
-            <select class="form-select" id="currencySelect" style="font-size: 0.9rem" onchange="changeCurrency(event)">
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
+            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.description">Select the currency to be used for transactions.</p>
+            <select class="form-select" id="currencySelect" style="font-size: 0.9rem; margin-bottom: 0.75rem" onchange="changeCurrency(event)"></select>
+            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.position">Symbol position:</p>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="currencyPosition" id="positionLeft" value="left" autocomplete="off" onchange="changeCurrencyPosition(event)">
+              <label class="btn btn-outline-primary" for="positionLeft" id="positionLeftLabel" style="font-size: 0.9rem">$100</label>
+              
+              <input type="radio" class="btn-check" name="currencyPosition" id="positionRight" value="right" autocomplete="off" onchange="changeCurrencyPosition(event)">
+              <label class="btn btn-outline-primary" for="positionRight" id="positionRightLabel" style="font-size: 0.9rem">100$</label>
+            </div>
           </div>
         </div>
       </div>
@@ -202,34 +153,60 @@
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">
-            <span>Login</span>
-          </div>
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.language.title">Language</div>
           <div class="card-body">
-            <p class="card-text mb-3" style="font-size: 0.9rem">Enable the login page. Off allows access without signing in.</p>
-            <button class="btn btn-primary" id="loginEnableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalEnable" onclick="enableLogin()">Enable Login</button>
-            <button class="btn btn-danger" id="loginDisableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalDisable">Disable Login</button>
-            <button class="btn btn-primary" id="loginChangeBtn" style="width: 150px; font-size: 0.9rem; display: none;"  data-bs-toggle="modal" data-bs-target="#loginModalChange" onclick="changeLogin()">Change Password</button>
+            <p class="card-text" style="font-size: 0.9rem" data-i18n="settings.language.description">Select your preferred language.</p>
+            <select class="form-select" id="languageSelect" style="font-size: 0.9rem" onchange="changeLanguage(event)">
+              <option value="ar">العربية</option>
+              <option value="ca">Català</option>
+              <option value="zh">中文</option>
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="hi">हिन्दी</option>
+              <option value="it">Italiano</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="pt">Português</option>
+              <option value="ru">Русский</option>
+            </select>
           </div>
         </div>
       </div>
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500">Import / Export Transactions</div>
+          <div class="card-header" style="font-weight: 500">
+            <span data-i18n="settings.login.title">Login</span>
+          </div>
           <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem;">Export or import transactions quickly using CSV files.</p>
-            <button class="btn btn-sm btn-primary" style="margin-right: 1px; width: 140px" onclick="exportToCSV()">
+            <p class="card-text mb-3" style="font-size: 0.9rem" data-i18n="settings.login.description">Enable the login page. Off allows access without signing in.</p>
+            <button class="btn btn-primary" id="loginEnableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalEnable" onclick="enableLogin()" data-i18n="settings.login.enable">Enable Login</button>
+            <button class="btn btn-danger" id="loginDisableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalDisable" data-i18n="settings.login.disable">Disable Login</button>
+            <button class="btn btn-primary" id="loginChangeBtn" style="width: 180px; font-size: 0.9rem; display: none;"  data-bs-toggle="modal" data-bs-target="#loginModalChange" onclick="changeLogin()" data-i18n="settings.login.change">Change Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.import_export.title">Import / Export Transactions</div>
+          <div class="card-body">
+            <p class="card-text" style="font-size: 0.9rem;" data-i18n="settings.import_export.description">Export or import transactions quickly using CSV files.</p>
+            <button class="btn btn-sm btn-primary" style="margin-right: 1px; min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="exportToCSV()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/>
               </svg>
-              Export to CSV
+              <span data-i18n="settings.import_export.export">Export to CSV</span>
             </button>
             <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
-            <button class="btn btn-sm btn-primary" style="width: 155px" onclick="csvInput.click()">
+            <button class="btn btn-sm btn-primary" style="min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="csvInput.click()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
                 <path d="M214.6 17.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 117.3 160 488c0 17.7 14.3 32 32 32s32-14.3 32-32l0-370.7 105.4 105.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/>
               </svg>
-              Import from CSV
+              <span data-i18n="settings.import_export.import">Import from CSV</span>
             </button>
           </div>
         </div>
@@ -238,18 +215,18 @@
 
     <div class="card mt-3">
       <div class="card-header d-flex align-items-center" style="font-weight: 500">
-        <span>Recurring Transactions</span>
-        <button class="btn btn-sm btn-success ms-auto" title="Add new recurring transaction" style="width: 80px" data-bs-toggle="modal" data-bs-target="#recurringModal" onclick="addRecurring()">
+        <span data-i18n="settings.recurring.title">Recurring Transactions</span>
+        <button class="btn btn-sm btn-success ms-auto" data-i18n-title="settings.recurring.add_tooltip" title="Add new recurring transaction" style="width: 80px" data-bs-toggle="modal" data-bs-target="#recurringModal" onclick="addRecurring()">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="12" height="12" fill="white" style="margin-right: 3px; padding-bottom: 2px">
             <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
           </svg>
-          Add
+          <span data-i18n="settings.recurring.add_btn">Add</span>
         </button>
       </div>
       <div class="card-body">
         <!-- Grid Filter -->
         <div class="mb-2">
-          <input type="text" class="form-control" id="searchInput" placeholder="Search..." style="font-size: 0.9rem;" oninput="onFilterTextBoxChanged()" />
+          <input type="text" class="form-control" id="searchInput" placeholder="Search..." data-i18n-placeholder="settings.recurring.search_placeholder" style="font-size: 0.9rem;" oninput="onFilterTextBoxChanged()" />
         </div>
         <!-- AG Grid Table -->
         <div id="myGrid" style="height: 500px;"></div>
@@ -275,13 +252,13 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
                 <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
               </svg>
-              Edit
+              <span data-i18n="common.edit">Edit</span>
             </button>
             <button type="button" class="btn btn-danger" style="flex: 1;" onclick="openDeleteCategoryModal()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
                 <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
               </svg>
-              Delete
+              <span data-i18n="common.delete">Delete</span>
             </button>
           </div>
         </div>
@@ -294,16 +271,16 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="editCategorySubmit(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="categoryModalEditLabel">Edit Category</h5>
+          <h5 class="modal-title" id="categoryModalEditLabel" data-i18n="settings.categories.edit_title">Edit Category</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="categoryEditInput" class="form-label">Category Name</label>
-          <input type="text" class="form-control" id="categoryEditInput" name="name" placeholder="Enter new name" required />
+          <label for="categoryEditInput" class="form-label" data-i18n="settings.categories.name_label">Category Name</label>
+          <input type="text" class="form-control" id="categoryEditInput" name="name" placeholder="Enter new name" data-i18n-placeholder="common.enter_new_name" required />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -314,21 +291,21 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="deleteCategorySubmit(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="categoryModalDeleteLabel">Delete Category</h5>
+          <h5 class="modal-title" id="categoryModalDeleteLabel" data-i18n="settings.categories.delete_title">Delete Category</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>Are you sure you want to delete the category <strong id="categoryModalDeleteName"></strong>?</p>
+          <p><span data-i18n="settings.categories.delete_confirm">Are you sure you want to delete the category</span> <strong id="categoryModalDeleteName"></strong>?</p>
           <div class="alert alert-light mb-0" style="font-size: 0.9rem; border: 1px solid #dee2e6;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="#6c757d" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
               <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
             </svg>
-            This will only work if there are no transactions using this category.
+            <span data-i18n="settings.categories.delete_warning">This will only work if there are no transactions using this category.</span>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
     </div>
@@ -350,13 +327,13 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
                 <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
               </svg>
-              Edit
+              <span data-i18n="common.edit">Edit</span>
             </button>
             <button type="button" class="btn btn-danger" style="flex: 1;" onclick="openDeleteTagModal()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="14" height="14" fill="white" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
                 <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
               </svg>
-              Delete
+              <span data-i18n="common.delete">Delete</span>
             </button>
           </div>
         </div>
@@ -369,16 +346,16 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="editTagSubmit(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="tagModalEditLabel">Edit Tag</h5>
+          <h5 class="modal-title" id="tagModalEditLabel" data-i18n="settings.tags.edit_title">Edit Tag</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="tagEditInput" class="form-label">Tag Name</label>
-          <input type="text" class="form-control" id="tagEditInput" name="name" placeholder="Enter new name" required />
+          <label for="tagEditInput" class="form-label" data-i18n="settings.tags.name_label">Tag Name</label>
+          <input type="text" class="form-control" id="tagEditInput" name="name" placeholder="Enter new name" data-i18n-placeholder="common.enter_new_name" required />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -389,21 +366,84 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="deleteTagSubmit(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="tagModalDeleteLabel">Delete Tag</h5>
+          <h5 class="modal-title" id="tagModalDeleteLabel" data-i18n="settings.tags.delete_title">Delete Tag</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>Are you sure you want to delete the tag <strong id="tagModalDeleteName"></strong>?</p>
+          <p><span data-i18n="settings.tags.delete_confirm">Are you sure you want to delete the tag</span> <strong id="tagModalDeleteName"></strong>?</p>
           <div class="alert alert-light mb-0" style="font-size: 0.9rem; border: 1px solid #dee2e6;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="#6c757d" style="margin-right: 6px; vertical-align: middle; margin-bottom: 2px">
               <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
             </svg>
-            This tag will be removed from all transactions.
+            <span data-i18n="settings.tags.delete_warning">This tag will be removed from all transactions.</span>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Currency Management Modal -->
+  <div class="modal fade" id="currencyModal" tabindex="-1" aria-labelledby="currencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="currencyModalLabel" data-i18n="settings.currency.manage_title">Manage Currencies</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-3" id="currencySearch" placeholder="Search currencies..." data-i18n-placeholder="settings.currency.search_placeholder" style="font-size: 0.9rem;" oninput="filterCurrencyList()">
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover align-middle" style="font-size: 0.9rem;">
+              <thead style="position: sticky; top: 0; background: var(--bs-body-bg); z-index: 10;">
+                <tr>
+                  <th style="width: 40%; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.code">Code</th>
+                  <th style="width: 40%; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.symbol">Symbol</th>
+                  <th style="width: 20%; text-align: center; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="currencyTableBody"></tbody>
+            </table>
+          </div>
+          <hr>
+          <form id="currencyAddForm" onsubmit="addCurrencySubmit(event)">
+            <div class="input-group">
+              <input type="text" class="form-control" name="name" placeholder="Code" data-i18n-placeholder="settings.currency.code" maxlength="10" style="font-size: 0.9rem;" required />
+              <input type="text" class="form-control" name="symbol" placeholder="Symbol" data-i18n-placeholder="settings.currency.symbol" maxlength="10" style="font-size: 0.9rem;" required />
+              <button class="btn btn-success" type="submit" style="font-size: 0.9rem;" data-i18n="settings.currency.add_currency">Add Currency</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Currency Edit Modal -->
+  <div class="modal fade" id="currencyEditModal" tabindex="-1" aria-labelledby="currencyEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="editCurrencySubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="currencyEditModalLabel" data-i18n="settings.currency.edit_title">Edit Currency</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2">
+            <div class="col">
+              <label for="currencyEditName" class="form-label" data-i18n="settings.currency.code">Code</label>
+              <input type="text" class="form-control" id="currencyEditName" name="name" maxlength="10" required />
+            </div>
+            <div class="col">
+              <label for="currencyEditSymbol" class="form-label" data-i18n="settings.currency.symbol">Symbol</label>
+              <input type="text" class="form-control" id="currencyEditSymbol" name="symbol" maxlength="10" required />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cancelCurrencyEdit()" style="width: 100px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 100px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -421,87 +461,87 @@
 
           <!-- Name -->
           <div class="mb-3">
-            <label for="nameInput" class="form-label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" required />
+            <label for="nameInput" class="form-label" data-i18n="settings.recurring.name">Name</label>
+            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" data-i18n-placeholder="settings.recurring.name_placeholder" required />
           </div>
 
           <!-- Category -->
           <div class="mb-3">
-            <label for="categorySelect" class="form-label">Category</label>
+            <label for="categorySelect" class="form-label" data-i18n="settings.recurring.category">Category</label>
             <select class="form-select" id="categorySelect" name="category" required></select>
           </div>
 
           <!-- Tags -->
           <div class="mb-3">
-            <label class="form-label">Tags</label>
-            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" autocomplete="off">
+            <label class="form-label" data-i18n="settings.recurring.tags">Tags</label>
+            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="settings.recurring.tags_placeholder" autocomplete="off">
           </div>
 
           <!-- Amount -->
           <div class="mb-3">
-            <label for="amountInput" class="form-label">Amount</label>
+            <label for="amountInput" class="form-label" data-i18n="settings.recurring.amount">Amount</label>
             <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" required />
           </div>
 
           <!-- Type -->
           <div class="mb-3">
-            <label for="typeSelect" class="form-label">Type</label>
+            <label for="typeSelect" class="form-label" data-i18n="settings.recurring.type">Type</label>
             <select class="form-select" id="typeSelect" name="type" required>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
+              <option value="expense" data-i18n="settings.recurring.type_expense">Expense</option>
+              <option value="income" data-i18n="settings.recurring.type_income">Income</option>
             </select>
           </div>
 
           <div class="row">
             <!-- Start Date -->
             <div class="col-6 mb-3">
-              <label for="startDateInput" class="form-label">Start Date</label>
+              <label for="startDateInput" class="form-label" data-i18n="settings.recurring.start_date">Start Date</label>
               <input type="date" class="form-control" id="startDateInput" name="startDate" required />
             </div>
             <!-- End Date -->
             <div class="col-6 mb-3">
-              <label for="endDateInput" class="form-label">End Date</label>
+              <label for="endDateInput" class="form-label" data-i18n="settings.recurring.end_date">End Date</label>
               <input type="date" class="form-control" id="endDateInput" name="endDate" required />
             </div>
           </div>
 
           <!-- Frequency -->
           <div class="mb-1">
-            <label for="frequencySelect" class="form-label">Frequency</label>
+            <label for="frequencySelect" class="form-label" data-i18n="settings.recurring.frequency">Frequency</label>
             <select class="form-select" id="frequencySelect" name="frequency" required>
-              <option value="" disabled selected>Select frequency</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
+              <option value="" disabled selected data-i18n="settings.recurring.frequency_placeholder">Select frequency</option>
+              <option value="daily" data-i18n="settings.recurring.frequency_daily">Daily</option>
+              <option value="weekly" data-i18n="settings.recurring.frequency_weekly">Weekly</option>
+              <option value="monthly" data-i18n="settings.recurring.frequency_monthly">Monthly</option>
+              <option value="yearly" data-i18n="settings.recurring.frequency_yearly">Yearly</option>
             </select>
           </div>
 
           <!-- Apply To -->
           <div id="recurringModalApplyTo" class="card mt-3" style="display: none">
             <div class="card-body">
-              <p class="mb-3">Apply changes to:</p>
+              <p class="mb-3" data-i18n="settings.recurring.apply_to">Apply changes to:</p>
               <div class="form-check mb-2">
                 <input class="form-check-input" type="radio" name="applyTo" value="future" id="recurringEditRadioFuture" checked>
-                <label class="form-check-label" for="recurringEditRadioFuture">
+                <label class="form-check-label" for="recurringEditRadioFuture" data-i18n="settings.recurring.apply_future">
                   Future transactions only
                 </label>
-                <div class="form-text">Past ones will stay as they are.</div>
+                <div class="form-text" data-i18n="settings.recurring.apply_future_hint">Past ones will stay as they are.</div>
               </div>
 
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="applyTo" value="all" id="recurringEditRadioAll">
-                <label class="form-check-label" for="recurringEditRadioAll">
+                <label class="form-check-label" for="recurringEditRadioAll" data-i18n="settings.recurring.apply_all">
                   All transactions
                 </label>
-                <div class="form-text">Past and future occurrences will be updated.</div>
+                <div class="form-text" data-i18n="settings.recurring.apply_all_hint">Past and future occurrences will be updated.</div>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px">Add</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px" data-i18n="settings.recurring.add_btn">Add</button>
         </div>
       </form>
     </div>
@@ -512,34 +552,34 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="submitRecurring(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="recurringModalDeleteLabel">Delete Recurring Transaction</h5>
+          <h5 class="modal-title" id="recurringModalDeleteLabel" data-i18n="settings.recurring.modal_delete_title">Delete Recurring Transaction</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Are you sure you want to delete this recurring transaction?
+          <span data-i18n="settings.recurring.delete_confirm">Are you sure you want to delete this recurring transaction?</span>
           <div id="recurringModalDeleteApplyTo" class="card mt-3">
             <div class="card-body">
-              <p class="mb-3">Apply changes to:</p>
+              <p class="mb-3" data-i18n="settings.recurring.apply_to">Apply changes to:</p>
               <div class="form-check mb-2">
                 <input class="form-check-input" type="radio" name="applyTo" value="future" id="recurringDeleteRadioFuture" checked>
-                <label class="form-check-label" for="recurringDeleteRadioFuture">
+                <label class="form-check-label" for="recurringDeleteRadioFuture" data-i18n="settings.recurring.apply_future">
                   Future transactions only
                 </label>
-                <div class="form-text">Past ones will stay as they are.</div>
+                <div class="form-text" data-i18n="settings.recurring.apply_future_hint">Past ones will stay as they are.</div>
               </div>
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="applyTo" value="all" id="recurringDeleteRadioAll">
-                <label class="form-check-label" for="recurringDeleteRadioAll">
+                <label class="form-check-label" for="recurringDeleteRadioAll" data-i18n="settings.recurring.apply_all">
                   All transactions
                 </label>
-                <div class="form-text">Past and future occurrences will be updated.</div>
+                <div class="form-text" data-i18n="settings.recurring.apply_all_hint">Past and future occurrences will be updated.</div>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
     </div>
@@ -550,19 +590,19 @@
     <div class="modal-dialog modal-dialog-centered">
       <form id="loginFormEnable" class="modal-content" onsubmit="loginSubmit(event, 'enable')">
         <div class="modal-header">
-          <h5 class="modal-title">Enable Login Page</h5>
+          <h5 class="modal-title" data-i18n="settings.login.enable_title">Enable Login Page</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="loginEnablePasswordInput" class="form-label">Password</label>
+          <label for="loginEnablePasswordInput" class="form-label" data-i18n="settings.login.password_label">Password</label>
           <div class="input-group">
-            <input type="password" class="form-control" id="loginEnablePasswordInput" name="password" placeholder="Enter a password" required />
-            <button id="loginEnablePasswordShow" class="btn btn-outline-secondary" type="button" title="Show password" onclick="loginEnablePasswordShow.style.display = 'none'; loginEnablePasswordHide.style.display = 'block'; loginEnablePasswordInput.type = 'text'">
+            <input type="password" class="form-control" id="loginEnablePasswordInput" name="password" placeholder="Enter a password" data-i18n-placeholder="settings.login.password_placeholder" required />
+            <button id="loginEnablePasswordShow" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.show_password" title="Show password" onclick="loginEnablePasswordShow.style.display = 'none'; loginEnablePasswordHide.style.display = 'block'; loginEnablePasswordInput.type = 'text'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
                 <path d="M41-24.9c-9.4-9.4-24.6-9.4-33.9 0S-2.3-.3 7 9.1l528 528c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-96.4-96.4c2.7-2.4 5.4-4.8 8-7.2 46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6-56.8 0-105.6 18.2-146 44.2L41-24.9zM204.5 138.7c23.5-16.8 52.4-26.7 83.5-26.7 79.5 0 144 64.5 144 144 0 31.1-9.9 59.9-26.7 83.5l-34.7-34.7c12.7-21.4 17-47.7 10.1-73.7-13.7-51.2-66.4-81.6-117.6-67.9-8.6 2.3-16.7 5.7-24 10l-34.7-34.7zM325.3 395.1c-11.9 3.2-24.4 4.9-37.3 4.9-79.5 0-144-64.5-144-144 0-12.9 1.7-25.4 4.9-37.3L69.4 139.2c-32.6 36.8-55 75.8-66.9 104.5-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6 37.3 0 71.2-7.9 101.5-20.6l-64.2-64.2z"/>
               </svg>
             </button>
-            <button id="loginEnablePasswordHide" class="btn btn-outline-secondary" type="button" title="Hide password" style="display: none" onclick="loginEnablePasswordShow.style.display = 'block'; loginEnablePasswordHide.style.display = 'none'; loginEnablePasswordInput.type = 'password'">
+            <button id="loginEnablePasswordHide" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.hide_password" title="Hide password" style="display: none" onclick="loginEnablePasswordShow.style.display = 'block'; loginEnablePasswordHide.style.display = 'none'; loginEnablePasswordInput.type = 'password'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
                 <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z"/>
               </svg>
@@ -570,8 +610,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px">Enable</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="settings.login.enable_btn">Enable</button>
         </div>
       </form>
     </div>
@@ -582,15 +622,15 @@
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" onsubmit="loginSubmit(event, 'disable')">
         <div class="modal-header">
-          <h5 class="modal-title">Disable Login Page</h5>
+          <h5 class="modal-title" data-i18n="settings.login.disable_title">Disable Login Page</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" data-i18n="settings.login.disable_confirm">
           Are you sure you want to disable the login page?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px">Disable</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="settings.login.disable_btn">Disable</button>
         </div>
       </form>
     </div>
@@ -601,19 +641,19 @@
     <div class="modal-dialog modal-dialog-centered">
       <form id="loginFormChange" class="modal-content" onsubmit="loginSubmit(event, 'change')">
         <div class="modal-header">
-          <h5 class="modal-title">Change Password</h5>
+          <h5 class="modal-title" data-i18n="settings.login.change_title">Change Password</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="loginChangePasswordInput" class="form-label">Password</label>
+          <label for="loginChangePasswordInput" class="form-label" data-i18n="settings.login.password_label">Password</label>
           <div class="input-group">
-            <input type="password" class="form-control" id="loginChangePasswordInput" name="password" placeholder="Enter a password" required />
-            <button id="loginChangePasswordShow" class="btn btn-outline-secondary" type="button" title="Show password" onclick="loginChangePasswordShow.style.display = 'none'; loginChangePasswordHide.style.display = 'block'; loginChangePasswordInput.type = 'text'">
+            <input type="password" class="form-control" id="loginChangePasswordInput" name="password" placeholder="Enter a password" data-i18n-placeholder="settings.login.password_placeholder" required />
+            <button id="loginChangePasswordShow" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.show_password" title="Show password" onclick="loginChangePasswordShow.style.display = 'none'; loginChangePasswordHide.style.display = 'block'; loginChangePasswordInput.type = 'text'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
                 <path d="M41-24.9c-9.4-9.4-24.6-9.4-33.9 0S-2.3-.3 7 9.1l528 528c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-96.4-96.4c2.7-2.4 5.4-4.8 8-7.2 46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6-56.8 0-105.6 18.2-146 44.2L41-24.9zM204.5 138.7c23.5-16.8 52.4-26.7 83.5-26.7 79.5 0 144 64.5 144 144 0 31.1-9.9 59.9-26.7 83.5l-34.7-34.7c12.7-21.4 17-47.7 10.1-73.7-13.7-51.2-66.4-81.6-117.6-67.9-8.6 2.3-16.7 5.7-24 10l-34.7-34.7zM325.3 395.1c-11.9 3.2-24.4 4.9-37.3 4.9-79.5 0-144-64.5-144-144 0-12.9 1.7-25.4 4.9-37.3L69.4 139.2c-32.6 36.8-55 75.8-66.9 104.5-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6 37.3 0 71.2-7.9 101.5-20.6l-64.2-64.2z"/>
               </svg>
             </button>
-            <button id="loginChangePasswordHide" class="btn btn-outline-secondary" type="button" title="Hide password" style="display: none" onclick="loginChangePasswordShow.style.display = 'block'; loginChangePasswordHide.style.display = 'none'; loginChangePasswordInput.type = 'password'">
+            <button id="loginChangePasswordHide" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.hide_password" title="Hide password" style="display: none" onclick="loginChangePasswordShow.style.display = 'block'; loginChangePasswordHide.style.display = 'none'; loginChangePasswordInput.type = 'password'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
                 <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z"/>
               </svg>
@@ -621,1421 +661,13 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px">Change</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="settings.login.change_btn">Change</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script>
-    const API_URL = '/api'; // 'http://127.0.0.1:8000';
-
-    let categories;
-    let tags;
-    let currency;
-    let login;
-
-    let categorySelected;
-    let tagSelected;
-
-    let gridInstance;
-    let gridApi;
-
-    let modalMode = 'add';
-    let selectedRow;
-
-    let tagsInput;
-
-    // Execute the main function when DOM has loaded
-    document.addEventListener('DOMContentLoaded', () => main());
-
-    async function main() {
-      await checkLogin();
-      await getVersion();
-
-      // Get categories, tags and default currency
-      [categories, tags, currency, login] = await Promise.all([
-        getCategories(),
-        getTags(),
-        getCurrency(),
-        getLogin(),
-        renderTheme(),
-      ]);
-
-      // Render Login elements
-      renderLogin();
-
-      // Initialize the grid
-      gridApi = await initGrid();
-
-      // Init Tom Select for tags input
-      tagsInput = new TomSelect('#tagsInput', {
-        plugins: {
-          remove_button: {
-            title: 'Remove this tag',
-          }
-        },
-        persist: false,
-        create: true,
-        render: {
-          no_results: function(data, escape) {
-            return '';
-          },
-        }
-      });
-    }
-
-     async function getVersion() {
-      const response = await fetch(`${API_URL}/version`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await response.json();
-      document.getElementById('version').innerText = `${data.version}`;
-    }
-
-    async function getCategories() {
-      const response = await fetch(`${API_URL}/categories`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await response.json();
-      await renderCategories(data);
-      return categories
-    }
-
-    async function getTags() {
-      const response = await fetch(`${API_URL}/tags`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await response.json();
-      await renderTags(data);
-      return data;
-    }
-
-    async function getCurrency() {
-      const response = await fetch(`${API_URL}/currency`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await response.json();
-      await renderCurrency(data);
-      return data.filter(x => x.selected)[0];
-    }
-
-    async function getLogin() {
-      const response = await fetch(`${API_URL}/login/check`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      return await response.json()
-    }
-
-    // --------------
-    // - CATEGORIES -
-    // --------------
-    document.getElementById('categoryModalEdit').addEventListener('shown.bs.modal', () => {
-      document.getElementById('categoryEditInput').focus();
-    });
-
-    function openCategoryActionsModal(category) {
-      // Store selected category
-      categorySelected = category;
-
-      // Update modal with category name
-      document.getElementById('categoryModalActionsName').textContent = category;
-
-      // Show modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalActions'));
-      modal.show();
-    }
-
-    function openEditCategoryModal() {
-      // Hide actions modal
-      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
-      actionsModal.hide();
-
-      // Set the current name in the edit input
-      document.getElementById('categoryEditInput').value = categorySelected;
-
-      // Show edit modal
-      const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalEdit'));
-      editModal.show();
-    }
-
-    function openDeleteCategoryModal() {
-      // Hide actions modal
-      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
-      actionsModal.hide();
-
-      // Update delete modal with category name
-      document.getElementById('categoryModalDeleteName').textContent = categorySelected;
-
-      // Show delete modal
-      const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
-      deleteModal.show();
-    }
-
-    async function editCategorySubmit(event) {
-      event.preventDefault();
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalEdit'));
-          modal.hide();
-
-          // Show toast with info about transaction updates
-          bootstrap.showToast({body: 'Category updated successfully.', delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the categories
-          categories = await getCategories();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-    async function renderCategories(categories) {
-      const container = document.getElementById('categoryBadges');
-      container.innerHTML = ''; // clear previous badges
-
-      if (categories.length == 0) {
-        const empty = document.createElement('span');
-        empty.style.fontSize = '0.9rem'
-        empty.innerText = "No categories have been created yet."
-        empty.style.fontStyle = 'italic';
-        container.appendChild(empty);
-      }
-      else {
-        categories.forEach(category => {
-          // Create badge span
-          const badge = document.createElement('span');
-          badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
-          badge.style.height = '34px';
-          badge.style.paddingLeft = '12px';
-          badge.style.paddingRight = '12px';
-          badge.style.fontSize = '0.9rem';
-          badge.style.fontWeight = '400';
-          badge.style.cursor = 'pointer';
-          badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
-          badge.textContent = category;
-
-          // Add hover effect
-          badge.addEventListener('mouseenter', function() {
-            badge.style.opacity = '0.8';
-            badge.style.transform = 'scale(1.05)';
-          });
-          badge.addEventListener('mouseleave', function() {
-            badge.style.opacity = '1';
-            badge.style.transform = 'scale(1)';
-          });
-
-          // Open actions modal on click
-          badge.onclick = function() { openCategoryActionsModal(category) };
-
-          // Append badge to container
-          container.appendChild(badge);
-        });
-      }
-
-      // Update the select dropdown in recurring transactions
-      const select = document.getElementById('categorySelect');
-
-      // Clear any existing options
-      select.innerHTML = "";
-
-      // First static placeholder option
-      const placeholder = document.createElement('option');
-      placeholder.value = "";
-      placeholder.textContent = "Select category";
-      placeholder.selected = true;
-      placeholder.disabled = true;
-      select.appendChild(placeholder);
-
-      // Then your dynamic options
-      categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        option.selected = false;
-        select.appendChild(option);
-      });
-    }
-
-    async function addCategory(event) {
-      event.preventDefault();
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      // Add new category
-      try {
-        const response = await fetch(`${API_URL}/categories`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          categories = await getCategories();
-          bootstrap.showToast({body: 'Category added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-          document.getElementById('categoryForm').reset();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    function deleteCategory(category) {
-      // Store selected category
-      categorySelected = category;
-
-      // Update delete modal with category name
-      document.getElementById('categoryModalDeleteName').textContent = categorySelected;
-
-      // Show modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
-      modal.show();
-    }
-
-    async function deleteCategorySubmit(event) {
-      event.preventDefault();
-
-      try {
-        const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalDelete'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Category deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the categories
-          categories = await getCategories();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // --------
-    // - TAGS -
-    // --------
-    document.getElementById('tagModalEdit').addEventListener('shown.bs.modal', () => {
-      document.getElementById('tagEditInput').focus();
-    });
-
-    function openTagActionsModal(tag) {
-      // Store selected tag
-      tagSelected = tag;
-
-      // Update modal with tag name
-      document.getElementById('tagModalActionsName').textContent = tag;
-
-      // Show modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalActions'));
-      modal.show();
-    }
-
-    function openEditTagModal() {
-      // Hide actions modal
-      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
-      actionsModal.hide();
-
-      // Set the current name in the edit input
-      document.getElementById('tagEditInput').value = tagSelected;
-
-      // Show edit modal
-      const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalEdit'));
-      editModal.show();
-    }
-
-    function openDeleteTagModal() {
-      // Hide actions modal
-      const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
-      actionsModal.hide();
-
-      // Update delete modal with tag name
-      document.getElementById('tagModalDeleteName').textContent = tagSelected;
-
-      // Show delete modal
-      const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
-      deleteModal.show();
-    }
-
-    async function editTagSubmit(event) {
-      event.preventDefault();
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalEdit'));
-          modal.hide();
-
-          // Show toast with info about transaction updates
-          bootstrap.showToast({body: 'Tag updated successfully.', delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the tags
-          tags = await getTags();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-    async function renderTags(tags) {
-      const container = document.getElementById('tagBadges');
-      container.innerHTML = ''; // clear previous badges
-
-      if (tags.length == 0) {
-        const empty = document.createElement('span');
-        empty.style.fontSize = '0.9rem'
-        empty.innerText = "No tags have been created yet."
-        empty.style.fontStyle = 'italic';
-        container.appendChild(empty);
-      }
-      else {
-        tags.forEach(tag => {
-          // Create badge span
-          const badge = document.createElement('span');
-          badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
-          badge.style.height = '34px';
-          badge.style.paddingLeft = '12px';
-          badge.style.paddingRight = '12px';
-          badge.style.fontSize = '0.9rem';
-          badge.style.fontWeight = '400';
-          badge.style.cursor = 'pointer';
-          badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
-          badge.textContent = tag;
-
-          // Add hover effect
-          badge.addEventListener('mouseenter', function() {
-            badge.style.opacity = '0.8';
-            badge.style.transform = 'scale(1.05)';
-          });
-          badge.addEventListener('mouseleave', function() {
-            badge.style.opacity = '1';
-            badge.style.transform = 'scale(1)';
-          });
-
-          // Open actions modal on click
-          badge.onclick = function() { openTagActionsModal(tag) };
-
-          // Append badge to container
-          container.appendChild(badge);
-        });
-      }
-    }
-
-    async function addTag(event) {
-      event.preventDefault();
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const response = await fetch(`${API_URL}/tags`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          tags = await getTags();
-          bootstrap.showToast({body: 'Tag added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-          document.getElementById('tagForm').reset();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    function deleteTag(tag) {
-      // Store selected tag
-      tagSelected = tag;
-
-      // Update delete modal with tag name
-      document.getElementById('tagModalDeleteName').textContent = tagSelected;
-
-      // Show modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
-      modal.show();
-    }
-
-    async function deleteTagSubmit(event) {
-      event.preventDefault();
-
-      try {
-        const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalDelete'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Tag deleted.', delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the tags
-          tags = await getTags();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // ------------
-    // - CURRENCY -
-    // ------------
-    async function renderCurrency(currency) {
-      const select = document.getElementById('currencySelect');
-
-      // Clear any existing options
-      select.innerHTML = "";
-
-      // Then your dynamic options
-      currency.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.name;
-        option.textContent = `${c.name} (${c.symbol})`;
-        option.selected = c.selected;
-        select.appendChild(option);
-      });
-    }
-
-    async function changeCurrency(event) {
-      const new_currency = event.target.value
-
-      try {
-        const response = await fetch(`${API_URL}/currency/${new_currency}`, {
-          method: 'PUT',
-          credentials: 'include',
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Show toast
-          bootstrap.showToast({body: 'Currency changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-        
-          // Refresh the currency
-          currency = await getCurrency();
-
-          // Update the grid with the new currency
-          gridApi.refreshCells();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // ---------
-    // - THEME -
-    // ---------
-    async function renderTheme() {
-      const currentTheme = localStorage.getItem('theme') || 'system';
-      const select = document.getElementById('themeSelect');
-      select.value = currentTheme;
-    }
-
-    async function changeTheme(event) {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const select = document.getElementById('themeSelect');
-      const theme = event.target.value
-
-      // Store the selected theme in localStorage
-      localStorage.setItem('theme', theme);
-
-      // Apply the theme to bootstrap elements
-      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      }
-      else {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
-      }
-
-      // Recreate the AG Grid with the new theme
-      initGrid();
-
-      // Show confirmation message
-      bootstrap.showToast({body: 'Theme changed.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-    }
-
-    // --------------
-    // - LOGIN PAGE -
-    // --------------
-    document.getElementById('loginModalEnable').addEventListener('shown.bs.modal', () => {
-      document.getElementById('loginEnablePasswordInput').focus();
-      loginEnablePasswordShow.style.display = 'block';
-      loginEnablePasswordHide.style.display = 'none';
-      loginEnablePasswordInput.type = 'password'
-    });
-    document.getElementById('loginModalChange').addEventListener('shown.bs.modal', () => {
-      document.getElementById('loginChangePasswordInput').focus();
-      loginChangePasswordShow.style.display = 'block';
-      loginChangePasswordHide.style.display = 'none';
-      loginChangePasswordInput.type = 'password'
-    });
-
-    function enableLogin() {
-      document.getElementById('loginFormEnable').reset();
-    }
-    function changeLogin() {
-      document.getElementById('loginFormChange').reset();
-    }
-
-    function renderLogin() {
-      const loginEnableBtn = document.getElementById('loginEnableBtn')
-      const loginDisableBtn = document.getElementById('loginDisableBtn')
-      const loginChangeBtn = document.getElementById('loginChangeBtn')
-
-      if (login) {
-        loginEnableBtn.style.display = 'none'
-        loginDisableBtn.style.display = 'inline'
-        loginChangeBtn.style.display = 'inline'
-      }
-      else {
-        loginEnableBtn.style.display = 'inline'
-        loginDisableBtn.style.display = 'none'
-        loginChangeBtn.style.display = 'none'
-      }
-    }
-
-    async function loginSubmit(event, mode) {
-      event.preventDefault();
-
-      let data = {"password": ""};
-      if (mode != 'disable') {
-        const formData = new FormData(event.target);
-        data = Object.fromEntries(formData.entries());
-      }
-
-      // Enable login and change password
-      try {
-        const response = await fetch(`${API_URL}/login/password`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        if (response.status === 405) {
-          bootstrap.showToast({body: "This action is not available in the demo.", delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          let modalID;
-          let message;
-
-          if (mode == 'enable') {
-            modalID = 'loginModalEnable'
-            message = 'Login page enabled.'
-            login = true
-          }
-          else if (mode == 'disable') {
-            modalID = 'loginModalDisable'
-            message = 'Login page disabled.'
-            login = false
-          }
-          else if (mode == 'change') {
-            modalID = 'loginModalChange'
-            message = 'Password changed.'
-          }
-
-          // If mode is enable, login automatically
-          if (mode == 'enable') {
-            await fetch(`${API_URL}/login`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data),
-            });
-            document.getElementById('logoutButton').style.display = 'block'
-          }
-
-          // If mode is disable, logout automatically
-          else if (mode == 'disable') {
-            await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-            document.getElementById('logoutButton').style.display = 'none'
-          }
-
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById(modalID));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: message, delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh UX
-          renderLogin();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // -------------------
-    // - IMPORT / EXPORT -
-    // -------------------
-    async function exportToCSV() {
-      try {
-        const response = await fetch(`${API_URL}/transactions`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          if (!json.length) {
-            bootstrap.showToast({body: "There are no transactions", delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-            return;
-          }
-
-          // Generate CSV only with mandatory columns
-          const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-          const csv = Papa.unparse(json, {
-            columns: mandatoryColumns
-          });
-
-          // Create Blob and trigger download
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement('a');
-          const url = URL.createObjectURL(blob);
-          link.setAttribute('href', url);
-          link.setAttribute('download', 'transactions.csv');
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    async function importFromCSV() {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      // Read file content
-      const csvText = await file.text();
-
-      // Parse CSV to JSON using PapaParse
-      const { data, errors, meta } = Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        transform: (value, column) => {
-          if (column === "tags") return value && value.trim() !== "" ? value.split(",").map(tag => tag.trim()) : [];
-          return value;
-        }
-      });
-
-      // Check for missing mandatory columns
-      const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-      const missing = mandatoryColumns.filter(col => !meta.fields.includes(col));
-      if (missing.length > 0) {
-        errors.unshift({message: `Missing CSV columns: ${missing.join(", ")}`});
-      }
-
-      if (errors.length) {
-        bootstrap.showToast({body: errors[0].message, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-        return;
-      }
-
-      // Send data
-      try {
-        const response = await fetch(`${API_URL}/transactions/import`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Show confirmation message
-          bootstrap.showToast({body: 'Transactions imported.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // --------------------------
-    // - RECURRING TRANSACTIONS -
-    // --------------------------
-    document.getElementById('recurringModal').addEventListener('shown.bs.modal', () => {
-      document.getElementById('nameInput').focus()
-    });
-
-    document.getElementById('amountInput').addEventListener('input', (event) => {
-      if (event.target.value.includes(',')) {
-        event.target.value = event.target.value.replace(',', '.');
-      }
-    });
-
-    async function getRecurring() {
-      const response = await fetch(`${API_URL}/recurring`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await response.json()
-      gridApi.setGridOption('rowData', data)        
-    }
-
-    async function initGrid() {
-      let myTheme;
-      const theme = localStorage.getItem('theme') || 'system';
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-        myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
-      }
-      else {
-        myTheme = agGrid.themeQuartz.withParams({
-          backgroundColor: '#212529',
-          foregroundColor: '#b5b9bd',
-          headerTextColor: '#b5b9bd',
-          headerBackgroundColor: '#272b30',
-          oddRowBackgroundColor: '#272b30',
-          headerColumnResizeHandleColor: '#b5b9bd',
-        });
-      }
-
-      const gridOptions = {
-        theme: myTheme,
-        suppressMovableColumns: true,
-        rowData: [],
-        defaultColDef: {
-          flex: 1,
-          minWidth: 150,
-        },
-        onGridReady: params => {
-          gridApi = params.api;
-          getRecurring();
-        },
-        onFilterChanged: params => {
-          updateRowCount(params.api);
-        },
-        columnDefs: [
-          {
-            field: "name",
-            filter: true,
-            wrapText: true,
-            autoHeight: true,
-            cellRenderer: (params) => {
-              const container = document.createElement('span');
-  
-              if (params.data?.recurringID) {
-                // SVG icon
-                container.innerHTML = `
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M488 192l-144 0c-9.7 0-18.5-5.8-22.2-14.8s-1.7-19.3 5.2-26.2l46.7-46.7c-75.3-58.6-184.3-53.3-253.5 15.9-75 75-75 196.5 0 271.5s196.5 75 271.5 0c8.2-8.2 15.5-16.9 21.9-26.1 10.1-14.5 30.1-18 44.6-7.9s18 30.1 7.9 44.6c-8.5 12.2-18.2 23.8-29.1 34.7-100 100-262.1 100-362 0S-25 175 75 75c94.3-94.3 243.7-99.6 344.3-16.2L471 7c6.9-6.9 17.2-8.9 26.2-5.2S512 14.3 512 24l0 144c0 13.3-10.7 24-24 24z"/>
-                  </svg>
-                `;
-                // Add the name text after the SVG
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = params.data?.name;
-                container.appendChild(nameSpan);
-              } else {
-                // Just the name if no recurringID
-                container.textContent = params.data?.name;
-              }
-              return container;
-            }
-          },
-          {
-            field: "category",
-            filter: true,
-          },
-          {
-            field: "tags",
-            filter: true,
-            valueFormatter: (params) => {
-              return params.value ? params.value.join(", ") : "";
-            },
-          },
-          {
-            field: "startDate",
-            filter: true,
-          },
-          {
-            field: "endDate",
-            filter: true,
-          },
-          {
-            field: "frequency",
-            filter: true,
-            valueFormatter: (params) => {
-              return params.value ? params.value.charAt(0).toUpperCase() + params.value.slice(1) : "";
-            },
-          },
-          {
-            field: "amount",
-            valueFormatter: (params) => {
-              const amount = params.value;
-              const sign = params.data?.type === 'expense' ? '-' : '';
-              
-              if (currency.position === 'left') {
-                return `${sign}${currency.symbol}${amount}`;
-              }
-              else {
-                return `${sign}${amount} ${currency.symbol}`;
-              }
-            },
-            cellClass: (params) => {
-              if (params.data?.type === 'income') return 'text-green';
-              if (params.data?.type === 'expense') return 'text-red';
-            },
-            comparator: (valueA, valueB, nodeA, nodeB, isInverted) => {             
-              const aData = nodeA.data;
-              const bData = nodeB.data;
-              
-              // Calculate "sort value" for aData.amount based on type
-              const aVal = (aData.type === 'expense' ? -aData.amount : aData.amount);
-              const bVal = (bData.type === 'expense' ? -bData.amount : bData.amount);
-
-              // Normal numeric compare
-              if (aVal < bVal) return -1;
-              if (aVal > bVal) return 1;
-              return 0;
-            }
-          },
-          { 
-            field: "actions",
-            width: 100,
-            cellRenderer: (params) => {
-              const container = document.createElement("div");
-              container.style.display = "flex";
-              container.style.alignItems = "center";
-
-              // Edit button
-              const editButton = document.createElement("span");
-              editButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16.5" height="16.5" fill="currentColor" style="display: inline-block; vertical-align: middle;">
-                  <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-                </svg>
-              `;
-              editButton.style.display = "flex";
-              editButton.style.justifyContent = "center";
-              editButton.style.alignItems = "center";
-              editButton.style.width = "35px";
-              editButton.style.height = "35px";
-              editButton.style.borderRadius = "50%";
-              editButton.style.cursor = "pointer";
-              editButton.style.marginRight = "1px";
-              editButton.style.color = "#007AFF"; // black
-              editButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
-              editButton.style.backgroundColor = "transparent";
-              editButton.style.lineHeight = "0";
-              editButton.style.filter = "opacity(0.8)";
-              editButton.title = "Edit Recurring Transaction";
-
-              editButton.addEventListener("mouseenter", () => {
-                editButton.style.color = "#0051CC";
-                editButton.style.backgroundColor = "#cce4ff";
-              });
-              editButton.addEventListener("mouseleave", () => {
-                editButton.style.color = "#007AFF" // "black";
-                editButton.style.backgroundColor = "transparent";
-              });
-              editButton.addEventListener("click", () => {
-                selectedRow = params.data;
-                editRecurring()
-              });
-
-              // Delete button
-              const deleteButton = document.createElement("span");
-              deleteButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
-                  <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
-                </svg>
-              `;
-              deleteButton.style.display = "flex";
-              deleteButton.style.justifyContent = "center";
-              deleteButton.style.alignItems = "center";
-              deleteButton.style.width = "35px";
-              deleteButton.style.height = "35px";
-              deleteButton.style.borderRadius = "50%";
-              deleteButton.style.cursor = "pointer";
-              deleteButton.style.marginLeft = "1px";
-              deleteButton.style.color = "#FF3B30" // "black";
-              deleteButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
-              deleteButton.style.backgroundColor = "transparent";
-              deleteButton.style.lineHeight = "0";
-              deleteButton.style.filter = "opacity(0.8)";
-              deleteButton.title = "Delete Recurring Transaction";
-
-              deleteButton.addEventListener("mouseenter", () => {
-                deleteButton.style.color = "red";
-                deleteButton.style.backgroundColor = "#ffc9c9";
-              });
-              deleteButton.addEventListener("mouseleave", () => {
-                deleteButton.style.color = "#FF3B30" // "black";
-                deleteButton.style.backgroundColor = "transparent";
-              });
-              deleteButton.addEventListener("click", () => {
-                selectedRow = params.data;
-                deleteRecurring()
-              });
-
-              container.appendChild(editButton);
-              container.appendChild(deleteButton);
-
-              return container;
-            }
-          }
-        ]
-      }
-
-      // Destroy existing grid instance if it exists
-      if (gridInstance) {
-        gridInstance.destroy();
-      }
-
-      // Creating the AG Grid
-      const myGridElement = document.querySelector('#myGrid');
-      gridInstance = agGrid.createGrid(myGridElement, gridOptions);
-    }
-
-    function updateRowCount(api) {
-      const rowCount = api.getDisplayedRowCount();
-      document.getElementById('rowCount').innerText = `Rows shown: ${rowCount}`;
-    }
-
-    function onFilterTextBoxChanged() {
-      gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
-    }
-
-    function addRecurring() {
-      modalMode = 'add';
-      document.getElementById('recurringModalLabel').textContent = 'Add Recurring Transaction';
-      document.getElementById('modalSubmitButton').textContent = 'Add';
-      document.getElementById('recurringForm').reset();
-      document.getElementById('categorySelect').value = "";
-      document.getElementById('frequencySelect').value = "";
-      tagsInput.clearOptions();
-      tags.forEach(tag => {
-        tagsInput.addOption({ value: tag, text: tag }, user_created=false);
-      });
-      tagsInput.setValue([]);
-      document.getElementById('startDateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-      document.getElementById('startDateInput').disabled = false;
-      document.getElementById('recurringModalApplyTo').style.display = 'none';
-    }
-
-    function editRecurring() {
-      modalMode = 'edit';
-      document.getElementById('recurringModalLabel').textContent = 'Edit Recurring Transaction';
-      document.getElementById('modalSubmitButton').textContent = 'Edit';
-
-      // Assign values
-      document.getElementById('nameInput').value = selectedRow.name
-      document.getElementById('categorySelect').value = selectedRow.category
-      tagsInput.clearOptions();
-      selectedRow.tags.forEach(tag => {
-        tagsInput.addOption({ value: tag, text: tag }, user_created=true);
-      });
-      tagsInput.setValue(selectedRow.tags);
-      document.getElementById('amountInput').value = selectedRow.amount
-      document.getElementById('typeSelect').value = selectedRow.type
-      document.getElementById('startDateInput').value = selectedRow.startDate
-      document.getElementById('startDateInput').disabled = true;
-      document.getElementById('endDateInput').value = selectedRow.endDate
-      document.getElementById('frequencySelect').value = selectedRow.frequency
-      document.getElementById('recurringModalApplyTo').style.display = 'block';
-      document.getElementById('recurringEditRadioFuture').checked = true;
-      document.getElementById('recurringEditRadioAll').checked = false;
-
-      // Open modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModal'));
-      modal.show();
-    }
-
-    function deleteRecurring() {
-      modalMode = 'delete';
-      document.getElementById('recurringDeleteRadioFuture').checked = true;
-      document.getElementById('recurringDeleteRadioAll').checked = false;
-
-      // Open modal
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModalDelete'));
-      modal.show();
-    }
-
-    function submitRecurring(event) {
-      if (modalMode === 'add') submitRecurringAdd(event);
-      else if (modalMode === 'edit') submitRecurringEdit(event);
-      else if (modalMode === 'delete') submitRecurringDelete(event);
-    }
-
-    async function submitRecurringAdd(event) {
-      event.preventDefault();
-
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-      data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-      // Check if start date is before end date
-      if (new Date(data.startDate) >= new Date(data.endDate)) {
-        bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-        return;
-      }
-
-      // Check: end date cannot be more than 100 years after start date
-      const yearDiff = new Date(data.endDate).getFullYear() - new Date(data.startDate).getFullYear();
-      if (yearDiff > 100) {
-        bootstrap.showToast({body: 'The end date cannot be more than 100 years after the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/recurring`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Recurring transaction added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the grid
-          getRecurring();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-    async function submitRecurringEdit(event) {
-      event.preventDefault();
-
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-      data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-      // Check if startDate is before endDate
-      if (new Date(data.startDate) >= new Date(data.endDate)) {
-        bootstrap.showToast({body: 'The end date must be later than the start date.', delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Recurring transaction edited.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the grid
-          getRecurring();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-    async function submitRecurringDelete(event) {
-      event.preventDefault();
-
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 422) throw new Error(json.detail[0].msg)
-          else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          // Hide the modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModalDelete'));
-          modal.hide();
-
-          // Show toast
-          bootstrap.showToast({body: 'Recurring transaction deleted.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-          // Refresh the grid
-          getRecurring();
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-
-    // --------
-    // - AUTH -
-    // --------
-    async function checkLogin() {
-      const response = await fetch(`${API_URL}/login/check`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const enabled = await response.json()
-      if (enabled) document.getElementById('logoutButton').style.display = 'block'
-    }
-
-    async function logout() {
-      await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-      window.location.href = '/login';
-    }
-  </script>
+  <script src="js/settings.js"></script>
 </body>
 </html>

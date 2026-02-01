@@ -1,0 +1,66 @@
+body {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+body.i18n-loaded {
+  opacity: 1;
+}
+
+:root[data-bs-theme="light"] {
+  --header-bg: #f8f8f8;
+  --pill-bg: #f4f4f7;
+  --pill-color: #000;
+}
+:root[data-bs-theme="dark"] {
+  --header-bg: #262a2e;
+  --pill-bg: #282c30;
+  --pill-color: #FFF;
+}
+header {
+  background-color: var(--header-bg);
+}
+input, .option {
+  color: var(--pill-color)!important;
+}
+
+.ts-control .item {
+  background-color: var(--pill-bg)!important;
+  color: var(--pill-color)!important;
+}
+
+.ts-control .item .remove {
+  border-color: var(--header-bg)!important;
+}
+
+.badge {
+  background-color: var(--pill-bg);
+  color: var(--pill-color);
+}
+
+.text-green {
+  color: #198754;
+}
+
+.text-red {
+  color: #dc3545;
+}
+
+/* Toast width customization */
+.toast {
+  min-width: 250px;
+  max-width: 350px;
+}
+
+/* Wider toasts for error messages */
+.toast.text-bg-danger {
+  min-width: 400px;
+  max-width: 600px;
+  width: max-content;
+}
+
+/* Ensure toast body wraps text properly */
+.toast-body {
+  word-wrap: break-word;
+  white-space: normal;
+}

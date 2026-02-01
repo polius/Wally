@@ -11,7 +11,7 @@ from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 
-VERSION = "1.9"
+VERSION = "1.10"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,27 +21,26 @@ async def lifespan(app: FastAPI):
 
     # Live version
     else:
-        # Create database and tables
         create_db_and_tables()
 
-        # Init database session
-        with Session(engine) as db:
-            # Create default settings
-            for key, value in DEFAULT_CONFIG.items():
-                if not db.get(AppConfig, key):
-                    db.add(AppConfig(key=key, value=value))
+    # Init database session
+    with Session(engine) as db:
+        # Create default settings
+        for key, value in DEFAULT_CONFIG.items():
+            if not db.get(AppConfig, key):
+                db.add(AppConfig(key=key, value=value))
+        db.commit()
+
+        # Create default categories if table is empty
+        if not db.exec(select(Category).limit(1)).first():
+            db.bulk_insert_mappings(Category, DEFAULT_CATEGORIES)
             db.commit()
 
-            # Create default categories if table is empty
-            if not db.exec(select(Category).limit(1)).first():
-                db.bulk_insert_mappings(Category, DEFAULT_CATEGORIES)
-                db.commit()
-
-            # Create default currencies
-            for item in DEFAULT_CURRENCIES:
-                if not db.get(Currency, item['name']):
-                    db.add(Currency(**item))
-            db.commit()
+        # Create default currencies
+        for item in DEFAULT_CURRENCIES:
+            if not db.get(Currency, item['name']):
+                db.add(Currency(**item))
+        db.commit()
 
     yield  # App is running
 

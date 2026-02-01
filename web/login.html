@@ -12,9 +12,12 @@
     <meta property="og:description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/wally.png" />
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <script src="js/bootstrap.bundle.min.js" defer></script>
-    <script src="js/bootstrap-show-toast.js" defer></script>
+  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
+    <link href="css/login.css" rel="stylesheet">
+  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
+  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
+    <script src="js/i18n.js"></script>
+
     <script>
       (function() {
         const theme = localStorage.getItem('theme') || 'system';
@@ -27,120 +30,27 @@
         }
       })();
     </script>
-    <style>
-      body {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        min-height: 100vh;
-        flex-direction: column;
-        padding-bottom: 20vh;
-      }
-      .form-signin {
-        max-width: 330px;
-        padding: 15px;
-      }
-      .form-signin .form-floating:focus-within {
-        z-index: 2;
-      }
-  </style>
 </head>
 
-<body class="text-center">
+<body class="text-center" data-i18n-document-title="login.title">
   <main class="form-signin w-100 m-auto">
     <form onsubmit="login(event)" >
       <div href="/" class="text-center d-block" style="cursor: default">
         <img src="assets/wally.png" alt="Wally Logo" width="100" height="110" class="mb-2">
         <div class="fw-semibold" style="font-size: 2.8rem;">Wally</div>
-        <div class="fw-medium fs-6 mt-1">LOGIN</div>
+        <div class="fw-medium fs-6 mt-1" data-i18n="login.header">LOGIN</div>
       </div>
       <div class="form-floating" style="margin-top: 40px">
-        <input id="password" name="password" type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password" autofocus required>
-        <label for="floatingPassword">Password</label>
+        <input id="password" name="password" type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password" data-i18n-placeholder="login.password_placeholder" autofocus required>
+        <label for="floatingPassword" data-i18n="login.password_label">Password</label>
       </div>
       <button id="submit" type="submit" class="w-100 btn btn-lg btn-primary mt-2 mb-4">
         <span id="loading" class="spinner-border spinner-border-sm"  style="display: none; border-width: 2px; margin-right: 5px; margin-bottom: 1px" aria-hidden="true"></span>
-        Log in
+        <span data-i18n="login.login_button">Log in</span>
       </button>
     </form>
-    <a href="" onclick="recoverPassword(event)" style="text-decoration: none">Forgot password</a>
+    <a href="" onclick="recoverPassword(event)" style="text-decoration: none" data-i18n="login.forgot_password">Forgot password</a>
   </main>
-  <script>
-    const API_URL = '/api'; // 'http://127.0.0.1:8000';
-    checkLogin();
-
-    async function checkLogin() {
-      const response = await fetch(`${API_URL}/login/check`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      if (response.ok) window.location.href = '/';
-    }
-
-    async function login(event) {
-      event.preventDefault();
-
-      // Disable the submit button
-      const submitButton = document.getElementById("submit");
-      const submitLoading = document.getElementById("loading");
-      submitButton.setAttribute("disabled", "");
-      submitLoading.style.display = 'inline-flex';
-
-      // Get form data
-      const formData = new FormData(event.target);
-      const data = Object.fromEntries(formData.entries());
-
-      // Perform login
-      try {
-        const response = await fetch(`${API_URL}/login`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-
-        const json = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 401) throw new Error(json.detail)
-          throw new Error("An error occurred.")
-        }
-        else {
-          window.location.href = '/';
-        }
-      }
-      catch (error) {
-        // Show error message
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-        
-        // Enable login button
-        submitButton.removeAttribute("disabled");
-        submitLoading.style.display = 'none';
-      }
-    }
-    
-    async function recoverPassword(event) {
-      event.preventDefault()
-      
-      try {
-        const response = await fetch(`${API_URL}/login/recover`, {
-          method: 'POST',
-          credentials: 'include',
-        });
-        
-        const json = await response.json()
-        
-        if (!response.ok) {
-          throw new Error("An error occurred.")
-        }
-        else {
-          bootstrap.showToast({body: `A temporary recovery password has been created.<br><br>${json.file}`, delay: 30000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-primary"});
-        }
-      }
-      catch (error) {
-        bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      }
-    }
-  </script>
+  <script src="js/login.js"></script>
 </body>
 </html>

@@ -6,6 +6,8 @@ DEFAULT_CONFIG = {
     "LOGIN_PAGE": False,
     "LOGIN_PASSWORD": "",
     "LOGIN_TOKEN": "",
+    "SELECTED_CURRENCY": "EUR",
+    "CURRENCY_POSITION": "right",
 }
 
 class AppConfig(SQLModel, table=True):

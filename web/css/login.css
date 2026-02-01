@@ -1,0 +1,23 @@
+body {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
+body.i18n-loaded {
+  opacity: 1;
+}
+
+body {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+  flex-direction: column;
+  padding-bottom: 20vh;
+}
+.form-signin {
+  max-width: 330px;
+  padding: 15px;
+}
+.form-signin .form-floating:focus-within {
+  z-index: 2;
+}
