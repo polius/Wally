@@ -742,17 +742,32 @@ function filterCurrencyList() {
   filtered.forEach(c => {
     const row = document.createElement('tr');
     const isSelected = c.name === allCurrencies.selected;
+    row.style.transition = 'background-color 0.15s ease';
     if (isSelected) {
       row.style.backgroundColor = 'var(--bs-primary-bg-subtle)';
     }
 
     const nameCell = document.createElement('td');
-    nameCell.innerHTML = `<strong>${c.name}</strong>`;
+    nameCell.style.padding = '12px 16px';
+    nameCell.style.fontWeight = '500';
+    if (isSelected) {
+      nameCell.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>${c.name}</span>
+          <span style="display: inline-block; padding: 2px 8px; background: var(--bs-primary); color: white; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Active</span>
+        </div>
+      `;
+    } else {
+      nameCell.textContent = c.name;
+    }
 
     const symbolCell = document.createElement('td');
+    symbolCell.style.padding = '12px 16px';
+    symbolCell.style.color = 'var(--bs-secondary-color)';
     symbolCell.textContent = c.symbol;
 
     const actionsCell = document.createElement('td');
+    actionsCell.style.padding = '8px 16px';
     actionsCell.style.textAlign = 'center';
     actionsCell.style.whiteSpace = 'nowrap';
 
@@ -766,23 +781,21 @@ function filterCurrencyList() {
     editButton.style.display = "inline-flex";
     editButton.style.justifyContent = "center";
     editButton.style.alignItems = "center";
-    editButton.style.minHeight = "44px";
-    editButton.style.minWidth = "44px";
-    editButton.style.paddingLeft = "8px";
-    editButton.style.paddingRight = "8px";
+    editButton.style.height = "36px";
+    editButton.style.width = "36px";
     editButton.style.borderRadius = "6px";
     editButton.style.cursor = "pointer";
-    editButton.style.color = "#3d8bfd";
-    editButton.style.transition = "all 0.2s ease";
+    editButton.style.color = "var(--bs-primary)";
+    editButton.style.transition = "all 0.15s ease";
     editButton.style.backgroundColor = "transparent";
     editButton.title = i18n.t('settings.currency.edit_tooltip');
     editButton.addEventListener("mouseenter", () => {
-      editButton.style.color = "#0d6efd";
-      editButton.style.backgroundColor = "rgba(13, 110, 253, 0.15)";
+      editButton.style.backgroundColor = "var(--bs-primary-bg-subtle)";
+      editButton.style.transform = "scale(1.05)";
     });
     editButton.addEventListener("mouseleave", () => {
-      editButton.style.color = "#3d8bfd";
       editButton.style.backgroundColor = "transparent";
+      editButton.style.transform = "scale(1)";
     });
     editButton.addEventListener("click", () => {
       editCurrency(c.name, c.symbol);
@@ -798,26 +811,24 @@ function filterCurrencyList() {
     deleteButton.style.display = "inline-flex";
     deleteButton.style.justifyContent = "center";
     deleteButton.style.alignItems = "center";
-    deleteButton.style.minHeight = "44px";
-    deleteButton.style.minWidth = "44px";
-    deleteButton.style.paddingLeft = "8px";
-    deleteButton.style.paddingRight = "8px";
+    deleteButton.style.height = "36px";
+    deleteButton.style.width = "36px";
     deleteButton.style.borderRadius = "6px";
     deleteButton.style.cursor = isSelected ? "not-allowed" : "pointer";
-    deleteButton.style.color = isSelected ? "#adb5bd" : "#e35d6a";
-    deleteButton.style.transition = "all 0.2s ease";
+    deleteButton.style.color = isSelected ? "var(--bs-secondary-color)" : "var(--bs-danger)";
+    deleteButton.style.transition = "all 0.15s ease";
     deleteButton.style.backgroundColor = "transparent";
     deleteButton.style.opacity = isSelected ? "0.4" : "1";
     deleteButton.title = isSelected ? i18n.t('settings.currency.cannot_delete') : i18n.t('settings.currency.delete_tooltip');
 
     if (!isSelected) {
       deleteButton.addEventListener("mouseenter", () => {
-        deleteButton.style.color = "#dc3545";
-        deleteButton.style.backgroundColor = "rgba(220, 53, 69, 0.15)";
+        deleteButton.style.backgroundColor = "var(--bs-danger-bg-subtle)";
+        deleteButton.style.transform = "scale(1.05)";
       });
       deleteButton.addEventListener("mouseleave", () => {
-        deleteButton.style.color = "#e35d6a";
         deleteButton.style.backgroundColor = "transparent";
+        deleteButton.style.transform = "scale(1)";
       });
       deleteButton.addEventListener("click", () => {
         deleteCurrency(c.name);

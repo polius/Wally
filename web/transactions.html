@@ -159,7 +159,7 @@
           <!-- Name -->
           <div class="mb-3">
             <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" data-i18n-placeholder="transactions.name_placeholder" required />
+            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" data-i18n-placeholder="transactions.name_placeholder" required autocomplete="off" />
           </div>
 
           <!-- Category -->
@@ -198,7 +198,7 @@
           <!-- Recurring -->
           <div id="recurringElement" class="form-check mt-3">
             <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
-            <label class="form-check-label" for="recurringCheck">
+            <label class="form-check-label" for="recurringCheck" data-i18n="transactions.recurring_label">
               Recurring
             </label>
           </div>
@@ -208,25 +208,25 @@
               <div class="row">
                 <!-- Start Date -->
                 <div class="col-6 mb-3">
-                  <label for="startDateInput" class="form-label">Start Date</label>
+                  <label for="startDateInput" class="form-label" data-i18n="transactions.start_date_label">Start Date</label>
                   <input type="date" class="form-control" id="startDateInput" name="startDate" />
                 </div>
                 <!-- End Date -->
                 <div class="col-6 mb-3">
-                  <label for="endDateInput" class="form-label">End Date</label>
+                  <label for="endDateInput" class="form-label" data-i18n="transactions.end_date_label">End Date</label>
                   <input type="date" class="form-control" id="endDateInput" name="endDate" />
                 </div>
               </div>
 
               <!-- Frequency -->
               <div>
-                <label for="frequencySelect" class="form-label">Frequency</label>
+                <label for="frequencySelect" class="form-label" data-i18n="transactions.frequency_label">Frequency</label>
                 <select class="form-select" id="frequencySelect" name="frequency">
-                  <option value="" disabled selected>Select frequency</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
+                  <option value="" disabled selected data-i18n="transactions.frequency_placeholder">Select frequency</option>
+                  <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
+                  <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
+                  <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
+                  <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
                 </select>
               </div>
             </div>
@@ -234,8 +234,8 @@
 
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px" data-i18n="transactions.add">Add</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="min-width: 120px" data-i18n="transactions.add">Add</button>
         </div>
       </form>
     </div>
@@ -253,8 +253,8 @@
           Are you sure you want to delete this transaction?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
     </div>

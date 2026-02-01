@@ -132,7 +132,7 @@
         <div class="card h-100">
           <div class="card-header d-flex align-items-center" style="font-weight: 500">
             <span data-i18n="settings.currency.title">Currency</span>
-            <button class="btn btn-sm btn-primary ms-auto" style="width: 80px" data-bs-toggle="modal" data-bs-target="#currencyModal" data-i18n="settings.currency.manage">Manage</button>
+            <button class="btn btn-sm btn-primary ms-auto" style="white-space: nowrap" data-bs-toggle="modal" data-bs-target="#currencyModal" data-i18n="settings.currency.manage">Manage</button>
           </div>
           <div class="card-body">
             <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.description">Select the currency to be used for transactions.</p>
@@ -181,9 +181,9 @@
           </div>
           <div class="card-body">
             <p class="card-text mb-3" style="font-size: 0.9rem" data-i18n="settings.login.description">Enable the login page. Off allows access without signing in.</p>
-            <button class="btn btn-primary" id="loginEnableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalEnable" onclick="enableLogin()" data-i18n="settings.login.enable">Enable Login</button>
-            <button class="btn btn-danger" id="loginDisableBtn" style="width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalDisable" data-i18n="settings.login.disable">Disable Login</button>
-            <button class="btn btn-primary" id="loginChangeBtn" style="width: 180px; font-size: 0.9rem; display: none;"  data-bs-toggle="modal" data-bs-target="#loginModalChange" onclick="changeLogin()" data-i18n="settings.login.change">Change Password</button>
+            <button class="btn btn-primary" id="loginEnableBtn" style="min-width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalEnable" onclick="enableLogin()" data-i18n="settings.login.enable">Enable Login</button>
+            <button class="btn btn-danger" id="loginDisableBtn" style="min-width: 120px; font-size: 0.9rem; margin-right: 1px; display: none;" data-bs-toggle="modal" data-bs-target="#loginModalDisable" data-i18n="settings.login.disable">Disable Login</button>
+            <button class="btn btn-primary" id="loginChangeBtn" style="min-width: 180px; font-size: 0.9rem; display: none;"  data-bs-toggle="modal" data-bs-target="#loginModalChange" onclick="changeLogin()" data-i18n="settings.login.change">Change Password</button>
           </div>
         </div>
       </div>
@@ -279,8 +279,8 @@
           <input type="text" class="form-control" id="categoryEditInput" name="name" placeholder="Enter new name" data-i18n-placeholder="common.enter_new_name" required />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="common.update">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -354,8 +354,8 @@
           <input type="text" class="form-control" id="tagEditInput" name="name" placeholder="Enter new name" data-i18n-placeholder="common.enter_new_name" required />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="common.update">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -396,13 +396,13 @@
         </div>
         <div class="modal-body">
           <input type="text" class="form-control mb-3" id="currencySearch" placeholder="Search currencies..." data-i18n-placeholder="settings.currency.search_placeholder" style="font-size: 0.9rem;" oninput="filterCurrencyList()">
-          <div style="max-height: 400px; overflow-y: auto;">
-            <table class="table table-hover align-middle" style="font-size: 0.9rem;">
-              <thead style="position: sticky; top: 0; background: var(--bs-body-bg); z-index: 10;">
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bs-border-color); border-radius: 8px;">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+              <thead style="position: sticky; top: 0; background: var(--bs-secondary-bg); z-index: 10; border-bottom: 2px solid var(--bs-border-color);">
                 <tr>
-                  <th style="width: 40%; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.code">Code</th>
-                  <th style="width: 40%; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.symbol">Symbol</th>
-                  <th style="width: 20%; text-align: center; border-bottom: 2px solid var(--bs-border-color);" data-i18n="settings.currency.actions">Actions</th>
+                  <th style="width: 40%; padding: 12px 16px; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--bs-secondary-color);" data-i18n="settings.currency.code">Code</th>
+                  <th style="width: 35%; padding: 12px 16px; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--bs-secondary-color);" data-i18n="settings.currency.symbol">Symbol</th>
+                  <th style="width: 25%; padding: 12px 16px; text-align: center; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--bs-secondary-color);" data-i18n="settings.currency.actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="currencyTableBody"></tbody>
@@ -442,8 +442,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="cancelCurrencyEdit()" style="width: 100px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 100px" data-i18n="common.update">Update</button>
+          <button type="button" class="btn btn-secondary" onclick="cancelCurrencyEdit()" style="min-width: 100px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 100px" data-i18n="common.update">Update</button>
         </div>
       </form>
     </div>
@@ -540,8 +540,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="width: 120px" data-i18n="settings.recurring.add_btn">Add</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="min-width: 120px" data-i18n="settings.recurring.add_btn">Add</button>
         </div>
       </form>
     </div>
@@ -578,8 +578,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="width: 120px" data-i18n="common.delete">Delete</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
     </div>
@@ -610,8 +610,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="width: 120px" data-i18n="settings.login.enable_btn">Enable</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="settings.login.enable_btn">Enable</button>
         </div>
       </form>
     </div>

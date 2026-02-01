@@ -27,6 +27,29 @@ def get_transaction_by_id(
     transaction = db.get(Transaction, transaction_id)
     return [transaction] if transaction else []
 
+@router.get("/transactions/names/search", response_model=list[str])
+def search_transaction_names(
+    db: Annotated[Session, Depends(get_session)],
+    q: str
+):
+    """Search for unique transaction names containing the query string (last year only, max 10 results)"""
+    # Get date from one year ago
+    today = date.today()
+    one_year_ago = today - relativedelta(years=1)
+    
+    # Search for names containing the query (case-insensitive) from last year
+    stmt = (
+        select(Transaction.name)
+        .distinct()
+        .where(Transaction.name.ilike(f"%{q}%"))
+        .where(Transaction.date >= one_year_ago)
+        .order_by(Transaction.name)
+        .limit(10)
+    )
+    
+    results = db.exec(stmt).all()
+    return results
+
 @router.get("/transactions/date/{year}-{month}", response_model=list[TransactionPublic])
 def read_transactions_by_date(
     year: Annotated[int, Path(..., ge=1, le=9999)],

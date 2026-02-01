@@ -10,6 +10,7 @@ let chartSelected = "currentMonth";
 let chartDisabledFields = new Set();
 
 let tagsInput;
+let nameInput;
 
 // Execute the main function when DOM has loaded
 document.addEventListener('DOMContentLoaded', () => main());
@@ -35,9 +36,10 @@ async function main() {
   // Load chart
   await loadChart();
 
-  // Render categories and tags
+  // Render categories, tags and name autocomplete
   await renderCategories();
   await renderTags();
+  await renderNameAutocomplete();
 
   // Show page after all translations are applied
   i18n.showPage();
@@ -164,16 +166,21 @@ async function getTransactions() {
 }
 
 function renderMonth() {
-  const lang = i18n.currentLanguage || 'en';
-  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'fr' ? 'fr-FR' : 'pt-PT';
-  let monthText = currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
-
-  // For Spanish, remove "de" and capitalize first letter
-  if (lang === 'es') {
-    monthText = monthText.replace(/^de\s+/, '').replace(/\sde\s+/, ' ');
-    monthText = monthText.charAt(0).toUpperCase() + monthText.slice(1);
-  }
-
+  const monthNames = [
+    i18n.t('common.months.january'),
+    i18n.t('common.months.february'),
+    i18n.t('common.months.march'),
+    i18n.t('common.months.april'),
+    i18n.t('common.months.may'),
+    i18n.t('common.months.june'),
+    i18n.t('common.months.july'),
+    i18n.t('common.months.august'),
+    i18n.t('common.months.september'),
+    i18n.t('common.months.october'),
+    i18n.t('common.months.november'),
+    i18n.t('common.months.december')
+  ];
+  const monthText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
   document.getElementById('currentMonth').textContent = monthText;
 }
 
@@ -737,6 +744,58 @@ async function renderTags() {
   });
 }
 
+async function renderNameAutocomplete() {
+  nameInput = new TomSelect('#nameInput', {
+    create: true,
+    addPrecedence: true,
+    maxOptions: 10,
+    maxItems: 1,
+    selectOnTab: true,
+    createOnBlur: true,
+    loadThrottle: 300,
+    onType: function(str) {
+      if (!str || str.length === 0) {
+        this.clearOptions();
+        this.close();
+      }
+    },
+    load: async function(query, callback) {
+      if (!query || query.length === 0) {
+        this.clearOptions();
+        this.close();
+        return callback();
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return callback();
+        }
+        
+        const names = await response.json();
+        const options = names.map(name => ({ value: name, text: name }));
+        callback(options);
+      } catch (error) {
+        console.error('Error loading transaction names:', error);
+        callback();
+      }
+    },
+    render: {
+      option_create: function(data, escape) {
+        return '<div class="create">' + escape(data.input) + '</div>';
+      },
+      no_results: function(data, escape) {
+        return '';
+      },
+    }
+  });
+}
+
 async function renderCategories() {
   const select = document.getElementById('categorySelect');
 
@@ -764,6 +823,7 @@ async function renderCategories() {
 function addTransaction() {
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
+  nameInput.clear();
   tagsInput.setValue([]);
   document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
   document.getElementById('recurringElement').style.display = 'block';

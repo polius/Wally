@@ -12,6 +12,7 @@ let selectedRow;
 
 let currentDate = new Date();
 let tagsInput;
+let nameInput;
 let activeCategoryFilter = null;
 
 // Execute the main function when DOM has loaded
@@ -38,9 +39,10 @@ async function main() {
     getCurrency(),
   ]);
 
-  // Render categories and tags
+  // Render categories, tags and name autocomplete
   await renderCategories();
   await renderTags();
+  await renderNameAutocomplete();
 
   // Initialize the grid
   gridApi = await initGrid();
@@ -154,6 +156,58 @@ async function renderTags() {
   });
 }
 
+async function renderNameAutocomplete() {
+  nameInput = new TomSelect('#nameInput', {
+    create: true,
+    addPrecedence: true,
+    maxOptions: 10,
+    maxItems: 1,
+    selectOnTab: true,
+    createOnBlur: true,
+    loadThrottle: 300,
+    onType: function(str) {
+      if (!str || str.length === 0) {
+        this.clearOptions();
+        this.close();
+      }
+    },
+    load: async function(query, callback) {
+      if (!query || query.length === 0) {
+        this.clearOptions();
+        this.close();
+        return callback();
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return callback();
+        }
+        
+        const names = await response.json();
+        const options = names.map(name => ({ value: name, text: name }));
+        callback(options);
+      } catch (error) {
+        console.error('Error loading transaction names:', error);
+        callback();
+      }
+    },
+    render: {
+      option_create: function(data, escape) {
+        return '<div class="create">' + escape(data.input) + '</div>';
+      },
+      no_results: function(data, escape) {
+        return '';
+      },
+    }
+  });
+}
+
 async function initGrid() {
   let myTheme;
   const theme = localStorage.getItem('theme') || 'system';
@@ -258,12 +312,24 @@ async function initGrid() {
         valueFormatter: (params) => {
           const [year, month, day] = params.value.split("-");
           const date = new Date(Number(year), Number(month) - 1, Number(day));
-          return new Intl.DateTimeFormat('en-US', {
-            weekday: 'short',  // "Mon"
-            month: 'short',    // "Aug"
-            day: 'numeric',    // 4
-            year: 'numeric'    // 2025
-          }).format(date);
+          const monthNames = [
+            i18n.t('common.months.january'),
+            i18n.t('common.months.february'),
+            i18n.t('common.months.march'),
+            i18n.t('common.months.april'),
+            i18n.t('common.months.may'),
+            i18n.t('common.months.june'),
+            i18n.t('common.months.july'),
+            i18n.t('common.months.august'),
+            i18n.t('common.months.september'),
+            i18n.t('common.months.october'),
+            i18n.t('common.months.november'),
+            i18n.t('common.months.december')
+          ];
+          const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const weekday = weekdayNames[date.getDay()];
+          const monthName = monthNames[date.getMonth()].substring(0, 3);
+          return `${weekday}, ${monthName} ${day}, ${year}`;
         }
       },
       {
@@ -403,16 +469,21 @@ async function initGrid() {
 }
 
 function renderMonth() {
-  const lang = i18n.currentLanguage || 'en';
-  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'fr' ? 'fr-FR' : 'pt-PT';
-  let monthText = currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
-
-  // For Spanish, remove "de" and capitalize first letter
-  if (lang === 'es') {
-    monthText = monthText.replace(/^de\s+/, '').replace(/\sde\s+/, ' ');
-    monthText = monthText.charAt(0).toUpperCase() + monthText.slice(1);
-  }
-
+  const monthNames = [
+    i18n.t('common.months.january'),
+    i18n.t('common.months.february'),
+    i18n.t('common.months.march'),
+    i18n.t('common.months.april'),
+    i18n.t('common.months.may'),
+    i18n.t('common.months.june'),
+    i18n.t('common.months.july'),
+    i18n.t('common.months.august'),
+    i18n.t('common.months.september'),
+    i18n.t('common.months.october'),
+    i18n.t('common.months.november'),
+    i18n.t('common.months.december')
+  ];
+  const monthText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
   document.getElementById('currentMonth').textContent = monthText;
 }
 
@@ -577,6 +648,7 @@ function addTransaction() {
   document.getElementById('modalSubmitButton').textContent = i18n.t('transactions.add');
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
+  nameInput.clear();
   tagsInput.setValue([]);
   document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
   document.getElementById('recurringElement').style.display = 'block';
@@ -591,7 +663,7 @@ function editTransaction() {
   toggleRecurring(false);
 
   // Assign values
-  document.getElementById('nameInput').value = selectedRow.name
+  nameInput.setValue(selectedRow.name);
   document.getElementById('categorySelect').value = selectedRow.category
   selectedRow.tags.forEach(tag => {
     tagsInput.addOption({ value: tag, text: tag }, user_created=true);

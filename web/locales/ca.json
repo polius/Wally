@@ -59,7 +59,7 @@
     "end_date_label": "Data de Fi",
     "frequency_label": "Freqüència",
     "frequency_placeholder": "Selecciona una freqüència",
-    "frequency_daily": "Diari",
+    "frequency_daily": "Diària",
     "frequency_weekly": "Setmanal",
     "frequency_monthly": "Mensual",
     "frequency_yearly": "Anual",
@@ -86,7 +86,7 @@
     }
   },
   "settings": {
-    "title": "Configuració",
+    "title": "Wally | Configuració",
     "version": "Versió:",
     "api_docs": "Docs API",
     "categories": {
@@ -208,7 +208,7 @@
       "end_date": "Data Fi",
       "frequency": "Freqüència",
       "frequency_placeholder": "Selecciona freqüència",
-      "frequency_daily": "Diari",
+      "frequency_daily": "Diària",
       "frequency_weekly": "Setmanal",
       "frequency_monthly": "Mensual",
       "frequency_yearly": "Anual",
