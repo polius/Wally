@@ -3,19 +3,43 @@ const DEFAULT_LANG = 'en';
 
 class I18n {
   constructor() {
-    this.locale = localStorage.getItem(I18N_STORAGE_KEY) || DEFAULT_LANG;
+    this.locale = DEFAULT_LANG;
     this.translations = {};
     this.onLanguageChangeCallbacks = [];
   }
 
   async init() {
+    this.locale = await this.getLanguagePreference();
     await this.loadTranslations(this.locale);
     this.updatePage();
   }
 
+  async getLanguagePreference() {
+    // First check localStorage (fast path)
+    const localLang = localStorage.getItem(I18N_STORAGE_KEY);
+    
+    if (localLang) {
+      return localLang;
+    }
+    
+    // If not in localStorage, fetch from API
+    let language = DEFAULT_LANG;
+    try {
+      const response = await fetch('/api/language');
+      if (response.ok) {
+        const data = await response.json();
+        language = data.language;
+        // Store in localStorage for next time
+        localStorage.setItem(I18N_STORAGE_KEY, language);
+      }
+    } catch (error) {
+      console.error('Error fetching language from API:', error);
+    }
+    return language;
+  }
+
   async loadTranslations(lang) {
     this.locale = lang;
-    localStorage.setItem(I18N_STORAGE_KEY, lang);
     document.documentElement.lang = lang;
 
     try {
@@ -33,6 +57,28 @@ class I18n {
   }
 
   async setLanguage(lang) {
+    // Save user's explicit language choice to localStorage
+    localStorage.setItem(I18N_STORAGE_KEY, lang);
+    
+    // Save to backend
+    try {
+      const response = await fetch(`/api/language/${lang}`, {
+        method: 'PUT',
+        credentials: 'include',
+      });
+      
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (!response.ok) {
+        console.error('Failed to save language to backend');
+      }
+    } catch (error) {
+      console.error('Error saving language:', error);
+    }
+    
     await this.loadTranslations(lang);
     this.updatePage();
     this.onLanguageChangeCallbacks.forEach(callback => callback());
@@ -42,21 +88,8 @@ class I18n {
     this.onLanguageChangeCallbacks.push(callback);
   }
 
-  get currentLanguage() {
-    return this.locale;
-  }
-
   t(key) {
-    const keys = key.split('.');
-    let value = this.translations;
-    for (const k of keys) {
-      if (value && value[k]) {
-        value = value[k];
-      } else {
-        return key;
-      }
-    }
-    return value;
+    return key.split('.').reduce((obj, k) => obj?.[k], this.translations) ?? key;
   }
 
   updatePage() {

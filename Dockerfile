@@ -5,7 +5,7 @@
 # ==============================
 # Stage 1: Build Python dependencies
 # ==============================
-FROM python:3.12-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache --virtual .build-deps build-base libffi-dev musl-dev python3-dev
@@ -20,15 +20,15 @@ RUN pip install --no-cache-dir --prefer-binary --upgrade pip setuptools wheel \
     && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Optional: remove tests and unnecessary files from site-packages
-RUN find /install/lib/python3.12/site-packages -name "tests" -type d -exec rm -rf {} + \
-    && find /install/lib/python3.12/site-packages -name "*.pyc" -delete \
-    && find /install/lib/python3.12/site-packages -name "*.pyo" -delete \
-    && find /install/lib/python3.12/site-packages -name "*.so" -exec strip --strip-unneeded {} +
+RUN find /install/lib/python3.14/site-packages -name "tests" -type d -exec rm -rf {} + \
+    && find /install/lib/python3.14/site-packages -name "*.pyc" -delete \
+    && find /install/lib/python3.14/site-packages -name "*.pyo" -delete \
+    && find /install/lib/python3.14/site-packages -name "*.so" -exec strip --strip-unneeded {} +
 
 # ==============================
 # Stage 2: Runtime image
 # ==============================
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 # Install Nginx runtime
 RUN apk add --no-cache nginx

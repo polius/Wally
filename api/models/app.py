@@ -8,6 +8,7 @@ DEFAULT_CONFIG = {
     "LOGIN_TOKEN": "",
     "SELECTED_CURRENCY": "EUR",
     "CURRENCY_POSITION": "right",
+    "LANGUAGE": "en",
 }
 
 class AppConfig(SQLModel, table=True):

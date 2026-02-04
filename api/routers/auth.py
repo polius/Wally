@@ -126,6 +126,25 @@ def get_login_page_enabled(
 ):
     return db.get(AppConfig, "LOGIN_PAGE").value
 
+@router.get("/language")
+def get_language(
+    db: Annotated[Session, Depends(get_session)],
+):
+    language_config = db.get(AppConfig, "LANGUAGE")
+    return {"language": language_config.value}
+
+@router.put("/language/{language}")
+def update_language(
+    language: str,
+    db: Annotated[Session, Depends(get_session)],
+    _ = Depends(check_login),
+):
+    config = db.get(AppConfig, "LANGUAGE")
+    config.value = language
+    db.add(config)
+    db.commit()
+    return {"message": "Language updated"}
+
 @router.post("/login/password")
 def set_login_password(
     login: LoginPassword,
