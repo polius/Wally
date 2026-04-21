@@ -3,15 +3,22 @@ const API_URL = '/api';
 let currentDate = new Date();
 let categories;
 let tags;
+let persons;
 let currency;
 
 let chart;
 let chartSelected = "currentMonth";
 let chartGroupBy = 'category';
 let chartDisabledFields = new Set();
+let budgets = {};
 
 let tagsInput;
 let nameInput;
+let categoryTagsMap = {};
+let previousMonthData = null; // For spending trends
+
+let savingsChart = null;
+let savingsPersonFilter = 'all'; // 'all' or a person name
 
 // Execute the main function when DOM has loaded
 document.addEventListener('DOMContentLoaded', () => main());
@@ -27,23 +34,29 @@ async function main() {
   });
 
   document.getElementById('dashboardForm').reset();
-  [categories, tags, currency] = await Promise.all([
+  [categories, tags, persons, currency, budgets] = await Promise.all([
     getCategories(),
     getTags(),
+    getPersons(),
     getCurrency(),
+    getBudgets(),
     renderMonth(),
   ]);
 
   // Load chart
   await loadChart();
 
-  // Render categories, tags and name autocomplete
+  // Render categories, tags, persons and name autocomplete
   await renderCategories();
   await renderTags();
+  await renderPersonSelect();
   await renderNameAutocomplete();
 
   // Group by toggle
   setupGroupByToggle();
+
+  // Load savings rate chart
+  await loadSavingsRate();
 
   // Show page after all translations are applied
   i18n.showPage();
@@ -95,6 +108,54 @@ async function getTags() {
 
   const data = await response.json();
   return data;
+}
+
+async function getPersons() {
+  const response = await fetch(`${API_URL}/persons`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    window.location.href = '/login';
+    return [];
+  }
+
+  if (!response.ok) return [];
+  return response.json();
+}
+
+async function renderPersonSelect() {
+  const select = document.getElementById('personSelect');
+  select.innerHTML = '';
+
+  const none = document.createElement('option');
+  none.value = '';
+  none.setAttribute('data-i18n', 'transactions.bulk_none');
+  none.textContent = i18n.t('transactions.bulk_none') || 'None';
+  select.appendChild(none);
+
+  persons.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person;
+    option.textContent = person;
+    select.appendChild(option);
+  });
+}
+
+async function getBudgets() {
+  const response = await fetch(`${API_URL}/categories/budgets`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    window.location.href = '/login';
+    return {};
+  }
+
+  if (!response.ok) return {};
+  return await response.json();
 }
 
 async function getCurrency() {
@@ -204,16 +265,33 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 
 async function loadChart() {
   const transactions = await getTransactions();
+  buildCategoryTagsMap(transactions);
+  budgets = await getBudgets();
+
+  // Fetch previous month data for spending trends (non-blocking, runs in parallel)
+  previousMonthData = null;
+  let trendsPromise = null;
+  if (chartSelected === 'currentMonth') {
+    const prevDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+    const prevYear = prevDate.getFullYear();
+    trendsPromise = fetch(`${API_URL}/transactions/date/${prevYear}-${prevMonth}`, { method: 'GET', credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+  }
+
   const chartBox = document.querySelector('.chart-box');
   const legendBox = document.getElementById('customLegend');
   const cashflowSection = document.getElementById('cashflow-section');
   const noDataMessage = document.getElementById('noDataMessage');
+  const trendsSection = document.getElementById('trends-section');
   const hasExpenses = transactions.some(t => t.type === 'expense');
 
   if (!hasExpenses) {
     chartBox.style.display = 'none';
     legendBox.style.display = 'none';
     cashflowSection.style.display = 'none';
+    if (trendsSection) trendsSection.style.display = 'none';
     noDataMessage.style.display = 'block';
   }
   else {
@@ -226,6 +304,12 @@ async function loadChart() {
     updateChart(data);
     updateLegend(transactions, data);
     updateCashflow(transactions);
+
+    // Await trends data (was fetching in parallel) then render
+    if (trendsPromise) {
+      previousMonthData = await trendsPromise;
+    }
+    updateTrends(transactions);
   }
 }
 
@@ -246,6 +330,101 @@ function updateCashflow(transactions) {
     balanceElement.classList.add('negative');
     balanceElement.classList.remove('positive');
   }
+}
+
+function computeCategorySpending(transactions) {
+  const map = {};
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    map[t.category] = Decimal.add(map[t.category] || 0, t.amount).toNumber();
+  });
+  return map;
+}
+
+function updateTrends(currentTransactions) {
+  const section = document.getElementById('trends-section');
+  if (!section) return;
+
+  // Only show trends in currentMonth view with category grouping
+  if (chartSelected !== 'currentMonth' || chartGroupBy !== 'category' || !previousMonthData) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const currSpending = computeCategorySpending(currentTransactions);
+  const prevSpending = computeCategorySpending(previousMonthData);
+
+  // Compute all category changes
+  const allCategories = new Set([...Object.keys(currSpending), ...Object.keys(prevSpending)]);
+  const changes = [];
+
+  allCategories.forEach(cat => {
+    const curr = currSpending[cat] || 0;
+    const prev = prevSpending[cat] || 0;
+    if (prev === 0 && curr === 0) return;
+
+    const diff = Decimal.sub(curr, prev).toNumber();
+    let pctChange = null;
+    if (prev > 0) pctChange = ((curr - prev) / prev) * 100;
+
+    changes.push({ category: cat, curr, prev, diff, pctChange });
+  });
+
+  // Filter out trivial changes (< 5% or both < 1)
+  const significant = changes.filter(c => {
+    if (c.pctChange === null) return c.curr > 0; // new category
+    return Math.abs(c.pctChange) >= 5 && (c.curr > 0 || c.prev > 0);
+  });
+
+  if (significant.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  // Sort by absolute diff (biggest movers first)
+  significant.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
+  // Take top 4
+  const top = significant.slice(0, 4);
+
+  const alertsHtml = top.map(c => {
+    const arrow = c.diff > 0 ? '↑' : '↓';
+    const cls = c.diff > 0 ? 'trend-alert-up' : 'trend-alert-down';
+
+    let detail;
+    let itemCls;
+    if (c.pctChange === null) {
+      // New category this month — use distinct "new" style
+      detail = `<span class="trend-alert-pct trend-alert-new">${i18n.t('dashboard.trends.new_label') || 'new'}</span>`;
+      itemCls = 'trend-alert-new';
+    } else {
+      detail = `<span class="trend-alert-pct ${cls}">${arrow} ${Math.abs(c.pctChange).toFixed(0)}%</span>`;
+      itemCls = cls;
+    }
+
+    const diffSign = c.diff > 0 ? '+' : '';
+    return `
+      <div class="trend-alert-item ${itemCls}">
+        <div class="trend-alert-category">${c.category}</div>
+        <div class="trend-alert-values">
+          ${detail}
+          <span class="trend-alert-diff">${diffSign}${formatCurrency(c.diff)}</span>
+        </div>
+        <div class="trend-alert-compare">${formatCurrency(c.prev)} → ${formatCurrency(c.curr)}</div>
+      </div>
+    `;
+  }).join('');
+
+  section.innerHTML = `
+    <div class="trends-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+      <span data-i18n="dashboard.trends.title">${i18n.t('dashboard.trends.title') || 'Spending Trends'}</span>
+      <span class="trends-subtitle" data-i18n="dashboard.trends.vs_last_month">${i18n.t('dashboard.trends.vs_last_month') || 'vs last month'}</span>
+    </div>
+    <div class="trends-grid">${alertsHtml}</div>
+  `;
+  section.style.display = 'block';
 }
 
 const chartColors = [
@@ -271,8 +450,8 @@ function updateChart(data) {
         datasets: [{
           data: data.map(x => x.total),
           backgroundColor: chartColors,
-          borderColor: '#1a1a1a',
-          borderWidth: 1
+          borderColor: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1a1a2e' : '#ffffff',
+          borderWidth: 2
         }]
       },
       options: {
@@ -427,20 +606,25 @@ function calculateBreakdown(transactions) {
   const breakdownMap = {};
   const untaggedLabel = i18n.t('dashboard.group_by.untagged');
 
-  for (const { type, amount, date, category, tags: txTags } of transactions) {
+  for (const { type, amount, date, category, tags: txTags, person } of transactions) {
     if (type !== 'expense') continue;
 
     const monthKey = date.slice(0, 7); // YYYY-MM
 
     if (chartGroupBy === 'tags') {
       const groupKeys = txTags && txTags.length > 0 ? txTags : [untaggedLabel];
-      const share = Decimal.div(amount, groupKeys.length).toNumber();
       for (const groupValue of groupKeys) {
         if (chartDisabledFields.has(groupValue)) continue;
         if (!breakdownMap[groupValue]) breakdownMap[groupValue] = { total: 0, months: {} };
-        breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, share).toNumber();
-        breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), share).toNumber();
+        breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, amount).toNumber();
+        breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), amount).toNumber();
       }
+    } else if (chartGroupBy === 'person') {
+      const groupValue = person || 'Unassigned';
+      if (chartDisabledFields.has(groupValue)) continue;
+      if (!breakdownMap[groupValue]) breakdownMap[groupValue] = { total: 0, months: {} };
+      breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, amount).toNumber();
+      breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), amount).toNumber();
     } else {
       const groupValue = category;
       if (chartDisabledFields.has(groupValue)) continue;
@@ -462,7 +646,16 @@ function calculateBreakdown(transactions) {
   })
   .sort((a, b) => b.total - a.total);
 
-  const grandTotal = result.reduce((sum, item) => Decimal.add(sum, item.total).toNumber(), 0);
+  // For tags, sum unique transaction amounts to avoid double-counting multi-tagged transactions
+  const grandTotal = chartGroupBy === 'tags'
+    ? transactions
+        .filter(({ type, tags: txTags }) => {
+          if (type !== 'expense') return false;
+          const keys = txTags && txTags.length > 0 ? txTags : [untaggedLabel];
+          return keys.some(k => !chartDisabledFields.has(k));
+        })
+        .reduce((sum, { amount }) => Decimal.add(sum, amount).toNumber(), 0)
+    : result.reduce((sum, item) => Decimal.add(sum, item.total).toNumber(), 0);
 
   // Add percentage field
   return result.map(item => ({
@@ -488,6 +681,10 @@ function updateLegend(transactions, data) {
       else labelSet.add(untaggedLabel);
     });
     uniqueLabels = Array.from(labelSet);
+  } else if (chartGroupBy === 'person') {
+    const labelSet = new Set();
+    monthExpenses.forEach(exp => labelSet.add(exp.person || 'Unassigned'));
+    uniqueLabels = Array.from(labelSet);
   } else {
     uniqueLabels = monthExpenses.map(exp => exp.category).filter((v, i, a) => a.indexOf(v) === i);
   }
@@ -505,13 +702,56 @@ function updateLegend(transactions, data) {
     const color = chartColors[index % chartColors.length];
     const percentage = itemData ? ` (${itemData.percentage.toFixed(1)}%)` : '';
     const amount = itemData ? formatCurrency(itemData.total) : '';
+    const spent = itemData ? itemData.total : 0;
+
+    // Budget bar — only for category grouping in current month view
+    const budget = (chartGroupBy === 'category' && chartSelected === 'currentMonth')
+      ? (budgets[label] ?? null)
+      : null;
+
+    let budgetHtml = '';
+    if (budget != null) {
+      const pct = Math.min((spent / budget) * 100, 100);
+      const isOver = spent > budget;
+      const isNear = !isOver && pct >= 80;
+      const barColor = isOver ? 'var(--bs-danger)' : (isNear ? 'var(--bs-warning)' : 'var(--bs-success)');
+      const wrapperClass = isOver ? 'budget-over' : (isNear ? 'budget-near' : '');
+      budgetHtml = `
+        <div class="budget-bar-wrapper ${wrapperClass}">
+          <div class="budget-progress">
+            <div class="budget-progress-bar" style="width: ${pct}%; background-color: ${barColor};"></div>
+          </div>
+          <span class="budget-label">${formatCurrency(spent)} / ${formatCurrency(budget)}${isOver ? ' ⚠ over budget' : ''}</span>
+        </div>`;
+    }
+
+    // Compute trend badge for current month view
+    let trendHtml = '';
+    if (chartSelected === 'currentMonth' && chartGroupBy === 'category' && previousMonthData) {
+      const prevSpending = computeCategorySpending(previousMonthData);
+      const prevAmount = prevSpending[label] || 0;
+      if (prevAmount > 0 && spent > 0) {
+        const pctChange = ((spent - prevAmount) / prevAmount) * 100;
+        if (Math.abs(pctChange) >= 1) {
+          const arrow = pctChange > 0 ? '↑' : '↓';
+          const cls = pctChange > 0 ? 'trend-up' : 'trend-down';
+          trendHtml = `<span class="trend-badge ${cls}">${arrow} ${Math.abs(pctChange).toFixed(0)}%</span>`;
+        }
+      } else if (prevAmount === 0 && spent > 0) {
+        trendHtml = `<span class="trend-badge trend-new">${i18n.t('dashboard.trends.new_label') || 'new'}</span>`;
+      }
+    }
+
     const item = document.createElement('div');
     item.className = `legend-item${chartDisabledFields.has(label) ? ' disabled' : ''}`;
     item.innerHTML = `
     <div class="color-box" style="background-color: ${color}"></div>
     <div class="legend-text">
-    <span>${label}${percentage}</span>
-    <span class="amount">${amount}</span>
+      <div class="legend-text-row">
+        <span>${label}${percentage} ${trendHtml}</span>
+        <span class="amount">${amount}</span>
+      </div>
+      ${budgetHtml}
     </div>
     `;
     item.addEventListener('click', () => toggleLegend(label));
@@ -527,6 +767,10 @@ function updateLegend(transactions, data) {
       const keys = tx.tags && tx.tags.length > 0 ? tx.tags : [untaggedLabel];
       return keys.some(t => !chartDisabledFields.has(t));
     })
+    .reduce((sum, x) => Decimal.add(sum, x.amount).toNumber(), 0);
+  } else if (chartGroupBy === 'person') {
+    activeTotal = monthExpenses
+    .filter(x => !chartDisabledFields.has(x.person || 'Unassigned'))
     .reduce((sum, x) => Decimal.add(sum, x.amount).toNumber(), 0);
   } else {
     activeTotal = monthExpenses
@@ -762,6 +1006,230 @@ function updateMonthHeaderAll() {
   }
 }
 
+// -----------------
+// - Savings Rate  -
+// -----------------
+async function loadSavingsRate() {
+  const section = document.getElementById('savings-rate-section');
+  if (!section) return;
+
+  try {
+    const response = await fetch(`${API_URL}/transactions/past-12-months`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!response.ok) { section.style.display = 'none'; return; }
+    const transactions = await response.json();
+
+    if (!transactions || transactions.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    // Build person filter buttons
+    buildSavingsPersonFilter(transactions);
+
+    // Render the chart
+    renderSavingsChart(transactions);
+
+    section.style.display = 'block';
+  } catch (_) {
+    section.style.display = 'none';
+  }
+}
+
+function buildSavingsPersonFilter(transactions) {
+  const container = document.getElementById('savings-person-filter');
+  const personSet = new Set();
+  transactions.forEach(t => { if (t.person) personSet.add(t.person); });
+
+  // Don't show filter if only one or no persons
+  if (personSet.size <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const allLabel = i18n.t('dashboard.savings.all') || 'All';
+  let html = `<button class="savings-filter-btn${savingsPersonFilter === 'all' ? ' active' : ''}" data-person="all">${allLabel}</button>`;
+  Array.from(personSet).sort().forEach(person => {
+    const isActive = savingsPersonFilter === person ? ' active' : '';
+    html += `<button class="savings-filter-btn${isActive}" data-person="${person}">${person}</button>`;
+  });
+  container.innerHTML = html;
+
+  // Event listeners
+  container.querySelectorAll('.savings-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      savingsPersonFilter = btn.dataset.person;
+      container.querySelectorAll('.savings-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Re-render chart with cached transactions
+      loadSavingsRate();
+    });
+  });
+}
+
+function renderSavingsChart(transactions) {
+  // Generate last 12 months labels
+  const months = [];
+  const today = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    months.push(`${d.getFullYear()}-${m}`);
+  }
+
+  // Filter by person if needed
+  const filtered = savingsPersonFilter === 'all'
+    ? transactions
+    : transactions.filter(t => t.person === savingsPersonFilter);
+
+  // Compute per-month income, expenses, savings rate
+  const monthlyData = months.map(month => {
+    const monthTx = filtered.filter(t => t.date.startsWith(month));
+    const income = monthTx.filter(t => t.type === 'income').reduce((s, t) => Decimal.add(s, t.amount).toNumber(), 0);
+    const expenses = monthTx.filter(t => t.type === 'expense').reduce((s, t) => Decimal.add(s, t.amount).toNumber(), 0);
+    const rate = income > 0 ? ((income - expenses) / income) * 100 : null;
+    return { month, income, expenses, rate };
+  });
+
+  // Update summary
+  updateSavingsSummary(monthlyData);
+
+  // Destroy old chart
+  if (savingsChart) savingsChart.destroy();
+
+  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+  const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)';
+
+  const rates = monthlyData.map(d => d.rate);
+  const hasData = rates.some(r => r !== null);
+
+  if (!hasData) {
+    document.getElementById('savings-rate-section').style.display = 'none';
+    return;
+  }
+
+  savingsChart = new Chart('savingsChartCanvas', {
+    type: 'line',
+    data: {
+      labels: months.map(m => formatDate(m)),
+      datasets: [{
+        label: i18n.t('dashboard.savings.rate_label') || 'Savings Rate',
+        data: rates,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const chart = ctx.chart;
+          const { ctx: context, chartArea } = chart;
+          if (!chartArea) return 'rgba(16, 185, 129, 0.1)';
+          const gradient = context.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+          gradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+          return gradient;
+        },
+        borderColor: '#10b981',
+        borderWidth: 2.5,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: (ctx) => {
+          const val = ctx.raw;
+          if (val === null) return 'transparent';
+          return val >= 0 ? '#10b981' : '#ef4444';
+        },
+        pointBorderColor: isDark ? '#1a1a2e' : '#ffffff',
+        pointBorderWidth: 2,
+        tension: 0.3,
+        spanGaps: true,
+        segment: {
+          borderColor: (ctx) => {
+            const val = ctx.p1.raw;
+            return val !== null && val < 0 ? '#ef4444' : '#10b981';
+          },
+        },
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { maxRotation: 45, minRotation: 0 },
+        },
+        y: {
+          grid: { color: (ctx) => ctx.tick.value === 0 ? zeroLineColor : gridColor },
+          ticks: {
+            callback: (value) => `${value}%`,
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleFont: { size: 14, weight: 'bold' },
+          bodyFont: { size: 13 },
+          bodySpacing: 6,
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => {
+              const d = monthlyData[ctx.dataIndex];
+              if (d.rate === null) return i18n.t('dashboard.savings.no_income') || 'No income';
+              const lines = [
+                `${i18n.t('dashboard.savings.rate_label') || 'Savings Rate'}: ${d.rate.toFixed(1)}%`,
+                `${i18n.t('dashboard.cashflow.income') || 'Income'}: ${formatCurrency(d.income)}`,
+                `${i18n.t('dashboard.cashflow.expenses') || 'Expenses'}: ${formatCurrency(d.expenses)}`,
+                `${i18n.t('dashboard.savings.saved') || 'Saved'}: ${formatCurrency(Decimal.sub(d.income, d.expenses))}`,
+              ];
+              return lines;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function updateSavingsSummary(monthlyData) {
+  const container = document.getElementById('savings-rate-summary');
+
+  // Calculate overall stats from months with income
+  const validMonths = monthlyData.filter(d => d.rate !== null);
+  if (validMonths.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const avgRate = validMonths.reduce((s, d) => s + d.rate, 0) / validMonths.length;
+  const totalIncome = validMonths.reduce((s, d) => Decimal.add(s, d.income).toNumber(), 0);
+  const totalExpenses = validMonths.reduce((s, d) => Decimal.add(s, d.expenses).toNumber(), 0);
+  const totalSaved = Decimal.sub(totalIncome, totalExpenses).toNumber();
+  const currentRate = validMonths[validMonths.length - 1]?.rate;
+
+  const rateClass = (r) => r >= 20 ? 'savings-stat-great' : r >= 0 ? 'savings-stat-ok' : 'savings-stat-negative';
+
+  container.innerHTML = `
+    <div class="savings-stat">
+      <span class="savings-stat-label">${i18n.t('dashboard.savings.current') || 'Current'}</span>
+      <span class="savings-stat-value ${rateClass(currentRate)}">${currentRate !== null && currentRate !== undefined ? currentRate.toFixed(1) + '%' : '—'}</span>
+    </div>
+    <div class="savings-stat">
+      <span class="savings-stat-label">${i18n.t('dashboard.savings.average') || 'Average'}</span>
+      <span class="savings-stat-value ${rateClass(avgRate)}">${avgRate.toFixed(1)}%</span>
+    </div>
+    <div class="savings-stat">
+      <span class="savings-stat-label">${i18n.t('dashboard.savings.total_saved') || 'Total Saved'}</span>
+      <span class="savings-stat-value ${totalSaved >= 0 ? 'savings-stat-great' : 'savings-stat-negative'}">${formatCurrency(totalSaved)}</span>
+    </div>
+  `;
+}
+
 // ----------------
 // - Transactions -
 // ----------------
@@ -774,6 +1242,25 @@ document.getElementById('amountInput').addEventListener('input', (event) => {
     event.target.value = event.target.value.replace(',', '.');
   }
 });
+
+function buildCategoryTagsMap(rows) {
+  categoryTagsMap = {};
+  if (!rows) return;
+  rows.forEach(row => {
+    if (row.category && row.tags && row.tags.length) {
+      if (!categoryTagsMap[row.category]) categoryTagsMap[row.category] = {};
+      row.tags.forEach(tag => {
+        categoryTagsMap[row.category][tag] = (categoryTagsMap[row.category][tag] || 0) + 1;
+      });
+    }
+  });
+}
+
+function getSuggestedTags() {
+  const cat = document.getElementById('categorySelect').value;
+  if (!cat || !categoryTagsMap[cat]) return [];
+  return Object.keys(categoryTagsMap[cat]);
+}
 
 async function renderTags() {
   tagsInput = new TomSelect('#tagsInput', {
@@ -788,12 +1275,56 @@ async function renderTags() {
       no_results: function(data, escape) {
         return '';
       },
-    }
+      option: function(data, escape) {
+        const suggested = getSuggestedTags();
+        const isSuggested = suggested.includes(data.value);
+        return `<div class="${isSuggested ? 'tag-suggested' : ''}">${escape(data.text)}</div>`;
+      },
+    },
+    score: function(search) {
+      const original = this.getScoreFunction(search);
+      return function(item) {
+        const suggested = getSuggestedTags();
+        const bonus = suggested.includes(item.value) ? 0.5 : 0;
+        return original(item) + bonus;
+      };
+    },
   });
 
+  function reorderTagOptions() {
+    const suggested = getSuggestedTags();
+    const selected = tagsInput.getValue(); // preserve current selection
+
+    // Clear and re-add in correct order: suggested first, then the rest
+    tagsInput.clearOptions();
+    const suggestedTags = tags.filter(t => suggested.includes(t)).sort();
+    const otherTags = tags.filter(t => !suggested.includes(t)).sort();
+    suggestedTags.concat(otherTags).forEach(tag => {
+      tagsInput.addOption({ value: tag, text: tag }, false);
+    });
+
+    // Restore selection
+    if (selected.length) tagsInput.setValue(selected, true);
+
+    // Refresh dropdown and apply highlight classes
+    tagsInput.refreshOptions(false);
+    setTimeout(() => {
+      if (tagsInput.dropdown_content) {
+        tagsInput.dropdown_content.querySelectorAll('.option').forEach(el => {
+          const val = el.getAttribute('data-value');
+          el.classList.toggle('tag-suggested', suggested.includes(val));
+        });
+      }
+    }, 0);
+  }
+
   tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=false);
+    tagsInput.addOption({ value: tag, text: tag }, false);
   });
+
+  // Refresh on category change and dropdown open
+  document.getElementById('categorySelect').addEventListener('change', reorderTagOptions);
+  tagsInput.on('dropdown_open', reorderTagOptions);
 }
 
 async function renderNameAutocomplete() {
@@ -891,6 +1422,7 @@ async function renderCategories() {
 function addTransaction() {
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
+  document.getElementById('personSelect').value = "";
   nameInput.clear();
   tagsInput.setValue([]);
   document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
@@ -959,6 +1491,25 @@ async function submitTransactionAdd(event) {
   const formData = new FormData(event.target);
   const data = Object.fromEntries(formData.entries());
   data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
+
+  // Duplicate warning: fetch the target month's transactions and check
+  try {
+    const [year, month] = data.date.split('-');
+    const checkResp = await fetch(`${API_URL}/transactions/date/${year}-${month}`, { method: 'GET', credentials: 'include' });
+    if (checkResp.ok) {
+      const existing = await checkResp.json();
+      const newAmount = parseFloat(data.amount);
+      const newPerson = (data.person || '').toLowerCase();
+      const newCategory = (data.category || '').toLowerCase();
+      const hasDupe = existing.some(row =>
+        parseFloat(row.amount) === newAmount &&
+        (row.person || '').toLowerCase() === newPerson &&
+        row.date === data.date &&
+        (row.category || '').toLowerCase() === newCategory
+      );
+      if (hasDupe && !confirm(i18n.t('transactions.messages.duplicate_warning'))) return;
+    }
+  } catch (_) { /* proceed if check fails */ }
 
   try {
     const response = await fetch(`${API_URL}/transactions`, {

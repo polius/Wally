@@ -22,6 +22,22 @@
       "expenses": "النفقات",
       "balance": "الرصيد"
     },
+    "trends": {
+      "title": "اتجاهات الإنفاق",
+      "vs_last_month": "مقارنة بالشهر الماضي",
+      "new_label": "جديد"
+    },
+    "savings": {
+      "title": "معدل التوفير",
+      "subtitle": "آخر 12 شهر",
+      "all": "الكل",
+      "rate_label": "معدل التوفير",
+      "no_income": "لا يوجد دخل",
+      "saved": "تم توفيره",
+      "current": "الحالي",
+      "average": "المتوسط",
+      "total_saved": "إجمالي التوفير"
+    },
     "modal": {
       "title": "تغيير لوحة التحكم",
       "select_prompt": "اختر لوحة تحكم للعرض:",
@@ -52,6 +68,7 @@
     "category_label": "الفئة",
     "category_placeholder": "اختر الفئة",
     "tags_label": "العلامات",
+    "person_label": "الشخص",
     "tags_placeholder": "أضف علامة واضغط Enter",
     "date_label": "التاريخ",
     "type_label": "النوع",
@@ -75,6 +92,7 @@
       "name": "الاسم",
       "category": "الفئة",
       "tags": "العلامات",
+      "person": "الشخص",
       "date": "التاريخ",
       "amount": "المبلغ",
       "actions": "الإجراءات"
@@ -89,8 +107,17 @@
       "transaction_edited": "تم تعديل المعاملة.",
       "transaction_deleted": "تم حذف المعاملة.",
       "recurring_added": "تمت إضافة المعاملة المتكررة.",
-      "end_date_later": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية."
-    }
+      "end_date_later": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية.",
+      "transactions_updated": "تم تحديث {count} معاملة.",
+      "duplicate_warning": "توجد معاملة بنفس المبلغ والشخص والتاريخ. هل تريد الإضافة على أي حال؟"
+    },
+    "edit": "تعديل",
+    "edit_multiple_title": "تعديل",
+    "edit_multiple_title_suffix": "معاملات",
+    "edit_multiple_hint": "سيتم تحديث الحقول المغيرة فقط.",
+    "bulk_keep_current": "— الاحتفاظ بالحالي —",
+    "bulk_none": "لا أحد",
+    "edit_multiple_apply": "تطبيق"
   },
   "settings": {
     "title": "Wally | الإعدادات",
@@ -104,7 +131,12 @@
       "delete_title": "حذف الفئة",
       "name_label": "اسم الفئة",
       "delete_confirm": "هل أنت متأكد من حذف الفئة",
-      "delete_warning": "سيعمل هذا فقط إذا لم تكن هناك معاملات تستخدم هذه الفئة."
+      "delete_warning": "سيعمل هذا فقط إذا لم تكن هناك معاملات تستخدم هذه الفئة.",
+      "set_budget": "تعيين الميزانية",
+      "budget_title": "تعيين الميزانية الشهرية",
+      "budget_for": "الميزانية الشهرية لـ",
+      "budget_amount": "مبلغ الميزانية",
+      "budget_hint": "اتركه فارغاً لمسح الميزانية."
     },
     "tags": {
       "title": "العلامات",
@@ -168,7 +200,8 @@
       "recurring_deleted": "تم حذف المعاملة المتكررة.",
       "api_key_created": "تم إنشاء مفتاح API.",
       "api_key_deleted": "تم حذف مفتاح API.",
-      "api_key_copied": "تم نسخ مفتاح API إلى الحافظة."
+      "api_key_copied": "تم نسخ مفتاح API إلى الحافظة.",
+      "budget_updated": "تم تحديث الميزانية."
     },
     "language": {
       "title": "اللغة",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "استيراد / تصدير المعاملات",
-      "description": "قم بتصدير أو استيراد المعاملات بسرعة باستخدام ملفات CSV.",
+      "description": "تصدير المعاملات بتنسيقات متعددة أو الاستيراد من CSV.",
       "export": "تصدير إلى CSV",
-      "import": "استيراد من CSV"
+      "import": "استيراد من CSV",
+      "export_btn": "تصدير",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (طباعة)",
+      "export_modal_title": "تصدير المعاملات",
+      "period_label": "الفترة",
+      "format_label": "التنسيق",
+      "custom_range_required": "يرجى تحديد شهر البداية والنهاية."
     },
     "recurring": {
       "title": "المعاملات المتكررة",
@@ -237,6 +278,7 @@
       "category": "الفئة",
       "tags": "العلامات",
       "tags_placeholder": "أضف علامة واضغط Enter",
+      "person": "الشخص",
       "amount": "المبلغ",
       "type": "النوع",
       "type_expense": "نفقة",
@@ -260,12 +302,23 @@
         "name": "الاسم",
         "category": "الفئة",
         "tags": "العلامات",
+        "person": "الشخص",
         "start_date": "تاريخ البداية",
         "end_date": "تاريخ النهاية",
         "frequency": "التكرار",
         "amount": "المبلغ",
         "actions": "الإجراءات"
       }
+    },
+    "persons": {
+      "title": "الأشخاص",
+      "placeholder": "إضافة شخص جديد",
+      "add": "إضافة",
+      "edit_title": "تعديل الشخص",
+      "delete_title": "حذف الشخص",
+      "name_label": "اسم الشخص",
+      "delete_confirm": "هل أنت متأكد أنك تريد حذف الشخص",
+      "delete_warning": "سيؤدي هذا إلى مسح الشخص من جميع المعاملات التي تستخدمه."
     }
   },
   "common": {

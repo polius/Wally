@@ -102,6 +102,12 @@
         </svg>
         <span class="btn-text" data-i18n="transactions.add">Add</span>
       </button>
+      <button id="editSelectedBtn" type="button" class="btn btn-primary align-items-center justify-content-center btn-action" style="display:none;" onclick="editSelectedTransactions()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
+          <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
+        </svg>
+        <span class="btn-text" data-i18n="transactions.edit">Edit</span> <span class="btn-text">(</span><span id="selectedCountEdit">0</span><span class="btn-text">)</span>
+      </button>
       <button id="deleteSelectedBtn" type="button" class="btn btn-danger align-items-center justify-content-center btn-action" style="display:none;" onclick="deleteSelectedTransactions()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor">
           <path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/>
@@ -179,6 +185,12 @@
           <div class="mb-3">
             <label class="form-label" data-i18n="transactions.tags_label">Tags</label>
             <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="transactions.tags_placeholder" autocomplete="off">
+          </div>
+
+          <!-- Person -->
+          <div class="mb-3">
+            <label for="personSelect" class="form-label" data-i18n="transactions.person_label">Person</label>
+            <select class="form-select" id="personSelect" name="person"></select>
           </div>
 
           <!-- Amount -->
@@ -289,6 +301,62 @@
           <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Transaction Modal Edit Multiple -->
+  <div class="modal fade" id="transactionModalEditMultiple" tabindex="-1" aria-labelledby="transactionModalEditMultipleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="submitTransactionEditMultiple(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="transactionModalEditMultipleLabel">
+            <span data-i18n="transactions.edit_multiple_title">Edit</span> <span id="editMultipleCount"></span> <span data-i18n="transactions.edit_multiple_title_suffix">Transactions</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size: 0.875rem;" data-i18n="transactions.edit_multiple_hint">Only changed fields will be updated. Leave unchanged fields on "Keep current".</p>
+
+          <!-- Category -->
+          <div class="mb-3">
+            <label for="bulkCategorySelect" class="form-label" data-i18n="transactions.category_label">Category</label>
+            <select class="form-select" id="bulkCategorySelect">
+              <option value="" data-i18n="transactions.bulk_keep_current">— Keep current —</option>
+            </select>
+          </div>
+
+          <!-- Person -->
+          <div class="mb-3">
+            <label for="bulkPersonSelect" class="form-label" data-i18n="transactions.person_label">Person</label>
+            <select class="form-select" id="bulkPersonSelect">
+              <option value="__keep__" data-i18n="transactions.bulk_keep_current">— Keep current —</option>
+              <option value="" data-i18n="transactions.bulk_none">None</option>
+            </select>
+          </div>
+
+          <!-- Type -->
+          <div class="mb-3">
+            <label for="bulkTypeSelect" class="form-label" data-i18n="transactions.type_label">Type</label>
+            <select class="form-select" id="bulkTypeSelect">
+              <option value="" data-i18n="transactions.bulk_keep_current">— Keep current —</option>
+              <option value="expense" data-i18n="transactions.type_expense">Expense</option>
+              <option value="income" data-i18n="transactions.type_income">Income</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="transactions.edit_multiple_apply">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Undo Delete Toast -->
+  <div id="undoToast" class="toast position-fixed border-0" style="z-index: 9999; top: 1.25rem; left: 50%; transform: translateX(-50%); min-width: 300px; border-radius: 8px; background: #323232;" role="alert" data-bs-autohide="false">
+    <div class="d-flex align-items-center gap-2 px-3 py-2" style="color: white;">
+      <span id="undoToastMessage" style="font-size: 0.875rem; flex: 1;"></span>
+      <button type="button" id="undoToastBtn" class="btn btn-sm fw-semibold" style="color: #90caf9; padding: 2px 8px; border: none; background: none; white-space: nowrap; font-size: 0.875rem;">Undo</button>
     </div>
   </div>
   

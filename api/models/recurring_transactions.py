@@ -11,6 +11,7 @@ class RecurringTransactionBase(SQLModel):
     name: str = Field(index=True)
     category: str = Field(index=True)
     tags: List[str] = Field(default_factory=list, sa_column=Column(JSON))
+    person: str = Field(default="", index=True)
     amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     startDate: date = Field(default_factory=date.today, index=True)
@@ -44,6 +45,7 @@ class RecurringTransactionUpdate(SQLModel):
     name: str | None = None
     category: str | None = None
     tags: List[str] | None = None
+    person: str | None = None
     amount: Decimal | None = None
     type: Literal["expense", "income"] | None = None
     endDate: date | None = None
@@ -58,6 +60,7 @@ class RecurringTransactionPublic(SQLModel):
     name: str
     category: str
     tags: List[str]
+    person: str
     amount: float
     type: Literal["expense", "income"]
     startDate: date

@@ -13,6 +13,7 @@ class TransactionBase(SQLModel):
     amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     date: d = Field(default_factory=d.today, index=True)
+    person: str = Field(default="", index=True)
 
     @model_validator(mode='after')
     def check_model(self):
@@ -36,6 +37,7 @@ class TransactionUpdate(SQLModel):
     amount: Decimal | None = None
     type: Literal["expense", "income"] | None = None
     date: d | None = None
+    person: str | None = None
 
 class TransactionPublic(SQLModel):
     id: UUID
@@ -46,3 +48,4 @@ class TransactionPublic(SQLModel):
     amount: Decimal
     type: Literal["expense", "income"]
     date: d
+    person: str

@@ -22,6 +22,22 @@
       "expenses": "Expenses",
       "balance": "Balance"
     },
+    "trends": {
+      "title": "Spending Trends",
+      "vs_last_month": "vs last month",
+      "new_label": "new"
+    },
+    "savings": {
+      "title": "Savings Rate",
+      "subtitle": "last 12 months",
+      "all": "All",
+      "rate_label": "Savings Rate",
+      "no_income": "No income",
+      "saved": "Saved",
+      "current": "Current",
+      "average": "Average",
+      "total_saved": "Total Saved"
+    },
     "modal": {
       "title": "Change Dashboard",
       "select_prompt": "Select a dashboard to view:",
@@ -52,6 +68,7 @@
     "category_label": "Category",
     "category_placeholder": "Select category",
     "tags_label": "Tags",
+    "person_label": "Person",
     "tags_placeholder": "Add a tag and press Enter",
     "date_label": "Date",
     "type_label": "Type",
@@ -75,6 +92,7 @@
       "name": "Name",
       "category": "Category",
       "tags": "Tags",
+      "person": "Person",
       "date": "Date",
       "amount": "Amount",
       "actions": "Actions"
@@ -89,8 +107,17 @@
       "transaction_edited": "Transaction edited.",
       "transaction_deleted": "Transaction deleted.",
       "recurring_added": "Recurring transaction added.",
-      "end_date_later": "The end date must be later than the start date."
-    }
+      "end_date_later": "The end date must be later than the start date.",
+      "transactions_updated": "{count} transactions updated.",
+      "duplicate_warning": "A transaction with the same amount, person, and date already exists. Add anyway?"
+    },
+    "edit": "Edit",
+    "edit_multiple_title": "Edit",
+    "edit_multiple_title_suffix": "Transactions",
+    "edit_multiple_hint": "Only changed fields will be updated. Leave unchanged fields on Keep current.",
+    "bulk_keep_current": "— Keep current —",
+    "bulk_none": "None",
+    "edit_multiple_apply": "Apply"
   },
   "settings": {
     "title": "Wally | Settings",
@@ -104,7 +131,12 @@
       "delete_title": "Delete Category",
       "name_label": "Category Name",
       "delete_confirm": "Are you sure you want to delete the category",
-      "delete_warning": "This will only work if there are no transactions using this category."
+      "delete_warning": "This will only work if there are no transactions using this category.",
+      "set_budget": "Set Budget",
+      "budget_title": "Set Monthly Budget",
+      "budget_for": "Monthly budget for",
+      "budget_amount": "Budget Amount",
+      "budget_hint": "Leave empty to clear the budget."
     },
     "tags": {
       "title": "Tags",
@@ -168,7 +200,8 @@
       "recurring_deleted": "Recurring transaction deleted.",
       "api_key_created": "API key created.",
       "api_key_deleted": "API key deleted.",
-      "api_key_copied": "API key copied to clipboard."
+      "api_key_copied": "API key copied to clipboard.",
+      "budget_updated": "Budget updated."
     },
     "language": {
       "title": "Language",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "Import / Export Transactions",
-      "description": "Export or import transactions quickly using CSV files.",
+      "description": "Export transactions in multiple formats or import from CSV.",
       "export": "Export to CSV",
-      "import": "Import from CSV"
+      "import": "Import from CSV",
+      "export_btn": "Export",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (Print)",
+      "export_modal_title": "Export Transactions",
+      "period_label": "Period",
+      "format_label": "Format",
+      "custom_range_required": "Please select both From and To months."
     },
     "recurring": {
       "title": "Recurring Transactions",
@@ -237,6 +278,7 @@
       "category": "Category",
       "tags": "Tags",
       "tags_placeholder": "Add a tag and press Enter",
+      "person": "Person",
       "amount": "Amount",
       "type": "Type",
       "type_expense": "Expense",
@@ -260,12 +302,23 @@
         "name": "Name",
         "category": "Category",
         "tags": "Tags",
+        "person": "Person",
         "start_date": "Start Date",
         "end_date": "End Date",
         "frequency": "Frequency",
         "amount": "Amount",
         "actions": "Actions"
       }
+    },
+    "persons": {
+      "title": "Persons",
+      "placeholder": "Add new person",
+      "add": "Add",
+      "edit_title": "Edit Person",
+      "delete_title": "Delete Person",
+      "name_label": "Person Name",
+      "delete_confirm": "Are you sure you want to delete the person",
+      "delete_warning": "This will clear the person from all transactions that use it."
     }
   },
   "common": {

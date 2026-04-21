@@ -21,6 +21,22 @@
       "expenses": "Despeses",
       "balance": "Balanç"
     },
+    "trends": {
+      "title": "Tendències de despesa",
+      "vs_last_month": "vs mes anterior",
+      "new_label": "nou"
+    },
+    "savings": {
+      "title": "Taxa d'estalvi",
+      "subtitle": "últims 12 mesos",
+      "all": "Tot",
+      "rate_label": "Taxa d'estalvi",
+      "no_income": "Sense ingressos",
+      "saved": "Estalviat",
+      "current": "Actual",
+      "average": "Mitjana",
+      "total_saved": "Total estalviat"
+    },
     "modal": {
       "title": "Canviar Gràfic",
       "select_prompt": "Selecciona un gràfic per veure:",
@@ -51,6 +67,7 @@
     "category_label": "Categoria",
     "category_placeholder": "Selecciona una categoria",
     "tags_label": "Etiquetes",
+    "person_label": "Persona",
     "tags_placeholder": "Afegeix una etiqueta i prem Enter",
     "date_label": "Data",
     "type_label": "Tipus",
@@ -74,6 +91,7 @@
       "name": "Nom",
       "category": "Categoria",
       "tags": "Etiquetes",
+      "person": "Persona",
       "date": "Data",
       "amount": "Quantitat",
       "actions": "Accions"
@@ -89,8 +107,17 @@
       "transaction_edited": "Transacció editada.",
       "transaction_deleted": "Transacció eliminada.",
       "recurring_added": "Transacció recurrent afegida.",
-      "end_date_later": "La data de finalització ha de ser posterior a la data d'inici."
-    }
+      "end_date_later": "La data de finalització ha de ser posterior a la data d'inici.",
+      "transactions_updated": "{count} transaccions actualitzades.",
+      "duplicate_warning": "Ja existeix una transacció amb el mateix import, persona i data. Vols afegir-la igualment?"
+    },
+    "edit": "Edita",
+    "edit_multiple_title": "Edita",
+    "edit_multiple_title_suffix": "transaccions",
+    "edit_multiple_hint": "Només s'actualitzaran els camps modificats. Deixa els altres en Conserva l'actual.",
+    "bulk_keep_current": "— Conserva l'actual —",
+    "bulk_none": "Cap",
+    "edit_multiple_apply": "Aplica"
   },
   "settings": {
     "title": "Wally | Configuració",
@@ -104,7 +131,12 @@
       "delete_title": "Eliminar Categoria",
       "name_label": "Nom de la Categoria",
       "delete_confirm": "Segur que vols eliminar la categoria",
-      "delete_warning": "Això només funcionarà si no hi ha transaccions utilitzant aquesta categoria."
+      "delete_warning": "Això només funcionarà si no hi ha transaccions utilitzant aquesta categoria.",
+      "set_budget": "Establir pressupost",
+      "budget_title": "Establir pressupost mensual",
+      "budget_for": "Pressupost mensual per a",
+      "budget_amount": "Import del pressupost",
+      "budget_hint": "Deixa-ho buit per eliminar el pressupost."
     },
     "tags": {
       "title": "Etiquetes",
@@ -168,7 +200,8 @@
       "recurring_deleted": "Transacció recurrent eliminada.",
       "api_key_created": "Clau API creada.",
       "api_key_deleted": "Clau API eliminada.",
-      "api_key_copied": "Clau API copiada al porta-retalls."
+      "api_key_copied": "Clau API copiada al porta-retalls.",
+      "budget_updated": "Pressupost actualitzat."
     },
     "language": {
       "title": "Idioma",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "Importar / Exportar Transaccions",
-      "description": "Exporta o importa transaccions ràpidament utilitzant fitxers CSV.",
+      "description": "Exporta les transaccions en múltiples formats o importa des d'un CSV.",
       "export": "Exportar a CSV",
-      "import": "Importar de CSV"
+      "import": "Importar de CSV",
+      "export_btn": "Exporta",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (Imprimeix)",
+      "export_modal_title": "Exporta transaccions",
+      "period_label": "Període",
+      "format_label": "Format",
+      "custom_range_required": "Selecciona els mesos d'inici i fi."
     },
     "recurring": {
       "title": "Transaccions Recurrents",
@@ -237,6 +278,7 @@
       "category": "Categoria",
       "tags": "Etiquetes",
       "tags_placeholder": "Afegeix una etiqueta i prem Enter",
+      "person": "Persona",
       "amount": "Quantitat",
       "type": "Tipus",
       "type_expense": "Despesa",
@@ -260,12 +302,23 @@
         "name": "Nom",
         "category": "Categoria",
         "tags": "Etiquetes",
+        "person": "Persona",
         "start_date": "Data Inici",
         "end_date": "Data Fi",
         "frequency": "Freqüència",
         "amount": "Quantitat",
         "actions": "Accions"
       }
+    },
+    "persons": {
+      "title": "Persones",
+      "placeholder": "Afegir nova persona",
+      "add": "Afegir",
+      "edit_title": "Editar persona",
+      "delete_title": "Eliminar persona",
+      "name_label": "Nom de la persona",
+      "delete_confirm": "Esteu segur que voleu eliminar la persona",
+      "delete_warning": "Això eliminarà la persona de totes les transaccions que la utilitzen."
     }
   },
   "common": {

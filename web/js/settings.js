@@ -2,14 +2,51 @@ const API_URL = '/api';
 
 let categories;
 let tags;
+let persons;
+let budgets = {};
 let currency;
 let login;
 
 let categorySelected;
 let tagSelected;
+let personSelected;
 
 let gridInstance;
 let gridApi;
+
+let _undoDeleteTimer = null;
+
+function showUndoToast(message, onExecute) {
+  if (_undoDeleteTimer) {
+    clearTimeout(_undoDeleteTimer);
+    _undoDeleteTimer = null;
+  }
+
+  const toastEl = document.getElementById('undoToast');
+  const msgEl = document.getElementById('undoToastMessage');
+  const undoBtn = document.getElementById('undoToastBtn');
+
+  msgEl.textContent = message;
+
+  const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+  toast.show();
+
+  function handleUndo() {
+    clearTimeout(_undoDeleteTimer);
+    _undoDeleteTimer = null;
+    toast.hide();
+    undoBtn.removeEventListener('click', handleUndo);
+  }
+
+  undoBtn.addEventListener('click', handleUndo);
+
+  _undoDeleteTimer = setTimeout(async () => {
+    undoBtn.removeEventListener('click', handleUndo);
+    toast.hide();
+    _undoDeleteTimer = null;
+    await onExecute();
+  }, 5000);
+}
 
 let modalMode = 'add';
 let selectedRow;
@@ -27,10 +64,11 @@ async function main() {
   await i18n.init();
   renderLanguage();
 
-  // Get categories, tags and default currency
-  [categories, tags, currency, login] = await Promise.all([
+  // Get categories, tags, persons and default currency
+  [categories, tags, persons, currency, login] = await Promise.all([
     getCategories(),
     getTags(),
+    getPersons(),
     getCurrency(),
     getLogin(),
     renderTheme(),
@@ -78,19 +116,22 @@ async function getVersion() {
 }
 
 async function getCategories() {
-  const response = await fetch(`${API_URL}/categories`, {
-    method: 'GET',
-    credentials: 'include',
-  });
+  const [catResponse, budgetsResponse] = await Promise.all([
+    fetch(`${API_URL}/categories`, { method: 'GET', credentials: 'include' }),
+    fetch(`${API_URL}/categories/budgets`, { method: 'GET', credentials: 'include' }),
+  ]);
 
-  if (response.status === 401) {
+  if (catResponse.status === 401) {
     window.location.href = '/login';
     return;
   }
 
-  const data = await response.json();
+  const data = await catResponse.json();
+  if (budgetsResponse.ok) {
+    budgets = await budgetsResponse.json();
+  }
   await renderCategories(data);
-  return categories
+  return data;
 }
 
 async function getTags() {
@@ -150,6 +191,10 @@ document.getElementById('categoryModalEdit').addEventListener('shown.bs.modal', 
   document.getElementById('categoryEditInput').focus();
 });
 
+document.getElementById('categoryModalBudget').addEventListener('shown.bs.modal', () => {
+  document.getElementById('categoryBudgetInput').focus();
+});
+
 function openCategoryActionsModal(category) {
   // Store selected category
   categorySelected = category;
@@ -186,6 +231,64 @@ function openDeleteCategoryModal() {
   // Show delete modal
   const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
   deleteModal.show();
+}
+
+function openBudgetCategoryModal() {
+  // Hide actions modal
+  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
+  actionsModal.hide();
+
+  // Populate modal
+  document.getElementById('categoryBudgetName').textContent = categorySelected;
+  const currentBudget = budgets[categorySelected] ?? null;
+  document.getElementById('categoryBudgetInput').value = currentBudget !== null ? currentBudget : '';
+
+  // Show budget modal
+  const budgetModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalBudget'));
+  budgetModal.show();
+}
+
+async function setBudgetSubmit(event) {
+  event.preventDefault();
+
+  const inputVal = document.getElementById('categoryBudgetInput').value.trim();
+  const budgetValue = inputVal === '' ? null : parseFloat(inputVal);
+
+  try {
+    const response = await fetch(`${API_URL}/categories/${encodeURIComponent(categorySelected)}/budget`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ budget: budgetValue }),
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422) throw new Error(json.detail[0].msg);
+      else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+      throw new Error('An error occurred.');
+    }
+    else {
+      // Hide the modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalBudget'));
+      modal.hide();
+
+      // Show success toast
+      bootstrap.showToast({ body: i18n.t('settings.messages.budget_updated'), delay: 2500, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-success' });
+
+      // Refresh categories (also re-fetches budgets)
+      categories = await getCategories();
+    }
+  }
+  catch (error) {
+    bootstrap.showToast({ body: `${error}`, delay: 2000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+  }
 }
 
 async function editCategorySubmit(event) {
@@ -254,7 +357,16 @@ async function renderCategories(categories) {
       badge.style.fontWeight = '400';
       badge.style.cursor = 'pointer';
       badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
-      badge.textContent = category;
+
+      const budget = budgets[category] ?? null;
+      if (budget != null) {
+        const formatted = currency
+          ? (currency.position === 'left' ? `${currency.symbol}${budget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `${budget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currency.symbol}`)
+          : budget;
+        badge.innerHTML = `${category} <span style="opacity: 0.65; font-size: 0.8em; margin-left: 4px;">· ${formatted}/mo</span>`;
+      } else {
+        badge.textContent = category;
+      }
 
       // Add hover effect
       badge.addEventListener('mouseenter', function() {
@@ -352,39 +464,39 @@ function deleteCategory(category) {
 async function deleteCategorySubmit(event) {
   event.preventDefault();
 
-  try {
-    const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
+  const categoryToDelete = categorySelected;
 
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
+  // Hide the modal immediately
+  const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalDelete'));
+  modal.hide();
 
-    const json = await response.json()
+  // Show undo toast — actual delete fires after 5 seconds unless undone
+  showUndoToast(i18n.t('settings.messages.category_deleted'), async () => {
+    try {
+      const response = await fetch(`${API_URL}/categories/${categoryToDelete}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalDelete'));
-      modal.hide();
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.category_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+      const json = await response.json();
 
-      // Refresh the categories
+      if (!response.ok) {
+        if (response.status === 422) throw new Error(json.detail[0].msg);
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+        throw new Error("An error occurred.");
+      }
+
       categories = await getCategories();
     }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
+    catch (error) {
+      bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+    }
+  });
 }
 
 // --------
@@ -572,10 +684,131 @@ function deleteTag(tag) {
 async function deleteTagSubmit(event) {
   event.preventDefault();
 
+  const tagToDelete = tagSelected;
+
+  // Hide the modal immediately
+  const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalDelete'));
+  modal.hide();
+
+  // Show undo toast — actual delete fires after 5 seconds unless undone
+  showUndoToast(i18n.t('settings.messages.tag_deleted'), async () => {
+    try {
+      const response = await fetch(`${API_URL}/tags/${tagToDelete}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 422) throw new Error(json.detail[0].msg);
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+        throw new Error("An error occurred.");
+      }
+
+      tags = await getTags();
+    }
+    catch (error) {
+      bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+    }
+  });
+}
+
+// -----------
+// - PERSONS -
+// -----------
+document.getElementById('personModalEdit').addEventListener('shown.bs.modal', () => {
+  document.getElementById('personEditInput').focus();
+});
+
+async function getPersons() {
+  const response = await fetch(`${API_URL}/persons`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    window.location.href = '/login';
+    return [];
+  }
+
+  if (!response.ok) return [];
+
+  const data = await response.json();
+  await renderPersons(data);
+  return data;
+}
+
+async function renderPersons(persons) {
+  // Populate person select in recurring modal
+  const recurringPersonSelect = document.getElementById('recurringPersonSelect');
+  recurringPersonSelect.innerHTML = '';
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '';
+  noneOpt.setAttribute('data-i18n', 'transactions.bulk_none');
+  noneOpt.textContent = i18n.t('transactions.bulk_none') || 'None';
+  recurringPersonSelect.appendChild(noneOpt);
+  persons.forEach(person => {
+    const opt = document.createElement('option');
+    opt.value = person;
+    opt.textContent = person;
+    recurringPersonSelect.appendChild(opt);
+  });
+
+  const container = document.getElementById('personBadges');
+  container.innerHTML = '';
+
+  if (persons.length === 0) {
+    const empty = document.createElement('span');
+    empty.style.fontSize = '0.9rem';
+    empty.innerText = "No persons have been created yet.";
+    empty.style.fontStyle = 'italic';
+    container.appendChild(empty);
+  } else {
+    persons.forEach(person => {
+      const badge = document.createElement('span');
+      badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
+      badge.style.height = '34px';
+      badge.style.paddingLeft = '12px';
+      badge.style.paddingRight = '12px';
+      badge.style.fontSize = '0.9rem';
+      badge.style.fontWeight = '400';
+      badge.style.cursor = 'pointer';
+      badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
+      badge.textContent = person;
+
+      badge.addEventListener('mouseenter', function() {
+        badge.style.opacity = '0.8';
+        badge.style.transform = 'scale(1.05)';
+      });
+      badge.addEventListener('mouseleave', function() {
+        badge.style.opacity = '1';
+        badge.style.transform = 'scale(1)';
+      });
+
+      badge.onclick = function() { openPersonActionsModal(person); };
+      container.appendChild(badge);
+    });
+  }
+}
+
+async function addPerson(event) {
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+
   try {
-    const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
-      method: 'DELETE',
+    const response = await fetch(`${API_URL}/persons`, {
+      method: 'POST',
       credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
 
     if (response.status === 401) {
@@ -583,28 +816,123 @@ async function deleteTagSubmit(event) {
       return;
     }
 
-    const json = await response.json()
+    const json = await response.json();
 
     if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalDelete'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.tag_deleted'), delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the tags
-      tags = await getTags();
+      if (response.status === 422) throw new Error(json.detail[0].msg);
+      else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+      throw new Error("An error occurred.");
+    } else {
+      persons = await getPersons();
+      bootstrap.showToast({body: 'Person added.', delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
+      document.getElementById('personForm').reset();
     }
   }
   catch (error) {
-    bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
   }
+}
+
+function openPersonActionsModal(person) {
+  personSelected = person;
+  document.getElementById('personModalActionsName').textContent = person;
+  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('personModalActions'));
+  modal.show();
+}
+
+function openEditPersonModal() {
+  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('personModalActions'));
+  actionsModal.hide();
+
+  document.getElementById('personEditInput').value = personSelected;
+
+  const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('personModalEdit'));
+  editModal.show();
+}
+
+function openDeletePersonModal() {
+  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('personModalActions'));
+  actionsModal.hide();
+
+  document.getElementById('personModalDeleteName').textContent = personSelected;
+
+  const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('personModalDelete'));
+  deleteModal.show();
+}
+
+async function editPersonSubmit(event) {
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch(`${API_URL}/persons/${personSelected}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422) throw new Error(json.detail[0].msg);
+      else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+      throw new Error("An error occurred.");
+    } else {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('personModalEdit'));
+      modal.hide();
+
+      bootstrap.showToast({body: 'Person updated.', delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
+
+      persons = await getPersons();
+    }
+  }
+  catch (error) {
+    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+  }
+}
+
+async function deletePersonSubmit(event) {
+  event.preventDefault();
+
+  const personToDelete = personSelected;
+
+  const modal = bootstrap.Modal.getInstance(document.getElementById('personModalDelete'));
+  modal.hide();
+
+  showUndoToast('Person deleted.', async () => {
+    try {
+      const response = await fetch(`${API_URL}/persons/${personToDelete}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 422) throw new Error(json.detail[0].msg);
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+        throw new Error("An error occurred.");
+      }
+
+      persons = await getPersons();
+    }
+    catch (error) {
+      bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+    }
+  });
 }
 
 // ------------
@@ -1310,6 +1638,230 @@ async function deleteApiKeySubmit(event) {
 // -------------------
 // - IMPORT / EXPORT -
 // -------------------
+
+document.getElementById('exportModal').addEventListener('show.bs.modal', () => {
+  // Reset to defaults each time the modal opens
+  document.getElementById('periodAll').checked = true;
+  document.getElementById('formatCSV').checked = true;
+  document.getElementById('exportCustomRange').classList.add('d-none');
+
+  // Pre-fill custom range inputs with current month
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const currentMonthValue = `${y}-${m}`;
+  document.getElementById('exportFromMonth').value = currentMonthValue;
+  document.getElementById('exportToMonth').value = currentMonthValue;
+});
+
+function toggleExportCustomRange() {
+  const isCustom = document.getElementById('periodCustom').checked;
+  document.getElementById('exportCustomRange').classList.toggle('d-none', !isCustom);
+}
+
+async function submitExport(event) {
+  event.preventDefault();
+
+  const period = document.querySelector('input[name="exportPeriod"]:checked').value;
+  const format = document.querySelector('input[name="exportFormat"]:checked').value;
+
+  // Validate custom range
+  if (period === 'custom') {
+    const from = document.getElementById('exportFromMonth').value;
+    const to = document.getElementById('exportToMonth').value;
+    if (!from || !to) {
+      bootstrap.showToast({ body: i18n.t('settings.import_export.custom_range_required'), delay: 2000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+      return;
+    }
+    if (from > to) {
+      bootstrap.showToast({ body: i18n.t('dashboard.modal.invalid_date_range'), delay: 2500, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+      return;
+    }
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+
+  const data = await fetchExportData(period);
+  if (!data) return;
+
+  if (format === 'csv') doExportCSV(data, period);
+  else if (format === 'json') doExportJSON(data, period);
+  else if (format === 'pdf') doExportPDF(data, period);
+}
+
+async function fetchExportData(period) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+
+  let url;
+  switch (period) {
+    case 'all':           url = `${API_URL}/transactions`; break;
+    case 'current_month': url = `${API_URL}/transactions/date/${y}-${m}`; break;
+    case 'past_3':        url = `${API_URL}/transactions/past-3-months`; break;
+    case 'past_6':        url = `${API_URL}/transactions/past-6-months`; break;
+    case 'past_12':       url = `${API_URL}/transactions/past-12-months`; break;
+    case 'ytd':           url = `${API_URL}/transactions/year-to-date`; break;
+    case 'custom': {
+      const [fy, fm] = document.getElementById('exportFromMonth').value.split('-');
+      const [ty, tm] = document.getElementById('exportToMonth').value.split('-');
+      url = `${API_URL}/transactions/range/${fy}-${parseInt(fm)}/${ty}-${parseInt(tm)}`;
+      break;
+    }
+    default: url = `${API_URL}/transactions`;
+  }
+
+  try {
+    const response = await fetch(url, { method: 'GET', credentials: 'include' });
+    if (response.status === 401) { window.location.href = '/login'; return null; }
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.detail || 'An error occurred.');
+    if (!json.length) {
+      bootstrap.showToast({ body: i18n.t('settings.messages.no_transactions'), delay: 1500, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+      return null;
+    }
+    return json;
+  } catch (error) {
+    bootstrap.showToast({ body: `${error}`, delay: 2000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+    return null;
+  }
+}
+
+function getExportFilename(period, ext) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  switch (period) {
+    case 'all':           return `transactions.${ext}`;
+    case 'current_month': return `transactions_${y}-${m}.${ext}`;
+    case 'past_3':        return `transactions_past-3-months.${ext}`;
+    case 'past_6':        return `transactions_past-6-months.${ext}`;
+    case 'past_12':       return `transactions_past-12-months.${ext}`;
+    case 'ytd':           return `transactions_${y}-ytd.${ext}`;
+    case 'custom': {
+      const from = document.getElementById('exportFromMonth').value;
+      const to = document.getElementById('exportToMonth').value;
+      return `transactions_${from}_to_${to}.${ext}`;
+    }
+    default: return `transactions.${ext}`;
+  }
+}
+
+function triggerDownload(blob, filename) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function doExportCSV(data, period) {
+  const columns = ["name", "category", "tags", "person", "amount", "type", "date"];
+  const csv = Papa.unparse(data, { columns });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  triggerDownload(blob, getExportFilename(period, 'csv'));
+}
+
+function doExportJSON(data, period) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
+  triggerDownload(blob, getExportFilename(period, 'json'));
+}
+
+function doExportPDF(data, period) {
+  let totalIncome = 0, totalExpense = 0;
+  data.forEach(t => {
+    if (t.type === 'income') totalIncome += parseFloat(t.amount);
+    else totalExpense += parseFloat(t.amount);
+  });
+  const balance = totalIncome - totalExpense;
+
+  const fmt = (amount) => currency.position === 'left'
+    ? `${currency.symbol}${Math.abs(amount).toFixed(2)}`
+    : `${Math.abs(amount).toFixed(2)} ${currency.symbol}`;
+
+  const fmtSigned = (t) => {
+    const sign = t.type === 'expense' ? '-' : '';
+    return currency.position === 'left'
+      ? `${sign}${currency.symbol}${parseFloat(t.amount).toFixed(2)}`
+      : `${sign}${parseFloat(t.amount).toFixed(2)} ${currency.symbol}`;
+  };
+
+  const fmtDate = (d) => { const [y, mo, day] = d.split('-'); return `${day}/${mo}/${y}`; };
+
+  const periodLabels = {
+    all: i18n.t('dashboard.modal.to_date'),
+    current_month: i18n.t('dashboard.modal.current_month'),
+    past_3: i18n.t('dashboard.modal.past_3_months'),
+    past_6: i18n.t('dashboard.modal.past_6_months'),
+    past_12: i18n.t('dashboard.modal.past_12_months'),
+    ytd: i18n.t('dashboard.modal.year_to_date'),
+    custom: (() => {
+      const from = document.getElementById('exportFromMonth').value;
+      const to = document.getElementById('exportToMonth').value;
+      return `${from} → ${to}`;
+    })(),
+  };
+
+  const rows = data.map(t => `
+    <tr>
+      <td>${fmtDate(t.date)}</td>
+      <td>${t.name}</td>
+      <td>${t.category}</td>
+      <td>${Array.isArray(t.tags) ? t.tags.join(', ') : (t.tags || '')}</td>
+      <td>${t.person || ''}</td>
+      <td style="color:${t.type === 'income' ? '#198754' : '#ea4152'}; font-weight:500; white-space:nowrap;">${fmtSigned(t)}</td>
+    </tr>`).join('');
+
+  const balanceColor = balance >= 0 ? '#198754' : '#ea4152';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wally — Transactions</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; padding: 24px; }
+    .header { margin-bottom: 4px; }
+    h1 { font-size: 20px; font-weight: 700; }
+    .subtitle { color: #888; font-size: 11px; margin-bottom: 16px; }
+    .summary { display: flex; gap: 32px; margin-bottom: 20px; padding: 12px 16px; background: #f5f5f5; border-radius: 6px; }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+    .summary-value { font-size: 14px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f0f0f0; }
+    th { text-align: left; padding: 7px 8px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; border-bottom: 2px solid #ddd; }
+    td { padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    @media print { body { padding: 0; } @page { margin: 1.5cm; } }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>Wally</h1></div>
+  <div class="subtitle">${periodLabels[period] || ''} &nbsp;·&nbsp; ${new Date().toLocaleDateString()} &nbsp;·&nbsp; ${data.length} transactions</div>
+  <div class="summary">
+    <div class="summary-item"><span class="summary-label">Income</span><span class="summary-value" style="color:#198754">${fmt(totalIncome)}</span></div>
+    <div class="summary-item"><span class="summary-label">Expense</span><span class="summary-value" style="color:#ea4152">${fmt(totalExpense)}</span></div>
+    <div class="summary-item"><span class="summary-label">Balance</span><span class="summary-value" style="color:${balanceColor}">${balance >= 0 ? '' : '-'}${fmt(balance)}</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Name</th><th>Category</th><th>Tags</th><th>Person</th><th>Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+}
+
+// Legacy wrappers kept for any external calls
 async function exportToCSV() {
   try {
     const response = await fetch(`${API_URL}/transactions`, {
@@ -1336,7 +1888,7 @@ async function exportToCSV() {
       }
 
       // Generate CSV only with mandatory columns
-      const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
+      const mandatoryColumns = ["name", "category", "tags", "person", "amount", "type", "date"];
       const csv = Papa.unparse(json, {
         columns: mandatoryColumns
       });
@@ -1355,6 +1907,175 @@ async function exportToCSV() {
   }
   catch (error) {
     bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+  }
+}
+
+async function exportToJSON() {
+  try {
+    const response = await fetch(`${API_URL}/transactions`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422) throw new Error(json.detail[0].msg);
+      else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+      throw new Error('An error occurred.');
+    }
+
+    if (!json.length) {
+      bootstrap.showToast({ body: i18n.t('settings.messages.no_transactions'), delay: 1000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'transactions.json';
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  catch (error) {
+    bootstrap.showToast({ body: `${error}`, delay: 2000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+  }
+}
+
+async function exportToPDF() {
+  try {
+    const response = await fetch(`${API_URL}/transactions`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422) throw new Error(json.detail[0].msg);
+      else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+      throw new Error('An error occurred.');
+    }
+
+    if (!json.length) {
+      bootstrap.showToast({ body: i18n.t('settings.messages.no_transactions'), delay: 1000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
+      return;
+    }
+
+    // Calculate totals
+    let totalIncome = 0, totalExpense = 0;
+    json.forEach(t => {
+      if (t.type === 'income') totalIncome += parseFloat(t.amount);
+      else totalExpense += parseFloat(t.amount);
+    });
+    const balance = totalIncome - totalExpense;
+
+    const fmt = (amount) => currency.position === 'left'
+      ? `${currency.symbol}${Math.abs(amount).toFixed(2)}`
+      : `${Math.abs(amount).toFixed(2)} ${currency.symbol}`;
+
+    const fmtSigned = (t) => {
+      const sign = t.type === 'expense' ? '-' : '';
+      return currency.position === 'left'
+        ? `${sign}${currency.symbol}${parseFloat(t.amount).toFixed(2)}`
+        : `${sign}${parseFloat(t.amount).toFixed(2)} ${currency.symbol}`;
+    };
+
+    const fmtDate = (dateStr) => {
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    };
+
+    const exportDate = new Date().toLocaleDateString();
+
+    const rows = json.map(t => `
+      <tr>
+        <td>${fmtDate(t.date)}</td>
+        <td>${t.name}</td>
+        <td>${t.category}</td>
+        <td>${Array.isArray(t.tags) ? t.tags.join(', ') : (t.tags || '')}</td>
+        <td>${t.person || ''}</td>
+        <td style="color: ${t.type === 'income' ? '#198754' : '#ea4152'}; font-weight: 500;">${fmtSigned(t)}</td>
+      </tr>`).join('');
+
+    const balanceColor = balance >= 0 ? '#198754' : '#ea4152';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wally — Transactions</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; padding: 24px; }
+    .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+    h1 { font-size: 20px; font-weight: 700; }
+    .subtitle { color: #888; font-size: 11px; margin-bottom: 16px; }
+    .summary { display: flex; gap: 32px; margin-bottom: 20px; padding: 12px 16px; background: #f5f5f5; border-radius: 6px; }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+    .summary-value { font-size: 14px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f0f0f0; }
+    th { text-align: left; padding: 7px 8px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; border-bottom: 2px solid #ddd; }
+    td { padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    @media print { body { padding: 0; } @page { margin: 1.5cm; } }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>Wally</h1></div>
+  <div class="subtitle">Exported on ${exportDate} &nbsp;·&nbsp; ${json.length} transactions</div>
+  <div class="summary">
+    <div class="summary-item">
+      <span class="summary-label">Income</span>
+      <span class="summary-value" style="color:#198754">${fmt(totalIncome)}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Expense</span>
+      <span class="summary-value" style="color:#ea4152">${fmt(totalExpense)}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Balance</span>
+      <span class="summary-value" style="color:${balanceColor}">${balance >= 0 ? '' : '-'}${fmt(balance)}</span>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Tags</th>
+        <th>Person</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 400);
+  }
+  catch (error) {
+    bootstrap.showToast({ body: `${error}`, delay: 2000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
   }
 }
 
@@ -1524,6 +2245,11 @@ async function initGrid() {
         },
       },
       {
+        field: "person",
+        headerName: i18n.t('settings.recurring.columns.person'),
+        filter: true,
+      },
+      {
         field: "startDate",
         headerName: i18n.t('settings.recurring.columns.start_date'),
         filter: true,
@@ -1686,6 +2412,7 @@ function addRecurring() {
   document.getElementById('modalSubmitButton').textContent = i18n.t('settings.recurring.add_btn');
   document.getElementById('recurringForm').reset();
   document.getElementById('categorySelect').value = "";
+  document.getElementById('recurringPersonSelect').value = "";
   document.getElementById('frequencySelect').value = "";
   tagsInput.clearOptions();
   tags.forEach(tag => {
@@ -1705,6 +2432,7 @@ function editRecurring() {
   // Assign values
   document.getElementById('nameInput').value = selectedRow.name
   document.getElementById('categorySelect').value = selectedRow.category
+  document.getElementById('recurringPersonSelect').value = selectedRow.person || ''
   tagsInput.clearOptions();
   selectedRow.tags.forEach(tag => {
     tagsInput.addOption({ value: tag, text: tag }, user_created=true);

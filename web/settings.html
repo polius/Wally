@@ -83,6 +83,7 @@
         API Docs
       </a>
     </div>
+    <!-- Row 1: Categories & Tags (content-heavy, need space) -->
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
@@ -114,8 +115,23 @@
       </div>
     </div>
 
+    <!-- Row 2: Persons, Theme, Language (compact widgets) -->
     <div class="row">
-      <div class="col-md-6 mt-3">
+      <div class="col-md-4 mt-3">
+        <div class="card h-100">
+          <div class="card-header" style="font-weight: 500" data-i18n="settings.persons.title">Persons</div>
+          <div class="card-body d-flex flex-column" style="height: 100%;">
+            <div id="personBadges" class="flex-grow-1"></div>
+            <form id="personForm" class="modal-content mt-2" onsubmit="addPerson(event)">
+              <div class="input-group">
+                <input type="text" class="form-control" name="name" placeholder="Add new person" data-i18n-placeholder="settings.persons.placeholder" style="font-size: 0.9rem;" required />
+                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;" data-i18n="settings.persons.add">Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.theme.title">Theme</div>
           <div class="card-body">
@@ -128,30 +144,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-6 mt-3">
-        <div class="card h-100">
-          <div class="card-header d-flex align-items-center" style="font-weight: 500">
-            <span data-i18n="settings.currency.title">Currency</span>
-            <button class="btn btn-sm btn-primary ms-auto" style="white-space: nowrap" data-bs-toggle="modal" data-bs-target="#currencyModal" data-i18n="settings.currency.manage">Manage</button>
-          </div>
-          <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.description">Select the currency to be used for transactions.</p>
-            <select class="form-select" id="currencySelect" style="font-size: 0.9rem; margin-bottom: 0.75rem" onchange="changeCurrency(event)"></select>
-            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.position">Symbol position:</p>
-            <div class="btn-group w-100" role="group">
-              <input type="radio" class="btn-check" name="currencyPosition" id="positionLeft" value="left" autocomplete="off" onchange="changeCurrencyPosition(event)">
-              <label class="btn btn-outline-primary" for="positionLeft" id="positionLeftLabel" style="font-size: 0.9rem">$100</label>
-              
-              <input type="radio" class="btn-check" name="currencyPosition" id="positionRight" value="right" autocomplete="off" onchange="changeCurrencyPosition(event)">
-              <label class="btn btn-outline-primary" for="positionRight" id="positionRightLabel" style="font-size: 0.9rem">100$</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6 mt-3">
+      <div class="col-md-4 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.language.title">Language</div>
           <div class="card-body">
@@ -174,6 +167,30 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Row 3: Currency & Login -->
+    <div class="row">
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header d-flex align-items-center" style="font-weight: 500">
+            <span data-i18n="settings.currency.title">Currency</span>
+            <button class="btn btn-sm btn-primary ms-auto" style="white-space: nowrap" data-bs-toggle="modal" data-bs-target="#currencyModal" data-i18n="settings.currency.manage">Manage</button>
+          </div>
+          <div class="card-body">
+            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.description">Select the currency to be used for transactions.</p>
+            <select class="form-select" id="currencySelect" style="font-size: 0.9rem; margin-bottom: 0.75rem" onchange="changeCurrency(event)"></select>
+            <p class="card-text" style="font-size: 0.9rem; margin-bottom: 0.5rem" data-i18n="settings.currency.position">Symbol position:</p>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="currencyPosition" id="positionLeft" value="left" autocomplete="off" onchange="changeCurrencyPosition(event)">
+              <label class="btn btn-outline-primary" for="positionLeft" id="positionLeftLabel" style="font-size: 0.9rem">$100</label>
+
+              <input type="radio" class="btn-check" name="currencyPosition" id="positionRight" value="right" autocomplete="off" onchange="changeCurrencyPosition(event)">
+              <label class="btn btn-outline-primary" for="positionRight" id="positionRightLabel" style="font-size: 0.9rem">100$</label>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500">
@@ -192,18 +209,19 @@
       </div>
     </div>
 
+    <!-- Row 4: Import / Export (compact) -->
     <div class="row">
       <div class="col-md-12 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.import_export.title">Import / Export Transactions</div>
           <div class="card-body">
-            <p class="card-text" style="font-size: 0.9rem;" data-i18n="settings.import_export.description">Export or import transactions quickly using CSV files.</p>
+            <p class="card-text" style="font-size: 0.9rem;" data-i18n="settings.import_export.description">Export transactions in multiple formats or import from CSV.</p>
             <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-sm btn-primary" style="min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="exportToCSV()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
+              <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal" style="min-width: 140px; padding-left: 12px; padding-right: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 5px">
                   <path d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/>
                 </svg>
-                <span data-i18n="settings.import_export.export">Export to CSV</span>
+                <span data-i18n="settings.import_export.export_btn">Export</span>
               </button>
               <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
               <button class="btn btn-sm btn-primary" style="min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="csvInput.click()">
@@ -257,6 +275,10 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               <span data-i18n="common.edit">Edit</span>
             </button>
+            <button type="button" class="btn btn-secondary d-flex align-items-center justify-content-center gap-2 py-2" onclick="openBudgetCategoryModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span data-i18n="settings.categories.set_budget">Set Budget</span>
+            </button>
             <button type="button" class="btn btn-danger d-flex align-items-center justify-content-center gap-2 py-2" onclick="openDeleteCategoryModal()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               <span data-i18n="common.delete">Delete</span>
@@ -308,6 +330,28 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
           <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Budget Modal -->
+  <div class="modal fade" id="categoryModalBudget" tabindex="-1" aria-labelledby="categoryModalBudgetLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="setBudgetSubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModalBudgetLabel" data-i18n="settings.categories.budget_title">Set Monthly Budget</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size: 0.9rem;"><span data-i18n="settings.categories.budget_for">Monthly budget for</span> <strong id="categoryBudgetName"></strong></p>
+          <label for="categoryBudgetInput" class="form-label" data-i18n="settings.categories.budget_amount">Budget Amount</label>
+          <input type="number" class="form-control" id="categoryBudgetInput" name="budget" min="0" step="0.01" placeholder="0.00" />
+          <div class="form-text" data-i18n="settings.categories.budget_hint">Leave empty to clear the budget.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="common.save">Save</button>
         </div>
       </form>
     </div>
@@ -484,6 +528,12 @@
           <div class="mb-3">
             <label class="form-label" data-i18n="settings.recurring.tags">Tags</label>
             <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="settings.recurring.tags_placeholder" autocomplete="off">
+          </div>
+
+          <!-- Person -->
+          <div class="mb-3">
+            <label for="recurringPersonSelect" class="form-label" data-i18n="settings.recurring.person">Person</label>
+            <select class="form-select" id="recurringPersonSelect" name="person"></select>
           </div>
 
           <!-- Amount -->
@@ -803,6 +853,163 @@
           <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Person Modal Actions -->
+  <div class="modal fade" id="personModalActions" tabindex="-1" aria-labelledby="personModalActionsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="personModalActionsLabel">
+            <strong id="personModalActionsName"></strong>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body px-3 pb-3 pt-2">
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2" onclick="openEditPersonModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span data-i18n="common.edit">Edit</span>
+            </button>
+            <button type="button" class="btn btn-danger d-flex align-items-center justify-content-center gap-2 py-2" onclick="openDeletePersonModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span data-i18n="common.delete">Delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Person Modal Edit -->
+  <div class="modal fade" id="personModalEdit" tabindex="-1" aria-labelledby="personModalEditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="editPersonSubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="personModalEditLabel" data-i18n="settings.persons.edit_title">Edit Person</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="personEditInput" class="form-label" data-i18n="settings.persons.name_label">Person Name</label>
+          <input type="text" class="form-control" id="personEditInput" name="name" placeholder="Enter new name" data-i18n-placeholder="common.enter_new_name" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="common.update">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Person Modal Delete -->
+  <div class="modal fade" id="personModalDelete" tabindex="-1" aria-labelledby="personModalDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="deletePersonSubmit(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="personModalDeleteLabel" data-i18n="settings.persons.delete_title">Delete Person</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <div class="dialog-warning-icon mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <p class="mb-2"><span data-i18n="settings.persons.delete_confirm">Are you sure you want to delete the person</span> <strong id="personModalDeleteName"></strong>?</p>
+          <div class="alert alert-warning d-inline-flex align-items-start gap-2 mb-0 text-start" style="font-size: 0.85rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span data-i18n="settings.persons.delete_warning">This will clear the person from all transactions that use it.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" onsubmit="submitExport(event)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exportModalLabel" data-i18n="settings.import_export.export_modal_title">Export Transactions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Period -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size: 0.9rem;" data-i18n="settings.import_export.period_label">Period</label>
+            <div class="d-flex flex-column gap-1" style="font-size: 0.9rem;">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodAll" value="all" onchange="toggleExportCustomRange()" checked>
+                <label class="form-check-label" for="periodAll" data-i18n="dashboard.modal.to_date">To date (All transactions)</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodCurrentMonth" value="current_month" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodCurrentMonth" data-i18n="dashboard.modal.current_month">Current month</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodPast3" value="past_3" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodPast3" data-i18n="dashboard.modal.past_3_months">Past 3 months</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodPast6" value="past_6" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodPast6" data-i18n="dashboard.modal.past_6_months">Past 6 months</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodPast12" value="past_12" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodPast12" data-i18n="dashboard.modal.past_12_months">Past 12 months</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodYtd" value="ytd" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodYtd" data-i18n="dashboard.modal.year_to_date">Year to date</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="exportPeriod" id="periodCustom" value="custom" onchange="toggleExportCustomRange()">
+                <label class="form-check-label" for="periodCustom" data-i18n="dashboard.modal.custom_range">Custom range</label>
+              </div>
+              <div id="exportCustomRange" class="ms-4 mt-1 d-none">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <label class="form-label mb-0" style="white-space: nowrap; font-size: 0.85rem;" data-i18n="dashboard.modal.from">From:</label>
+                  <input type="month" class="form-control form-control-sm" id="exportFromMonth" style="max-width: 160px;">
+                  <label class="form-label mb-0" style="white-space: nowrap; font-size: 0.85rem;" data-i18n="dashboard.modal.to">To:</label>
+                  <input type="month" class="form-control form-control-sm" id="exportToMonth" style="max-width: 160px;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Format -->
+          <div>
+            <label class="form-label fw-semibold" style="font-size: 0.9rem;" data-i18n="settings.import_export.format_label">Format</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="exportFormat" id="formatCSV" value="csv" autocomplete="off" checked>
+              <label class="btn btn-outline-primary btn-sm" for="formatCSV" data-i18n="settings.import_export.export_csv">CSV (.csv)</label>
+              <input type="radio" class="btn-check" name="exportFormat" id="formatJSON" value="json" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="formatJSON" data-i18n="settings.import_export.export_json">JSON (.json)</label>
+              <input type="radio" class="btn-check" name="exportFormat" id="formatPDF" value="pdf" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="formatPDF" data-i18n="settings.import_export.export_pdf">PDF (Print)</label>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="settings.import_export.export_btn">Export</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Undo Delete Toast -->
+  <div id="undoToast" class="toast position-fixed border-0" style="z-index: 9999; top: 1.25rem; left: 50%; transform: translateX(-50%); min-width: 300px; border-radius: 8px; background: #323232;" role="alert" data-bs-autohide="false">
+    <div class="d-flex align-items-center gap-2 px-3 py-2" style="color: white;">
+      <span id="undoToastMessage" style="font-size: 0.875rem; flex: 1;"></span>
+      <button type="button" id="undoToastBtn" class="btn btn-sm fw-semibold" style="color: #90caf9; padding: 2px 8px; border: none; background: none; white-space: nowrap; font-size: 0.875rem;">Undo</button>
     </div>
   </div>
 

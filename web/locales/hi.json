@@ -22,6 +22,22 @@
       "expenses": "खर्च",
       "balance": "शेष"
     },
+    "trends": {
+      "title": "खर्च के रुझान",
+      "vs_last_month": "पिछले महीने की तुलना",
+      "new_label": "नया"
+    },
+    "savings": {
+      "title": "बचत दर",
+      "subtitle": "पिछले 12 महीने",
+      "all": "सभी",
+      "rate_label": "बचत दर",
+      "no_income": "कोई आय नहीं",
+      "saved": "बचत",
+      "current": "वर्तमान",
+      "average": "औसत",
+      "total_saved": "कुल बचत"
+    },
     "modal": {
       "title": "डैशबोर्ड बदलें",
       "select_prompt": "देखने के लिए एक डैशबोर्ड चुनें:",
@@ -52,6 +68,7 @@
     "category_label": "श्रेणी",
     "category_placeholder": "श्रेणी चुनना",
     "tags_label": "टैग",
+    "person_label": "व्यक्ति",
     "tags_placeholder": "एक टैग जोड़ें और Enter दबाएं",
     "date_label": "तारीख",
     "type_label": "प्रकार",
@@ -75,6 +92,7 @@
       "name": "नाम",
       "category": "श्रेणी",
       "tags": "टैग",
+      "person": "व्यक्ति",
       "date": "तारीख",
       "amount": "राशि",
       "actions": "कार्रवाई"
@@ -89,8 +107,17 @@
       "transaction_edited": "लेन-देन संपादित किया गया।",
       "transaction_deleted": "लेन-देन हटाया गया।",
       "recurring_added": "आवर्ती लेन-देन जोड़ा गया।",
-      "end_date_later": "समाप्ति तिथि प्रारंभ तिथि के बाद होनी चाहिए।"
-    }
+      "end_date_later": "समाप्ति तिथि प्रारंभ तिथि के बाद होनी चाहिए।",
+      "transactions_updated": "{count} लेनदेन अपडेट किए गए।",
+      "duplicate_warning": "समान राशि, व्यक्ति और तारीख वाला लेन-देन पहले से मौजूद है। फिर भी जोड़ें?"
+    },
+    "edit": "संपादित करें",
+    "edit_multiple_title": "संपादित करें",
+    "edit_multiple_title_suffix": "लेनदेन",
+    "edit_multiple_hint": "केवल बदले गए फ़ील्ड अपडेट होंगे।",
+    "bulk_keep_current": "— वर्तमान रखें —",
+    "bulk_none": "कोई नहीं",
+    "edit_multiple_apply": "लागू करें"
   },
   "settings": {
     "title": "Wally | सेटिंग्स",
@@ -104,7 +131,12 @@
       "delete_title": "श्रेणी हटाएं",
       "name_label": "श्रेणी का नाम",
       "delete_confirm": "क्या आप वाकई श्रेणी को हटाना चाहते हैं",
-      "delete_warning": "यह केवल तभी काम करेगा जब इस श्रेणी का उपयोग करने वाला कोई लेन-देन न हो।"
+      "delete_warning": "यह केवल तभी काम करेगा जब इस श्रेणी का उपयोग करने वाला कोई लेन-देन न हो।",
+      "set_budget": "बजट सेट करें",
+      "budget_title": "मासिक बजट सेट करें",
+      "budget_for": "के लिए मासिक बजट",
+      "budget_amount": "बजट राशि",
+      "budget_hint": "बजट हटाने के लिए खाली छोड़ें।"
     },
     "tags": {
       "title": "टैग",
@@ -168,7 +200,8 @@
       "recurring_deleted": "आवर्ती लेन-देन हटाया गया।",
       "api_key_created": "API कुंजी बनाई गई।",
       "api_key_deleted": "API कुंजी हटाई गई।",
-      "api_key_copied": "API कुंजी क्लिपबोर्ड पर कॉपी की गई।"
+      "api_key_copied": "API कुंजी क्लिपबोर्ड पर कॉपी की गई।",
+      "budget_updated": "बजट अपडेट किया गया।"
     },
     "language": {
       "title": "भाषा",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "लेन-देन आयात / निर्यात करें",
-      "description": "CSV फ़ाइलों का उपयोग करके लेन-देन को जल्दी से निर्यात या आयात करें।",
+      "description": "लेनदेन को कई प्रारूपों में निर्यात करें या CSV से आयात करें।",
       "export": "CSV में निर्यात करें",
-      "import": "CSV से आयात करें"
+      "import": "CSV से आयात करें",
+      "export_btn": "निर्यात करें",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (प्रिंट)",
+      "export_modal_title": "लेनदेन निर्यात करें",
+      "period_label": "अवधि",
+      "format_label": "प्रारूप",
+      "custom_range_required": "कृपया आरंभ और अंत दोनों महीने चुनें।"
     },
     "recurring": {
       "title": "आवर्ती लेन-देन",
@@ -237,6 +278,7 @@
       "category": "श्रेणी",
       "tags": "टैग",
       "tags_placeholder": "एक टैग जोड़ें और Enter दबाएं",
+      "person": "व्यक्ति",
       "amount": "राशि",
       "type": "प्रकार",
       "type_expense": "खर्च",
@@ -260,12 +302,23 @@
         "name": "नाम",
         "category": "श्रेणी",
         "tags": "टैग",
+        "person": "व्यक्ति",
         "start_date": "प्रारंभ तिथि",
         "end_date": "समाप्ति तिथि",
         "frequency": "आवृत्ति",
         "amount": "राशि",
         "actions": "कार्रवाई"
       }
+    },
+    "persons": {
+      "title": "व्यक्ति",
+      "placeholder": "नया व्यक्ति जोड़ें",
+      "add": "जोड़ें",
+      "edit_title": "व्यक्ति संपादित करें",
+      "delete_title": "व्यक्ति हटाएं",
+      "name_label": "व्यक्ति का नाम",
+      "delete_confirm": "क्या आप वाकई इस व्यक्ति को हटाना चाहते हैं",
+      "delete_warning": "यह इसका उपयोग करने वाले सभी लेनदेन से व्यक्ति को हटा देगा।"
     }
   },
   "common": {

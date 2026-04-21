@@ -64,7 +64,7 @@ def update_recurring_transaction(
     db_recurring_transaction.sqlmodel_update(recurring_transaction.model_dump(exclude_unset=True))
 
     # Update new transactions based on the updated Recurring Transaction
-    update_transactions_from_recurring(recurring_transaction_id, recurring_transaction, db)
+    update_transactions_from_recurring(recurring_transaction_id, db_recurring_transaction, recurring_transaction.applyTo, db)
 
     # Commit the changes to the database
     db.commit()
@@ -112,6 +112,7 @@ def create_transactions_from_recurring (
             name=recurring_transaction.name,
             category=recurring_transaction.category,
             tags=recurring_transaction.tags,
+            person=recurring_transaction.person,
             amount=recurring_transaction.amount,
             type=recurring_transaction.type,
             date=current_date,
@@ -131,27 +132,25 @@ def create_transactions_from_recurring (
 
 def update_transactions_from_recurring (
     recurring_transaction_id: UUID,
-    recurring_transaction: RecurringTransactionUpdate,
+    updated_recurring: RecurringTransaction,
+    apply_to: str,
     db: Session
 ):
     # Get transactions associated with the recurring transaction
     stmt = select(Transaction).where(Transaction.recurringID == str(recurring_transaction_id))
-    if recurring_transaction.applyTo == 'future':
+    if apply_to == 'future':
         stmt = stmt.where(Transaction.date > date.today())
 
     transactions = db.exec(stmt).all()
 
-    # Convert the update object to a dict of only provided fields
-    updates = recurring_transaction.model_dump(exclude_unset=True)
-
-    # Get all valid Transaction fields
-    transaction_fields = set(Transaction.__fields__.keys())
-
-    # Apply only the provided fields that exist on Transaction
+    # Apply the recurring transaction's shared fields to each linked transaction
     for transaction in transactions:
-        for key, value in updates.items():
-            if key in transaction_fields:
-                setattr(transaction, key, value)
+        transaction.name = updated_recurring.name
+        transaction.category = updated_recurring.category
+        transaction.tags = updated_recurring.tags
+        transaction.person = updated_recurring.person
+        transaction.amount = updated_recurring.amount
+        transaction.type = updated_recurring.type
 
 def delete_transactions_from_recurring (
     recurring_transaction_id: UUID,

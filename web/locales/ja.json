@@ -22,6 +22,22 @@
       "expenses": "支出",
       "balance": "残高"
     },
+    "trends": {
+      "title": "支出トレンド",
+      "vs_last_month": "先月比",
+      "new_label": "新規"
+    },
+    "savings": {
+      "title": "貯蓄率",
+      "subtitle": "過去12ヶ月",
+      "all": "全員",
+      "rate_label": "貯蓄率",
+      "no_income": "収入なし",
+      "saved": "貯蓄額",
+      "current": "今月",
+      "average": "平均",
+      "total_saved": "貯蓄合計"
+    },
     "modal": {
       "title": "ダッシュボードを変更",
       "select_prompt": "表示するダッシュボードを選択：",
@@ -52,6 +68,7 @@
     "category_label": "カテゴリー",
     "category_placeholder": "カテゴリを選択",
     "tags_label": "タグ",
+    "person_label": "人物",
     "tags_placeholder": "タグを追加してEnterを押す",
     "date_label": "日付",
     "type_label": "種類",
@@ -75,6 +92,7 @@
       "name": "名前",
       "category": "カテゴリー",
       "tags": "タグ",
+      "person": "人物",
       "date": "日付",
       "amount": "金額",
       "actions": "操作"
@@ -89,8 +107,17 @@
       "transaction_edited": "取引を編集しました。",
       "transaction_deleted": "取引を削除しました。",
       "recurring_added": "定期取引を追加しました。",
-      "end_date_later": "終了日は開始日より後である必要があります。"
-    }
+      "end_date_later": "終了日は開始日より後である必要があります。",
+      "transactions_updated": "{count}件の取引を更新しました。",
+      "duplicate_warning": "同じ金額、担当者、日付の取引が既に存在します。追加しますか？"
+    },
+    "edit": "編集",
+    "edit_multiple_title": "編集",
+    "edit_multiple_title_suffix": "件の取引",
+    "edit_multiple_hint": "変更されたフィールドのみ更新されます。",
+    "bulk_keep_current": "— 現在を維持 —",
+    "bulk_none": "なし",
+    "edit_multiple_apply": "適用"
   },
   "settings": {
     "title": "Wally | 設定",
@@ -104,7 +131,12 @@
       "delete_title": "カテゴリーを削除",
       "name_label": "カテゴリー名",
       "delete_confirm": "カテゴリーを削除してもよろしいですか",
-      "delete_warning": "このカテゴリーを使用している取引がない場合のみ機能します。"
+      "delete_warning": "このカテゴリーを使用している取引がない場合のみ機能します。",
+      "set_budget": "予算を設定",
+      "budget_title": "月次予算を設定",
+      "budget_for": "月次予算：",
+      "budget_amount": "予算額",
+      "budget_hint": "空白のままにすると予算をクリアします。"
     },
     "tags": {
       "title": "タグ",
@@ -168,7 +200,8 @@
       "recurring_deleted": "定期取引を削除しました。",
       "api_key_created": "APIキーを作成しました。",
       "api_key_deleted": "APIキーを削除しました。",
-      "api_key_copied": "APIキーをクリップボードにコピーしました。"
+      "api_key_copied": "APIキーをクリップボードにコピーしました。",
+      "budget_updated": "予算を更新しました。"
     },
     "language": {
       "title": "言語",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "取引のインポート/エクスポート",
-      "description": "CSVファイルを使用して取引を素早くエクスポートまたはインポートします。",
+      "description": "複数の形式でトランザクションをエクスポートするか、CSVからインポートします。",
       "export": "CSVにエクスポート",
-      "import": "CSVからインポート"
+      "import": "CSVからインポート",
+      "export_btn": "エクスポート",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF（印刷）",
+      "export_modal_title": "取引をエクスポート",
+      "period_label": "期間",
+      "format_label": "フォーマット",
+      "custom_range_required": "開始月と終了月を選択してください。"
     },
     "recurring": {
       "title": "定期取引",
@@ -237,6 +278,7 @@
       "category": "カテゴリー",
       "tags": "タグ",
       "tags_placeholder": "タグを追加してEnterを押す",
+      "person": "担当者",
       "amount": "金額",
       "type": "種類",
       "type_expense": "支出",
@@ -260,12 +302,23 @@
         "name": "名前",
         "category": "カテゴリー",
         "tags": "タグ",
+        "person": "担当者",
         "start_date": "開始日",
         "end_date": "終了日",
         "frequency": "頻度",
         "amount": "金額",
         "actions": "操作"
       }
+    },
+    "persons": {
+      "title": "人物",
+      "placeholder": "新しい人物を追加",
+      "add": "追加",
+      "edit_title": "人物を編集",
+      "delete_title": "人物を削除",
+      "name_label": "人物名",
+      "delete_confirm": "この人物を削除してもよろしいですか",
+      "delete_warning": "これにより、この人物を使用しているすべての取引から人物が削除されます。"
     }
   },
   "common": {

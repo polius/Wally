@@ -22,6 +22,22 @@
       "expenses": "Расходы",
       "balance": "Баланс"
     },
+    "trends": {
+      "title": "Тенденции расходов",
+      "vs_last_month": "по сравнению с прошлым месяцем",
+      "new_label": "новое"
+    },
+    "savings": {
+      "title": "Норма сбережений",
+      "subtitle": "за последние 12 месяцев",
+      "all": "Все",
+      "rate_label": "Норма сбережений",
+      "no_income": "Нет дохода",
+      "saved": "Сбережено",
+      "current": "Текущая",
+      "average": "Средняя",
+      "total_saved": "Всего сбережено"
+    },
     "modal": {
       "title": "Сменить дашборд",
       "select_prompt": "Выберите дашборд для просмотра:",
@@ -52,6 +68,7 @@
     "category_label": "Категория",
     "category_placeholder": "Выбрать категорию",
     "tags_label": "Теги",
+    "person_label": "Человек",
     "tags_placeholder": "Добавьте тег и нажмите Enter",
     "date_label": "Дата",
     "type_label": "Тип",
@@ -75,6 +92,7 @@
       "name": "Название",
       "category": "Категория",
       "tags": "Теги",
+      "person": "Человек",
       "date": "Дата",
       "amount": "Сумма",
       "actions": "Действия"
@@ -89,8 +107,17 @@
       "transaction_edited": "Транзакция изменена.",
       "transaction_deleted": "Транзакция удалена.",
       "recurring_added": "Повторяющаяся транзакция добавлена.",
-      "end_date_later": "Дата окончания должна быть позже даты начала."
-    }
+      "end_date_later": "Дата окончания должна быть позже даты начала.",
+      "transactions_updated": "{count} транзакций обновлено.",
+      "duplicate_warning": "Транзакция с такой же суммой, лицом и датой уже существует. Добавить всё равно?"
+    },
+    "edit": "Изменить",
+    "edit_multiple_title": "Изменить",
+    "edit_multiple_title_suffix": "транзакций",
+    "edit_multiple_hint": "Будут обновлены только изменённые поля.",
+    "bulk_keep_current": "— Сохранить текущее —",
+    "bulk_none": "Нет",
+    "edit_multiple_apply": "Применить"
   },
   "settings": {
     "title": "Wally | Настройки",
@@ -104,7 +131,12 @@
       "delete_title": "Удалить категорию",
       "name_label": "Название категории",
       "delete_confirm": "Вы уверены, что хотите удалить категорию",
-      "delete_warning": "Это сработает только если нет транзакций, использующих эту категорию."
+      "delete_warning": "Это сработает только если нет транзакций, использующих эту категорию.",
+      "set_budget": "Установить бюджет",
+      "budget_title": "Установить месячный бюджет",
+      "budget_for": "Месячный бюджет для",
+      "budget_amount": "Сумма бюджета",
+      "budget_hint": "Оставьте пустым, чтобы удалить бюджет."
     },
     "tags": {
       "title": "Теги",
@@ -168,7 +200,8 @@
       "recurring_deleted": "Повторяющаяся транзакция удалена.",
       "api_key_created": "API-ключ создан.",
       "api_key_deleted": "API-ключ удалён.",
-      "api_key_copied": "API-ключ скопирован в буфер обмена."
+      "api_key_copied": "API-ключ скопирован в буфер обмена.",
+      "budget_updated": "Бюджет обновлён."
     },
     "language": {
       "title": "Язык",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "Импорт / Экспорт транзакций",
-      "description": "Быстро экспортируйте или импортируйте транзакции с помощью CSV-файлов.",
+      "description": "Экспортируйте транзакции в нескольких форматах или импортируйте из CSV.",
       "export": "Экспорт в CSV",
-      "import": "Импорт из CSV"
+      "import": "Импорт из CSV",
+      "export_btn": "Экспорт",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (Печать)",
+      "export_modal_title": "Экспорт транзакций",
+      "period_label": "Период",
+      "format_label": "Формат",
+      "custom_range_required": "Выберите начальный и конечный месяцы."
     },
     "recurring": {
       "title": "Повторяющиеся транзакции",
@@ -237,6 +278,7 @@
       "category": "Категория",
       "tags": "Теги",
       "tags_placeholder": "Добавьте тег и нажмите Enter",
+      "person": "Человек",
       "amount": "Сумма",
       "type": "Тип",
       "type_expense": "Расход",
@@ -260,12 +302,23 @@
         "name": "Название",
         "category": "Категория",
         "tags": "Теги",
+        "person": "Человек",
         "start_date": "Дата начала",
         "end_date": "Дата окончания",
         "frequency": "Частота",
         "amount": "Сумма",
         "actions": "Действия"
       }
+    },
+    "persons": {
+      "title": "Люди",
+      "placeholder": "Добавить нового человека",
+      "add": "Добавить",
+      "edit_title": "Редактировать человека",
+      "delete_title": "Удалить человека",
+      "name_label": "Имя человека",
+      "delete_confirm": "Вы уверены, что хотите удалить человека",
+      "delete_warning": "Это очистит человека из всех транзакций, использующих его."
     }
   },
   "common": {

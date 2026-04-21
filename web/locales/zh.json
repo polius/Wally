@@ -22,6 +22,22 @@
       "expenses": "支出",
       "balance": "余额"
     },
+    "trends": {
+      "title": "支出趋势",
+      "vs_last_month": "与上月相比",
+      "new_label": "新增"
+    },
+    "savings": {
+      "title": "储蓄率",
+      "subtitle": "最近12个月",
+      "all": "全部",
+      "rate_label": "储蓄率",
+      "no_income": "无收入",
+      "saved": "已储蓄",
+      "current": "当前",
+      "average": "平均",
+      "total_saved": "总储蓄"
+    },
     "modal": {
       "title": "更改仪表板",
       "select_prompt": "选择要查看的仪表板：",
@@ -52,6 +68,7 @@
     "category_label": "类别",
     "category_placeholder": "选择类别",
     "tags_label": "标签",
+    "person_label": "人员",
     "tags_placeholder": "添加标签并按Enter",
     "date_label": "日期",
     "type_label": "类型",
@@ -75,6 +92,7 @@
       "name": "名称",
       "category": "类别",
       "tags": "标签",
+      "person": "人员",
       "date": "日期",
       "amount": "金额",
       "actions": "操作"
@@ -89,8 +107,17 @@
       "transaction_edited": "交易已编辑。",
       "transaction_deleted": "交易已删除。",
       "recurring_added": "重复交易已添加。",
-      "end_date_later": "结束日期必须晚于开始日期。"
-    }
+      "end_date_later": "结束日期必须晚于开始日期。",
+      "transactions_updated": "已更新 {count} 笔交易。",
+      "duplicate_warning": "已存在相同金额、人员和日期的交易。仍然添加吗？"
+    },
+    "edit": "编辑",
+    "edit_multiple_title": "编辑",
+    "edit_multiple_title_suffix": "笔交易",
+    "edit_multiple_hint": "只有更改的字段才会更新。",
+    "bulk_keep_current": "— 保留当前 —",
+    "bulk_none": "无",
+    "edit_multiple_apply": "应用"
   },
   "settings": {
     "title": "Wally | 设置",
@@ -104,7 +131,12 @@
       "delete_title": "删除类别",
       "name_label": "类别名称",
       "delete_confirm": "确定要删除类别",
-      "delete_warning": "仅当没有交易使用此类别时才能删除。"
+      "delete_warning": "仅当没有交易使用此类别时才能删除。",
+      "set_budget": "设置预算",
+      "budget_title": "设置月度预算",
+      "budget_for": "每月预算用于",
+      "budget_amount": "预算金额",
+      "budget_hint": "留空以清除预算。"
     },
     "tags": {
       "title": "标签",
@@ -168,7 +200,8 @@
       "recurring_deleted": "重复交易已删除.",
       "api_key_created": "API 密钥已创建。",
       "api_key_deleted": "API 密钥已删除。",
-      "api_key_copied": "API 密钥已复制到剪贴板。"
+      "api_key_copied": "API 密钥已复制到剪贴板。",
+      "budget_updated": "预算已更新。"
     },
     "language": {
       "title": "语言",
@@ -220,9 +253,17 @@
     },
     "import_export": {
       "title": "导入/导出交易",
-      "description": "使用CSV文件快速导出或导入交易。",
+      "description": "以多种格式导出交易记录，或从CSV导入。",
       "export": "导出为CSV",
-      "import": "从CSV导入"
+      "import": "从CSV导入",
+      "export_btn": "导出",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF（打印）",
+      "export_modal_title": "导出交易",
+      "period_label": "时间段",
+      "format_label": "格式",
+      "custom_range_required": "请选择开始月和结束月。"
     },
     "recurring": {
       "title": "重复交易",
@@ -237,6 +278,7 @@
       "category": "类别",
       "tags": "标签",
       "tags_placeholder": "添加标签并按Enter",
+      "person": "人员",
       "amount": "金额",
       "type": "类型",
       "type_expense": "支出",
@@ -260,12 +302,23 @@
         "name": "名称",
         "category": "类别",
         "tags": "标签",
+        "person": "人员",
         "start_date": "开始日期",
         "end_date": "结束日期",
         "frequency": "频率",
         "amount": "金额",
         "actions": "操作"
       }
+    },
+    "persons": {
+      "title": "人员",
+      "placeholder": "添加新人员",
+      "add": "添加",
+      "edit_title": "编辑人员",
+      "delete_title": "删除人员",
+      "name_label": "人员姓名",
+      "delete_confirm": "您确定要删除该人员吗",
+      "delete_warning": "这将从所有使用该人员的交易中清除该人员。"
     }
   },
   "common": {

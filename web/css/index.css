@@ -23,8 +23,9 @@ html {
 }
 
 :root[data-bs-theme="light"] {
+  --bs-body-bg: #f5f6f8;
   --header-bg: #ffffff;
-  --pill-bg: #f0f2f5;
+  --pill-bg: #eaecf0;
   --pill-color: #1a1a2e;
   --amount-color: var(--bs-gray-800);
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -242,8 +243,47 @@ main.container {
 
 .legend-text {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   flex: 1;
+  gap: 0.2rem;
+}
+
+.legend-text-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.budget-bar-wrapper {
+  width: 100%;
+}
+
+.budget-progress {
+  height: 5px;
+  border-radius: 3px;
+  background-color: var(--bs-secondary-bg);
+  overflow: hidden;
+}
+
+.budget-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.budget-label {
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  font-family: monospace;
+}
+
+.budget-over .budget-label {
+  color: var(--bs-danger);
+  font-weight: 600;
+}
+
+.budget-near .budget-label {
+  color: var(--bs-warning-text-emphasis);
 }
 
 .legend-item {
@@ -410,6 +450,17 @@ main.container {
   background: var(--bs-secondary-color);
 }
 
+/* Tag suggestions: highlight tags previously used with selected category */
+.ts-dropdown .tag-suggested {
+  border-left: 3px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.08);
+  font-weight: 600;
+}
+:root[data-bs-theme="dark"] .ts-dropdown .tag-suggested {
+  border-left-color: #6ea8fe;
+  background-color: rgba(110, 168, 254, 0.12);
+}
+
 /* Cashflow styles */
 .cashflow-container {
   display: flex;
@@ -531,6 +582,282 @@ main.container {
 
 .cashflow-value.negative {
   color: #ef4444;
+}
+
+/* Trend badges in legend */
+.trend-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.01em;
+}
+
+.trend-badge.trend-up {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.trend-badge.trend-down {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.trend-badge.trend-new {
+  color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Spending Trends Section */
+.trends-section {
+  border-top: 1px solid var(--bs-border-color);
+  background: var(--header-bg);
+  padding: 0.8rem 1rem;
+  border-radius: 0;
+}
+
+.trends-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--pill-color);
+}
+
+.trends-subtitle {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.trends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.trend-alert-item {
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+  background: var(--pill-bg);
+  transition: transform 0.15s ease;
+}
+
+.trend-alert-item:hover {
+  transform: translateY(-1px);
+}
+
+.trend-alert-category {
+  font-weight: 600;
+  font-size: 0.82rem;
+  margin-bottom: 0.2rem;
+  color: var(--pill-color);
+}
+
+.trend-alert-values {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.trend-alert-pct {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.trend-alert-pct.trend-alert-up {
+  color: #dc3545;
+}
+
+.trend-alert-pct.trend-alert-down {
+  color: #10b981;
+}
+
+.trend-alert-pct.trend-alert-new {
+  color: #6366f1;
+  font-weight: 700;
+}
+
+.trend-alert-item.trend-alert-new {
+  border-color: rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.trend-alert-diff {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+}
+
+.trend-alert-compare {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  opacity: 0.8;
+}
+
+/* Dark mode: brighter trend card borders & new badge */
+:root[data-bs-theme="dark"] .trend-alert-item {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root[data-bs-theme="dark"] .trend-alert-item.trend-alert-new {
+  border-color: rgba(129, 140, 248, 0.3);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+:root[data-bs-theme="dark"] .trend-alert-pct.trend-alert-new {
+  color: #818cf8;
+}
+
+:root[data-bs-theme="dark"] .trend-badge.trend-new {
+  color: #818cf8;
+  background-color: rgba(129, 140, 248, 0.15);
+}
+
+@media (max-width: 768px) {
+  .trends-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Savings Rate Section */
+.savings-rate-card {
+  margin-top: 1rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--bs-border-color);
+  background: var(--header-bg);
+  padding: 1rem 1.25rem;
+}
+
+.savings-rate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.savings-rate-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--pill-color);
+}
+
+.savings-rate-subtitle {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.savings-person-filter {
+  display: flex;
+  gap: 3px;
+  background-color: var(--pill-bg);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.savings-filter-btn {
+  padding: 4px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--pill-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.savings-filter-btn:hover:not(.active) {
+  background-color: rgba(128, 128, 128, 0.15);
+}
+
+.savings-filter-btn.active {
+  background-color: var(--toggle-active-bg);
+  color: var(--toggle-active-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.savings-rate-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.savings-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.savings-stat-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.savings-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.savings-stat-great {
+  color: #10b981;
+}
+
+.savings-stat-ok {
+  color: #f59e0b;
+}
+
+.savings-stat-negative {
+  color: #ef4444;
+}
+
+.savings-rate-chart-wrapper {
+  height: 220px;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .savings-rate-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .savings-rate-summary {
+    gap: 1rem;
+  }
+
+  .savings-rate-chart-wrapper {
+    height: 180px;
+  }
+
+  .savings-stat-value {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 768px) {

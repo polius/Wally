@@ -12,8 +12,9 @@ body.i18n-loaded {
 }
 
 :root[data-bs-theme="light"] {
+  --bs-body-bg: #f5f6f8;
   --header-bg: #ffffff;
-  --pill-bg: #f0f2f5;
+  --pill-bg: #eaecf0;
   --pill-color: #1a1a2e;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --nav-active-color: #0d6efd;
@@ -342,7 +343,8 @@ main.container {
   transition: all 0.25s ease;
 }
 
-/* Delete button animation */
+/* Edit / Delete button animation */
+#editSelectedBtn,
 #deleteSelectedBtn {
   overflow: hidden;
   opacity: 0;
@@ -353,6 +355,7 @@ main.container {
   transition: all 0.25s ease;
 }
 
+#editSelectedBtn.show-edit,
 #deleteSelectedBtn.show-delete {
   opacity: 1;
   width: 150px;
@@ -370,7 +373,7 @@ main.container {
   transform: scale(0.97);
 }
 
-/* Mobile: Compact when delete button is shown */
+/* Mobile: Compact when selection buttons are shown */
 @media (max-width: 767px) {
   .compact-buttons .btn-action {
     font-size: 0.8rem;
@@ -384,6 +387,7 @@ main.container {
     margin-right: 6px;
   }
 
+  .compact-buttons #editSelectedBtn.show-edit,
   .compact-buttons #deleteSelectedBtn.show-delete {
     width: 120px;
   }
@@ -402,6 +406,7 @@ main.container {
     margin-right: 5px;
   }
 
+  .compact-buttons #editSelectedBtn.show-edit,
   .compact-buttons #deleteSelectedBtn.show-delete {
     width: 105px;
   }
@@ -511,4 +516,15 @@ main.container {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bs-secondary-color);
+}
+
+/* Tag suggestions: highlight tags previously used with selected category */
+.ts-dropdown .tag-suggested {
+  border-left: 3px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.08);
+  font-weight: 600;
+}
+:root[data-bs-theme="dark"] .ts-dropdown .tag-suggested {
+  border-left-color: #6ea8fe;
+  background-color: rgba(110, 168, 254, 0.12);
 }

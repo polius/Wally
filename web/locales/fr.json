@@ -21,6 +21,22 @@
       "expenses": "Dépenses",
       "balance": "Solde"
     },
+    "trends": {
+      "title": "Tendances de dépenses",
+      "vs_last_month": "vs mois précédent",
+      "new_label": "nouveau"
+    },
+    "savings": {
+      "title": "Taux d'épargne",
+      "subtitle": "12 derniers mois",
+      "all": "Tout",
+      "rate_label": "Taux d'épargne",
+      "no_income": "Aucun revenu",
+      "saved": "Épargné",
+      "current": "Actuel",
+      "average": "Moyenne",
+      "total_saved": "Total épargné"
+    },
     "modal": {
       "title": "Changer le Tableau de bord",
       "select_prompt": "Sélectionnez un tableau de bord à afficher:",
@@ -51,6 +67,7 @@
     "category_label": "Catégorie",
     "category_placeholder": "Sélectionner une catégorie",
     "tags_label": "Étiquettes",
+    "person_label": "Personne",
     "tags_placeholder": "Ajoutez une étiquette et appuyez sur Entrée",
     "date_label": "Date",
     "type_label": "Type",
@@ -74,6 +91,7 @@
       "name": "Nom",
       "category": "Catégorie",
       "tags": "Étiquettes",
+      "person": "Personne",
       "date": "Date",
       "amount": "Montant",
       "actions": "Actions"
@@ -88,8 +106,17 @@
       "transaction_edited": "Transaction modifiée.",
       "transaction_deleted": "Transaction supprimée.",
       "recurring_added": "Transaction récurrente ajoutée.",
-      "end_date_later": "La date de fin doit être postérieure à la date de début."
-    }
+      "end_date_later": "La date de fin doit être postérieure à la date de début.",
+      "transactions_updated": "{count} transactions mises à jour.",
+      "duplicate_warning": "Une transaction avec le même montant, personne et date existe déjà. Ajouter quand même ?"
+    },
+    "edit": "Modifier",
+    "edit_multiple_title": "Modifier",
+    "edit_multiple_title_suffix": "transactions",
+    "edit_multiple_hint": "Seuls les champs modifiés seront mis à jour. Laissez les autres sur Conserver actuel.",
+    "bulk_keep_current": "— Conserver actuel —",
+    "bulk_none": "Aucun",
+    "edit_multiple_apply": "Appliquer"
   },
   "settings": {
     "title": "Wally | Paramètres",
@@ -103,7 +130,12 @@
       "delete_title": "Supprimer la catégorie",
       "name_label": "Nom de la catégorie",
       "delete_confirm": "Êtes-vous sûr de vouloir supprimer la catégorie",
-      "delete_warning": "Cela ne fonctionnera que s'il n'y a pas de transactions utilisant cette catégorie."
+      "delete_warning": "Cela ne fonctionnera que s'il n'y a pas de transactions utilisant cette catégorie.",
+      "set_budget": "Définir le budget",
+      "budget_title": "Définir le budget mensuel",
+      "budget_for": "Budget mensuel pour",
+      "budget_amount": "Montant du budget",
+      "budget_hint": "Laissez vide pour supprimer le budget."
     },
     "tags": {
       "title": "Étiquettes",
@@ -167,7 +199,8 @@
       "recurring_deleted": "Transaction récurrente supprimée.",
       "api_key_created": "Clé API créée.",
       "api_key_deleted": "Clé API supprimée.",
-      "api_key_copied": "Clé API copiée dans le presse-papiers."
+      "api_key_copied": "Clé API copiée dans le presse-papiers.",
+      "budget_updated": "Budget mis à jour."
     },
     "language": {
       "title": "Langue",
@@ -219,9 +252,17 @@
     },
     "import_export": {
       "title": "Importer / Exporter Transactions",
-      "description": "Exportez ou importez rapidement des transactions via des fichiers CSV.",
+      "description": "Exportez les transactions dans plusieurs formats ou importez depuis un CSV.",
       "export": "Exporter en CSV",
-      "import": "Importer depuis CSV"
+      "import": "Importer depuis CSV",
+      "export_btn": "Exporter",
+      "export_csv": "CSV (.csv)",
+      "export_json": "JSON (.json)",
+      "export_pdf": "PDF (Imprimer)",
+      "export_modal_title": "Exporter les transactions",
+      "period_label": "Période",
+      "format_label": "Format",
+      "custom_range_required": "Veuillez sélectionner les mois de début et de fin."
     },
     "recurring": {
       "title": "Transactions Récurrentes",
@@ -236,6 +277,7 @@
       "category": "Catégorie",
       "tags": "Étiquettes",
       "tags_placeholder": "Ajouter une étiquette et appuyer sur Entrée",
+      "person": "Personne",
       "amount": "Montant",
       "type": "Type",
       "type_expense": "Dépense",
@@ -259,12 +301,23 @@
         "name": "Nom",
         "category": "Catégorie",
         "tags": "Étiquettes",
+        "person": "Personne",
         "start_date": "Date de début",
         "end_date": "Date de fin",
         "frequency": "Fréquence",
         "amount": "Montant",
         "actions": "Actions"
       }
+    },
+    "persons": {
+      "title": "Personnes",
+      "placeholder": "Ajouter une nouvelle personne",
+      "add": "Ajouter",
+      "edit_title": "Modifier la personne",
+      "delete_title": "Supprimer la personne",
+      "name_label": "Nom de la personne",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer la personne",
+      "delete_warning": "Cela effacera la personne de toutes les transactions qui l'utilisent."
     }
   },
   "common": {

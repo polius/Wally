@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
-from ..models.categories import Category, CategoryCreate, CategoryPublic, CategoryUpdate
+from ..models.categories import Category, CategoryCreate, CategoryPublic, CategoryUpdate, CategoryBudgetUpdate
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
 from .auth import check_login
@@ -18,6 +18,28 @@ def read_categories(
     statement = select(Category).order_by(Category.name)
     categories = db.exec(statement).all()
     return sorted([c.name for c in categories], key=str.lower)
+
+@router.get("/categories/budgets")
+def read_category_budgets(
+    db: Annotated[Session, Depends(get_session)]
+):
+    categories = db.exec(select(Category)).all()
+    return {c.name: float(c.budget) if c.budget is not None else None for c in categories}
+
+@router.put("/categories/{category_name}/budget", response_model=CategoryPublic)
+def update_category_budget(
+    category_name: str,
+    budget_update: CategoryBudgetUpdate,
+    db: Annotated[Session, Depends(get_session)]
+):
+    category = db.get(Category, category_name)
+    if not category:
+        raise HTTPException(status_code=404, detail="This category does not exist.")
+    category.budget = budget_update.budget
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
 
 @router.post("/categories", response_model=CategoryPublic)
 def create_category(

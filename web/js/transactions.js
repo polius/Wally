@@ -2,6 +2,7 @@ const API_URL = '/api';
 
 let categories;
 let tags;
+let persons;
 let currency;
 
 let gridInstance;
@@ -9,6 +10,151 @@ let gridApi;
 
 let modalMode = 'add';
 let selectedRow;
+
+let _undoDeleteTimer = null;
+let categoryTagsMap = {};
+let duplicateColorMap = {};
+
+const DUPLICATE_COLORS_LIGHT = [
+  'rgba(255, 179, 186, 0.30)',
+  'rgba(255, 218, 170, 0.30)',
+  'rgba(255, 255, 170, 0.30)',
+  'rgba(170, 235, 185, 0.30)',
+  'rgba(170, 215, 255, 0.30)',
+  'rgba(210, 180, 255, 0.30)',
+  'rgba(255, 180, 230, 0.30)',
+];
+const DUPLICATE_COLORS_DARK = [
+  'rgba(255, 120, 130, 0.18)',
+  'rgba(255, 180, 120, 0.18)',
+  'rgba(255, 255, 120, 0.18)',
+  'rgba(120, 220, 150, 0.18)',
+  'rgba(120, 180, 255, 0.18)',
+  'rgba(180, 130, 255, 0.18)',
+  'rgba(255, 130, 200, 0.18)',
+];
+
+function buildCategoryTagsMap(rows) {
+  categoryTagsMap = {};
+  if (!rows) return;
+  rows.forEach(row => {
+    if (row.category && row.tags && row.tags.length) {
+      if (!categoryTagsMap[row.category]) categoryTagsMap[row.category] = {};
+      row.tags.forEach(tag => {
+        categoryTagsMap[row.category][tag] = (categoryTagsMap[row.category][tag] || 0) + 1;
+      });
+    }
+  });
+}
+
+function getSuggestedTags() {
+  const cat = document.getElementById('categorySelect').value;
+  if (!cat || !categoryTagsMap[cat]) return [];
+  return Object.keys(categoryTagsMap[cat]);
+}
+
+function refreshTagSuggestions() {
+  if (!tagsInput) return;
+  const suggested = getSuggestedTags();
+  const selected = tagsInput.getValue(); // preserve current selection
+
+  // Clear and re-add in correct order: suggested first, then the rest
+  tagsInput.clearOptions();
+  const suggestedTags = tags.filter(t => suggested.includes(t)).sort();
+  const otherTags = tags.filter(t => !suggested.includes(t)).sort();
+  suggestedTags.concat(otherTags).forEach(tag => {
+    tagsInput.addOption({ value: tag, text: tag }, false);
+  });
+
+  // Restore selection
+  if (selected.length) tagsInput.setValue(selected, true);
+
+  // Refresh dropdown and apply highlight classes
+  tagsInput.refreshOptions(false);
+  setTimeout(() => {
+    if (tagsInput.dropdown_content) {
+      tagsInput.dropdown_content.querySelectorAll('.option').forEach(el => {
+        const val = el.getAttribute('data-value');
+        el.classList.toggle('tag-suggested', suggested.includes(val));
+      });
+    }
+  }, 0);
+}
+
+function computeDuplicateColorMap(rows) {
+  duplicateColorMap = {};
+  if (!rows || rows.length === 0) return;
+
+  const groups = {};
+  rows.forEach(row => {
+    const key = `${parseFloat(row.amount)}|${(row.person || '').toLowerCase()}|${row.date}|${(row.category || '').toLowerCase()}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(row.id);
+  });
+
+  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  const palette = isDark ? DUPLICATE_COLORS_DARK : DUPLICATE_COLORS_LIGHT;
+  let colorIdx = 0;
+
+  Object.values(groups).forEach(ids => {
+    if (ids.length > 1) {
+      const color = palette[colorIdx % palette.length];
+      ids.forEach(id => { duplicateColorMap[id] = color; });
+      colorIdx++;
+    }
+  });
+}
+
+function checkDuplicateBeforeAdd(data) {
+  if (!gridApi) return false;
+  const rows = [];
+  gridApi.forEachNode(node => { if (node.data) rows.push(node.data); });
+
+  const newAmount = parseFloat(data.amount);
+  const newPerson = (data.person || '').toLowerCase();
+  const newDate = data.date;
+
+  const newCategory = (data.category || '').toLowerCase();
+
+  return rows.some(row =>
+    parseFloat(row.amount) === newAmount &&
+    (row.person || '').toLowerCase() === newPerson &&
+    row.date === newDate &&
+    (row.category || '').toLowerCase() === newCategory
+  );
+}
+
+function showUndoToast(message, onExecute) {
+  if (_undoDeleteTimer) {
+    clearTimeout(_undoDeleteTimer);
+    _undoDeleteTimer = null;
+  }
+
+  const toastEl = document.getElementById('undoToast');
+  const msgEl = document.getElementById('undoToastMessage');
+  const undoBtn = document.getElementById('undoToastBtn');
+
+  msgEl.textContent = message;
+
+  const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+  toast.show();
+
+  function handleUndo() {
+    clearTimeout(_undoDeleteTimer);
+    _undoDeleteTimer = null;
+    toast.hide();
+    undoBtn.removeEventListener('click', handleUndo);
+  }
+
+  undoBtn.addEventListener('click', handleUndo);
+
+  _undoDeleteTimer = setTimeout(async () => {
+    undoBtn.removeEventListener('click', handleUndo);
+    toast.hide();
+    _undoDeleteTimer = null;
+    await onExecute();
+  }, 5000);
+}
 
 let currentDate = new Date();
 let tagsInput;
@@ -32,16 +178,18 @@ async function main() {
   // Show current month
   renderMonth();
 
-  // Get categories, tags and default currency
-  [categories, tags, currency] = await Promise.all([
+  // Get categories, tags, persons and default currency
+  [categories, tags, persons, currency] = await Promise.all([
     getCategories(),
     getTags(),
+    getPersons(),
     getCurrency(),
   ]);
 
-  // Render categories, tags and name autocomplete
+  // Render categories, tags, persons and name autocomplete
   await renderCategories();
   await renderTags();
+  await renderPersonSelect();
   await renderNameAutocomplete();
 
   // Initialize the grid
@@ -92,6 +240,22 @@ async function getTags() {
   return response.json();
 }
 
+async function getPersons() {
+  const response = await fetch(`${API_URL}/persons`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    window.location.href = '/login';
+    return [];
+  }
+
+  if (!response.ok) return [];
+
+  return response.json();
+}
+
 async function getCurrency() {
   const response = await fetch(`${API_URL}/currency`, {
     method: 'GET',
@@ -133,6 +297,44 @@ async function renderCategories() {
     option.selected = false;
     select.appendChild(option);
   });
+
+  // Also populate bulk edit category select (keep the static "Keep current" first option)
+  const bulkSelect = document.getElementById('bulkCategorySelect');
+  // Remove all options except the first "Keep current"
+  while (bulkSelect.options.length > 1) bulkSelect.remove(1);
+  categories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    bulkSelect.appendChild(option);
+  });
+}
+
+async function renderPersonSelect() {
+  const select = document.getElementById('personSelect');
+  select.innerHTML = "";
+
+  const none = document.createElement('option');
+  none.value = "";
+  none.textContent = "None";
+  select.appendChild(none);
+
+  persons.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person;
+    option.textContent = person;
+    select.appendChild(option);
+  });
+
+  // Also populate bulk edit person select (keep the first 2 static options: __keep__ and "")
+  const bulkSelect = document.getElementById('bulkPersonSelect');
+  while (bulkSelect.options.length > 2) bulkSelect.remove(2);
+  persons.forEach(person => {
+    const option = document.createElement('option');
+    option.value = person;
+    option.textContent = person;
+    bulkSelect.appendChild(option);
+  });
 }
 
 async function renderTags() {
@@ -148,12 +350,29 @@ async function renderTags() {
       no_results: function(data, escape) {
         return '';
       },
-    }
+      option: function(data, escape) {
+        const suggested = getSuggestedTags();
+        const isSuggested = suggested.includes(data.value);
+        return `<div class="${isSuggested ? 'tag-suggested' : ''}">${escape(data.text)}</div>`;
+      },
+    },
+    score: function(search) {
+      const original = this.getScoreFunction(search);
+      return function(item) {
+        const suggested = getSuggestedTags();
+        const bonus = suggested.includes(item.value) ? 0.5 : 0;
+        return original(item) + bonus;
+      };
+    },
   });
 
   tags.forEach(tag => {
     tagsInput.addOption({ value: tag, text: tag }, user_created=false);
   });
+
+  // Refresh tag suggestions when category changes and on dropdown open
+  document.getElementById('categorySelect').addEventListener('change', refreshTagSuggestions);
+  tagsInput.on('dropdown_open', refreshTagSuggestions);
 }
 
 async function renderNameAutocomplete() {
@@ -257,6 +476,12 @@ async function initGrid() {
       flex: 1,
       minWidth: 150,
     },
+    getRowStyle: (params) => {
+      if (params.data && duplicateColorMap[params.data.id]) {
+        return { backgroundColor: duplicateColorMap[params.data.id] };
+      }
+      return null;
+    },
     overlayNoRowsTemplate: `<span style="padding: 10px; border: 1px solid var(--bs-border-color); background: var(--bs-body-bg);">${i18n.t('common.no_rows')}</span>`,
     onGridReady: async params => {
       gridApi = params.api;
@@ -271,7 +496,7 @@ async function initGrid() {
       updateFooter(params.api);
     },
     onSelectionChanged: () => {
-      updateDeleteButton();
+      updateSelectionButtons();
     },
     columnDefs: [
       {
@@ -321,6 +546,11 @@ async function initGrid() {
         valueFormatter: (params) => {
           return params.value ? params.value.join(", ") : "";
         },
+      },
+      {
+        field: "person",
+        headerName: i18n.t('transactions.columns.person'),
+        filter: true,
       },
       {
         field: "date",
@@ -536,6 +766,8 @@ async function getTransactions() {
     }
 
     const data = await response.json()
+    computeDuplicateColorMap(data);
+    buildCategoryTagsMap(data);
     gridApi.setGridOption('rowData', data)
   }
   else {
@@ -556,6 +788,8 @@ async function getTransactions() {
     }
 
     const data = await response.json()
+    computeDuplicateColorMap(data);
+    buildCategoryTagsMap(data);
     gridApi.setGridOption('rowData', data)
   }
   updateFooter(gridApi);
@@ -577,7 +811,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
-    document.getElementById('nameInput').focus()
+    if (modalMode === 'add') nameInput.focus();
   });
 
   document.getElementById('amountInput').addEventListener('input', (event) => {
@@ -619,6 +853,7 @@ function addTransaction() {
   document.getElementById('modalSubmitButton').textContent = i18n.t('transactions.add');
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
+  document.getElementById('personSelect').value = "";
   nameInput.clear();
   tagsInput.setValue([]);
   document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
@@ -634,15 +869,17 @@ function editTransaction() {
   toggleRecurring(false);
 
   // Assign values
+  nameInput.addOption({ value: selectedRow.name, text: selectedRow.name });
   nameInput.setValue(selectedRow.name);
-  document.getElementById('categorySelect').value = selectedRow.category
+  document.getElementById('categorySelect').value = selectedRow.category;
   selectedRow.tags.forEach(tag => {
     tagsInput.addOption({ value: tag, text: tag }, user_created=true);
   });
   tagsInput.setValue(selectedRow.tags);
-  document.getElementById('amountInput').value = selectedRow.amount
-  document.getElementById('typeSelect').value = selectedRow.type
-  document.getElementById('dateInput').value = selectedRow.date
+  document.getElementById('personSelect').value = selectedRow.person || "";
+  document.getElementById('amountInput').value = selectedRow.amount;
+  document.getElementById('typeSelect').value = selectedRow.type;
+  document.getElementById('dateInput').value = selectedRow.date;
 
   // Open modal
   const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModal'));
@@ -720,6 +957,11 @@ async function submitTransactionAdd(event) {
   const formData = new FormData(event.target);
   const data = Object.fromEntries(formData.entries());
   data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
+
+  // Duplicate warning
+  if (checkDuplicateBeforeAdd(data)) {
+    if (!confirm(i18n.t('transactions.messages.duplicate_warning'))) return;
+  }
 
   try {
     const response = await fetch(`${API_URL}/transactions`, {
@@ -805,39 +1047,39 @@ async function submitTransactionEdit(event) {
 async function submitTransactionDelete(event) {
   event.preventDefault();
 
-  try {
-    const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
+  const id = selectedRow.id;
 
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
+  // Hide the modal immediately
+  const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDelete'));
+  modal.hide();
 
-    const json = await response.json()
+  // Show undo toast — actual delete fires after 5 seconds unless undone
+  showUndoToast(i18n.t('transactions.messages.transaction_deleted'), async () => {
+    try {
+      const response = await fetch(`${API_URL}/transactions/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDelete'));
-      modal.hide();
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.transaction_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+      const json = await response.json();
 
-      // Refresh the grid
+      if (!response.ok) {
+        if (response.status === 422) throw new Error(json.detail[0].msg);
+        else if ([400, 404].includes(response.status)) throw new Error(json.detail);
+        throw new Error("An error occurred.");
+      }
+
       getTransactions();
     }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
+    catch (error) {
+      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+    }
+  });
 }
 
 function toggleRecurring(enabled) {
@@ -863,29 +1105,35 @@ function toggleRecurring(enabled) {
   }
 }
 
-function updateDeleteButton() {
+function updateSelectionButtons() {
   const selectedRows = gridApi.getSelectedRows();
+  const count = selectedRows.length;
+  const editBtn = document.getElementById('editSelectedBtn');
   const deleteBtn = document.getElementById('deleteSelectedBtn');
-  const selectedCount = document.getElementById('selectedCount');
   const container = document.getElementById('actionButtonsContainer');
 
-  if (selectedRows.length > 0) {
-    selectedCount.textContent = selectedRows.length;
-    // First: compact the existing buttons
+  if (count > 0) {
+    document.getElementById('selectedCountEdit').textContent = count;
+    document.getElementById('selectedCount').textContent = count;
+    // Compact existing buttons
     container.classList.add('compact-buttons');
-    // Then: reveal the delete button after buttons have resized
+    // Reveal edit + delete buttons
+    editBtn.style.display = '';
+    editBtn.classList.add('d-flex');
     deleteBtn.style.display = '';
     deleteBtn.classList.add('d-flex');
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        editBtn.classList.add('show-edit');
         deleteBtn.classList.add('show-delete');
       });
     });
   } else {
-    // First: hide the delete button
+    editBtn.classList.remove('show-edit');
     deleteBtn.classList.remove('show-delete');
-    // Then: after transition, remove compact and hide fully
     setTimeout(() => {
+      editBtn.classList.remove('d-flex');
+      editBtn.style.display = 'none';
       deleteBtn.classList.remove('d-flex');
       deleteBtn.style.display = 'none';
       container.classList.remove('compact-buttons');
@@ -907,47 +1155,111 @@ function deleteSelectedTransactions() {
 async function submitTransactionDeleteMultiple(event) {
   event.preventDefault();
 
+  // Capture IDs at confirmation time
   const selectedRows = gridApi.getSelectedRows();
   const transactionIds = selectedRows.map(row => row.id);
+  const count = transactionIds.length;
+
+  // Hide the modal immediately
+  const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDeleteMultiple'));
+  modal.hide();
+
+  // Show undo toast — actual delete fires after 5 seconds unless undone
+  const message = `${count} transaction${count === 1 ? '' : 's'} deleted.`;
+  showUndoToast(message, async () => {
+    try {
+      const deletePromises = transactionIds.map(id =>
+        fetch(`${API_URL}/transactions/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        })
+      );
+
+      const responses = await Promise.all(deletePromises);
+
+      const failedResponse = responses.find(r => !r.ok);
+      if (failedResponse) {
+        if (failedResponse.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error("An error occurred while deleting transactions.");
+      }
+
+      getTransactions();
+    }
+    catch (error) {
+      bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
+    }
+  });
+}
+
+function editSelectedTransactions() {
+  const selectedRows = gridApi.getSelectedRows();
+  document.getElementById('editMultipleCount').textContent = selectedRows.length;
+
+  // Reset selects to "Keep current"
+  document.getElementById('bulkCategorySelect').value = '';
+  document.getElementById('bulkPersonSelect').value = '__keep__';
+  document.getElementById('bulkTypeSelect').value = '';
+
+  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModalEditMultiple'));
+  modal.show();
+}
+
+async function submitTransactionEditMultiple(event) {
+  event.preventDefault();
+
+  const selectedRows = gridApi.getSelectedRows();
+  const newCategory = document.getElementById('bulkCategorySelect').value;
+  const newPerson = document.getElementById('bulkPersonSelect').value;
+  const newType = document.getElementById('bulkTypeSelect').value;
+
+  // Nothing to change
+  if (!newCategory && newPerson === '__keep__' && !newType) {
+    bootstrap.Modal.getInstance(document.getElementById('transactionModalEditMultiple')).hide();
+    return;
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById('transactionModalEditMultiple')).hide();
 
   try {
-    const deletePromises = transactionIds.map(id =>
-    fetch(`${API_URL}/transactions/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-    );
+    const updatePromises = selectedRows.map(row => {
+      const payload = {
+        name: row.name,
+        category: newCategory || row.category,
+        tags: row.tags,
+        person: newPerson !== '__keep__' ? newPerson : row.person,
+        amount: row.amount,
+        type: newType || row.type,
+        date: row.date,
+      };
+      return fetch(`${API_URL}/transactions/${row.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    });
 
-    const responses = await Promise.all(deletePromises);
+    const responses = await Promise.all(updatePromises);
 
-    // Check if any request failed
     const failedResponse = responses.find(r => !r.ok);
     if (failedResponse) {
       if (failedResponse.status === 401) {
         window.location.href = '/login';
         return;
       }
-      throw new Error("An error occurred while deleting transactions.");
+      throw new Error('An error occurred while updating transactions.');
     }
 
-    // Hide the modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDeleteMultiple'));
-    modal.hide();
+    const count = selectedRows.length;
+    bootstrap.showToast({ body: i18n.t('transactions.messages.transactions_updated').replace('{count}', count), delay: 2500, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-success' });
 
-    // Show toast
-    const count = transactionIds.length;
-    bootstrap.showToast({
-      body: `${count} transaction${count === 1 ? '' : 's'} deleted.`,
-      delay: 1000,
-      position: "top-0 start-50 translate-middle-x",
-      toastClass: "text-bg-success"
-    });
-
-    // Refresh the grid
-    getTransactions();
+    await getTransactions();
   }
   catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+    bootstrap.showToast({ body: `${error}`, delay: 3000, position: 'top-0 start-50 translate-middle-x', toastClass: 'text-bg-danger' });
   }
 }
 
