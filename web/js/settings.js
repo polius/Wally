@@ -1307,18 +1307,11 @@ async function deleteApiKeySubmit(event) {
   }
 }
 
-function escapeCsvField(value) {
-  if (value == null) return '';
-  const str = String(value);
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-    return '"' + str.replace(/"/g, '""') + '"';
-  }
-  return str;
-}
-
 function tagsToCsvString(tags) {
   if (!tags || !Array.isArray(tags)) return '';
-  return tags.map(tag => escapeCsvField(tag)).join(',');
+  const processedTags = tags.map(tag => tag == null ? '' : String(tag));
+  const csv = Papa.unparse([processedTags], { header: false });
+  return csv.replace(/\r?\n$/, '');
 }
 
 function csvStringToTags(csvStr) {
