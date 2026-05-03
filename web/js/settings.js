@@ -1310,13 +1310,13 @@ async function deleteApiKeySubmit(event) {
 function tagsToCsvString(tags) {
   if (!tags || !Array.isArray(tags)) return '';
   const processedTags = tags.map(tag => tag == null ? '' : String(tag));
-  const csv = Papa.unparse([processedTags], { header: false });
+  const csv = Papa.unparse([processedTags], { header: false, quotes: true });
   return csv.replace(/\r?\n$/, '');
 }
 
 function csvStringToTags(csvStr) {
-  if (!csvStr || csvStr.trim() === '') return [];
-  const result = Papa.parse(csvStr, {
+  if (csvStr == null) return [];
+  const result = Papa.parse(String(csvStr), {
     header: false,
     skipEmptyLines: false
   });
