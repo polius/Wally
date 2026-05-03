@@ -1307,6 +1307,32 @@ async function deleteApiKeySubmit(event) {
   }
 }
 
+function escapeCsvField(value) {
+  if (value == null) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function tagsToCsvString(tags) {
+  if (!tags || !Array.isArray(tags)) return '';
+  return tags.map(tag => escapeCsvField(tag)).join(',');
+}
+
+function csvStringToTags(csvStr) {
+  if (!csvStr || csvStr.trim() === '') return [];
+  const result = Papa.parse(csvStr, {
+    header: false,
+    skipEmptyLines: false
+  });
+  if (result.data && result.data.length > 0 && Array.isArray(result.data[0])) {
+    return result.data[0].filter(tag => tag !== null && tag !== undefined).map(tag => String(tag));
+  }
+  return [];
+}
+
 // -------------------
 // - IMPORT / EXPORT -
 // -------------------
@@ -1335,9 +1361,13 @@ async function exportToCSV() {
         return;
       }
 
-      // Generate CSV only with mandatory columns
+      const processedData = json.map(transaction => ({
+        ...transaction,
+        tags: tagsToCsvString(transaction.tags)
+      }));
+
       const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-      const csv = Papa.unparse(json, {
+      const csv = Papa.unparse(processedData, {
         columns: mandatoryColumns
       });
 
@@ -1370,7 +1400,7 @@ async function importFromCSV() {
     header: true,
     skipEmptyLines: true,
     transform: (value, column) => {
-      if (column === "tags") return value && value.trim() !== "" ? value.split(",").map(tag => tag.trim()) : [];
+      if (column === "tags") return csvStringToTags(value);
       return value;
     }
   });
