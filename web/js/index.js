@@ -8,6 +8,9 @@ let currency;
 let chart;
 let chartSelected = "currentMonth";
 let chartGroupBy = 'category';
+// 'line' or 'stacked' — only meaningful when chartSelected !== 'currentMonth'.
+// Persisted so the user's choice survives reloads.
+let chartType = localStorage.getItem('chartType') === 'stacked' ? 'stacked' : 'line';
 let chartDisabledFields = new Set();
 
 let tagsInput;
@@ -44,6 +47,7 @@ async function main() {
 
   // Group by toggle
   setupGroupByToggle();
+  setupChartTypeModalControls();
 
   // Show page after all translations are applied
   i18n.showPage();
@@ -260,6 +264,32 @@ const chartColors = [
   '#E9ECEF'
 ];
 
+// Theme-aware tooltip styling shared by the doughnut and line/bar charts.
+// Kept near-opaque so the chart underneath doesn't bleed through the text.
+function getChartTooltipStyle() {
+  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  return {
+    backgroundColor: isDark ? 'rgba(43, 43, 43, 0.97)' : 'rgba(255, 255, 255, 0.98)',
+    titleColor: isDark ? '#ffffff' : '#0f172a',
+    bodyColor: isDark ? '#e5e5e5' : '#374151',
+    footerColor: isDark ? '#ffffff' : '#0f172a',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.08)',
+    borderWidth: 1,
+    cornerRadius: 8,
+    padding: 12,
+    titleFont: { size: 13, weight: '600' },
+    bodyFont: { size: 13 },
+    bodySpacing: 6,
+    footerFont: { size: 13, weight: '600' },
+    footerMarginTop: 8,
+    footerSpacing: 4,
+    displayColors: true,
+    usePointStyle: true,
+    boxPadding: 6,
+    caretSize: 6,
+  };
+}
+
 function updateChart(data) {
   if (chart) chart.destroy();
 
@@ -293,8 +323,7 @@ function updateChart(data) {
             display: false
           },
           tooltip: {
-            boxPadding: 3,
-            usePointStyle: true,
+            ...getChartTooltipStyle(),
             callbacks: {
               label: (context) => {
                 const value = context.raw;
@@ -318,30 +347,43 @@ function updateChart(data) {
     else if (chartSelected === 'customRange') range = getCustomMonthRange(window.customRangeFrom, window.customRangeTo);
     else if (chartSelected === 'allData') range = getAllMonths(data);
 
+    const isStacked = chartType === 'stacked';
+
+    const datasets = data.map((item, index) => {
+      const color = chartColors[index % chartColors.length];
+      const base = {
+        label: item.name,
+        data: range.map(m => {
+          const idx = item.dates.indexOf(m);
+          return idx !== -1 ? item.amounts[idx] : 0;
+        }),
+        backgroundColor: color,
+        borderColor: color,
+      };
+      if (isStacked) {
+        return { ...base, borderWidth: 0, borderRadius: 4, maxBarThickness: 48 };
+      }
+      return {
+        ...base,
+        fill: false,
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: color,
+        pointHoverBorderWidth: 2,
+        tension: 0.3,
+      };
+    });
+
     chart = new Chart('chartCanvas', {
-      type: 'line',
+      type: isStacked ? 'bar' : 'line',
       data: {
         labels: range.map(x => formatDate(x)),
-        datasets: data.map((item, index) => ({
-          label: item.name,
-          data: range.map(m => {
-            const idx = item.dates.indexOf(m);
-            return idx !== -1 ? item.amounts[idx] : 0;
-          }),
-          fill: false,
-          backgroundColor: chartColors[index % chartColors.length],
-          borderColor: chartColors[index % chartColors.length],
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: chartColors[index % chartColors.length],
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: chartColors[index % chartColors.length],
-          pointHoverBorderWidth: 2,
-          tension: 0.3,
-        })),
+        datasets,
       },
       options: {
         responsive: true,
@@ -352,6 +394,7 @@ function updateChart(data) {
         },
         scales: {
           x: {
+            stacked: isStacked,
             grid: {
               display: true,
               drawOnChartArea: true,
@@ -364,6 +407,7 @@ function updateChart(data) {
             }
           },
           y: {
+            stacked: isStacked,
             beginAtZero: true,
             grid: {
               display: true,
@@ -381,26 +425,7 @@ function updateChart(data) {
             display: false
           },
           tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleFont: {
-              size: 14,
-              weight: 'bold'
-            },
-            bodyFont: {
-              size: 13
-            },
-            bodySpacing: 6,
-            footerFont: {
-              size: 13,
-            },
-            footerMarginTop: 8,
-            footerSpacing: 4,
-            displayColors: true,
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
-            usePointStyle: true,
-            boxPadding: 6,
+            ...getChartTooltipStyle(),
             callbacks: {
               label: (context) => {
                 const value = context.raw;
@@ -571,6 +596,35 @@ function setupGroupByToggle() {
   });
 }
 
+// Chart-type radios live inside the dashboard modal. They're disabled when the
+// selected range is currentMonth (which renders a doughnut, ignoring this).
+function setupChartTypeModalControls() {
+  const modal = document.getElementById('dashboardModal');
+  if (!modal) return;
+
+  // When the modal opens, seed it with the current global state so the radios
+  // reflect what the user is actually looking at right now.
+  modal.addEventListener('show.bs.modal', () => {
+    const target = document.querySelector(`input[name="chartType"][value="${chartType}"]`);
+    if (target) target.checked = true;
+    syncChartTypeRadioState();
+  });
+
+  // Track range changes inside the modal so the chart-type radios reflect
+  // whether they apply to the about-to-be-applied range.
+  document.querySelectorAll('input[name="range"]').forEach(radio => {
+    radio.addEventListener('change', syncChartTypeRadioState);
+  });
+}
+
+function syncChartTypeRadioState() {
+  const checkedRange = document.querySelector('input[name="range"]:checked');
+  const disabled = checkedRange?.value === 'currentMonth';
+  document.querySelectorAll('input[name="chartType"]').forEach(r => {
+    r.disabled = disabled;
+  });
+}
+
 function populateYearDropdowns() {
   const currentYear = new Date().getFullYear();
   const now = new Date();
@@ -592,6 +646,12 @@ function submitDashboard(event) {
 
   // Store the selected range and group in the global variable
   chartSelected = data.range;
+  // For currentMonth the chart-type field is disabled, so FormData omits it —
+  // keep whatever the user had previously chosen for non-currentMonth ranges.
+  if (data.chartType === 'line' || data.chartType === 'stacked') {
+    chartType = data.chartType;
+    localStorage.setItem('chartType', chartType);
+  }
 
   // Validate custom range if selected
   if (chartSelected === 'customRange') {
@@ -797,70 +857,120 @@ async function renderTags() {
 }
 
 async function renderNameAutocomplete() {
+  nameInput = document.getElementById('nameInput');
   const nameCategoryMap = new Map();
 
-  nameInput = new TomSelect('#nameInput', {
-    create: true,
-    addPrecedence: true,
-    maxOptions: 10,
-    maxItems: 1,
-    selectOnTab: true,
-    createOnBlur: true,
-    loadThrottle: 300,
-    onType: function(str) {
-      if (!str || str.length === 0) {
-        this.clearOptions();
-        this.close();
-      }
-    },
-    onItemAdd: function(value) {
-      // Only auto-fill category if the selected name came from the API suggestions
-      if (nameCategoryMap.has(value)) {
-        const category = nameCategoryMap.get(value);
-        if (category) {
-          const categorySelect = document.getElementById('categorySelect');
-          const categoryOptions = Array.from(categorySelect.options).map(o => o.value);
-          if (categoryOptions.includes(category)) {
-            categorySelect.value = category;
-          }
-        }
-      }
-    },
-    load: async function(query, callback) {
-      if (!query || query.length === 0) {
-        this.clearOptions();
-        this.close();
-        return callback();
-      }
-      
-      try {
-        const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-        
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return callback();
-        }
-        
-        const results = await response.json();
-        results.forEach(r => nameCategoryMap.set(r.name, r.category));
-        const options = results.map(r => ({ value: r.name, text: r.name }));
-        callback(options);
-      } catch (error) {
-        console.error('Error loading transaction names:', error);
-        callback();
-      }
-    },
-    render: {
-      option_create: function(data, escape) {
-        return '<div class="create">' + escape(data.input) + '</div>';
-      },
-      no_results: function(data, escape) {
-        return '';
-      },
+  // Custom dropdown — keeps the name field consistent with the Transactions
+  // page and avoids the native <datalist>'s theme-ignoring popup.
+  const wrapper = document.createElement('div');
+  wrapper.className = 'name-autocomplete-wrapper';
+  nameInput.parentNode.insertBefore(wrapper, nameInput);
+  wrapper.appendChild(nameInput);
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'name-autocomplete-dropdown';
+  dropdown.setAttribute('role', 'listbox');
+  dropdown.hidden = true;
+  wrapper.appendChild(dropdown);
+
+  let currentResults = [];
+  let activeIndex = -1;
+
+  const escapeHtml = (str) => {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  };
+
+  const applyCategoryFor = (name) => {
+    const category = nameCategoryMap.get(name);
+    if (!category) return;
+    const categorySelect = document.getElementById('categorySelect');
+    if ([...categorySelect.options].some(o => o.value === category)) {
+      categorySelect.value = category;
     }
+  };
+
+  const hideDropdown = () => {
+    dropdown.hidden = true;
+    activeIndex = -1;
+  };
+
+  const render = () => {
+    if (currentResults.length === 0) {
+      hideDropdown();
+      return;
+    }
+    dropdown.innerHTML = currentResults.map((r, i) =>
+      `<div class="name-autocomplete-item${i === activeIndex ? ' active' : ''}" role="option" data-index="${i}">${escapeHtml(r.name)}</div>`
+    ).join('');
+    dropdown.hidden = false;
+  };
+
+  const selectIndex = (i) => {
+    const item = currentResults[i];
+    if (!item) return;
+    nameInput.value = item.name;
+    applyCategoryFor(item.name);
+    hideDropdown();
+  };
+
+  let searchTimer;
+  nameInput.addEventListener('input', () => {
+    applyCategoryFor(nameInput.value);
+
+    clearTimeout(searchTimer);
+    const query = nameInput.value.trim();
+    if (!query) {
+      currentResults = [];
+      hideDropdown();
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
+      if (response.status === 401) return window.location.href = '/login';
+      if (!response.ok) return;
+      const results = await response.json();
+      results.forEach(r => nameCategoryMap.set(r.name, r.category));
+      currentResults = results;
+      activeIndex = -1;
+      render();
+    }, 300);
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    if (dropdown.hidden || currentResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % currentResults.length;
+      render();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = activeIndex <= 0 ? currentResults.length - 1 : activeIndex - 1;
+      render();
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      selectIndex(activeIndex);
+    } else if (e.key === 'Escape') {
+      hideDropdown();
+    }
+  });
+
+  // mousedown fires before the input's blur, so the selection still applies
+  dropdown.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.name-autocomplete-item');
+    if (!item) return;
+    e.preventDefault();
+    selectIndex(parseInt(item.dataset.index, 10));
+  });
+
+  nameInput.addEventListener('blur', () => {
+    setTimeout(hideDropdown, 150);
+  });
+
+  document.getElementById('transactionModal').addEventListener('hidden.bs.modal', () => {
+    currentResults = [];
+    hideDropdown();
   });
 }
 
@@ -891,9 +1001,8 @@ async function renderCategories() {
 function addTransaction() {
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
-  nameInput.clear();
   tagsInput.setValue([]);
-  document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+  document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
   document.getElementById('recurringElement').style.display = 'block';
   toggleRecurring(false);
 }
@@ -1007,7 +1116,7 @@ function toggleRecurring(enabled) {
   if (enabled) {
     recurringDiv.style.display = 'block';
     date.disabled = true;
-    startDate.value = new Date().toISOString().split('T')[0];
+    startDate.value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
     startDate.required = true;
     endDate.required = true;
     frequencySelect.required = true;
