@@ -42,6 +42,7 @@ def search_transaction_names(
         select(Transaction.name)
         .distinct()
         .where(Transaction.name.ilike(f"%{q}%"))
+        .where(Transaction.name != "")
         .where(Transaction.date >= one_year_ago)
         .order_by(Transaction.name)
         .limit(10)

@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, Field, String
 from dateutil.relativedelta import relativedelta
 
 class RecurringTransactionBase(SQLModel):
-    name: str = Field(index=True)
+    name: str = Field(default="", index=True)
     category: str = Field(index=True)
     tags: List[str] = Field(default_factory=list, sa_column=Column(JSON))
     amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
