@@ -1311,6 +1311,30 @@ async function deleteApiKeySubmit(event) {
 // -------------------
 // - IMPORT / EXPORT -
 // -------------------
+
+// Tags are stored as arrays internally but must fit in a single CSV cell.
+// We embed a "sub-CSV": the cell value is itself a comma-separated list where
+// each tag is CSV-quoted only if it contains a comma, quote, or newline. Using
+// Papa for both directions keeps the round-trip symmetric — a tag like
+// "Home, Office" survives export+import as a single tag instead of being
+// silently split.
+function tagsToCsvCell(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return '';
+  const normalized = tags.map(t => (t == null ? '' : String(t)));
+  return Papa.unparse([normalized], { header: false }).replace(/\r?\n$/, '');
+}
+
+function csvCellToTags(cell) {
+  if (cell == null) return [];
+  const str = String(cell).trim();
+  if (str === '') return [];
+  const { data } = Papa.parse(str, { header: false, skipEmptyLines: false });
+  const row = data?.[0];
+  if (!Array.isArray(row)) return [];
+  // Trim whitespace (forgiving for hand-edited CSVs) and drop empty entries.
+  return row.map(t => (t == null ? '' : String(t).trim())).filter(t => t !== '');
+}
+
 async function exportToCSV() {
   try {
     const response = await fetch(`${API_URL}/transactions`, {
@@ -1336,9 +1360,11 @@ async function exportToCSV() {
         return;
       }
 
-      // Generate CSV only with mandatory columns
+      // Serialize each transaction's tag array into a single CSV cell value
+      // so tags containing commas/quotes survive the round-trip.
+      const rows = json.map(tx => ({ ...tx, tags: tagsToCsvCell(tx.tags) }));
       const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-      const csv = Papa.unparse(json, {
+      const csv = Papa.unparse(rows, {
         columns: mandatoryColumns
       });
 
@@ -1371,7 +1397,7 @@ async function importFromCSV() {
     header: true,
     skipEmptyLines: true,
     transform: (value, column) => {
-      if (column === "tags") return value && value.trim() !== "" ? value.split(",").map(tag => tag.trim()) : [];
+      if (column === "tags") return csvCellToTags(value);
       return value;
     }
   });
