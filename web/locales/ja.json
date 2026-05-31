@@ -17,6 +17,10 @@
       "tags": "タグ",
       "untagged": "タグなし"
     },
+    "chart_type": {
+      "line": "折れ線",
+      "stacked": "積み上げ"
+    },
     "cashflow": {
       "income": "収入",
       "expenses": "支出",
@@ -34,6 +38,7 @@
       "to_date": "現在まで（すべての取引）",
       "from": "開始：",
       "to": "終了：",
+      "chart_type_label": "グラフの種類：",
       "apply": "適用",
       "invalid_date_range": "開始月は終了月以前である必要があります。"
     }
@@ -100,20 +105,26 @@
       "title": "カテゴリー",
       "placeholder": "新しいカテゴリーを追加",
       "add": "追加",
+      "add_title": "カテゴリーを追加",
+      "add_tooltip": "新しいカテゴリーを追加",
       "edit_title": "カテゴリーを編集",
       "delete_title": "カテゴリーを削除",
       "name_label": "カテゴリー名",
       "delete_confirm": "カテゴリーを削除してもよろしいですか",
+      "delete_confirm_many": "これら {count} 件のカテゴリーを削除してもよろしいですか？",
       "delete_warning": "このカテゴリーを使用している取引がない場合のみ機能します。"
     },
     "tags": {
       "title": "タグ",
       "placeholder": "新しいタグを追加",
       "add": "追加",
+      "add_title": "タグを追加",
+      "add_tooltip": "新しいタグを追加",
       "edit_title": "タグを編集",
       "delete_title": "タグを削除",
       "name_label": "タグ名",
       "delete_confirm": "タグを削除してもよろしいですか",
+      "delete_confirm_many": "これら {count} 件のタグを削除してもよろしいですか？",
       "delete_warning": "このタグはすべての取引から削除されます。"
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "カテゴリーを更新しました。",
       "category_added": "カテゴリーを追加しました。",
       "category_deleted": "カテゴリーを削除しました。",
+      "categories_deleted": "{count} 件のカテゴリーを削除しました。",
       "tag_updated": "タグを更新しました。",
       "tag_added": "タグを追加しました。",
       "tag_deleted": "タグを削除しました。",
+      "tags_deleted": "{count} 件のタグを削除しました。",
       "currency_changed": "通貨を変更しました。",
       "currency_position_changed": "記号の位置を変更しました。",
       "currency_added": "通貨を追加しました。",
@@ -275,6 +288,9 @@
     "edit": "編集",
     "save": "保存",
     "close": "閉じる",
+    "clear": "クリア",
+    "edit_single_tooltip": "編集するには1つの項目のみを選択してください",
+    "delete_partial": "{success} / {total} 件を削除しました。一部は削除できませんでした。",
     "enter_new_name": "新しい名前を入力",
     "no_rows": "表示する行がありません",
     "no_recurring_transactions": "定期取引が作成されていません",

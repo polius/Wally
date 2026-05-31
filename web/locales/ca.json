@@ -16,6 +16,10 @@
       "tags": "Etiquetes",
       "untagged": "Sense etiqueta"
     },
+    "chart_type": {
+      "line": "Línia",
+      "stacked": "Apilades"
+    },
     "cashflow": {
       "income": "Ingressos",
       "expenses": "Despeses",
@@ -33,6 +37,7 @@
       "to_date": "Totes les transaccions",
       "from": "Des de:",
       "to": "Fins a:",
+      "chart_type_label": "Tipus de gràfic:",
       "apply": "Aplicar",
       "invalid_date_range": "El mes d'inici ha de ser anterior o igual al mes de finalització."
     }
@@ -100,20 +105,26 @@
       "title": "Categories",
       "placeholder": "Afegir nova categoria",
       "add": "Afegir",
+      "add_title": "Afegir categoria",
+      "add_tooltip": "Afegir nova categoria",
       "edit_title": "Editar Categoria",
       "delete_title": "Eliminar Categoria",
-      "name_label": "Nom de la Categoria",
+      "name_label": "Nom de la categoria",
       "delete_confirm": "Segur que vols eliminar la categoria",
+      "delete_confirm_many": "Segur que vols eliminar aquestes {count} categories?",
       "delete_warning": "Això només funcionarà si no hi ha transaccions utilitzant aquesta categoria."
     },
     "tags": {
       "title": "Etiquetes",
       "placeholder": "Afegir nova etiqueta",
       "add": "Afegir",
+      "add_title": "Afegir etiqueta",
+      "add_tooltip": "Afegir nova etiqueta",
       "edit_title": "Editar Etiqueta",
       "delete_title": "Eliminar Etiqueta",
-      "name_label": "Nom de l'Etiqueta",
+      "name_label": "Nom de l'etiqueta",
       "delete_confirm": "Segur que vols eliminar l'etiqueta",
+      "delete_confirm_many": "Segur que vols eliminar aquestes {count} etiquetes?",
       "delete_warning": "Aquesta etiqueta s'eliminarà de totes les transaccions."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "Categoria actualitzada correctament.",
       "category_added": "Categoria afegida.",
       "category_deleted": "Categoria eliminada.",
+      "categories_deleted": "{count} categories eliminades.",
       "tag_updated": "Etiqueta actualitzada correctament.",
       "tag_added": "Etiqueta afegida.",
       "tag_deleted": "Etiqueta eliminada.",
+      "tags_deleted": "{count} etiquetes eliminades.",
       "currency_changed": "Moneda canviada.",
       "currency_position_changed": "Posició del símbol canviada.",
       "currency_added": "Moneda afegida.",
@@ -255,7 +268,7 @@
       "apply_all": "Totes les transaccions",
       "apply_all_hint": "Les ocurrències passades i futures s'actualitzaran.",
       "delete_confirm": "Segur que vols eliminar aquesta transacció recurrent?",
-      "update_btn": "Actualitzar",
+      "update_btn": "Modificar",
       "columns": {
         "name": "Nom",
         "category": "Categoria",
@@ -270,11 +283,14 @@
   },
   "common": {
     "cancel": "Cancel·lar",
-    "update": "Actualitzar",
+    "update": "Modificar",
     "delete": "Eliminar",
     "edit": "Editar",
     "save": "Desar",
     "close": "Tancar",
+    "clear": "Esborra",
+    "edit_single_tooltip": "Selecciona un únic element per editar",
+    "delete_partial": "Eliminats {success} de {total}. Alguns no s'han pogut eliminar.",
     "enter_new_name": "Introdueix el nou nom",
     "no_rows": "No Hi Ha Files Per Mostrar",
     "no_recurring_transactions": "No hi ha transaccions recurrents creades",

@@ -17,6 +17,10 @@
       "tags": "标签",
       "untagged": "无标签"
     },
+    "chart_type": {
+      "line": "折线",
+      "stacked": "堆叠"
+    },
     "cashflow": {
       "income": "收入",
       "expenses": "支出",
@@ -34,6 +38,7 @@
       "to_date": "至今（所有交易）",
       "from": "从：",
       "to": "至：",
+      "chart_type_label": "图表类型：",
       "apply": "应用",
       "invalid_date_range": "开始月份必须早于或等于结束月份。"
     }
@@ -100,20 +105,26 @@
       "title": "类别",
       "placeholder": "添加新类别",
       "add": "添加",
+      "add_title": "添加类别",
+      "add_tooltip": "添加新类别",
       "edit_title": "编辑类别",
       "delete_title": "删除类别",
       "name_label": "类别名称",
       "delete_confirm": "确定要删除类别",
+      "delete_confirm_many": "确定要删除这 {count} 个类别吗？",
       "delete_warning": "仅当没有交易使用此类别时才能删除。"
     },
     "tags": {
       "title": "标签",
       "placeholder": "添加新标签",
       "add": "添加",
+      "add_title": "添加标签",
+      "add_tooltip": "添加新标签",
       "edit_title": "编辑标签",
       "delete_title": "删除标签",
       "name_label": "标签名称",
       "delete_confirm": "确定要删除标签",
+      "delete_confirm_many": "确定要删除这 {count} 个标签吗？",
       "delete_warning": "此标签将从所有交易中删除。"
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "类别更新成功。",
       "category_added": "类别已添加。",
       "category_deleted": "类别已删除。",
+      "categories_deleted": "已删除 {count} 个类别。",
       "tag_updated": "标签更新成功。",
       "tag_added": "标签已添加。",
       "tag_deleted": "标签已删除。",
+      "tags_deleted": "已删除 {count} 个标签。",
       "currency_changed": "货币已更改。",
       "currency_position_changed": "符号位置已更改。",
       "currency_added": "货币已添加。",
@@ -275,6 +288,9 @@
     "edit": "编辑",
     "save": "保存",
     "close": "关闭",
+    "clear": "清除",
+    "edit_single_tooltip": "请选择单个项目进行编辑",
+    "delete_partial": "已删除 {success} / {total}。部分项目无法删除。",
     "enter_new_name": "输入新名称",
     "no_rows": "无行显示",
     "no_recurring_transactions": "未创建重复交易",

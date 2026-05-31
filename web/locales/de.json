@@ -17,6 +17,10 @@
       "tags": "Tags",
       "untagged": "Ohne Tag"
     },
+    "chart_type": {
+      "line": "Linie",
+      "stacked": "Gestapelt"
+    },
     "cashflow": {
       "income": "Einnahmen",
       "expenses": "Ausgaben",
@@ -34,6 +38,7 @@
       "to_date": "Bis heute (Alle Transaktionen)",
       "from": "Von:",
       "to": "Bis:",
+      "chart_type_label": "Diagrammtyp:",
       "apply": "Anwenden",
       "invalid_date_range": "Der Startmonat muss vor oder gleich dem Endmonat sein."
     }
@@ -100,20 +105,26 @@
       "title": "Kategorien",
       "placeholder": "Neue Kategorie hinzufügen",
       "add": "Hinzufügen",
+      "add_title": "Kategorie hinzufügen",
+      "add_tooltip": "Neue Kategorie hinzufügen",
       "edit_title": "Kategorie bearbeiten",
       "delete_title": "Kategorie löschen",
       "name_label": "Kategoriename",
       "delete_confirm": "Möchten Sie die Kategorie wirklich löschen",
+      "delete_confirm_many": "Möchten Sie diese {count} Kategorien wirklich löschen?",
       "delete_warning": "Dies funktioniert nur, wenn keine Transaktionen diese Kategorie verwenden."
     },
     "tags": {
       "title": "Tags",
       "placeholder": "Neues Tag hinzufügen",
       "add": "Hinzufügen",
+      "add_title": "Tag hinzufügen",
+      "add_tooltip": "Neues Tag hinzufügen",
       "edit_title": "Tag bearbeiten",
       "delete_title": "Tag löschen",
       "name_label": "Tag-Name",
       "delete_confirm": "Möchten Sie das Tag wirklich löschen",
+      "delete_confirm_many": "Möchten Sie diese {count} Tags wirklich löschen?",
       "delete_warning": "Dieses Tag wird aus allen Transaktionen entfernt."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "Kategorie erfolgreich aktualisiert.",
       "category_added": "Kategorie hinzugefügt.",
       "category_deleted": "Kategorie gelöscht.",
+      "categories_deleted": "{count} Kategorien gelöscht.",
       "tag_updated": "Tag erfolgreich aktualisiert.",
       "tag_added": "Tag hinzugefügt.",
       "tag_deleted": "Tag gelöscht.",
+      "tags_deleted": "{count} Tags gelöscht.",
       "currency_changed": "Währung geändert.",
       "currency_position_changed": "Symbolposition geändert.",
       "currency_added": "Währung hinzugefügt.",
@@ -275,6 +288,9 @@
     "edit": "Bearbeiten",
     "save": "Speichern",
     "close": "Schließen",
+    "clear": "Leeren",
+    "edit_single_tooltip": "Wähle einen einzelnen Eintrag zum Bearbeiten",
+    "delete_partial": "{success} von {total} gelöscht. Einige konnten nicht gelöscht werden.",
     "enter_new_name": "Neuen Namen eingeben",
     "no_rows": "Keine Zeilen zum Anzeigen",
     "no_recurring_transactions": "Keine wiederkehrenden Transaktionen erstellt",

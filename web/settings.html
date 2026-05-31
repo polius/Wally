@@ -30,12 +30,9 @@
     (function() {
       const theme = localStorage.getItem('theme') || 'system';
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      }
-      else {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
-      }
+      const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', resolved);
+      document.documentElement.style.colorScheme = resolved;
     })();
   </script>
 </head>
@@ -86,29 +83,55 @@
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500" data-i18n="settings.categories.title">Categories</div>
-          <div class="card-body d-flex flex-column" style="height: 100%;">
-            <div id="categoryBadges" class="flex-grow-1"></div>
-            <form id="categoryForm" class="modal-content mt-2" onsubmit="addCategory(event)">
-              <div class="input-group">
-                <input type="text" class="form-control" name="name" placeholder="Add new category" data-i18n-placeholder="settings.categories.placeholder" style="font-size: 0.9rem;" required />
-                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;" data-i18n="settings.categories.add">Add</button>
+          <div class="card-header pill-card-header" style="font-weight: 500">
+            <span data-i18n="settings.categories.title">Categories</span>
+            <div class="pill-card-header-right">
+              <div class="pill-card-actions" hidden id="categoryHeaderActions">
+                <span class="pill-selection-chip" id="categorySelectionChip" role="button" tabindex="0" data-i18n-title="common.clear" title="Clear">
+                  <span id="categorySelectionCount">0</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </span>
+                <button type="button" id="categoryEditBtn" class="btn btn-sm btn-primary" onclick="openEditFromSelection('category')">
+                  <span data-i18n="common.edit">Edit</span>
+                </button>
+                <button type="button" id="categoryDeleteBtn" class="btn btn-sm btn-danger" onclick="openDeleteFromSelection('category')">
+                  <span data-i18n="common.delete">Delete</span>
+                </button>
               </div>
-            </form>
+              <button class="btn btn-sm btn-success" data-i18n-title="settings.categories.add_tooltip" title="Add new category" style="width: 65px" data-bs-toggle="modal" data-bs-target="#categoryModalAdd">
+                <span data-i18n="settings.categories.add">Add</span>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="categoryBadges"></div>
           </div>
         </div>
       </div>
       <div class="col-md-6 mt-3">
         <div class="card h-100">
-          <div class="card-header" style="font-weight: 500" data-i18n="settings.tags.title">Tags</div>
-          <div class="card-body d-flex flex-column" style="height: 100%;">
-            <div id="tagBadges" class="flex-grow-1"></div>
-            <form id="tagForm" class="modal-content mt-2" onsubmit="addTag(event)">
-              <div class="input-group">
-                <input type="text" class="form-control" name="name" placeholder="Add new tag" data-i18n-placeholder="settings.tags.placeholder" style="font-size: 0.9rem;" required />
-                <button class="btn btn-primary" type="submit" style="font-size: 0.9rem;" data-i18n="settings.tags.add">Add</button>
+          <div class="card-header pill-card-header" style="font-weight: 500">
+            <span data-i18n="settings.tags.title">Tags</span>
+            <div class="pill-card-header-right">
+              <div class="pill-card-actions" hidden id="tagHeaderActions">
+                <span class="pill-selection-chip" id="tagSelectionChip" role="button" tabindex="0" data-i18n-title="common.clear" title="Clear">
+                  <span id="tagSelectionCount">0</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </span>
+                <button type="button" id="tagEditBtn" class="btn btn-sm btn-primary" onclick="openEditFromSelection('tag')">
+                  <span data-i18n="common.edit">Edit</span>
+                </button>
+                <button type="button" id="tagDeleteBtn" class="btn btn-sm btn-danger" onclick="openDeleteFromSelection('tag')">
+                  <span data-i18n="common.delete">Delete</span>
+                </button>
               </div>
-            </form>
+              <button class="btn btn-sm btn-success" data-i18n-title="settings.tags.add_tooltip" title="Add new tag" style="width: 65px" data-bs-toggle="modal" data-bs-target="#tagModalAdd">
+                <span data-i18n="settings.tags.add">Add</span>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="tagBadges"></div>
           </div>
         </div>
       </div>
@@ -241,29 +264,23 @@
     </div>
   </main>
 
-  <!-- Category Modal Actions -->
-  <div class="modal fade" id="categoryModalActions" tabindex="-1" aria-labelledby="categoryModalActionsLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-      <div class="modal-content">
+  <!-- Category Modal Add -->
+  <div class="modal fade" id="categoryModalAdd" tabindex="-1" aria-labelledby="categoryModalAddLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="categoryForm" class="modal-content" onsubmit="addCategory(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="categoryModalActionsLabel">
-            <strong id="categoryModalActionsName"></strong>
-          </h5>
+          <h5 class="modal-title" id="categoryModalAddLabel" data-i18n="settings.categories.add_title">Add Category</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body px-3 pb-3 pt-2">
-          <div class="d-grid gap-2">
-            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2" onclick="openEditCategoryModal()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <span data-i18n="common.edit">Edit</span>
-            </button>
-            <button type="button" class="btn btn-danger d-flex align-items-center justify-content-center gap-2 py-2" onclick="openDeleteCategoryModal()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span data-i18n="common.delete">Delete</span>
-            </button>
-          </div>
+        <div class="modal-body">
+          <label for="categoryAddInput" class="form-label" data-i18n="settings.categories.name_label">Category Name</label>
+          <input type="text" class="form-control" id="categoryAddInput" name="name" placeholder="Add new category" data-i18n-placeholder="settings.categories.placeholder" required />
         </div>
-      </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="settings.categories.add">Add</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -299,7 +316,7 @@
           <div class="dialog-warning-icon mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
-          <p class="mb-2"><span data-i18n="settings.categories.delete_confirm">Are you sure you want to delete the category</span> <strong id="categoryModalDeleteName"></strong>?</p>
+          <p class="mb-2" id="categoryModalDeletePrompt"></p>
           <div class="alert alert-warning d-inline-flex align-items-start gap-2 mb-0 text-start" style="font-size: 0.85rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span data-i18n="settings.categories.delete_warning">This will only work if there are no transactions using this category.</span>
@@ -313,29 +330,23 @@
     </div>
   </div>
 
-  <!-- Tag Modal Actions -->
-  <div class="modal fade" id="tagModalActions" tabindex="-1" aria-labelledby="tagModalActionsLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-      <div class="modal-content">
+  <!-- Tag Modal Add -->
+  <div class="modal fade" id="tagModalAdd" tabindex="-1" aria-labelledby="tagModalAddLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="tagForm" class="modal-content" onsubmit="addTag(event)">
         <div class="modal-header">
-          <h5 class="modal-title" id="tagModalActionsLabel">
-            <strong id="tagModalActionsName"></strong>
-          </h5>
+          <h5 class="modal-title" id="tagModalAddLabel" data-i18n="settings.tags.add_title">Add Tag</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body px-3 pb-3 pt-2">
-          <div class="d-grid gap-2">
-            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2" onclick="openEditTagModal()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <span data-i18n="common.edit">Edit</span>
-            </button>
-            <button type="button" class="btn btn-danger d-flex align-items-center justify-content-center gap-2 py-2" onclick="openDeleteTagModal()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span data-i18n="common.delete">Delete</span>
-            </button>
-          </div>
+        <div class="modal-body">
+          <label for="tagAddInput" class="form-label" data-i18n="settings.tags.name_label">Tag Name</label>
+          <input type="text" class="form-control" id="tagAddInput" name="name" placeholder="Add new tag" data-i18n-placeholder="settings.tags.placeholder" required />
         </div>
-      </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 120px" data-i18n="settings.tags.add">Add</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -371,7 +382,7 @@
           <div class="dialog-warning-icon mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
-          <p class="mb-2"><span data-i18n="settings.tags.delete_confirm">Are you sure you want to delete the tag</span> <strong id="tagModalDeleteName"></strong>?</p>
+          <p class="mb-2" id="tagModalDeletePrompt"></p>
           <div class="alert alert-warning d-inline-flex align-items-start gap-2 mb-0 text-start" style="font-size: 0.85rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span data-i18n="settings.tags.delete_warning">This tag will be removed from all transactions.</span>

@@ -60,6 +60,59 @@ input, .option {
   transform: scale(1.03);
 }
 
+.badge.selected {
+  background-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+/* Card header layout for selectable pill sections (Categories, Tags) */
+.pill-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  /* Reserve height for the action row so the header doesn't jump
+     when the contextual Edit/Delete buttons appear or disappear. */
+  min-height: 60px;
+}
+
+.pill-card-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pill-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pill-selection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2px 8px 2px 10px;
+  background-color: var(--pill-bg);
+  color: var(--pill-color);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.pill-selection-chip:hover {
+  background-color: rgba(128, 128, 128, 0.2);
+}
+
+.pill-selection-chip svg {
+  opacity: 0.7;
+}
+
+
 .text-green {
   color: #198754;
 }

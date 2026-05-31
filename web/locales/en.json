@@ -17,6 +17,10 @@
       "tags": "Tags",
       "untagged": "Untagged"
     },
+    "chart_type": {
+      "line": "Line",
+      "stacked": "Stacked"
+    },
     "cashflow": {
       "income": "Income",
       "expenses": "Expenses",
@@ -34,6 +38,7 @@
       "to_date": "To date (All transactions)",
       "from": "From:",
       "to": "To:",
+      "chart_type_label": "Chart type:",
       "apply": "Apply",
       "invalid_date_range": "From month must be before or equal to the to month."
     }
@@ -100,20 +105,26 @@
       "title": "Categories",
       "placeholder": "Add new category",
       "add": "Add",
+      "add_title": "Add Category",
+      "add_tooltip": "Add new category",
       "edit_title": "Edit Category",
       "delete_title": "Delete Category",
       "name_label": "Category Name",
       "delete_confirm": "Are you sure you want to delete the category",
+      "delete_confirm_many": "Are you sure you want to delete these {count} categories?",
       "delete_warning": "This will only work if there are no transactions using this category."
     },
     "tags": {
       "title": "Tags",
       "placeholder": "Add new tag",
       "add": "Add",
+      "add_title": "Add Tag",
+      "add_tooltip": "Add new tag",
       "edit_title": "Edit Tag",
       "delete_title": "Delete Tag",
       "name_label": "Tag Name",
       "delete_confirm": "Are you sure you want to delete the tag",
+      "delete_confirm_many": "Are you sure you want to delete these {count} tags?",
       "delete_warning": "This tag will be removed from all transactions."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "Category updated successfully.",
       "category_added": "Category added.",
       "category_deleted": "Category deleted.",
+      "categories_deleted": "{count} categories deleted.",
       "tag_updated": "Tag updated successfully.",
       "tag_added": "Tag added.",
       "tag_deleted": "Tag deleted.",
+      "tags_deleted": "{count} tags deleted.",
       "currency_changed": "Currency changed.",
       "currency_position_changed": "Symbol position changed.",
       "currency_added": "Currency added.",
@@ -275,6 +288,9 @@
     "edit": "Edit",
     "save": "Save",
     "close": "Close",
+    "clear": "Clear",
+    "edit_single_tooltip": "Select a single item to edit",
+    "delete_partial": "Deleted {success} of {total}. Some couldn't be deleted.",
     "enter_new_name": "Enter new name",
     "no_rows": "No Rows To Show",
     "no_recurring_transactions": "No recurring transactions created",

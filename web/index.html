@@ -30,12 +30,9 @@
     (function() {
       const theme = localStorage.getItem('theme') || 'system';
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      }
-      else {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
-      }
+      const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', resolved);
+      document.documentElement.style.colorScheme = resolved;
     })();
   </script>
 
@@ -269,6 +266,22 @@
                 </div>
               </div>
             </div>
+
+            <!-- Chart Type -->
+            <hr class="my-3">
+            <p class="mb-2 fw-medium" data-i18n="dashboard.modal.chart_type_label">Chart type:</p>
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="radio" name="chartType" value="line" id="chartTypeLine" checked>
+              <label class="form-check-label" for="chartTypeLine" data-i18n="dashboard.chart_type.line">
+                Line
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="chartType" value="stacked" id="chartTypeStacked">
+              <label class="form-check-label" for="chartTypeStacked" data-i18n="dashboard.chart_type.stacked">
+                Stacked
+              </label>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
@@ -292,7 +305,7 @@
           <!-- Name -->
           <div class="mb-3">
             <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name" data-i18n-placeholder="transactions.name_placeholder" required autocomplete="off" />
+            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter transaction name" data-i18n-placeholder="transactions.name_placeholder" autocomplete="off" />
           </div>
 
           <!-- Category -->

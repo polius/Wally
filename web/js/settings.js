@@ -8,6 +8,13 @@ let login;
 let categorySelected;
 let tagSelected;
 
+// Multi-select state for the Categories / Tags pill sections.
+// Names of currently-selected pills; drives the action buttons in the card header.
+const pillSelections = {
+  category: new Set(),
+  tag: new Set(),
+};
+
 let gridInstance;
 let gridApi;
 
@@ -90,7 +97,7 @@ async function getCategories() {
 
   const data = await response.json();
   await renderCategories(data);
-  return categories
+  return data;
 }
 
 async function getTags() {
@@ -149,43 +156,118 @@ async function getLogin() {
 document.getElementById('categoryModalEdit').addEventListener('shown.bs.modal', () => {
   document.getElementById('categoryEditInput').focus();
 });
+document.getElementById('categoryModalAdd').addEventListener('shown.bs.modal', () => {
+  document.getElementById('categoryAddInput').focus();
+});
 
-function openCategoryActionsModal(category) {
-  // Store selected category
-  categorySelected = category;
+// Shared section config — Categories and Tags use identical multi-select UX.
+const PILL_SECTIONS = {
+  category: {
+    selection: () => pillSelections.category,
+    items: () => categories,
+    headerActions: 'categoryHeaderActions',
+    countEl: 'categorySelectionCount',
+    chip: 'categorySelectionChip',
+    editBtn: 'categoryEditBtn',
+    deleteBtn: 'categoryDeleteBtn',
+    editModal: 'categoryModalEdit',
+    editInput: 'categoryEditInput',
+    deleteModal: 'categoryModalDelete',
+    deletePrompt: 'categoryModalDeletePrompt',
+    confirmOneKey: 'settings.categories.delete_confirm',
+    confirmManyKey: 'settings.categories.delete_confirm_many',
+    deletedManyKey: 'settings.messages.categories_deleted',
+    deletedOneKey: 'settings.messages.category_deleted',
+    rerender: () => renderCategories(categories),
+  },
+  tag: {
+    selection: () => pillSelections.tag,
+    items: () => tags,
+    headerActions: 'tagHeaderActions',
+    countEl: 'tagSelectionCount',
+    chip: 'tagSelectionChip',
+    editBtn: 'tagEditBtn',
+    deleteBtn: 'tagDeleteBtn',
+    editModal: 'tagModalEdit',
+    editInput: 'tagEditInput',
+    deleteModal: 'tagModalDelete',
+    deletePrompt: 'tagModalDeletePrompt',
+    confirmOneKey: 'settings.tags.delete_confirm',
+    confirmManyKey: 'settings.tags.delete_confirm_many',
+    deletedManyKey: 'settings.messages.tags_deleted',
+    deletedOneKey: 'settings.messages.tag_deleted',
+    rerender: () => renderTags(tags),
+  },
+};
 
-  // Update modal with category name
-  document.getElementById('categoryModalActionsName').textContent = category;
-
-  // Show modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalActions'));
-  modal.show();
+function togglePillSelection(section, name) {
+  const set = PILL_SECTIONS[section].selection();
+  if (set.has(name)) set.delete(name);
+  else set.add(name);
+  PILL_SECTIONS[section].rerender();
 }
 
-function openEditCategoryModal() {
-  // Hide actions modal
-  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
-  actionsModal.hide();
-
-  // Set the current name in the edit input
-  document.getElementById('categoryEditInput').value = categorySelected;
-
-  // Show edit modal
-  const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalEdit'));
-  editModal.show();
+function clearPillSelection(section) {
+  PILL_SECTIONS[section].selection().clear();
+  PILL_SECTIONS[section].rerender();
 }
 
-function openDeleteCategoryModal() {
-  // Hide actions modal
-  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('categoryModalActions'));
-  actionsModal.hide();
+function updatePillHeaderState(section) {
+  const cfg = PILL_SECTIONS[section];
+  const count = cfg.selection().size;
+  const actions = document.getElementById(cfg.headerActions);
+  const editBtn = document.getElementById(cfg.editBtn);
+  const countEl = document.getElementById(cfg.countEl);
+  if (!actions || !editBtn || !countEl) return;
 
-  // Update delete modal with category name
-  document.getElementById('categoryModalDeleteName').textContent = categorySelected;
+  // display: none (via hidden) gives instant hide; the header's min-height
+  // keeps it from jumping when the buttons appear/disappear.
+  actions.hidden = count === 0;
+  countEl.textContent = String(count);
 
-  // Show delete modal
-  const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
-  deleteModal.show();
+  // Edit makes sense only for a single selection; greyed out otherwise.
+  editBtn.disabled = count !== 1;
+  editBtn.title = count > 1 ? i18n.t('common.edit_single_tooltip') : '';
+}
+
+// Wire up the clear-selection chip once at startup (HTML element exists from page load).
+['category', 'tag'].forEach(section => {
+  const chip = document.getElementById(PILL_SECTIONS[section].chip);
+  if (!chip) return;
+  chip.addEventListener('click', () => clearPillSelection(section));
+  chip.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      clearPillSelection(section);
+    }
+  });
+});
+
+function openEditFromSelection(section) {
+  const cfg = PILL_SECTIONS[section];
+  const set = cfg.selection();
+  if (set.size !== 1) return;
+  const name = [...set][0];
+  if (section === 'category') categorySelected = name;
+  else tagSelected = name;
+  document.getElementById(cfg.editInput).value = name;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById(cfg.editModal)).show();
+}
+
+function openDeleteFromSelection(section) {
+  const cfg = PILL_SECTIONS[section];
+  const set = cfg.selection();
+  if (set.size === 0) return;
+  const names = [...set];
+  const prompt = document.getElementById(cfg.deletePrompt);
+  if (names.length === 1) {
+    prompt.innerHTML = `${escapeHtml(i18n.t(cfg.confirmOneKey))} <strong>${escapeHtml(names[0])}</strong>?`;
+  } else {
+    const lead = i18n.t(cfg.confirmManyKey).replace('{count}', String(names.length));
+    const shown = names.length > 5 ? names.slice(0, 5).join(', ') + `, +${names.length - 5}` : names.join(', ');
+    prompt.innerHTML = `${escapeHtml(lead)}<br><strong>${escapeHtml(shown)}</strong>`;
+  }
+  bootstrap.Modal.getOrCreateInstance(document.getElementById(cfg.deleteModal)).show();
 }
 
 async function editCategorySubmit(event) {
@@ -223,7 +305,8 @@ async function editCategorySubmit(event) {
       // Show toast with info about transaction updates
       bootstrap.showToast({body: i18n.t('settings.messages.category_updated'), delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
-      // Refresh the categories
+      // The renamed item no longer matches the previously-selected name.
+      pillSelections.category.clear();
       categories = await getCategories();
     }
   }
@@ -235,6 +318,12 @@ async function renderCategories(categories) {
   const container = document.getElementById('categoryBadges');
   container.innerHTML = ''; // clear previous badges
 
+  // Drop stale selections — items that no longer exist in the list.
+  const validNames = new Set(categories);
+  for (const name of pillSelections.category) {
+    if (!validNames.has(name)) pillSelections.category.delete(name);
+  }
+
   if (categories.length == 0) {
     const empty = document.createElement('span');
     empty.style.fontSize = '0.9rem'
@@ -244,35 +333,21 @@ async function renderCategories(categories) {
   }
   else {
     categories.forEach(category => {
-      // Create badge span
       const badge = document.createElement('span');
       badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
+      if (pillSelections.category.has(category)) badge.classList.add('selected');
       badge.style.height = '34px';
       badge.style.paddingLeft = '12px';
       badge.style.paddingRight = '12px';
       badge.style.fontSize = '0.9rem';
       badge.style.fontWeight = '400';
       badge.style.cursor = 'pointer';
-      badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
       badge.textContent = category;
-
-      // Add hover effect
-      badge.addEventListener('mouseenter', function() {
-        badge.style.opacity = '0.8';
-        badge.style.transform = 'scale(1.05)';
-      });
-      badge.addEventListener('mouseleave', function() {
-        badge.style.opacity = '1';
-        badge.style.transform = 'scale(1)';
-      });
-
-      // Open actions modal on click
-      badge.onclick = function() { openCategoryActionsModal(category) };
-
-      // Append badge to container
+      badge.onclick = () => togglePillSelection('category', category);
       container.appendChild(badge);
     });
   }
+  updatePillHeaderState('category');
 
   // Update the select dropdown in recurring transactions
   const select = document.getElementById('categorySelect');
@@ -330,6 +405,7 @@ async function addCategory(event) {
       categories = await getCategories();
       bootstrap.showToast({body: i18n.t('settings.messages.category_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
       document.getElementById('categoryForm').reset();
+      bootstrap.Modal.getInstance(document.getElementById('categoryModalAdd'))?.hide();
     }
   }
   catch (error) {
@@ -337,53 +413,64 @@ async function addCategory(event) {
   }
 }
 
-function deleteCategory(category) {
-  // Store selected category
-  categorySelected = category;
-
-  // Update delete modal with category name
-  document.getElementById('categoryModalDeleteName').textContent = categorySelected;
-
-  // Show modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModalDelete'));
-  modal.show();
-}
-
 async function deleteCategorySubmit(event) {
   event.preventDefault();
+  await bulkDeletePills('category', {
+    endpoint: (name) => `${API_URL}/categories/${encodeURIComponent(name)}`,
+    refresh: async () => { categories = await getCategories(); },
+  });
+}
 
-  try {
-    const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
+// Shared bulk-delete handler for the Categories / Tags pill sections.
+// Fans out DELETEs in parallel and reports aggregated results — including
+// partial failures (e.g. a category still in use can't be deleted).
+async function bulkDeletePills(section, { endpoint, refresh }) {
+  const cfg = PILL_SECTIONS[section];
+  const names = [...cfg.selection()];
+  if (names.length === 0) return;
 
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
+  const results = await Promise.all(names.map(async (name) => {
+    try {
+      const response = await fetch(endpoint(name), { method: 'DELETE', credentials: 'include' });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return { name, ok: false, error: 'unauthorized' };
+      }
+      if (!response.ok) {
+        let detail = `HTTP ${response.status}`;
+        try {
+          const json = await response.json();
+          detail = json.detail?.[0]?.msg || json.detail || detail;
+        } catch (_) {}
+        return { name, ok: false, error: detail };
+      }
+      return { name, ok: true };
+    } catch (err) {
+      return { name, ok: false, error: err.message || String(err) };
     }
+  }));
 
-    const json = await response.json()
+  bootstrap.Modal.getInstance(document.getElementById(cfg.deleteModal))?.hide();
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalDelete'));
-      modal.hide();
+  const succeeded = results.filter(r => r.ok);
+  const failed = results.filter(r => !r.ok);
 
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.category_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+  // Refresh the list before toasting so deleted items disappear visually first.
+  await refresh();
 
-      // Refresh the categories
-      categories = await getCategories();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+  if (failed.length === 0) {
+    const body = succeeded.length === 1
+      ? i18n.t(cfg.deletedOneKey)
+      : i18n.t(cfg.deletedManyKey).replace('{count}', String(succeeded.length));
+    bootstrap.showToast({ body, delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success" });
+  } else if (succeeded.length === 0) {
+    // Total failure — surface the first failure's detail (typically all fail for the same reason).
+    bootstrap.showToast({ body: failed[0].error, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger" });
+  } else {
+    const body = i18n.t('common.delete_partial')
+      .replace('{success}', String(succeeded.length))
+      .replace('{total}', String(results.length));
+    bootstrap.showToast({ body, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-warning" });
   }
 }
 
@@ -393,44 +480,9 @@ async function deleteCategorySubmit(event) {
 document.getElementById('tagModalEdit').addEventListener('shown.bs.modal', () => {
   document.getElementById('tagEditInput').focus();
 });
-
-function openTagActionsModal(tag) {
-  // Store selected tag
-  tagSelected = tag;
-
-  // Update modal with tag name
-  document.getElementById('tagModalActionsName').textContent = tag;
-
-  // Show modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalActions'));
-  modal.show();
-}
-
-function openEditTagModal() {
-  // Hide actions modal
-  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
-  actionsModal.hide();
-
-  // Set the current name in the edit input
-  document.getElementById('tagEditInput').value = tagSelected;
-
-  // Show edit modal
-  const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalEdit'));
-  editModal.show();
-}
-
-function openDeleteTagModal() {
-  // Hide actions modal
-  const actionsModal = bootstrap.Modal.getInstance(document.getElementById('tagModalActions'));
-  actionsModal.hide();
-
-  // Update delete modal with tag name
-  document.getElementById('tagModalDeleteName').textContent = tagSelected;
-
-  // Show delete modal
-  const deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
-  deleteModal.show();
-}
+document.getElementById('tagModalAdd').addEventListener('shown.bs.modal', () => {
+  document.getElementById('tagAddInput').focus();
+});
 
 async function editTagSubmit(event) {
   event.preventDefault();
@@ -467,7 +519,8 @@ async function editTagSubmit(event) {
       // Show toast with info about transaction updates
       bootstrap.showToast({body: i18n.t('settings.messages.tag_updated'), delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
 
-      // Refresh the tags
+      // The renamed item no longer matches the previously-selected name.
+      pillSelections.tag.clear();
       tags = await getTags();
     }
   }
@@ -479,6 +532,12 @@ async function renderTags(tags) {
   const container = document.getElementById('tagBadges');
   container.innerHTML = ''; // clear previous badges
 
+  // Drop stale selections — items that no longer exist in the list.
+  const validNames = new Set(tags);
+  for (const name of pillSelections.tag) {
+    if (!validNames.has(name)) pillSelections.tag.delete(name);
+  }
+
   if (tags.length == 0) {
     const empty = document.createElement('span');
     empty.style.fontSize = '0.9rem'
@@ -488,35 +547,21 @@ async function renderTags(tags) {
   }
   else {
     tags.forEach(tag => {
-      // Create badge span
       const badge = document.createElement('span');
       badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
+      if (pillSelections.tag.has(tag)) badge.classList.add('selected');
       badge.style.height = '34px';
       badge.style.paddingLeft = '12px';
       badge.style.paddingRight = '12px';
       badge.style.fontSize = '0.9rem';
       badge.style.fontWeight = '400';
       badge.style.cursor = 'pointer';
-      badge.style.transition = 'opacity 0.2s ease, transform 0.1s ease';
       badge.textContent = tag;
-
-      // Add hover effect
-      badge.addEventListener('mouseenter', function() {
-        badge.style.opacity = '0.8';
-        badge.style.transform = 'scale(1.05)';
-      });
-      badge.addEventListener('mouseleave', function() {
-        badge.style.opacity = '1';
-        badge.style.transform = 'scale(1)';
-      });
-
-      // Open actions modal on click
-      badge.onclick = function() { openTagActionsModal(tag) };
-
-      // Append badge to container
+      badge.onclick = () => togglePillSelection('tag', tag);
       container.appendChild(badge);
     });
   }
+  updatePillHeaderState('tag');
 }
 
 async function addTag(event) {
@@ -550,6 +595,7 @@ async function addTag(event) {
       tags = await getTags();
       bootstrap.showToast({body: i18n.t('settings.messages.tag_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
       document.getElementById('tagForm').reset();
+      bootstrap.Modal.getInstance(document.getElementById('tagModalAdd'))?.hide();
     }
   }
   catch (error) {
@@ -557,54 +603,12 @@ async function addTag(event) {
   }
 }
 
-function deleteTag(tag) {
-  // Store selected tag
-  tagSelected = tag;
-
-  // Update delete modal with tag name
-  document.getElementById('tagModalDeleteName').textContent = tagSelected;
-
-  // Show modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('tagModalDelete'));
-  modal.show();
-}
-
 async function deleteTagSubmit(event) {
   event.preventDefault();
-
-  try {
-    const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalDelete'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.tag_deleted'), delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the tags
-      tags = await getTags();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error.message || error}`, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
+  await bulkDeletePills('tag', {
+    endpoint: (name) => `${API_URL}/tags/${encodeURIComponent(name)}`,
+    refresh: async () => { tags = await getTags(); },
+  });
 }
 
 // ------------
@@ -921,12 +925,9 @@ async function changeTheme(event) {
   localStorage.setItem('theme', theme);
 
   // Apply the theme to bootstrap elements
-  if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-    document.documentElement.setAttribute('data-bs-theme', 'light');
-  }
-  else {
-    document.documentElement.setAttribute('data-bs-theme', 'dark');
-  }
+  const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-bs-theme', resolved);
+  document.documentElement.style.colorScheme = resolved;
 
   // Recreate the AG Grid with the new theme
   initGrid();
@@ -1310,6 +1311,30 @@ async function deleteApiKeySubmit(event) {
 // -------------------
 // - IMPORT / EXPORT -
 // -------------------
+
+// Tags are stored as arrays internally but must fit in a single CSV cell.
+// We embed a "sub-CSV": the cell value is itself a comma-separated list where
+// each tag is CSV-quoted only if it contains a comma, quote, or newline. Using
+// Papa for both directions keeps the round-trip symmetric — a tag like
+// "Home, Office" survives export+import as a single tag instead of being
+// silently split.
+function tagsToCsvCell(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return '';
+  const normalized = tags.map(t => (t == null ? '' : String(t)));
+  return Papa.unparse([normalized], { header: false }).replace(/\r?\n$/, '');
+}
+
+function csvCellToTags(cell) {
+  if (cell == null) return [];
+  const str = String(cell).trim();
+  if (str === '') return [];
+  const { data } = Papa.parse(str, { header: false, skipEmptyLines: false });
+  const row = data?.[0];
+  if (!Array.isArray(row)) return [];
+  // Trim whitespace (forgiving for hand-edited CSVs) and drop empty entries.
+  return row.map(t => (t == null ? '' : String(t).trim())).filter(t => t !== '');
+}
+
 async function exportToCSV() {
   try {
     const response = await fetch(`${API_URL}/transactions`, {
@@ -1335,9 +1360,11 @@ async function exportToCSV() {
         return;
       }
 
-      // Generate CSV only with mandatory columns
+      // Serialize each transaction's tag array into a single CSV cell value
+      // so tags containing commas/quotes survive the round-trip.
+      const rows = json.map(tx => ({ ...tx, tags: tagsToCsvCell(tx.tags) }));
       const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-      const csv = Papa.unparse(json, {
+      const csv = Papa.unparse(rows, {
         columns: mandatoryColumns
       });
 
@@ -1370,7 +1397,7 @@ async function importFromCSV() {
     header: true,
     skipEmptyLines: true,
     transform: (value, column) => {
-      if (column === "tags") return value && value.trim() !== "" ? value.split(",").map(tag => tag.trim()) : [];
+      if (column === "tags") return csvCellToTags(value);
       return value;
     }
   });
