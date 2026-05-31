@@ -22,12 +22,9 @@
       (function() {
         const theme = localStorage.getItem('theme') || 'system';
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-          document.documentElement.setAttribute('data-bs-theme', 'light');
-        }
-        else {
-          document.documentElement.setAttribute('data-bs-theme', 'dark');
-        }
+        const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.style.colorScheme = resolved;
       })();
     </script>
 </head>
