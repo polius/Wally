@@ -42,7 +42,8 @@ async function main() {
   // Render categories, tags and name autocomplete
   await renderCategories();
   await renderTags();
-  await renderNameAutocomplete();
+  nameInput = document.getElementById('nameInput');
+  renderNameAutocomplete();
 
   // Initialize the grid
   gridApi = await initGrid();
@@ -156,71 +157,122 @@ async function renderTags() {
   });
 }
 
-async function renderNameAutocomplete() {
+function renderNameAutocomplete() {
   const nameCategoryMap = new Map();
 
-  nameInput = new TomSelect('#nameInput', {
-    create: true,
-    addPrecedence: true,
-    maxOptions: 10,
-    maxItems: 1,
-    selectOnTab: true,
-    createOnBlur: true,
-    loadThrottle: 300,
-    onType: function(str) {
-      if (!str || str.length === 0) {
-        this.clearOptions();
-        this.close();
-      }
-    },
-    onItemAdd: function(value) {
-      // Only auto-fill category if the selected name came from the API suggestions
-      if (nameCategoryMap.has(value)) {
-        const category = nameCategoryMap.get(value);
-        if (category) {
-          const categorySelect = document.getElementById('categorySelect');
-          const categoryOptions = Array.from(categorySelect.options).map(o => o.value);
-          if (categoryOptions.includes(category)) {
-            categorySelect.value = category;
-          }
-        }
-      }
-    },
-    load: async function(query, callback) {
-      if (!query || query.length === 0) {
-        this.clearOptions();
-        this.close();
-        return callback();
-      }
-      
-      try {
-        const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-        
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return callback();
-        }
-        
-        const results = await response.json();
-        results.forEach(r => nameCategoryMap.set(r.name, r.category));
-        const options = results.map(r => ({ value: r.name, text: r.name }));
-        callback(options);
-      } catch (error) {
-        console.error('Error loading transaction names:', error);
-        callback();
-      }
-    },
-    render: {
-      option_create: function(data, escape) {
-        return '<div class="create">' + escape(data.input) + '</div>';
-      },
-      no_results: function(data, escape) {
-        return '';
-      },
+  // Custom dropdown — native <datalist> popups ignore color-scheme on most
+  // Chromium builds and render dark even when the page is in light mode.
+  const wrapper = document.createElement('div');
+  wrapper.className = 'name-autocomplete-wrapper';
+  nameInput.parentNode.insertBefore(wrapper, nameInput);
+  wrapper.appendChild(nameInput);
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'name-autocomplete-dropdown';
+  dropdown.setAttribute('role', 'listbox');
+  dropdown.hidden = true;
+  wrapper.appendChild(dropdown);
+
+  let currentResults = [];
+  let activeIndex = -1;
+
+  const escapeHtml = (str) => {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  };
+
+  const applyCategoryFor = (name) => {
+    const category = nameCategoryMap.get(name);
+    if (!category) return;
+    const categorySelect = document.getElementById('categorySelect');
+    if ([...categorySelect.options].some(o => o.value === category)) {
+      categorySelect.value = category;
     }
+  };
+
+  const hideDropdown = () => {
+    dropdown.hidden = true;
+    activeIndex = -1;
+  };
+
+  const render = () => {
+    if (currentResults.length === 0) {
+      hideDropdown();
+      return;
+    }
+    dropdown.innerHTML = currentResults.map((r, i) =>
+      `<div class="name-autocomplete-item${i === activeIndex ? ' active' : ''}" role="option" data-index="${i}">${escapeHtml(r.name)}</div>`
+    ).join('');
+    dropdown.hidden = false;
+  };
+
+  const selectIndex = (i) => {
+    const item = currentResults[i];
+    if (!item) return;
+    nameInput.value = item.name;
+    applyCategoryFor(item.name);
+    hideDropdown();
+  };
+
+  let searchTimer;
+  nameInput.addEventListener('input', () => {
+    applyCategoryFor(nameInput.value);
+
+    clearTimeout(searchTimer);
+    const query = nameInput.value.trim();
+    if (!query) {
+      currentResults = [];
+      hideDropdown();
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
+      if (response.status === 401) return window.location.href = '/login';
+      if (!response.ok) return;
+      const results = await response.json();
+      results.forEach(r => nameCategoryMap.set(r.name, r.category));
+      currentResults = results;
+      activeIndex = -1;
+      render();
+    }, 300);
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    if (dropdown.hidden || currentResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % currentResults.length;
+      render();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = activeIndex <= 0 ? currentResults.length - 1 : activeIndex - 1;
+      render();
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      selectIndex(activeIndex);
+    } else if (e.key === 'Escape') {
+      hideDropdown();
+    }
+  });
+
+  // mousedown fires before the input's blur, so the selection still applies
+  dropdown.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.name-autocomplete-item');
+    if (!item) return;
+    e.preventDefault();
+    selectIndex(parseInt(item.dataset.index, 10));
+  });
+
+  nameInput.addEventListener('blur', () => {
+    setTimeout(hideDropdown, 150);
+  });
+
+  // Reset state whenever the modal closes so the dropdown doesn't reappear
+  // with stale results on the next open.
+  document.getElementById('transactionModal').addEventListener('hidden.bs.modal', () => {
+    currentResults = [];
+    hideDropdown();
   });
 }
 
@@ -290,22 +342,31 @@ async function initGrid() {
         autoHeight: true,
         cellRenderer: (params) => {
           const container = document.createElement('span');
+          const name = params.data?.name ?? '';
+
+          const appendName = () => {
+            if (name) {
+              const nameSpan = document.createElement('span');
+              nameSpan.textContent = name;
+              container.appendChild(nameSpan);
+            } else {
+              // Em-dash for empty names — typographic "no value" convention,
+              // disambiguates from a user-typed "-".
+              const blank = document.createElement('span');
+              blank.className = 'text-secondary fst-italic';
+              blank.textContent = '—';
+              container.appendChild(blank);
+            }
+          };
 
           if (params.data?.recurringID) {
-            // SVG icon
             container.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="vertical-align: middle; margin-right: 6px;">
             <path d="M488 192l-144 0c-9.7 0-18.5-5.8-22.2-14.8s-1.7-19.3 5.2-26.2l46.7-46.7c-75.3-58.6-184.3-53.3-253.5 15.9-75 75-75 196.5 0 271.5s196.5 75 271.5 0c8.2-8.2 15.5-16.9 21.9-26.1 10.1-14.5 30.1-18 44.6-7.9s18 30.1 7.9 44.6c-8.5 12.2-18.2 23.8-29.1 34.7-100 100-262.1 100-362 0S-25 175 75 75c94.3-94.3 243.7-99.6 344.3-16.2L471 7c6.9-6.9 17.2-8.9 26.2-5.2S512 14.3 512 24l0 144c0 13.3-10.7 24-24 24z"/>
             </svg>
             `;
-            // Add the name text after the SVG
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = params.data?.name;
-            container.appendChild(nameSpan);
-          } else {
-            // Just the name if no recurringID
-            container.textContent = params.data?.name;
           }
+          appendName();
           return container;
         }
       },
@@ -619,7 +680,6 @@ function addTransaction() {
   document.getElementById('modalSubmitButton').textContent = i18n.t('transactions.add');
   document.getElementById('transactionForm').reset();
   document.getElementById('categorySelect').value = "";
-  nameInput.clear();
   tagsInput.setValue([]);
   document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
   document.getElementById('recurringElement').style.display = 'block';
@@ -634,7 +694,7 @@ function editTransaction() {
   toggleRecurring(false);
 
   // Assign values
-  nameInput.setValue(selectedRow.name);
+  nameInput.value = selectedRow.name;
   document.getElementById('categorySelect').value = selectedRow.category
   selectedRow.tags.forEach(tag => {
     tagsInput.addOption({ value: tag, text: tag }, user_created=true);
