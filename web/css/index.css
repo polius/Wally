@@ -74,6 +74,41 @@ input, .option {
   color: var(--pill-color)!important;
 }
 
+/* Name field autocomplete (custom dropdown — replaces native <datalist>
+   so the popup follows the page theme instead of the OS/browser default). */
+.name-autocomplete-wrapper {
+  position: relative;
+}
+.name-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+  box-shadow: var(--card-shadow);
+  z-index: 1060;
+}
+.name-autocomplete-item {
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.name-autocomplete-item:hover,
+.name-autocomplete-item.active {
+  background-color: var(--bs-tertiary-bg);
+}
+:root[data-bs-theme="dark"] .name-autocomplete-item:hover,
+:root[data-bs-theme="dark"] .name-autocomplete-item.active {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 .form-check-input {
   background-color: white;
 }
