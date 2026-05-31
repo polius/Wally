@@ -17,6 +17,10 @@
       "tags": "العلامات",
       "untagged": "بدون علامة"
     },
+    "chart_type": {
+      "line": "خط",
+      "stacked": "متراكم"
+    },
     "cashflow": {
       "income": "الدخل",
       "expenses": "النفقات",
@@ -34,6 +38,7 @@
       "to_date": "حتى الآن (جميع المعاملات)",
       "from": "من:",
       "to": "إلى:",
+      "chart_type_label": "نوع الرسم البياني:",
       "apply": "تطبيق",
       "invalid_date_range": "يجب أن يكون شهر البداية قبل أو يساوي شهر النهاية."
     }
@@ -100,20 +105,26 @@
       "title": "الفئات",
       "placeholder": "إضافة فئة جديدة",
       "add": "إضافة",
+      "add_title": "إضافة فئة",
+      "add_tooltip": "إضافة فئة جديدة",
       "edit_title": "تعديل الفئة",
       "delete_title": "حذف الفئة",
       "name_label": "اسم الفئة",
       "delete_confirm": "هل أنت متأكد من حذف الفئة",
+      "delete_confirm_many": "هل تريد بالتأكيد حذف هذه الفئات الـ {count}؟",
       "delete_warning": "سيعمل هذا فقط إذا لم تكن هناك معاملات تستخدم هذه الفئة."
     },
     "tags": {
       "title": "العلامات",
       "placeholder": "إضافة علامة جديدة",
       "add": "إضافة",
+      "add_title": "إضافة علامة",
+      "add_tooltip": "إضافة علامة جديدة",
       "edit_title": "تعديل العلامة",
       "delete_title": "حذف العلامة",
       "name_label": "اسم العلامة",
       "delete_confirm": "هل أنت متأكد من حذف العلامة",
+      "delete_confirm_many": "هل تريد بالتأكيد حذف هذه العلامات الـ {count}؟",
       "delete_warning": "ستتم إزالة هذه العلامة من جميع المعاملات."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "تم تحديث الفئة بنجاح.",
       "category_added": "تمت إضافة الفئة.",
       "category_deleted": "تم حذف الفئة.",
+      "categories_deleted": "تم حذف {count} فئة.",
       "tag_updated": "تم تحديث العلامة بنجاح.",
       "tag_added": "تمت إضافة العلامة.",
       "tag_deleted": "تم حذف العلامة.",
+      "tags_deleted": "تم حذف {count} علامة.",
       "currency_changed": "تم تغيير العملة.",
       "currency_position_changed": "تم تغيير موضع الرمز.",
       "currency_added": "تمت إضافة العملة.",
@@ -275,6 +288,9 @@
     "edit": "تعديل",
     "save": "حفظ",
     "close": "إغلاق",
+    "clear": "مسح",
+    "edit_single_tooltip": "اختر عنصرًا واحدًا فقط للتعديل",
+    "delete_partial": "تم حذف {success} من {total}. تعذر حذف البعض.",
     "enter_new_name": "أدخل اسمًا جديدًا",
     "no_rows": "لا توجد صفوف للعرض",
     "no_recurring_transactions": "لم يتم إنشاء معاملات متكررة",

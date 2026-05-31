@@ -17,6 +17,10 @@
       "tags": "태그",
       "untagged": "태그 없음"
     },
+    "chart_type": {
+      "line": "선",
+      "stacked": "누적"
+    },
     "cashflow": {
       "income": "수입",
       "expenses": "지출",
@@ -34,6 +38,7 @@
       "to_date": "현재까지 (모든 거래)",
       "from": "시작:",
       "to": "종료:",
+      "chart_type_label": "차트 유형:",
       "apply": "적용",
       "invalid_date_range": "시작 월은 종료 월보다 이전이거나 같아야 합니다."
     }
@@ -100,20 +105,26 @@
       "title": "카테고리",
       "placeholder": "새 카테고리 추가",
       "add": "추가",
+      "add_title": "카테고리 추가",
+      "add_tooltip": "새 카테고리 추가",
       "edit_title": "카테고리 편집",
       "delete_title": "카테고리 삭제",
       "name_label": "카테고리 이름",
       "delete_confirm": "카테고리를 삭제하시겠습니까",
+      "delete_confirm_many": "이 {count}개의 카테고리를 삭제하시겠습니까?",
       "delete_warning": "이 카테고리를 사용하는 거래가 없는 경우에만 작동합니다."
     },
     "tags": {
       "title": "태그",
       "placeholder": "새 태그 추가",
       "add": "추가",
+      "add_title": "태그 추가",
+      "add_tooltip": "새 태그 추가",
       "edit_title": "태그 편집",
       "delete_title": "태그 삭제",
       "name_label": "태그 이름",
       "delete_confirm": "태그를 삭제하시겠습니까",
+      "delete_confirm_many": "이 {count}개의 태그를 삭제하시겠습니까?",
       "delete_warning": "이 태그는 모든 거래에서 제거됩니다."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "카테고리가 성공적으로 업데이트되었습니다.",
       "category_added": "카테고리가 추가되었습니다.",
       "category_deleted": "카테고리가 삭제되었습니다.",
+      "categories_deleted": "{count}개의 카테고리가 삭제되었습니다.",
       "tag_updated": "태그가 성공적으로 업데이트되었습니다.",
       "tag_added": "태그가 추가되었습니다.",
       "tag_deleted": "태그가 삭제되었습니다.",
+      "tags_deleted": "{count}개의 태그가 삭제되었습니다.",
       "currency_changed": "통화가 변경되었습니다.",
       "currency_position_changed": "기호 위치가 변경되었습니다.",
       "currency_added": "통화가 추가되었습니다.",
@@ -275,6 +288,9 @@
     "edit": "편집",
     "save": "저장",
     "close": "닫기",
+    "clear": "지우기",
+    "edit_single_tooltip": "편집하려면 단일 항목만 선택하세요",
+    "delete_partial": "{total}개 중 {success}개 삭제됨. 일부는 삭제할 수 없습니다.",
     "enter_new_name": "새 이름 입력",
     "no_rows": "표시할 행 없음",
     "no_recurring_transactions": "생성된 반복 거래 없음",

@@ -17,6 +17,10 @@
       "tags": "टैग",
       "untagged": "बिना टैग"
     },
+    "chart_type": {
+      "line": "रेखा",
+      "stacked": "स्टैक्ड"
+    },
     "cashflow": {
       "income": "आय",
       "expenses": "खर्च",
@@ -34,6 +38,7 @@
       "to_date": "आज तक (सभी लेन-देन)",
       "from": "से:",
       "to": "तक:",
+      "chart_type_label": "चार्ट प्रकार:",
       "apply": "लागू करें",
       "invalid_date_range": "प्रारंभ महीना समाप्ति महीने से पहले या बराबर होना चाहिए।"
     }
@@ -100,20 +105,26 @@
       "title": "श्रेणियां",
       "placeholder": "नई श्रेणी जोड़ें",
       "add": "जोड़ें",
+      "add_title": "श्रेणी जोड़ें",
+      "add_tooltip": "नई श्रेणी जोड़ें",
       "edit_title": "श्रेणी संपादित करें",
       "delete_title": "श्रेणी हटाएं",
       "name_label": "श्रेणी का नाम",
       "delete_confirm": "क्या आप वाकई श्रेणी को हटाना चाहते हैं",
+      "delete_confirm_many": "क्या आप वाकई इन {count} श्रेणियों को हटाना चाहते हैं?",
       "delete_warning": "यह केवल तभी काम करेगा जब इस श्रेणी का उपयोग करने वाला कोई लेन-देन न हो।"
     },
     "tags": {
       "title": "टैग",
       "placeholder": "नया टैग जोड़ें",
       "add": "जोड़ें",
+      "add_title": "टैग जोड़ें",
+      "add_tooltip": "नया टैग जोड़ें",
       "edit_title": "टैग संपादित करें",
       "delete_title": "टैग हटाएं",
       "name_label": "टैग का नाम",
       "delete_confirm": "क्या आप वाकई टैग को हटाना चाहते हैं",
+      "delete_confirm_many": "क्या आप वाकई इन {count} टैग को हटाना चाहते हैं?",
       "delete_warning": "यह टैग सभी लेन-देन से हटा दिया जाएगा।"
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "श्रेणी सफलतापूर्वक अपडेट की गई।",
       "category_added": "श्रेणी जोड़ी गई।",
       "category_deleted": "श्रेणी हटाई गई।",
+      "categories_deleted": "{count} श्रेणियाँ हटाई गईं।",
       "tag_updated": "टैग सफलतापूर्वक अपडेट किया गया।",
       "tag_added": "टैग जोड़ा गया।",
       "tag_deleted": "टैग हटाया गया।",
+      "tags_deleted": "{count} टैग हटाए गए।",
       "currency_changed": "मुद्रा बदली गई।",
       "currency_position_changed": "प्रतीक की स्थिति बदली गई।",
       "currency_added": "मुद्रा जोड़ी गई।",
@@ -275,6 +288,9 @@
     "edit": "संपादित करें",
     "save": "सहेजें",
     "close": "बंद करें",
+    "clear": "साफ़ करें",
+    "edit_single_tooltip": "संपादित करने के लिए केवल एक आइटम चुनें",
+    "delete_partial": "{total} में से {success} हटाए गए। कुछ हटाए नहीं जा सके।",
     "enter_new_name": "नया नाम दर्ज करें",
     "no_rows": "दिखाने के लिए कोई पंक्तियां नहीं",
     "no_recurring_transactions": "कोई आवर्ती लेन-देन नहीं बनाए गए",

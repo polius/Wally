@@ -17,6 +17,10 @@
       "tags": "Tags",
       "untagged": "Sem tag"
     },
+    "chart_type": {
+      "line": "Linha",
+      "stacked": "Empilhadas"
+    },
     "cashflow": {
       "income": "Receitas",
       "expenses": "Despesas",
@@ -34,6 +38,7 @@
       "to_date": "Até agora (Todas as transações)",
       "from": "De:",
       "to": "Até:",
+      "chart_type_label": "Tipo de gráfico:",
       "apply": "Aplicar",
       "invalid_date_range": "O mês de início deve ser anterior ou igual ao mês de término."
     }
@@ -100,20 +105,26 @@
       "title": "Categorias",
       "placeholder": "Adicionar nova categoria",
       "add": "Adicionar",
+      "add_title": "Adicionar categoria",
+      "add_tooltip": "Adicionar nova categoria",
       "edit_title": "Editar Categoria",
       "delete_title": "Eliminar Categoria",
-      "name_label": "Nome da Categoria",
+      "name_label": "Nome da categoria",
       "delete_confirm": "Tem certeza de que deseja eliminar a categoria",
+      "delete_confirm_many": "Tem certeza de que deseja eliminar estas {count} categorias?",
       "delete_warning": "Isto só funcionará se não houver transações usando esta categoria."
     },
     "tags": {
       "title": "Etiquetas",
       "placeholder": "Adicionar nova etiqueta",
       "add": "Adicionar",
+      "add_title": "Adicionar etiqueta",
+      "add_tooltip": "Adicionar nova etiqueta",
       "edit_title": "Editar Etiqueta",
       "delete_title": "Eliminar Etiqueta",
-      "name_label": "Nome da Etiqueta",
+      "name_label": "Nome da etiqueta",
       "delete_confirm": "Tem certeza de que deseja eliminar a etiqueta",
+      "delete_confirm_many": "Tem certeza de que deseja eliminar estas {count} etiquetas?",
       "delete_warning": "Esta etiqueta será removida de todas as transações."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "Categoria atualizada com sucesso.",
       "category_added": "Categoria adicionada.",
       "category_deleted": "Categoria eliminada.",
+      "categories_deleted": "{count} categorias eliminadas.",
       "tag_updated": "Etiqueta atualizada com sucesso.",
       "tag_added": "Etiqueta adicionada.",
       "tag_deleted": "Etiqueta eliminada.",
+      "tags_deleted": "{count} etiquetas eliminadas.",
       "currency_changed": "Moeda alterada.",
       "currency_position_changed": "Posição do símbolo alterada.",
       "currency_added": "Moeda adicionada.",
@@ -275,6 +288,9 @@
     "edit": "Editar",
     "save": "Guardar",
     "close": "Fechar",
+    "clear": "Limpar",
+    "edit_single_tooltip": "Selecione um único item para editar",
+    "delete_partial": "Eliminados {success} de {total}. Alguns não puderam ser eliminados.",
     "enter_new_name": "Digite o novo nome",
     "no_rows": "Nenhuma Linha Para Mostrar",
     "no_recurring_transactions": "Nenhuma transação recorrente criada",

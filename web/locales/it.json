@@ -17,6 +17,10 @@
       "tags": "Tag",
       "untagged": "Senza tag"
     },
+    "chart_type": {
+      "line": "Linea",
+      "stacked": "Impilate"
+    },
     "cashflow": {
       "income": "Entrate",
       "expenses": "Spese",
@@ -34,6 +38,7 @@
       "to_date": "A oggi (Tutte le transazioni)",
       "from": "Da:",
       "to": "A:",
+      "chart_type_label": "Tipo di grafico:",
       "apply": "Applica",
       "invalid_date_range": "Il mese di inizio deve essere precedente o uguale al mese di fine."
     }
@@ -100,20 +105,26 @@
       "title": "Categorie",
       "placeholder": "Aggiungi nuova categoria",
       "add": "Aggiungi",
+      "add_title": "Aggiungi categoria",
+      "add_tooltip": "Aggiungi nuova categoria",
       "edit_title": "Modifica Categoria",
       "delete_title": "Elimina Categoria",
-      "name_label": "Nome Categoria",
+      "name_label": "Nome categoria",
       "delete_confirm": "Sei sicuro di voler eliminare la categoria",
+      "delete_confirm_many": "Sei sicuro di voler eliminare queste {count} categorie?",
       "delete_warning": "Questo funzionerà solo se non ci sono transazioni che utilizzano questa categoria."
     },
     "tags": {
       "title": "Tag",
       "placeholder": "Aggiungi nuovo tag",
       "add": "Aggiungi",
+      "add_title": "Aggiungi tag",
+      "add_tooltip": "Aggiungi nuovo tag",
       "edit_title": "Modifica Tag",
       "delete_title": "Elimina Tag",
-      "name_label": "Nome Tag",
+      "name_label": "Nome tag",
       "delete_confirm": "Sei sicuro di voler eliminare il tag",
+      "delete_confirm_many": "Sei sicuro di voler eliminare questi {count} tag?",
       "delete_warning": "Questo tag verrà rimosso da tutte le transazioni."
     },
     "theme": {
@@ -144,9 +155,11 @@
       "category_updated": "Categoria aggiornata con successo.",
       "category_added": "Categoria aggiunta.",
       "category_deleted": "Categoria eliminata.",
+      "categories_deleted": "{count} categorie eliminate.",
       "tag_updated": "Tag aggiornato con successo.",
       "tag_added": "Tag aggiunto.",
       "tag_deleted": "Tag eliminato.",
+      "tags_deleted": "{count} tag eliminati.",
       "currency_changed": "Valuta modificata.",
       "currency_position_changed": "Posizione del simbolo modificata.",
       "currency_added": "Valuta aggiunta.",
@@ -275,6 +288,9 @@
     "edit": "Modifica",
     "save": "Salva",
     "close": "Chiudi",
+    "clear": "Cancella",
+    "edit_single_tooltip": "Seleziona un singolo elemento da modificare",
+    "delete_partial": "Eliminati {success} su {total}. Alcuni non sono stati eliminati.",
     "enter_new_name": "Inserisci nuovo nome",
     "no_rows": "Nessuna Riga da Mostrare",
     "no_recurring_transactions": "Nessuna transazione ricorrente creata",
