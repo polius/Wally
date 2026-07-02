@@ -1,5 +1,5 @@
 bcrypt==5.0.0
-fastapi[standard]==0.138.2
+fastapi[standard]==0.139.0
 PyJWT==2.13.0
 python-dateutil==2.9.0.post0
 sqlmodel==0.0.39
