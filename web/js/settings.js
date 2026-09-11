@@ -775,9 +775,7 @@ function filterCurrencyList() {
     editButton.className = 'currency-action-btn currency-btn-edit';
     editButton.title = i18n.t('settings.currency.edit_tooltip');
     editButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor">
-        <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-      </svg>
+      <i data-lucide="square-pen" width="14" height="14"></i>
     `;
     editButton.addEventListener('click', () => editCurrency(c.name, c.symbol));
 
@@ -788,9 +786,7 @@ function filterCurrencyList() {
     deleteButton.title = isSelected ? i18n.t('settings.currency.cannot_delete') : i18n.t('settings.currency.delete_tooltip');
     deleteButton.disabled = isSelected;
     deleteButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="14" height="14" fill="currentColor">
-        <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/>
-      </svg>
+      <i data-lucide="trash-2" width="14" height="14"></i>
     `;
     if (!isSelected) {
       deleteButton.addEventListener('click', () => deleteCurrency(c.name));
@@ -810,12 +806,14 @@ function filterCurrencyList() {
     tbody.innerHTML = `
       <tr>
         <td colspan="3" class="text-center text-muted py-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; margin-bottom: 6px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <i data-lucide="search" width="24" height="24" style="opacity: 0.4; margin-bottom: 6px;"></i>
           <div style="font-size: 0.85rem;">${i18n.t('settings.currency.no_results') || 'No currencies found'}</div>
         </td>
       </tr>
     `;
   }
+
+  renderIcons(tbody);
 }
 
 async function addCurrencySubmit(event) {
@@ -1122,11 +1120,12 @@ function renderApiKeysList(keys) {
     container.innerHTML = `
       <div class="text-center py-5">
         <div class="api-keys-empty-icon mx-auto mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          <i data-lucide="key" width="28" height="28"></i>
         </div>
         <p class="text-muted mb-0" style="font-size: 0.9rem;" data-i18n="settings.api_keys.no_keys">${i18n.t('settings.api_keys.no_keys') || 'No API keys created'}</p>
       </div>`;
     updateCreateApiKeyBtn(0);
+    renderIcons(container);
     return;
   }
 
@@ -1145,7 +1144,7 @@ function renderApiKeysList(keys) {
     html += `<td>${escapeHtml(lastUsed)}</td>`;
     html += `<td class="text-center">
       <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteApiKey('${key.id}')" title="${i18n.t('settings.api_keys.delete_tooltip') || 'Delete'}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <i data-lucide="trash-2" width="14" height="14"></i>
       </button>
     </td>`;
     html += `</tr>`;
@@ -1153,6 +1152,7 @@ function renderApiKeysList(keys) {
 
   html += '</tbody></table>';
   container.innerHTML = html;
+  renderIcons(container);
 
   // Disable create button at limit
   updateCreateApiKeyBtn(keys.length);
@@ -1522,9 +1522,7 @@ async function initGrid() {
           if (params.data?.recurringID) {
             // SVG icon
             container.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="vertical-align: middle; margin-right: 6px;">
-            <path d="M488 192l-144 0c-9.7 0-18.5-5.8-22.2-14.8s-1.7-19.3 5.2-26.2l46.7-46.7c-75.3-58.6-184.3-53.3-253.5 15.9-75 75-75 196.5 0 271.5s196.5 75 271.5 0c8.2-8.2 15.5-16.9 21.9-26.1 10.1-14.5 30.1-18 44.6-7.9s18 30.1 7.9 44.6c-8.5 12.2-18.2 23.8-29.1 34.7-100 100-262.1 100-362 0S-25 175 75 75c94.3-94.3 243.7-99.6 344.3-16.2L471 7c6.9-6.9 17.2-8.9 26.2-5.2S512 14.3 512 24l0 144c0 13.3-10.7 24-24 24z"/>
-            </svg>
+            <i data-lucide="refresh-ccw" width="10" height="10" style="vertical-align: middle; margin-right: 6px;"></i>
             `;
             // Add the name text after the SVG
             const nameSpan = document.createElement('span');
@@ -1534,6 +1532,7 @@ async function initGrid() {
             // Just the name if no recurringID
             container.textContent = params.data?.name;
           }
+          renderIcons(container);
           return container;
         }
       },
@@ -1612,9 +1611,7 @@ async function initGrid() {
           // Edit button
           const editButton = document.createElement("span");
           editButton.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16.5" height="16.5" fill="currentColor" style="display: inline-block; vertical-align: middle;">
-          <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/>
-          </svg>
+          <i data-lucide="square-pen" width="16.5" height="16.5" style="display: inline-block; vertical-align: middle;"></i>
           `;
           editButton.style.display = "flex";
           editButton.style.justifyContent = "center";
@@ -1647,9 +1644,7 @@ async function initGrid() {
           // Delete button
           const deleteButton = document.createElement("span");
           deleteButton.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
-          <path d="M136.7 5.9C141.1-7.2 153.3-16 167.1-16l113.9 0c13.8 0 26 8.8 30.4 21.9L320 32 416 32c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 8.7-26.1zM32 144l384 0 0 304c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-304zm88 64c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24zm104 0c-13.3 0-24 10.7-24 24l0 192c0 13.3 10.7 24 24 24s24-10.7 24-24l0-192c0-13.3-10.7-24-24-24z"/>
-          </svg>
+          <i data-lucide="trash-2" width="16" height="16" style="display: inline-block; vertical-align: middle;"></i>
           `;
           deleteButton.style.display = "flex";
           deleteButton.style.justifyContent = "center";
@@ -1682,6 +1677,7 @@ async function initGrid() {
           container.appendChild(editButton);
           container.appendChild(deleteButton);
 
+          renderIcons(container);
           return container;
         }
       }

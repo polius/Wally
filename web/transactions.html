@@ -23,6 +23,8 @@
   <script src="js/vendors/ag-grid-community.min.noStyle.js"></script>
   <script src="js/vendors/tom-select.complete.min.js"></script>
   <script src="js/vendors/decimal.min.js"></script>
+  <script src="js/vendors/lucide.min.js" defer></script>
+  <script src="js/icons.js" defer></script>
   <script src="js/i18n.js"></script>
   <script src="js/transactions.js"></script>
 
@@ -57,11 +59,7 @@
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
             <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pill-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                <path d="M9 12h12l-3 -3" />
-                <path d="M18 15l3 -3" />
-              </svg>
+              <i data-lucide="log-out" width="22" height="22" style="color: var(--pill-color);"></i>
             </li>
           </ul>
         </div>
@@ -75,15 +73,11 @@
     <!-- Month Header -->
     <div id="monthHeader" class="month-navigation">
       <div id="prevMonth" style="cursor: pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor">
-          <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 288 480 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-370.7 0 105.4-105.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
-        </svg>
+        <i data-lucide="arrow-left" width="22" height="22"></i>
       </div>
       <div id="currentMonth" class="current-month"></div>
       <div id="nextMonth" style="cursor: pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor">
-          <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l370.7 0-105.4 105.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/>
-        </svg>
+        <i data-lucide="arrow-right" width="22" height="22"></i>
       </div>
     </div>
 
@@ -94,22 +88,16 @@
     <!-- Action buttons -->
     <div id="actionButtonsContainer" class="d-flex flex-wrap justify-content-center align-items-center mb-3" style="margin-top: 12px; gap: 5px;">
       <button type="button" class="btn btn-success d-flex align-items-center justify-content-center btn-action" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor">
-          <path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>
-        </svg>
+        <i data-lucide="plus" width="16" height="16"></i>
         <span class="btn-text" data-i18n="transactions.add">Add</span>
       </button>
       <button id="deleteSelectedBtn" type="button" class="btn btn-danger align-items-center justify-content-center btn-action" style="display:none;" onclick="deleteSelectedTransactions()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="16" height="16" fill="currentColor">
-          <path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/>
-        </svg>
+        <i data-lucide="minus" width="16" height="16"></i>
         <span class="btn-text">Delete (</span><span id="selectedCount">0</span><span class="btn-text">)</span>
       </button>
       <div class="d-flex justify-content-center">
         <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center btn-action" style="user-select:none; cursor:pointer;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-            <path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/>
-          </svg>
+          <i data-lucide="list-checks" width="16" height="16"></i>
           <span class="btn-text" data-i18n="transactions.show_all">Show All</span>
           <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; display: none;" onchange="getTransactions()" />
         </label>
@@ -119,21 +107,15 @@
     <!-- Category Filter Indicator -->
     <div id="categoryFilterIndicator" class="justify-content-center mb-3" style="display: none;">
       <button type="button" class="btn d-flex align-items-center gap-2 category-filter-btn" onclick="clearCategoryFilter()" style="border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; height: 40px; background-color: transparent; transition: all 0.2s ease;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="14" height="14" fill="currentColor" style="flex-shrink: 0;">
-          <path d="M3.9 54.9C10.5 40.9 24.5 32 40 32l432 0c15.5 0 29.5 8.9 36.1 22.9s4.6 30.5-5.2 42.5L320 320.9 320 448c0 12.1-6.8 23.2-17.7 28.6s-23.8 4.3-33.5-3l-64-48c-8.1-6-12.8-15.5-12.8-25.6l0-79.1L9.1 97.3C-.7 85.4-2.8 68.8 3.9 54.9z"/>
-        </svg>
+        <i data-lucide="filter" width="14" height="14" style="flex-shrink: 0;"></i>
         <span style="font-weight: 500;"><span data-i18n="transactions.filtered_by">Filtered by</span>: <span id="filteredCategoryName"></span></span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="10" height="10" fill="currentColor" style="flex-shrink: 0;">
-          <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
-        </svg>
+        <i data-lucide="x" width="10" height="10" style="flex-shrink: 0;"></i>
       </button>
     </div>
 
     <!-- Grid Filter -->
     <div class="mb-2 position-relative">
-      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="15" height="15" fill="currentColor">
-        <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
-      </svg>
+      <i data-lucide="search" class="search-icon" width="15" height="15"></i>
       <input type="text" class="form-control search-input" id="searchInput" placeholder="Search..." data-i18n-placeholder="transactions.search_placeholder" oninput="onFilterTextBoxChanged()" />
     </div>
 
@@ -255,7 +237,7 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-0 fs-6" data-i18n="transactions.delete_confirm">Are you sure you want to delete this transaction?</p>
         </div>
@@ -277,7 +259,7 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-0 fs-6" id="deleteMultipleMessage"></p>
         </div>

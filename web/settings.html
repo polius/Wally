@@ -23,6 +23,8 @@
   <script src="js/vendors/ag-grid-community.min.noStyle.js" defer></script>
   <script src="js/vendors/tom-select.complete.min.js" defer></script>
   <script src="js/vendors/papaparse.min.js" defer></script>
+  <script src="js/vendors/lucide.min.js" defer></script>
+  <script src="js/icons.js" defer></script>
   <script src="js/i18n.js"></script>
 
 
@@ -57,11 +59,7 @@
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
             <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pill-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                <path d="M9 12h12l-3 -3" />
-                <path d="M18 15l3 -3" />
-              </svg>
+              <i data-lucide="log-out" width="22" height="22" style="color: var(--pill-color);"></i>
             </li>
           </ul>
         </div>
@@ -89,7 +87,7 @@
               <div class="pill-card-actions" hidden id="categoryHeaderActions">
                 <span class="pill-selection-chip" id="categorySelectionChip" role="button" tabindex="0" data-i18n-title="common.clear" title="Clear">
                   <span id="categorySelectionCount">0</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <i data-lucide="x" width="11" height="11" aria-hidden="true"></i>
                 </span>
                 <button type="button" id="categoryEditBtn" class="btn btn-sm btn-primary" onclick="openEditFromSelection('category')">
                   <span data-i18n="common.edit">Edit</span>
@@ -116,7 +114,7 @@
               <div class="pill-card-actions" hidden id="tagHeaderActions">
                 <span class="pill-selection-chip" id="tagSelectionChip" role="button" tabindex="0" data-i18n-title="common.clear" title="Clear">
                   <span id="tagSelectionCount">0</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <i data-lucide="x" width="11" height="11" aria-hidden="true"></i>
                 </span>
                 <button type="button" id="tagEditBtn" class="btn btn-sm btn-primary" onclick="openEditFromSelection('tag')">
                   <span data-i18n="common.edit">Edit</span>
@@ -223,16 +221,12 @@
             <p class="card-text" style="font-size: 0.9rem;" data-i18n="settings.import_export.description">Export or import transactions quickly using CSV files.</p>
             <div class="d-flex flex-wrap gap-2">
               <button class="btn btn-sm btn-primary" style="min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="exportToCSV()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
-                  <path d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/>
-                </svg>
+                <i data-lucide="arrow-down" width="12" height="12" style="color: white; margin-right: 3px;"></i>
                 <span data-i18n="settings.import_export.export">Export to CSV</span>
               </button>
               <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
               <button class="btn btn-sm btn-primary" style="min-width: 140px; padding-left: 12px; padding-right: 12px;" onclick="csvInput.click()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="12" height="12" fill="white" style="margin-right: 3px">
-                  <path d="M214.6 17.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 117.3 160 488c0 17.7 14.3 32 32 32s32-14.3 32-32l0-370.7 105.4 105.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/>
-                </svg>
+                <i data-lucide="arrow-up" width="12" height="12" style="color: white; margin-right: 3px;"></i>
                 <span data-i18n="settings.import_export.import">Import from CSV</span>
               </button>
             </div>
@@ -251,9 +245,7 @@
       <div class="card-body">
         <!-- Grid Filter -->
         <div class="mb-2 position-relative">
-          <svg class="recurring-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="15" height="15" fill="currentColor">
-            <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
-          </svg>
+          <i data-lucide="search" class="recurring-search-icon" width="15" height="15"></i>
           <input type="text" class="form-control recurring-search-input" id="searchInput" placeholder="Search..." data-i18n-placeholder="settings.recurring.search_placeholder" oninput="onFilterTextBoxChanged()" />
         </div>
         <!-- AG Grid Table -->
@@ -314,11 +306,11 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-2" id="categoryModalDeletePrompt"></p>
           <div class="alert alert-warning d-inline-flex align-items-start gap-2 mb-0 text-start" style="font-size: 0.85rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <i data-lucide="info" width="16" height="16" class="flex-shrink-0" style="margin-top: 2px;"></i>
             <span data-i18n="settings.categories.delete_warning">This will only work if there are no transactions using this category.</span>
           </div>
         </div>
@@ -380,11 +372,11 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-2" id="tagModalDeletePrompt"></p>
           <div class="alert alert-warning d-inline-flex align-items-start gap-2 mb-0 text-start" style="font-size: 0.85rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <i data-lucide="info" width="16" height="16" class="flex-shrink-0" style="margin-top: 2px;"></i>
             <span data-i18n="settings.tags.delete_warning">This tag will be removed from all transactions.</span>
           </div>
         </div>
@@ -407,7 +399,7 @@
         <div class="modal-body">
           <!-- Search -->
           <div class="currency-search-wrap">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="currency-search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <i data-lucide="search" class="currency-search-icon" width="15" height="15"></i>
             <input type="text" class="form-control currency-search-input" id="currencySearch" placeholder="Search currencies..." data-i18n-placeholder="settings.currency.search_placeholder" oninput="filterCurrencyList()" autocomplete="off">
           </div>
 
@@ -431,7 +423,7 @@
               <input type="text" class="form-control" name="name" placeholder="Code" data-i18n-placeholder="settings.currency.code" maxlength="10" required />
               <input type="text" class="form-control" name="symbol" placeholder="Symbol" data-i18n-placeholder="settings.currency.symbol" maxlength="10" required />
               <button class="btn btn-success currency-add-btn" type="submit">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <i data-lucide="plus" width="16" height="16"></i>
                 <span data-i18n="settings.currency.add_currency">Add</span>
               </button>
             </div>
@@ -578,7 +570,7 @@
         <div class="modal-body py-4">
           <div class="text-center mb-3">
             <div class="dialog-warning-icon mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <i data-lucide="triangle-alert" width="32" height="32"></i>
             </div>
             <p class="mb-0 fs-6" data-i18n="settings.recurring.delete_confirm">Are you sure you want to delete this recurring transaction?</p>
           </div>
@@ -623,14 +615,10 @@
           <div class="input-group">
             <input type="password" class="form-control" id="loginEnablePasswordInput" name="password" placeholder="Enter a password" data-i18n-placeholder="settings.login.password_placeholder" required />
             <button id="loginEnablePasswordShow" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.show_password" title="Show password" onclick="loginEnablePasswordShow.style.display = 'none'; loginEnablePasswordHide.style.display = 'block'; loginEnablePasswordInput.type = 'text'">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
-                <path d="M41-24.9c-9.4-9.4-24.6-9.4-33.9 0S-2.3-.3 7 9.1l528 528c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-96.4-96.4c2.7-2.4 5.4-4.8 8-7.2 46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6-56.8 0-105.6 18.2-146 44.2L41-24.9zM204.5 138.7c23.5-16.8 52.4-26.7 83.5-26.7 79.5 0 144 64.5 144 144 0 31.1-9.9 59.9-26.7 83.5l-34.7-34.7c12.7-21.4 17-47.7 10.1-73.7-13.7-51.2-66.4-81.6-117.6-67.9-8.6 2.3-16.7 5.7-24 10l-34.7-34.7zM325.3 395.1c-11.9 3.2-24.4 4.9-37.3 4.9-79.5 0-144-64.5-144-144 0-12.9 1.7-25.4 4.9-37.3L69.4 139.2c-32.6 36.8-55 75.8-66.9 104.5-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6 37.3 0 71.2-7.9 101.5-20.6l-64.2-64.2z"/>
-              </svg>
+              <i data-lucide="eye-off" width="16" height="16" style="margin-bottom: 2px;"></i>
             </button>
             <button id="loginEnablePasswordHide" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.hide_password" title="Hide password" style="display: none" onclick="loginEnablePasswordShow.style.display = 'block'; loginEnablePasswordHide.style.display = 'none'; loginEnablePasswordInput.type = 'password'">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
-                <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z"/>
-              </svg>
+              <i data-lucide="eye" width="16" height="16" style="margin-bottom: 2px;"></i>
             </button>
           </div>
         </div>
@@ -652,7 +640,7 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon warning mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-0 fs-6" data-i18n="settings.login.disable_confirm">Are you sure you want to disable the login page?</p>
         </div>
@@ -677,14 +665,10 @@
           <div class="input-group">
             <input type="password" class="form-control" id="loginChangePasswordInput" name="password" placeholder="Enter a password" data-i18n-placeholder="settings.login.password_placeholder" required />
             <button id="loginChangePasswordShow" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.show_password" title="Show password" onclick="loginChangePasswordShow.style.display = 'none'; loginChangePasswordHide.style.display = 'block'; loginChangePasswordInput.type = 'text'">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
-                <path d="M41-24.9c-9.4-9.4-24.6-9.4-33.9 0S-2.3-.3 7 9.1l528 528c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-96.4-96.4c2.7-2.4 5.4-4.8 8-7.2 46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6-56.8 0-105.6 18.2-146 44.2L41-24.9zM204.5 138.7c23.5-16.8 52.4-26.7 83.5-26.7 79.5 0 144 64.5 144 144 0 31.1-9.9 59.9-26.7 83.5l-34.7-34.7c12.7-21.4 17-47.7 10.1-73.7-13.7-51.2-66.4-81.6-117.6-67.9-8.6 2.3-16.7 5.7-24 10l-34.7-34.7zM325.3 395.1c-11.9 3.2-24.4 4.9-37.3 4.9-79.5 0-144-64.5-144-144 0-12.9 1.7-25.4 4.9-37.3L69.4 139.2c-32.6 36.8-55 75.8-66.9 104.5-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6 37.3 0 71.2-7.9 101.5-20.6l-64.2-64.2z"/>
-              </svg>
+              <i data-lucide="eye-off" width="16" height="16" style="margin-bottom: 2px;"></i>
             </button>
             <button id="loginChangePasswordHide" class="btn btn-outline-secondary" type="button" data-i18n-title="settings.login.hide_password" title="Hide password" style="display: none" onclick="loginChangePasswordShow.style.display = 'block'; loginChangePasswordHide.style.display = 'none'; loginChangePasswordInput.type = 'password'">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="16" height="16" fill="currentColor" style="margin-bottom: 2px">
-                <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z"/>
-              </svg>
+              <i data-lucide="eye" width="16" height="16" style="margin-bottom: 2px;"></i>
             </button>
           </div>
         </div>
@@ -711,7 +695,7 @@
           <!-- API Usage Guide -->
           <div class="api-usage-section-container mb-3">
             <div class="api-usage-header">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+              <i data-lucide="code" width="16" height="16"></i>
               <span data-i18n="settings.api_keys.usage_title">Usage</span>
             </div>
             <div class="api-usage-content">
@@ -723,7 +707,7 @@
               <p class="api-endpoint-desc" data-i18n="settings.api_keys.usage_get_transactions">Retrieve all transactions.</p>
               <div class="api-code-block">
                 <button class="btn btn-sm api-code-copy-btn" onclick="copyCodeBlock(this)" title="Copy">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <i data-lucide="copy" width="12" height="12"></i>
                 </button>
                 <pre><code>curl <span class="api-url-placeholder">URL</span>/transactions \
   -H "X-API-Key: YOUR_API_KEY"</code></pre>
@@ -735,7 +719,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-primary d-flex align-items-center gap-2" id="createApiKeyBtn" style="font-size: 0.9rem;" onclick="createApiKey()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <i data-lucide="plus" width="16" height="16"></i>
             <span data-i18n="settings.api_keys.create">Create API key</span>
           </button>
         </div>
@@ -749,20 +733,20 @@
       <div class="modal-content">
         <div class="modal-body text-center py-4">
           <div class="api-key-success-icon mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            <i data-lucide="key" width="28" height="28"></i>
           </div>
           <h6 class="fw-semibold mb-2" data-i18n="settings.api_keys.created_title">API Key Created</h6>
           <p class="text-muted mb-3" style="font-size: 0.85rem;" data-i18n="settings.api_keys.created_description">Copy your API key now. You won't be able to see it again.</p>
           <div class="api-usage-section-container mb-3 text-start">
             <div class="api-usage-header">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <i data-lucide="key" width="16" height="16"></i>
               <span>API Key</span>
             </div>
             <div class="api-usage-content">
               <div class="api-key-display">
                 <code id="apiKeyCreatedValue" class="user-select-all"></code>
                 <button class="btn btn-sm btn-outline-secondary api-key-copy-btn" type="button" onclick="copyApiKey()" data-i18n-title="settings.api_keys.copy" title="Copy">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <i data-lucide="copy" width="14" height="14"></i>
                 </button>
               </div>
             </div>
@@ -770,7 +754,7 @@
           <!-- Usage section with pre-filled API key -->
           <div class="api-usage-section-container mt-4 text-start">
             <div class="api-usage-header">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+              <i data-lucide="code" width="16" height="16"></i>
               <span data-i18n="settings.api_keys.usage_title">Usage</span>
             </div>
             <div class="api-usage-content">
@@ -782,7 +766,7 @@
               <p class="api-endpoint-desc" data-i18n="settings.api_keys.usage_get_transactions">Retrieve all transactions.</p>
               <div class="api-code-block">
                 <button class="btn btn-sm api-code-copy-btn" onclick="copyCodeBlock(this)" title="Copy">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <i data-lucide="copy" width="12" height="12"></i>
                 </button>
                 <pre><code>curl <span class="api-url-placeholder">URL</span>/transactions \
   -H "X-API-Key: <span id="apiKeyCreatedUsageValue"></span>"</code></pre>
@@ -805,7 +789,7 @@
         </div>
         <div class="modal-body text-center py-4">
           <div class="dialog-warning-icon mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <i data-lucide="triangle-alert" width="32" height="32"></i>
           </div>
           <p class="mb-0"><span data-i18n="settings.api_keys.delete_confirm">Are you sure you want to delete the API key</span> <strong id="apiKeyDeleteName"></strong>?</p>
         </div>
