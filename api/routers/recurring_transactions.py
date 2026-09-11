@@ -63,8 +63,8 @@ def update_recurring_transaction(
     # Modify the existing Recurring Transaction
     db_recurring_transaction.sqlmodel_update(recurring_transaction.model_dump(exclude_unset=True))
 
-    # Update new transactions based on the updated Recurring Transaction
-    update_transactions_from_recurring(recurring_transaction_id, recurring_transaction, db)
+    # Update transactions based on the updated Recurring Transaction
+    update_transactions_from_recurring(db_recurring_transaction, recurring_transaction, db)
 
     # Commit the changes to the database
     db.commit()
@@ -98,60 +98,61 @@ def delete_recurring_transaction(
     # Return a success message
     return {"ok": True}
 
-def create_transactions_from_recurring (
+def create_transactions_from_recurring(
     recurring_transaction: RecurringTransaction,
-    db: Session
+    db: Session,
+    only_after: date | None = None,
 ):
     start_date = recurring_transaction.startDate
     end_date = recurring_transaction.endDate
     frequency = recurring_transaction.frequency
+
+    # Advance from the start date (start + n periods) rather than accumulating
+    # (current += 1 period). This re-anchors monthly/yearly recurrences on the
+    # original day: the 31st clamps to the 28th in February but returns to the
+    # 31st in March, instead of drifting down to the 28th forever.
+    n = 0
     current_date = start_date
-
     while current_date <= end_date:
-        transaction = Transaction(
-            name=recurring_transaction.name,
-            category=recurring_transaction.category,
-            tags=recurring_transaction.tags,
-            amount=recurring_transaction.amount,
-            type=recurring_transaction.type,
-            date=current_date,
-            recurringID=str(recurring_transaction.id)
-        )
-        db.add(transaction)
-
-        # Increment date based on frequency
+        if only_after is None or current_date > only_after:
+            db.add(Transaction(
+                name=recurring_transaction.name,
+                category=recurring_transaction.category,
+                tags=recurring_transaction.tags,
+                amount=recurring_transaction.amount,
+                type=recurring_transaction.type,
+                date=current_date,
+                recurringID=str(recurring_transaction.id),
+            ))
+        n += 1
         if frequency == "daily":
-            current_date += timedelta(days=1)
+            current_date = start_date + timedelta(days=n)
         elif frequency == "weekly":
-            current_date += timedelta(weeks=1)
+            current_date = start_date + timedelta(weeks=n)
         elif frequency == "monthly":
-            current_date += relativedelta(months=1)
+            current_date = start_date + relativedelta(months=n)
         elif frequency == "yearly":
-            current_date += relativedelta(years=1)
+            current_date = start_date + relativedelta(years=n)
 
-def update_transactions_from_recurring (
-    recurring_transaction_id: UUID,
+def update_transactions_from_recurring(
+    db_recurring_transaction: RecurringTransaction,
     recurring_transaction: RecurringTransactionUpdate,
-    db: Session
+    db: Session,
 ):
-    # Get transactions associated with the recurring transaction
-    stmt = select(Transaction).where(Transaction.recurringID == str(recurring_transaction_id))
-    if recurring_transaction.applyTo == 'future':
-        stmt = stmt.where(Transaction.date > date.today())
+    recurring_id = str(db_recurring_transaction.id)
+    today = date.today()
 
-    transactions = db.exec(stmt).all()
-
-    # Convert the update object to a dict of only provided fields
-    updates = recurring_transaction.model_dump(exclude_unset=True)
-
-    # Get all valid Transaction fields
-    transaction_fields = set(Transaction.__fields__.keys())
-
-    # Apply only the provided fields that exist on Transaction
-    for transaction in transactions:
-        for key, value in updates.items():
-            if key in transaction_fields:
-                setattr(transaction, key, value)
+    if recurring_transaction.applyTo == "future":
+        # Rebuild future occurrences only; past transactions stay untouched.
+        # "Future" is strictly after today, so a transaction dated today is
+        # never deleted or overwritten.
+        db.exec(delete(Transaction)
+                .where(Transaction.recurringID == recurring_id)
+                .where(Transaction.date > today))
+        create_transactions_from_recurring(db_recurring_transaction, db, only_after=today)
+    else:
+        db.exec(delete(Transaction).where(Transaction.recurringID == recurring_id))
+        create_transactions_from_recurring(db_recurring_transaction, db)
 
 def delete_transactions_from_recurring (
     recurring_transaction_id: UUID,
