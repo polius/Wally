@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Wally | Budgets</title>
+
+    <link rel="icon" type="image/png" href="assets/wally.png">
+
+    <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
+    <link href="css/vendors/tom-select.min.css" rel="stylesheet">
+    <link href="css/budgets.css" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light">
+
+            <a class="navbar-brand d-flex align-items-center gap-2 ms-1 me-4" href="/">
+                <img src="assets/wally.png" alt="Wally" width="42" height="42">
+                <span style="font-size: 1.6rem; font-weight: 700;">Wally</span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+
+                <ul class="navbar-nav gap-1">
+                    <li class="nav-item ms-2">
+                        <a class="nav-link" href="/">Dashboards</a>
+                    </li>
+
+                    <li class="nav-item ms-2">
+                        <a class="nav-link" href="transactions">Transactions</a>
+                    </li>
+                                  
+                    <li class="nav-item ms-2">
+                        <a class="nav-link" href="settings">Settings</a>
+                    </li>
+                    
+                    <li class="nav-item ms-2">
+                        <a class="nav-link" href="/spending-history.html" data-i18n="nav.spending">Spending History</a>
+                    </li>
+
+                    <li class="nav-item ms-2">
+                        <a class="nav-link active" href="/budgets.html" data-i18n="nav.budgets" aria-current="page">Budgets</a>
+                    </li>
+
+                </ul>
+
+                <ul id="logoutButton"
+                    class="navbar-nav ms-auto"
+                    style="display: none;">
+
+                    <li class="nav-item ms-2"
+                        style="cursor: pointer;"
+                        title="Logout"
+                        onclick="logout()">
+
+                        <i data-lucide="log-out" width="22" height="22"></i>
+                    </li>
+
+                </ul>
+
+            </div>
+        </nav>
+    </div>
+</header>
+<main class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Budgets</h2>
+            <p class="text-muted mb-0">
+                Track how much you have spent compared with your budget.
+            </p>
+        </div>
+    </div>
+
+    <div id="budgetsContainer">
+        <!-- Budget cards will be inserted here by budgets.js -->
+    </div>
+
+    <div id="emptyState" class="text-center text-muted py-5" style="display: none;">
+        <h5>No budgets yet</h5>
+        <p>Create a budget to start tracking your spending progress.</p>
+    </div>
+</main>
+<script src="js/vendors/bootstrap.bundle.min.js"></script>
+<script src="js/vendors/lucide.min.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/budgets.js"></script>
+</body>
+</html>

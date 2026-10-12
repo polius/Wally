@@ -298,16 +298,23 @@ async function editCategorySubmit(event) {
       throw new Error("An error occurred.")
     }
     else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalEdit'));
-      modal.hide();
+  const modal = bootstrap.Modal.getInstance(
+    document.getElementById('categoryModalEdit')
+  );
 
-      // Show toast with info about transaction updates
-      bootstrap.showToast({body: i18n.t('settings.messages.category_updated'), delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
+  modal.hide();
 
-      // The renamed item no longer matches the previously-selected name.
-      pillSelections.category.clear();
-      categories = await getCategories();
+  bootstrap.showToast({
+    body: i18n.t('settings.messages.category_updated'),
+    delay: 2500,
+    position: "top-0 start-50 translate-middle-x",
+    toastClass: "text-bg-success"
+  });
+
+  pillSelections.category.clear();
+  categories = await getCategories();
+
+      document.dispatchEvent(new CustomEvent('categories:changed'));
     }
   }
   catch (error) {
@@ -402,10 +409,22 @@ async function addCategory(event) {
       throw new Error("An error occurred.")
     }
     else {
-      categories = await getCategories();
-      bootstrap.showToast({body: i18n.t('settings.messages.category_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-      document.getElementById('categoryForm').reset();
-      bootstrap.Modal.getInstance(document.getElementById('categoryModalAdd'))?.hide();
+  categories = await getCategories();
+
+  document.dispatchEvent(new CustomEvent('categories:changed'));
+
+  bootstrap.showToast({
+    body: i18n.t('settings.messages.category_added'),
+    delay: 1000,
+    position: "top-0 start-50 translate-middle-x",
+    toastClass: "text-bg-success"
+  });
+
+  document.getElementById('categoryForm').reset();
+
+  bootstrap.Modal.getInstance(
+    document.getElementById('categoryModalAdd')
+  )?.hide();
     }
   }
   catch (error) {
@@ -457,6 +476,11 @@ async function bulkDeletePills(section, { endpoint, refresh }) {
 
   // Refresh the list before toasting so deleted items disappear visually first.
   await refresh();
+
+  // Notify the Budgets card only if at least one category was deleted.
+  if (section === 'category' && succeeded.length > 0) {
+    document.dispatchEvent(new CustomEvent('categories:changed'));
+  }
 
   if (failed.length === 0) {
     const body = succeeded.length === 1

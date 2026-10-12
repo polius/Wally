@@ -2,3 +2,9 @@ wally.db
 __pycache__
 .DS_Store
 password.txt
+.venv/
+*.py[cod]
+.pytest_cache/
+/data/
+*.db
+*.db-*

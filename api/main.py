@@ -1,17 +1,31 @@
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .demo import generate_demo
-from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys
+from .routers import (
+    transactions,
+    recurring_transactions,
+    categories,
+    tags,
+    currency,
+    auth,
+    api_keys,
+    budgets,
+    spending_history,
+)
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
+from .models.budgets import Budget
+
 
 VERSION = "1.16"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,14 +52,20 @@ async def lifespan(app: FastAPI):
 
         # Create default currencies
         for item in DEFAULT_CURRENCIES:
-            if not db.get(Currency, item['name']):
+            if not db.get(Currency, item["name"]):
                 db.add(Currency(**item))
         db.commit()
 
     yield  # App is running
 
+
 # Init FastAPI
-app = FastAPI(title='Wally API', version=VERSION, lifespan=lifespan, root_path="/api")
+app = FastAPI(
+    title="Wally API",
+    version=VERSION,
+    lifespan=lifespan,
+    root_path="/api",
+)
 
 # Allow your dev frontend origin
 app.add_middleware(
@@ -64,18 +84,23 @@ app.include_router(tags.router)
 app.include_router(currency.router)
 app.include_router(auth.router)
 app.include_router(api_keys.router)
+app.include_router(budgets.router)
+app.include_router(spending_history.router)
+
 
 # Add root route
 @app.get("/", tags=["Root"])
 async def root():
     return {"message": "Welcome to Wally API!"}
 
+
 # Add health check route
 @app.get("/health", tags=["Root"])
 async def health_check():
     return {"status": "ok", "message": "Wally API is running!"}
 
-# Add health check route
+
+# Add version route
 @app.get("/version", tags=["Root"])
 async def version():
     return {"version": VERSION}

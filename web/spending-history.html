@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spending history — Wally</title>
+
+  <link rel="icon" type="image/png" href="/assets/wally.png">
+
+<link rel="stylesheet" href="/css/vendors/bootstrap.min.css">
+<link rel="stylesheet" href="/css/spending-history.css">
+
+  <style>
+    .chart-container {
+      position: relative;
+      height: 360px;
+    }
+  </style>
+
+  <script src="/js/vendors/bootstrap.bundle.min.js" defer></script>
+  <script src="/js/i18n.js" defer></script>
+  <script src="/js/vendors/chart.umd.min.js" defer></script>
+  <script src="/js/spending-history.js" defer></script>
+</head>
+
+<body>
+  <header class="spending-header">
+    <div class="container">
+      <nav class="navbar navbar-expand-lg">
+        <a class="navbar-brand d-flex align-items-center gap-2 ms-1 me-4" href="/">
+          <img src="assets/wally.png" alt="Wally" width="42" height="42">
+          <span style="font-size: 1.6rem; font-weight: 700;">Wally</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#spending-navbar"
+          aria-controls="spending-navbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="spending-navbar">
+          <ul class="navbar-nav spending-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="/" data-i18n="nav.dashboards">
+                Dashboards
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/transactions" data-i18n="nav.transactions">
+                Transactions
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/settings" data-i18n="nav.settings">
+                Settings
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link active" href="/spending-history.html" data-i18n="nav.spending" aria-current="page">
+                Spending History
+              </a>
+            </li>
+            <li class="nav-item ms-2">
+              <a class="nav-link" href="/budgets.html" data-i18n="nav.budgets">
+                Budgets
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container py-2">
+    <h1 class="h3">Category spending history</h1>
+
+    <p class="text-secondary">
+      Previous six completed calendar months.
+      Amounts use Wally's configured monetary unit.
+    </p>
+
+    <label for="category-select" class="form-label">
+      Category
+    </label>
+
+    <select id="category-select" class="form-select mb-4" disabled>
+      <option value="">Loading categories…</option>
+    </select>
+
+    <section class="card">
+      <div class="card-body">
+        <h2 id="history-title" class="h5">
+          Select a category
+        </h2>
+
+        <p id="history-message" role="status" aria-live="polite"></p>
+
+        <div id="chart-container" class="chart-container" hidden>
+          <canvas id="history-chart" role="img" aria-label="Monthly spending by category"></canvas>
+        </div>
+
+        <div id="totals-container" class="table-responsive mt-3" hidden>
+          <table class="table">
+            <caption>Monthly spending totals</caption>
+            <thead>
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="history-totals"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>

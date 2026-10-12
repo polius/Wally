@@ -26,7 +26,7 @@
   <script src="js/vendors/lucide.min.js" defer></script>
   <script src="js/icons.js" defer></script>
   <script src="js/i18n.js"></script>
-
+  <script src="/js/settings-budgets.js"></script>
 
   <script>
     (function() {
@@ -56,6 +56,8 @@
             <li class="nav-item ms-2"><a class="nav-link" href="/" data-i18n="nav.dashboards">Dashboards</a></li>
             <li class="nav-item ms-2"><a class="nav-link" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
             <li class="nav-item ms-2"><a class="nav-link active" href="settings" data-i18n="nav.settings">Settings</a></li>
+            <li class="nav-item ms-2"><a class="nav-link" href="/spending-history" data-i18n="nav.spending">Spending History</a></li>
+            <li class="nav-item ms-2"><a class="nav-link" href="/budgets.html" data-i18n="nav.budgets">Budgets</a></li>
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
             <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
@@ -78,6 +80,8 @@
         API Docs
       </a>
     </div>
+
+    <!-- Row 1: Categories & Budgets -->
     <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
@@ -106,6 +110,39 @@
           </div>
         </div>
       </div>
+
+      <div class="col-md-6 mt-3">
+        <div class="card h-100">
+          <div class="card-header pill-card-header" style="font-weight: 500">
+            <span>Budgets</span>
+            <div class="pill-card-header-right">
+              <button
+                id="budgetAddButton"
+                type="button"
+                class="btn btn-sm btn-success"
+                style="width: 65px"
+                data-bs-toggle="modal"
+                data-bs-target="#budgetModalAdd"
+                disabled>
+                Add
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="budgetCategoryBadges">Loading categories…</div>
+            <p
+              id="budgetCardStatus"
+              class="small mt-2 mb-0"
+              role="status"
+              aria-live="polite">
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Tags & Theme -->
+    <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header pill-card-header" style="font-weight: 500">
@@ -133,9 +170,7 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.theme.title">Theme</div>
@@ -149,6 +184,10 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Row 3: Currency & Language -->
+    <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header d-flex align-items-center" style="font-weight: 500">
@@ -162,16 +201,13 @@
             <div class="btn-group w-100" role="group">
               <input type="radio" class="btn-check" name="currencyPosition" id="positionLeft" value="left" autocomplete="off" onchange="changeCurrencyPosition(event)">
               <label class="btn btn-outline-primary" for="positionLeft" id="positionLeftLabel" style="font-size: 0.9rem">$100</label>
-              
               <input type="radio" class="btn-check" name="currencyPosition" id="positionRight" value="right" autocomplete="off" onchange="changeCurrencyPosition(event)">
               <label class="btn btn-outline-primary" for="positionRight" id="positionRightLabel" style="font-size: 0.9rem">100$</label>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.language.title">Language</div>
@@ -195,6 +231,10 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Row 4: Login & Import/Export -->
+    <div class="row">
       <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500">
@@ -211,10 +251,8 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="col-md-12 mt-3">
+      <div class="col-md-6 mt-3">
         <div class="card h-100">
           <div class="card-header" style="font-weight: 500" data-i18n="settings.import_export.title">Import / Export Transactions</div>
           <div class="card-body">
@@ -235,23 +273,28 @@
       </div>
     </div>
 
-    <div class="card mt-3">
-      <div class="card-header d-flex align-items-center" style="font-weight: 500">
-        <span data-i18n="settings.recurring.title">Recurring Transactions</span>
-        <button class="btn btn-sm btn-success ms-auto" data-i18n-title="settings.recurring.add_tooltip" title="Add new recurring transaction" style="width: 65px" data-bs-toggle="modal" data-bs-target="#recurringModal" onclick="addRecurring()">
-          <span data-i18n="settings.recurring.add_btn">Add</span>
-        </button>
-      </div>
-      <div class="card-body">
-        <!-- Grid Filter -->
-        <div class="mb-2 position-relative">
-          <i data-lucide="search" class="recurring-search-icon" width="15" height="15"></i>
-          <input type="text" class="form-control recurring-search-input" id="searchInput" placeholder="Search..." data-i18n-placeholder="settings.recurring.search_placeholder" oninput="onFilterTextBoxChanged()" />
+    <!-- Row 5: Recurring Transactions -->
+    <div class="row">
+      <div class="col-md-12 mt-3">
+        <div class="card h-100">
+          <div class="card-header d-flex align-items-center" style="font-weight: 500">
+            <span data-i18n="settings.recurring.title">Recurring Transactions</span>
+            <button class="btn btn-sm btn-success ms-auto" data-i18n-title="settings.recurring.add_tooltip" title="Add new recurring transaction" style="width: 65px" data-bs-toggle="modal" data-bs-target="#recurringModal" onclick="addRecurring()">
+              <span data-i18n="settings.recurring.add_btn">Add</span>
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- Grid Filter -->
+            <div class="mb-2 position-relative">
+              <i data-lucide="search" class="recurring-search-icon" width="15" height="15"></i>
+              <input type="text" class="form-control recurring-search-input" id="searchInput" placeholder="Search..." data-i18n-placeholder="settings.recurring.search_placeholder" oninput="onFilterTextBoxChanged()" />
+            </div>
+            <!-- AG Grid Table -->
+            <div id="myGrid" style="max-height: 500px; overflow: auto;"></div>
+            <!-- Row count -->
+            <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.85rem; font-weight: 600;"></div>
+          </div>
         </div>
-        <!-- AG Grid Table -->
-        <div id="myGrid" style="max-height: 500px; overflow: auto;"></div>
-        <!-- Row count -->
-        <div id="rowCount" class="mt-3" style="text-align: center; font-size: 0.85rem; font-weight: 600;"></div>
       </div>
     </div>
   </main>
@@ -383,6 +426,42 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
           <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add budget modal (Moved from main grid to bottom for layout stability) -->
+  <div class="modal fade" id="budgetModalAdd" tabindex="-1" aria-labelledby="budgetModalAddLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="budgetCreateForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="budgetModalAddLabel">Add Budget</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="budgetFormError" class="alert alert-danger" role="alert" hidden></div>
+          <div class="mb-3">
+            <label for="budgetCategoryInput" class="form-label">Category</label>
+            <select id="budgetCategoryInput" class="form-select" required></select>
+            <div class="form-text">Categories with an existing budget cannot be selected.</div>
+          </div>
+          <div class="mb-3">
+            <label for="budgetLimitInput" class="form-label">Budget amount</label>
+            <input id="budgetLimitInput" type="number" class="form-control" min="0.01" step="0.01" required>
+            <div class="form-text">Enter the amount in your configured application currency.</div>
+          </div>
+          <div>
+            <label for="budgetPeriodInput" class="form-label">Period</label>
+            <select id="budgetPeriodInput" class="form-select" required>
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id="budgetSaveButton" type="submit" class="btn btn-primary" disabled>Save</button>
         </div>
       </form>
     </div>

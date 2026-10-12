@@ -3,6 +3,8 @@
     "dashboards": "Dashboards",
     "transactions": "Transactions",
     "settings": "Settings",
+    "spending": "Spending History",
+    "budgets": "Budgets",
     "logout": "Logout",
     "logout_title": "Logout"
   },
