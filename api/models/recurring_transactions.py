@@ -16,6 +16,7 @@ class RecurringTransactionBase(SQLModel):
     startDate: date = Field(default_factory=date.today, index=True)
     endDate: date = Field(default_factory=date.today, index=True)
     frequency: Literal["daily", "weekly", "monthly", "yearly"] = Field(sa_type=String, default="daily", index=True)
+    person_id: str | None = Field(default=None, index=True)
     
     @model_validator(mode='after')
     def check_model(self):
@@ -48,6 +49,7 @@ class RecurringTransactionUpdate(SQLModel):
     type: Literal["expense", "income"] | None = None
     endDate: date | None = None
     frequency: Literal["daily", "weekly", "monthly", "yearly"] | None = None
+    person_id: str | None = None
     applyTo: Literal["future", "all"] = Field(default="future")
 
 class RecurringTransactionDelete(SQLModel):
@@ -63,3 +65,4 @@ class RecurringTransactionPublic(SQLModel):
     startDate: date
     endDate: date
     frequency: Literal["daily", "weekly", "monthly", "yearly"]
+    person_id: str | None = None

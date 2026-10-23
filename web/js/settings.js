@@ -1,1936 +1,1166 @@
-const API_URL = '/api';
-
-let categories;
-let tags;
-let currency;
-let login;
-
-let categorySelected;
-let tagSelected;
-
-// Multi-select state for the Categories / Tags pill sections.
-// Names of currently-selected pills; drives the action buttons in the card header.
-const pillSelections = {
-  category: new Set(),
-  tag: new Set(),
-};
-
-let gridInstance;
-let gridApi;
-
-let modalMode = 'add';
-let selectedRow;
-
-let tagsInput;
-
-// Execute the main function when DOM has loaded
-document.addEventListener('DOMContentLoaded', () => main());
-
-async function main() {
-  await checkLogin();
-  await getVersion();
-
-  // Initialize i18n
-  await i18n.init();
-  renderLanguage();
-
-  // Get categories, tags and default currency
-  [categories, tags, currency, login] = await Promise.all([
-    getCategories(),
-    getTags(),
-    getCurrency(),
-    getLogin(),
-    renderTheme(),
+(() => {
+  const MANAGED_TAGS = new Set([
+    'urgent', 'monthly', 'recurring', 'gift', 'bonus', 'vacation', 'subscription',
+    'online', 'special', 'daily', 'fun', 'salary',
   ]);
 
-  // Render Login elements
-  renderLogin();
+  const LANGUAGES = [
+    { value: 'en', label: 'English', detail: 'English' },
+    { value: 'ca', label: 'Català', detail: 'Catalan' },
+    { value: 'de', label: 'Deutsch', detail: 'German' },
+    { value: 'es', label: 'Español', detail: 'Spanish' },
+    { value: 'fr', label: 'Français', detail: 'French' },
+    { value: 'hi', label: 'हिन्दी', detail: 'Hindi' },
+    { value: 'it', label: 'Italiano', detail: 'Italian' },
+    { value: 'ja', label: '日本語', detail: 'Japanese' },
+    { value: 'ko', label: '한국어', detail: 'Korean' },
+    { value: 'pt', label: 'Português', detail: 'Portuguese' },
+    { value: 'ru', label: 'Русский', detail: 'Russian' },
+    { value: 'zh', label: '中文', detail: 'Chinese' },
+    { value: 'ar', label: 'العربية', detail: 'Arabic' },
+  ];
 
-  // Initialize the grid
-  gridApi = await initGrid();
-
-  // Show page after all translations are applied
-  i18n.showPage();
-
-  // Init Tom Select for tags input
-  tagsInput = new TomSelect('#tagsInput', {
-    plugins: {
-      remove_button: {
-        title: 'Remove this tag',
-      }
-    },
-    persist: false,
-    create: true,
-    render: {
-      no_results: function(data, escape) {
-        return '';
-      },
-    }
-  });
-}
-
-async function getVersion() {
-  const response = await fetch(`${API_URL}/version`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  document.getElementById('version').innerText = `${data.version}`;
-}
-
-async function getCategories() {
-  const response = await fetch(`${API_URL}/categories`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  await renderCategories(data);
-  return data;
-}
-
-async function getTags() {
-  const response = await fetch(`${API_URL}/tags`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  await renderTags(data);
-  return data;
-}
-
-async function getCurrency() {
-  const response = await fetch(`${API_URL}/currency`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  await renderCurrency(data);
-  return {
-    name: data.selected,
-    symbol: data.currencies.find(c => c.name === data.selected)?.symbol,
-    position: data.position
+  const state = {
+    section: 'general',
+    all: [],
+    month: [],
+    rules: [],
+    keys: [],
+    loginEnabled: false,
+    editCats: false,
+    editTags: false,
+    selectedCats: new Set(),
+    selectedTags: new Set(),
+    importStatus: '',
+    loaded: false,
   };
-}
 
-async function getLogin() {
-  const response = await fetch(`${API_URL}/login/check`, {
-    method: 'GET',
-    credentials: 'include',
-  });
+  const $ = (id) => document.getElementById(id);
 
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
+  function languageLabel(code) {
+    return LANGUAGES.find((l) => l.value === code)?.label || code;
   }
 
-  return await response.json()
-}
+  function destinationList() {
+    const list = [
+      { id: 'general', label: 'General', icon: 'sliders' },
+    ];
+    if (W.hasPeople()) list.push({ id: 'people', label: 'People', icon: 'people' });
+    list.push(
+      { id: 'categories', label: 'Categories & tags', icon: 'tag' },
+      { id: 'recurring', label: 'Recurring', icon: 'repeat' },
+      { id: 'data', label: 'Data', icon: 'swap' },
+      { id: 'access', label: 'Access', icon: 'key' },
+      { id: 'about', label: 'About', icon: 'info' },
+    );
+    return list;
+  }
 
-// --------------
-// - CATEGORIES -
-// --------------
-document.getElementById('categoryModalEdit').addEventListener('shown.bs.modal', () => {
-  document.getElementById('categoryEditInput').focus();
-});
-document.getElementById('categoryModalAdd').addEventListener('shown.bs.modal', () => {
-  document.getElementById('categoryAddInput').focus();
-});
-
-// Shared section config — Categories and Tags use identical multi-select UX.
-const PILL_SECTIONS = {
-  category: {
-    selection: () => pillSelections.category,
-    items: () => categories,
-    headerActions: 'categoryHeaderActions',
-    countEl: 'categorySelectionCount',
-    chip: 'categorySelectionChip',
-    editBtn: 'categoryEditBtn',
-    deleteBtn: 'categoryDeleteBtn',
-    editModal: 'categoryModalEdit',
-    editInput: 'categoryEditInput',
-    deleteModal: 'categoryModalDelete',
-    deletePrompt: 'categoryModalDeletePrompt',
-    confirmOneKey: 'settings.categories.delete_confirm',
-    confirmManyKey: 'settings.categories.delete_confirm_many',
-    deletedManyKey: 'settings.messages.categories_deleted',
-    deletedOneKey: 'settings.messages.category_deleted',
-    rerender: () => renderCategories(categories),
-  },
-  tag: {
-    selection: () => pillSelections.tag,
-    items: () => tags,
-    headerActions: 'tagHeaderActions',
-    countEl: 'tagSelectionCount',
-    chip: 'tagSelectionChip',
-    editBtn: 'tagEditBtn',
-    deleteBtn: 'tagDeleteBtn',
-    editModal: 'tagModalEdit',
-    editInput: 'tagEditInput',
-    deleteModal: 'tagModalDelete',
-    deletePrompt: 'tagModalDeletePrompt',
-    confirmOneKey: 'settings.tags.delete_confirm',
-    confirmManyKey: 'settings.tags.delete_confirm_many',
-    deletedManyKey: 'settings.messages.tags_deleted',
-    deletedOneKey: 'settings.messages.tag_deleted',
-    rerender: () => renderTags(tags),
-  },
-};
-
-function togglePillSelection(section, name) {
-  const set = PILL_SECTIONS[section].selection();
-  if (set.has(name)) set.delete(name);
-  else set.add(name);
-  PILL_SECTIONS[section].rerender();
-}
-
-function clearPillSelection(section) {
-  PILL_SECTIONS[section].selection().clear();
-  PILL_SECTIONS[section].rerender();
-}
-
-function updatePillHeaderState(section) {
-  const cfg = PILL_SECTIONS[section];
-  const count = cfg.selection().size;
-  const actions = document.getElementById(cfg.headerActions);
-  const editBtn = document.getElementById(cfg.editBtn);
-  const countEl = document.getElementById(cfg.countEl);
-  if (!actions || !editBtn || !countEl) return;
-
-  // display: none (via hidden) gives instant hide; the header's min-height
-  // keeps it from jumping when the buttons appear/disappear.
-  actions.hidden = count === 0;
-  countEl.textContent = String(count);
-
-  // Edit makes sense only for a single selection; greyed out otherwise.
-  editBtn.disabled = count !== 1;
-  editBtn.title = count > 1 ? i18n.t('common.edit_single_tooltip') : '';
-}
-
-// Wire up the clear-selection chip once at startup (HTML element exists from page load).
-['category', 'tag'].forEach(section => {
-  const chip = document.getElementById(PILL_SECTIONS[section].chip);
-  if (!chip) return;
-  chip.addEventListener('click', () => clearPillSelection(section));
-  chip.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      clearPillSelection(section);
+  function railValue(id) {
+    if (id === 'general') {
+      const theme = localStorage.getItem('theme') || 'system';
+      return `${theme === 'system' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light'} · ${W.state.currency.name} · ${languageLabel(i18n.locale)}`;
     }
-  });
-});
-
-function openEditFromSelection(section) {
-  const cfg = PILL_SECTIONS[section];
-  const set = cfg.selection();
-  if (set.size !== 1) return;
-  const name = [...set][0];
-  if (section === 'category') categorySelected = name;
-  else tagSelected = name;
-  document.getElementById(cfg.editInput).value = name;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById(cfg.editModal)).show();
-}
-
-function openDeleteFromSelection(section) {
-  const cfg = PILL_SECTIONS[section];
-  const set = cfg.selection();
-  if (set.size === 0) return;
-  const names = [...set];
-  const prompt = document.getElementById(cfg.deletePrompt);
-  if (names.length === 1) {
-    prompt.innerHTML = `${escapeHtml(i18n.t(cfg.confirmOneKey))} <strong>${escapeHtml(names[0])}</strong>?`;
-  } else {
-    const lead = i18n.t(cfg.confirmManyKey).replace('{count}', String(names.length));
-    const shown = names.length > 5 ? names.slice(0, 5).join(', ') + `, +${names.length - 5}` : names.join(', ');
-    prompt.innerHTML = `${escapeHtml(lead)}<br><strong>${escapeHtml(shown)}</strong>`;
-  }
-  bootstrap.Modal.getOrCreateInstance(document.getElementById(cfg.deleteModal)).show();
-}
-
-async function editCategorySubmit(event) {
-  event.preventDefault();
-
-  // Get form data
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const response = await fetch(`${API_URL}/categories/${categorySelected}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
+    if (id === 'people') {
+      const names = W.state.people.map((p) => p.name);
+      return names.length ? `${names.slice(0, 2).join(' · ')}${names.length > 2 ? ` +${names.length - 2}` : ''}` : 'Not used';
     }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModalEdit'));
-      modal.hide();
-
-      // Show toast with info about transaction updates
-      bootstrap.showToast({body: i18n.t('settings.messages.category_updated'), delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // The renamed item no longer matches the previously-selected name.
-      pillSelections.category.clear();
-      categories = await getCategories();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-async function renderCategories(categories) {
-  const container = document.getElementById('categoryBadges');
-  container.innerHTML = ''; // clear previous badges
-
-  // Drop stale selections — items that no longer exist in the list.
-  const validNames = new Set(categories);
-  for (const name of pillSelections.category) {
-    if (!validNames.has(name)) pillSelections.category.delete(name);
+    if (id === 'categories') return `${W.state.categories.length} categories · ${W.state.tags.length} tags`;
+    if (id === 'recurring') return state.rules.length ? `${state.rules.length} ${state.rules.length === 1 ? 'rule' : 'rules'}` : 'No rules';
+    if (id === 'data') return 'Import and export';
+    if (id === 'access') return state.loginEnabled ? 'Password on · API keys' : 'No password · API keys';
+    if (id === 'about') return `Version ${W.state.version}`;
+    return '';
   }
 
-  if (categories.length == 0) {
-    const empty = document.createElement('span');
-    empty.style.fontSize = '0.9rem'
-    empty.innerText = "No categories have been created yet."
-    empty.style.fontStyle = 'italic';
-    container.appendChild(empty);
-  }
-  else {
-    categories.forEach(category => {
-      const badge = document.createElement('span');
-      badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
-      if (pillSelections.category.has(category)) badge.classList.add('selected');
-      badge.style.height = '34px';
-      badge.style.paddingLeft = '12px';
-      badge.style.paddingRight = '12px';
-      badge.style.fontSize = '0.9rem';
-      badge.style.fontWeight = '400';
-      badge.style.cursor = 'pointer';
-      badge.textContent = category;
-      badge.onclick = () => togglePillSelection('category', category);
-      container.appendChild(badge);
+  function renderRail() {
+    const rail = $('settingsRail');
+    const destinations = destinationList();
+    rail.innerHTML = destinations.map((d) => `
+      <a class="item ${state.section === d.id ? 'on' : ''}" href="#${d.id}" data-section="${d.id}" ${state.section === d.id ? 'aria-current="page"' : ''}>
+        <span class="sic">${W.icon(d.icon)}</span>
+        <span class="rail-l"><span class="rail-name">${d.label}</span><small class="rail-val">${W.escapeHtml(railValue(d.id))}</small></span>
+        <span class="rail-chev" aria-hidden="true">${W.icon('chevronRight')}</span>
+      </a>`).join('');
+    rail.querySelectorAll('[data-section]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        location.hash = link.dataset.section;
+      });
     });
   }
-  updatePillHeaderState('category');
 
-  // Update the select dropdown in recurring transactions
-  const select = document.getElementById('categorySelect');
+  function isSmall() {
+    return window.matchMedia('(max-width: 860px)').matches;
+  }
 
-  // Clear any existing options
-  select.innerHTML = "";
+  function showSection(id, { scroll = true } = {}) {
+    const destinations = destinationList();
+    const requested = destinations.some((d) => d.id === id) ? id : null;
+    const active = requested || 'general';
+    const detail = !isSmall() || Boolean(requested);
+    state.section = active;
+    const root = document.querySelector('.settings');
+    root?.classList.toggle('detail', detail);
+    document.querySelectorAll('[data-panel]').forEach((panel) => {
+      panel.classList.toggle('on', detail && panel.dataset.panel === active);
+    });
+    document.querySelectorAll('#settingsRail [data-section]').forEach((link) => {
+      link.classList.toggle('on', detail && link.dataset.section === active);
+      if (detail && link.dataset.section === active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+    document.title = `${requested ? destinations.find((d) => d.id === requested)?.label : 'Settings'} · Wally`;
+    if (scroll && isSmall() && requested) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }
 
-  // First static placeholder option
-  const placeholder = document.createElement('option');
-  placeholder.value = "";
-  placeholder.textContent = "Select category";
-  placeholder.selected = true;
-  placeholder.disabled = true;
-  select.appendChild(placeholder);
+  /* ------------------------------ data ------------------------------ */
+  async function loadAll() {
+    await W.loadCore(true);
+    const [all, rules, keys, loginEnabled] = await Promise.all([
+      W.api('/transactions'),
+      W.api('/recurring'),
+      W.api('/api-keys').catch(() => []),
+      W.api('/login/check').catch(() => false),
+    ]);
+    state.all = all;
+    state.rules = rules;
+    W.state.recurring = rules;
+    state.keys = keys;
+    state.loginEnabled = Boolean(loginEnabled);
+    const now = new Date();
+    state.month = W.monthTransactions(all, now);
+    state.loaded = true;
+    renderAll();
+  }
 
-  // Then your dynamic options
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
-    option.selected = false;
-    select.appendChild(option);
-  });
-}
+  function renderAll() {
+    renderRail();
+    renderGeneral();
+    renderPeople();
+    renderTokens('categories');
+    renderTokens('tags');
+    renderRules();
+    renderData();
+    renderAccess();
+    renderAbout();
+    showSection(location.hash.replace('#', ''), { scroll: false });
+  }
 
-async function addCategory(event) {
-  event.preventDefault();
+  function categoryCounts() {
+    const counts = new Map();
+    for (const t of state.all) counts.set(t.category, (counts.get(t.category) || 0) + 1);
+    return counts;
+  }
 
-  // Get form data
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
+  function tagCounts() {
+    const counts = new Map();
+    for (const t of state.all) {
+      for (const tag of t.tags || []) counts.set(tag, (counts.get(tag) || 0) + 1);
+    }
+    return counts;
+  }
 
-  // Add new category
-  try {
-    const response = await fetch(`${API_URL}/categories`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  /* ----------------------------- general ---------------------------- */
+  function renderGeneral() {
+    const preference = localStorage.getItem('theme') || 'system';
+    const themeChoices = [...document.querySelectorAll('[data-theme-choice]')];
+    themeChoices.forEach((button, index) => {
+      const on = button.dataset.themeChoice === preference;
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-checked', String(on));
+      button.tabIndex = on ? 0 : -1;
+      button.onclick = () => {
+        W.setTheme(button.dataset.themeChoice);
+        renderGeneral();
+      };
+      button.onkeydown = (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        event.preventDefault();
+        const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+        const next = themeChoices[(index + step + themeChoices.length) % themeChoices.length];
+        next.focus();
+        next.click();
+      };
     });
 
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      categories = await getCategories();
-      bootstrap.showToast({body: i18n.t('settings.messages.category_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-      document.getElementById('categoryForm').reset();
-      bootstrap.Modal.getInstance(document.getElementById('categoryModalAdd'))?.hide();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function deleteCategorySubmit(event) {
-  event.preventDefault();
-  await bulkDeletePills('category', {
-    endpoint: (name) => `${API_URL}/categories/${encodeURIComponent(name)}`,
-    refresh: async () => { categories = await getCategories(); },
-  });
-}
-
-// Shared bulk-delete handler for the Categories / Tags pill sections.
-// Fans out DELETEs in parallel and reports aggregated results — including
-// partial failures (e.g. a category still in use can't be deleted).
-async function bulkDeletePills(section, { endpoint, refresh }) {
-  const cfg = PILL_SECTIONS[section];
-  const names = [...cfg.selection()];
-  if (names.length === 0) return;
-
-  const results = await Promise.all(names.map(async (name) => {
-    try {
-      const response = await fetch(endpoint(name), { method: 'DELETE', credentials: 'include' });
-      if (response.status === 401) {
-        window.location.href = '/login';
-        return { name, ok: false, error: 'unauthorized' };
-      }
-      if (!response.ok) {
-        let detail = `HTTP ${response.status}`;
-        try {
-          const json = await response.json();
-          detail = json.detail?.[0]?.msg || json.detail || detail;
-        } catch (_) {}
-        return { name, ok: false, error: detail };
-      }
-      return { name, ok: true };
-    } catch (err) {
-      return { name, ok: false, error: err.message || String(err) };
-    }
-  }));
-
-  bootstrap.Modal.getInstance(document.getElementById(cfg.deleteModal))?.hide();
-
-  const succeeded = results.filter(r => r.ok);
-  const failed = results.filter(r => !r.ok);
-
-  // Refresh the list before toasting so deleted items disappear visually first.
-  await refresh();
-
-  if (failed.length === 0) {
-    const body = succeeded.length === 1
-      ? i18n.t(cfg.deletedOneKey)
-      : i18n.t(cfg.deletedManyKey).replace('{count}', String(succeeded.length));
-    bootstrap.showToast({ body, delay: 1500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success" });
-  } else if (succeeded.length === 0) {
-    // Total failure — surface the first failure's detail (typically all fail for the same reason).
-    bootstrap.showToast({ body: failed[0].error, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger" });
-  } else {
-    const body = i18n.t('common.delete_partial')
-      .replace('{success}', String(succeeded.length))
-      .replace('{total}', String(results.length));
-    bootstrap.showToast({ body, delay: 4000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-warning" });
-  }
-}
-
-// --------
-// - TAGS -
-// --------
-document.getElementById('tagModalEdit').addEventListener('shown.bs.modal', () => {
-  document.getElementById('tagEditInput').focus();
-});
-document.getElementById('tagModalAdd').addEventListener('shown.bs.modal', () => {
-  document.getElementById('tagAddInput').focus();
-});
-
-async function editTagSubmit(event) {
-  event.preventDefault();
-
-  // Get form data
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const response = await fetch(`${API_URL}/tags/${tagSelected}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('tagModalEdit'));
-      modal.hide();
-
-      // Show toast with info about transaction updates
-      bootstrap.showToast({body: i18n.t('settings.messages.tag_updated'), delay: 2500, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // The renamed item no longer matches the previously-selected name.
-      pillSelections.tag.clear();
-      tags = await getTags();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-async function renderTags(tags) {
-  const container = document.getElementById('tagBadges');
-  container.innerHTML = ''; // clear previous badges
-
-  // Drop stale selections — items that no longer exist in the list.
-  const validNames = new Set(tags);
-  for (const name of pillSelections.tag) {
-    if (!validNames.has(name)) pillSelections.tag.delete(name);
-  }
-
-  if (tags.length == 0) {
-    const empty = document.createElement('span');
-    empty.style.fontSize = '0.9rem'
-    empty.innerText = "No tags have been created yet."
-    empty.style.fontStyle = 'italic';
-    container.appendChild(empty);
-  }
-  else {
-    tags.forEach(tag => {
-      const badge = document.createElement('span');
-      badge.className = 'badge rounded-pill me-2 d-inline-flex align-items-center mb-2';
-      if (pillSelections.tag.has(tag)) badge.classList.add('selected');
-      badge.style.height = '34px';
-      badge.style.paddingLeft = '12px';
-      badge.style.paddingRight = '12px';
-      badge.style.fontSize = '0.9rem';
-      badge.style.fontWeight = '400';
-      badge.style.cursor = 'pointer';
-      badge.textContent = tag;
-      badge.onclick = () => togglePillSelection('tag', tag);
-      container.appendChild(badge);
-    });
-  }
-  updatePillHeaderState('tag');
-}
-
-async function addTag(event) {
-  event.preventDefault();
-
-  // Get form data
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const response = await fetch(`${API_URL}/tags`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      tags = await getTags();
-      bootstrap.showToast({body: i18n.t('settings.messages.tag_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-      document.getElementById('tagForm').reset();
-      bootstrap.Modal.getInstance(document.getElementById('tagModalAdd'))?.hide();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function deleteTagSubmit(event) {
-  event.preventDefault();
-  await bulkDeletePills('tag', {
-    endpoint: (name) => `${API_URL}/tags/${encodeURIComponent(name)}`,
-    refresh: async () => { tags = await getTags(); },
-  });
-}
-
-// ------------
-// - CURRENCY -
-// ------------
-async function renderCurrency(data) {
-  const select = document.getElementById('currencySelect');
-
-  // Clear any existing options
-  select.innerHTML = "";
-
-  // Add currency options
-  data.currencies.forEach(c => {
-    const option = document.createElement('option');
-    option.value = c.name;
-    option.textContent = `${c.name} (${c.symbol})`;
-    option.selected = c.name === data.selected;
-    select.appendChild(option);
-  });
-
-  // Set position radio buttons
-  document.getElementById('positionLeft').checked = data.position === 'left';
-  document.getElementById('positionRight').checked = data.position === 'right';
-
-  // Update position button labels with selected currency symbol
-  const selectedCurrency = data.currencies.find(c => c.name === data.selected);
-  if (selectedCurrency) {
-    document.getElementById('positionLeftLabel').textContent = `${selectedCurrency.symbol}100`;
-    document.getElementById('positionRightLabel').textContent = `100${selectedCurrency.symbol}`;
-  }
-}
-
-async function changeCurrency(event) {
-  const new_currency = event.target.value
-
-  try {
-    const response = await fetch(`${API_URL}/currency/${new_currency}`, {
-      method: 'PUT',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.currency_changed'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the currency
-      currency = await getCurrency();
-
-      // Update position button labels with new currency symbol
-      const currencyData = await fetch(`${API_URL}/currency`, {credentials: 'include'}).then(r => r.json());
-      renderCurrency(currencyData);
-
-      // Update the grid with the new currency
-      gridApi.refreshCells();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function changeCurrencyPosition(event) {
-  const position = event.target.value
-
-  try {
-    const response = await fetch(`${API_URL}/currency/position/${position}`, {
-      method: 'PUT',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.currency_position_changed'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the currency
-      currency = await getCurrency();
-
-      // Update the grid with the new currency
-      gridApi.refreshCells();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-document.getElementById('currencyModal').addEventListener('shown.bs.modal', () => {
-  renderCurrencyList();
-  document.getElementById('currencySearch').value = '';
-});
-
-let editingCurrency = null;
-let allCurrencies = [];
-
-async function renderCurrencyList() {
-  const response = await fetch(`${API_URL}/currency`, {credentials: 'include'});
-  const data = await response.json();
-  allCurrencies = data;
-  filterCurrencyList();
-}
-
-function filterCurrencyList() {
-  const search = document.getElementById('currencySearch').value.toLowerCase();
-  const tbody = document.getElementById('currencyTableBody');
-  tbody.innerHTML = '';
-
-  const filtered = allCurrencies.currencies.filter(c =>
-    c.name.toLowerCase().includes(search) || c.symbol.toLowerCase().includes(search)
-  );
-
-  filtered.forEach(c => {
-    const row = document.createElement('tr');
-    const isSelected = c.name === allCurrencies.selected;
-    row.className = 'currency-row' + (isSelected ? ' currency-row-active' : '');
-
-    // Code cell
-    const nameCell = document.createElement('td');
-    nameCell.className = 'currency-cell-name';
-    if (isSelected) {
-      nameCell.innerHTML = `
-        <span class="currency-code">${c.name}</span>
-        <span class="currency-active-badge">${i18n.t('settings.currency.active') || 'Active'}</span>
-      `;
+    $('currencyValue').textContent = `${W.state.currency.name} · ${W.state.currency.symbol}`;
+    $('languageValue').textContent = languageLabel(i18n.locale);
+    if (W.hasPeople()) {
+      const names = W.state.people.map((p) => p.name);
+      $('peopleRowValue').textContent = names.length <= 2 ? names.join(' & ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+      $('peopleRowSub').textContent = 'Shared costs, splits and balances.';
     } else {
-      nameCell.innerHTML = `<span class="currency-code">${c.name}</span>`;
+      $('peopleRowValue').textContent = 'Not used';
+      $('peopleRowSub').textContent = 'Add someone to split a cost.';
     }
 
-    // Symbol cell
-    const symbolCell = document.createElement('td');
-    symbolCell.className = 'currency-cell-symbol';
-    symbolCell.innerHTML = `<span class="currency-symbol-display">${c.symbol}</span>`;
+    const owner = W.defaultOwner();
+    $('ownerDefaultValue').textContent = !W.hasPeople()
+      ? 'No people yet'
+      : owner === 'shared'
+        ? 'Shared'
+        : W.personName(owner) || 'First person';
 
-    // Actions cell
-    const actionsCell = document.createElement('td');
-    actionsCell.className = 'currency-cell-actions';
-
-    // Edit button
-    const editButton = document.createElement('button');
-    editButton.type = 'button';
-    editButton.className = 'currency-action-btn currency-btn-edit';
-    editButton.title = i18n.t('settings.currency.edit_tooltip');
-    editButton.innerHTML = `
-      <i data-lucide="square-pen" width="14" height="14"></i>
-    `;
-    editButton.addEventListener('click', () => editCurrency(c.name, c.symbol));
-
-    // Delete button
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.className = 'currency-action-btn currency-btn-delete' + (isSelected ? ' disabled' : '');
-    deleteButton.title = isSelected ? i18n.t('settings.currency.cannot_delete') : i18n.t('settings.currency.delete_tooltip');
-    deleteButton.disabled = isSelected;
-    deleteButton.innerHTML = `
-      <i data-lucide="trash-2" width="14" height="14"></i>
-    `;
-    if (!isSelected) {
-      deleteButton.addEventListener('click', () => deleteCurrency(c.name));
-    }
-
-    actionsCell.appendChild(editButton);
-    actionsCell.appendChild(deleteButton);
-
-    row.appendChild(nameCell);
-    row.appendChild(symbolCell);
-    row.appendChild(actionsCell);
-
-    tbody.appendChild(row);
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="3" class="text-center text-muted py-4">
-          <i data-lucide="search" width="24" height="24" style="opacity: 0.4; margin-bottom: 6px;"></i>
-          <div style="font-size: 0.85rem;">${i18n.t('settings.currency.no_results') || 'No currencies found'}</div>
-        </td>
-      </tr>
-    `;
+    $('currencyRow').onclick = openCurrencyDialog;
+    $('languageRow').onclick = openLanguageDialog;
+    $('peopleRow').onclick = () => {
+      if (W.hasPeople()) location.hash = 'people';
+      else addPerson();
+    };
+    $('ownerDefaultRow').onclick = openOwnerDefault;
+    $('ownerDefaultReset').onclick = () => {
+      W.setDefaultOwner(null);
+      renderGeneral();
+      W.toast('New transactions will start with the first person.');
+    };
+    const generalValue = document.querySelector('#settingsRail [data-section="general"] .rail-val');
+    if (generalValue) generalValue.textContent = railValue('general');
   }
 
-  renderIcons(tbody);
-}
-
-async function addCurrencySubmit(event) {
-  event.preventDefault();
-  const form = event.target;
-  const data = {name: form.name.value.toUpperCase(), symbol: form.symbol.value};
-
-  try {
-    const response = await fetch(`${API_URL}/currency`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
-    });
-
-    const json = await response.json();
-    if (!response.ok) throw new Error(json.detail || 'Error adding currency');
-
-    bootstrap.showToast({body: i18n.t('settings.messages.currency_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
-    form.reset();
-    await renderCurrencyList();
-    currency = await getCurrency();
-    renderCurrency(await fetch(`${API_URL}/currency`, {credentials: 'include'}).then(r => r.json()));
-  } catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-  }
-}
-
-function editCurrency(name, symbol) {
-  editingCurrency = name;
-  document.getElementById('currencyEditName').value = name;
-  document.getElementById('currencyEditSymbol').value = symbol;
-  bootstrap.Modal.getInstance(document.getElementById('currencyModal')).hide();
-  new bootstrap.Modal(document.getElementById('currencyEditModal')).show();
-}
-
-function cancelCurrencyEdit() {
-  bootstrap.Modal.getInstance(document.getElementById('currencyEditModal')).hide();
-  new bootstrap.Modal(document.getElementById('currencyModal')).show();
-}
-
-async function editCurrencySubmit(event) {
-  event.preventDefault();
-  const form = event.target;
-  const data = {name: form.name.value.toUpperCase(), symbol: form.symbol.value};
-
-  try {
-    const response = await fetch(`${API_URL}/currency/${editingCurrency}/update`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
-    });
-
-    const json = await response.json();
-    if (!response.ok) throw new Error(json.detail || 'Error updating currency');
-
-    bootstrap.showToast({body: i18n.t('settings.messages.currency_updated'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
-    bootstrap.Modal.getInstance(document.getElementById('currencyEditModal')).hide();
-    new bootstrap.Modal(document.getElementById('currencyModal')).show();
-    await renderCurrencyList();
-    currency = await getCurrency();
-    renderCurrency(await fetch(`${API_URL}/currency`, {credentials: 'include'}).then(r => r.json()));
-    gridApi.refreshCells();
-  } catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-  }
-}
-
-async function deleteCurrency(name) {
-  if (!confirm(i18n.t('settings.messages.delete_currency_confirm').replace('{name}', name))) return;
-
-  try {
-    const response = await fetch(`${API_URL}/currency/${name}`, {
-      method: 'DELETE',
-      credentials: 'include'
-    });
-
-    const json = await response.json();
-    if (!response.ok) throw new Error(json.detail || 'Error deleting currency');
-
-    bootstrap.showToast({body: i18n.t('settings.messages.currency_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
-    renderCurrencyList();
-    currency = await getCurrency();
-    renderCurrency(await fetch(`${API_URL}/currency`, {credentials: 'include'}).then(r => r.json()));
-    gridApi.refreshCells();
-  } catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-  }
-}
-
-// ---------
-// - THEME -
-// ---------
-async function renderTheme() {
-  const currentTheme = localStorage.getItem('theme') || 'system';
-  const select = document.getElementById('themeSelect');
-  select.value = currentTheme;
-}
-
-async function changeTheme(event) {
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const select = document.getElementById('themeSelect');
-  const theme = event.target.value
-
-  // Store the selected theme in localStorage
-  localStorage.setItem('theme', theme);
-
-  // Apply the theme to bootstrap elements
-  const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-bs-theme', resolved);
-  document.documentElement.style.colorScheme = resolved;
-
-  // Recreate the AG Grid with the new theme
-  initGrid();
-
-  // Show confirmation message
-  bootstrap.showToast({body: i18n.t('settings.messages.theme_changed'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-}
-
-// ------------
-// - LANGUAGE -
-// ------------
-function renderLanguage() {
-  const select = document.getElementById('languageSelect');
-  select.value = i18n.locale;
-}
-
-async function changeLanguage(event) {
-  const lang = event.target.value;
-  await i18n.setLanguage(lang);
-
-  // Reinitialize the grid with translated column headers
-  initGrid();
-
-  bootstrap.showToast({body: i18n.t('settings.messages.language_changed'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"});
-}
-
-// --------------
-// - LOGIN PAGE -
-// --------------
-document.getElementById('loginModalEnable').addEventListener('shown.bs.modal', () => {
-  document.getElementById('loginEnablePasswordInput').focus();
-  loginEnablePasswordShow.style.display = 'block';
-  loginEnablePasswordHide.style.display = 'none';
-  loginEnablePasswordInput.type = 'password'
-});
-document.getElementById('loginModalChange').addEventListener('shown.bs.modal', () => {
-  document.getElementById('loginChangePasswordInput').focus();
-  loginChangePasswordShow.style.display = 'block';
-  loginChangePasswordHide.style.display = 'none';
-  loginChangePasswordInput.type = 'password'
-});
-
-function enableLogin() {
-  document.getElementById('loginFormEnable').reset();
-}
-function changeLogin() {
-  document.getElementById('loginFormChange').reset();
-}
-
-function renderLogin() {
-  const loginEnableBtn = document.getElementById('loginEnableBtn')
-  const loginDisableBtn = document.getElementById('loginDisableBtn')
-  const loginChangeBtn = document.getElementById('loginChangeBtn')
-  const apiKeysBtn = document.getElementById('apiKeysBtn')
-
-  if (login) {
-    loginEnableBtn.style.display = 'none'
-    loginDisableBtn.style.display = 'inline'
-    loginChangeBtn.style.display = 'inline'
-    apiKeysBtn.style.display = 'inline'
-  }
-  else {
-    loginEnableBtn.style.display = 'inline'
-    loginDisableBtn.style.display = 'none'
-    loginChangeBtn.style.display = 'none'
-    apiKeysBtn.style.display = 'none'
-  }
-}
-
-async function loginSubmit(event, mode) {
-  event.preventDefault();
-
-  let data = {"password": ""};
-  if (mode != 'disable') {
-    const formData = new FormData(event.target);
-    data = Object.fromEntries(formData.entries());
-  }
-
-  // Enable login and change password
-  try {
-    const response = await fetch(`${API_URL}/login/password`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
+  async function openCurrencyDialog() {
+    let data;
+    try {
+      data = await W.api('/currency');
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
       return;
     }
+    const body = `
+      <label class="field"><span class="flabel">Currency</span>
+        <select class="input" id="currencySelect">
+          ${data.currencies.map((c) => `<option value="${W.escapeHtml(c.name)}" ${c.name === data.selected ? 'selected' : ''}>${W.escapeHtml(c.name)} · ${W.escapeHtml(c.symbol)}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field"><span class="flabel">Symbol position</span>
+        <select class="input" id="currencyPosition">
+          <option value="left" ${data.position === 'left' ? 'selected' : ''}>Before the amount — ${W.escapeHtml(data.currencies.find((c) => c.name === data.selected)?.symbol || '')}12.34</option>
+          <option value="right" ${data.position === 'right' ? 'selected' : ''}>After the amount — 12.34 ${W.escapeHtml(data.currencies.find((c) => c.name === data.selected)?.symbol || '')}</option>
+        </select>
+      </label>
+      <p class="card-note">Existing amounts are not converted. Only the symbol and its position change.</p>`;
+    const result = await W.dialog({
+      title: 'Currency',
+      description: 'One currency for the whole ledger.',
+      body,
+      confirmLabel: 'Save',
+      onConfirm: async (el) => {
+        const name = el.querySelector('#currencySelect').value;
+        const position = el.querySelector('#currencyPosition').value;
+        if (name !== W.state.currency.name) await W.api(`/currency/${encodeURIComponent(name)}`, { method: 'PUT' });
+        if (position !== W.state.currency.position) await W.api(`/currency/position/${position}`, { method: 'PUT' });
+        return true;
+      },
+    });
+    if (result) {
+      await W.loadCore(true);
+      renderGeneral();
+      W.toast('Currency updated.');
+    }
+  }
 
-    if (response.status === 405) {
-      bootstrap.showToast({body: i18n.t('settings.messages.demo_action_unavailable'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+  async function openLanguageDialog() {
+    const result = await W.choiceDialog({
+      title: 'Language',
+      description: 'Existing translations are kept. New labels fall back to English.',
+      options: LANGUAGES,
+      value: i18n.locale,
+      confirmLabel: 'Use language',
+    });
+    if (!result || result === i18n.locale) return;
+    await i18n.setLanguage(result);
+    renderGeneral();
+    W.toast('Language updated.');
+  }
+
+  async function openOwnerDefault() {
+    if (!W.hasPeople()) {
+      addPerson();
       return;
     }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      let modalID;
-      let message;
-
-      if (mode == 'enable') {
-        modalID = 'loginModalEnable'
-        message = i18n.t('settings.messages.login_enabled')
-        login = true
-      }
-      else if (mode == 'disable') {
-        modalID = 'loginModalDisable'
-        message = i18n.t('settings.messages.login_disabled')
-        login = false
-      }
-      else if (mode == 'change') {
-        modalID = 'loginModalChange'
-        message = i18n.t('settings.messages.password_changed')
-      }
-
-      // If mode is enable, login automatically
-      if (mode == 'enable') {
-        await fetch(`${API_URL}/login`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        document.getElementById('logoutButton').style.display = 'block'
-      }
-
-      // If mode is disable, logout automatically
-      else if (mode == 'disable') {
-        await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-        document.getElementById('logoutButton').style.display = 'none'
-      }
-
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById(modalID));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: message, delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh UX
-      renderLogin();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-// --------------
-// - API KEYS -
-// --------------
-let apiKeyDeleteId = null;
-const MAX_API_KEYS = 3;
-
-async function loadApiKeys() {
-  try {
-    const response = await fetch(`${API_URL}/api-keys`, {
-      method: 'GET',
-      credentials: 'include',
+    const current = W.defaultOwner();
+    const options = W.state.people.map((p) => ({ value: p.id, label: p.name, detail: p.is_self ? 'This browser' : 'Person' }));
+    if (W.state.people.length >= 2) options.push({ value: 'shared', label: 'Shared', detail: 'Start with a split' });
+    const result = await W.choiceDialog({
+      title: 'Default owner',
+      description: 'The owner a new transaction starts with on this browser.',
+      options,
+      value: current,
+      confirmLabel: 'Use owner',
     });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const keys = await response.json();
-    renderApiKeysList(keys);
-
-    // Populate URL placeholders in usage section
-    document.querySelectorAll('.api-url-placeholder').forEach(el => {
-      el.textContent = window.location.origin + '/api';
-    });
+    if (!result) return;
+    W.setDefaultOwner(result);
+    renderGeneral();
+    W.toast('Default owner set for this browser.');
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+
+  /* ------------------------------ people ---------------------------- */
+  function sharedRow() {
+    return W.summarise(state.month);
   }
-}
 
-function renderApiKeysList(keys) {
-  const container = document.getElementById('apiKeysList');
+  function renderPeople() {
+    const list = $('peopleList');
+    const balance = $('balanceList');
+    $('balanceSurface').hidden = !W.hasPeople();
+    $('peopleCount').textContent = W.hasPeople()
+      ? `${W.state.people.length} ${W.state.people.length === 1 ? 'person' : 'people'} · ${state.month.length} transactions this month`
+      : 'No people yet';
 
-  if (!keys.length) {
-    container.innerHTML = `
-      <div class="text-center py-5">
-        <div class="api-keys-empty-icon mx-auto mb-3">
-          <i data-lucide="key" width="28" height="28"></i>
-        </div>
-        <p class="text-muted mb-0" style="font-size: 0.9rem;" data-i18n="settings.api_keys.no_keys">${i18n.t('settings.api_keys.no_keys') || 'No API keys created'}</p>
+    if (!W.hasPeople()) {
+      list.innerHTML = `<div class="empty" style="padding:26px 18px">
+        <span class="eic">${W.icon('people')}</span>
+        <b>A ledger for one</b>
+        <span>Add someone when a cost is shared. People are real owners, never tags.</span>
+        <button type="button" class="btn primary sm" id="emptyAddPerson" style="margin-top:8px">Add the first person</button>
       </div>`;
-    updateCreateApiKeyBtn(0);
-    renderIcons(container);
-    return;
-  }
-
-  let html = '<table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;"><thead><tr>';
-  html += `<th>ID</th>`;
-  html += `<th data-i18n="settings.api_keys.created">${i18n.t('settings.api_keys.created') || 'Created'}</th>`;
-  html += `<th data-i18n="settings.api_keys.last_used">${i18n.t('settings.api_keys.last_used') || 'Last Used'}</th>`;
-  html += `<th class="text-center" data-i18n="settings.api_keys.actions">${i18n.t('settings.api_keys.actions') || 'Actions'}</th>`;
-  html += '</tr></thead><tbody>';
-
-  for (const key of keys) {
-    const lastUsed = key.last_used || (i18n.t('settings.api_keys.never') || 'Never');
-    html += `<tr>`;
-    html += `<td><code>${escapeHtml(key.id)}</code></td>`;
-    html += `<td>${escapeHtml(key.created_at)}</td>`;
-    html += `<td>${escapeHtml(lastUsed)}</td>`;
-    html += `<td class="text-center">
-      <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteApiKey('${key.id}')" title="${i18n.t('settings.api_keys.delete_tooltip') || 'Delete'}">
-        <i data-lucide="trash-2" width="14" height="14"></i>
-      </button>
-    </td>`;
-    html += `</tr>`;
-  }
-
-  html += '</tbody></table>';
-  container.innerHTML = html;
-  renderIcons(container);
-
-  // Disable create button at limit
-  updateCreateApiKeyBtn(keys.length);
-}
-
-function updateCreateApiKeyBtn(count) {
-  const btn = document.getElementById('createApiKeyBtn');
-  if (!btn) return;
-  btn.disabled = count >= MAX_API_KEYS;
-  if (count >= MAX_API_KEYS) {
-    btn.title = (i18n.t('settings.api_keys.max_reached') || `Maximum of ${MAX_API_KEYS} API keys reached`);
-  } else {
-    btn.title = '';
-  }
-}
-
-function copyCodeBlock(btn) {
-  const code = btn.closest('.api-code-block').querySelector('code');
-  navigator.clipboard.writeText(code.textContent);
-  // Brief visual feedback
-  btn.classList.add('copied');
-  setTimeout(() => btn.classList.remove('copied'), 1500);
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-async function createApiKey() {
-  try {
-    const response = await fetch(`${API_URL}/api-keys`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
+      list.querySelector('#emptyAddPerson')?.addEventListener('click', addPerson);
+      balance.innerHTML = '';
+      $('balanceNote').textContent = '';
+      $('peopleNotice').innerHTML = '';
       return;
     }
 
-    if (response.status === 405) {
-      bootstrap.showToast({body: i18n.t('settings.messages.demo_action_unavailable'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+    const sum = sharedRow();
+    const max = Math.max(1, ...Object.values(sum.perPerson).map((p) => Math.max(p.spent, p.shares)));
+    list.innerHTML = W.state.people.map((person) => {
+      const row = sum.perPerson[person.id] || { spent: 0, earned: 0, net: 0, shares: 0, count: 0 };
+      return `<div class="person-row">
+        ${W.avatar(person)}
+        <button type="button" class="pn-wrap" data-edit-person="${person.id}">
+          <span class="pn">${W.escapeHtml(person.name)}</span>
+          <span class="ps">${person.is_self ? 'This browser' : 'Person'} · ${row.count} ${row.count === 1 ? 'transaction' : 'transactions'}${row.shares ? ` · ${W.money(row.shares)} shared` : ''}</span>
+        </button>
+        <span class="pval ${row.net - row.shares > 0 ? 'pos' : row.net - row.shares < 0 ? 'muted' : ''}">${W.money(row.net - row.shares, { signed: true })}</span>
+        <button type="button" class="icon-btn small" data-delete-person="${person.id}" aria-label="Delete ${W.escapeHtml(person.name)}">${W.icon('trash')}</button>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-edit-person]').forEach((button) => {
+      button.addEventListener('click', () => editPerson(button.dataset.editPerson));
+    });
+    list.querySelectorAll('[data-delete-person]').forEach((button) => {
+      button.addEventListener('click', () => deletePerson(button.dataset.deletePerson));
+    });
+
+    const peopleRows = W.state.people.map((person) => {
+      const row = sum.perPerson[person.id] || { spent: 0, earned: 0, net: 0, shares: 0 };
+      return `<div class="bal">
+        <span class="who">${W.avatar(person, 'tiny')}<b>${W.escapeHtml(person.name)}</b></span>
+        <span class="balbar" aria-hidden="true"><u style="width:${((row.spent + row.shares) / max * 100).toFixed(1)}%"></u></span>
+        <span class="num">${W.money(row.spent + row.shares)}</span>
+        <span class="num">${W.money(row.earned)}</span>
+      </div>`;
+    }).join('');
+
+    const shared = sum.shared;
+    const sharedParts = Object.entries(shared.parts)
+      .map(([pid, amount]) => `${W.personName(pid)} ${W.money(amount)}`)
+      .join(' · ');
+    balance.innerHTML = peopleRows + (shared.count ? `<div class="bal">
+      <span class="who"><span class="avatar-person tiny shared">${W.icon('people')}</span><span class="who-txt"><b>Shared</b>${sharedParts ? `<small>${W.escapeHtml(sharedParts)}</small>` : ''}</span></span>
+      <span class="balbar" aria-hidden="true"><u style="width:${(shared.spent / max * 100).toFixed(1)}%"></u></span>
+      <span class="num">${W.money(shared.spent)}</span>
+      <span class="num">—</span>
+    </div>` : '') + `<div class="bal total">
+      <span class="who"><b>Household</b></span>
+      <span class="balbar" aria-hidden="true"></span>
+      <span class="num">${W.money(sum.expense)}</span>
+      <span class="num">${W.money(sum.income)}</span>
+    </div>`;
+
+    $('balanceNote').textContent = `${W.monthLabel(new Date())}. Personal rows exclude the shared pot. ${shared.count ? `${shared.count} shared ${shared.count === 1 ? 'cost' : 'costs'}, ${W.money(shared.spent)} in total.` : 'No shared costs this month.'}`;
+
+    renderMigration();
+  }
+
+  function renderMigration() {
+    const notice = $('peopleNotice');
+    if (!W.hasPeople() || !state.all.length) { notice.innerHTML = ''; return; }
+    const counts = new Map();
+    for (const t of state.all) {
+      for (const tag of t.tags || []) counts.set(tag, (counts.get(tag) || 0) + 1);
+    }
+    const threshold = Math.max(5, Math.ceil(state.all.length * 0.22));
+    const candidate = [...counts.entries()]
+      .filter(([tag, count]) => count >= threshold && !MANAGED_TAGS.has(tag.toLowerCase()) && !localStorage.getItem(`wally_dismiss_migrate_${tag}`))
+      .sort((a, b) => b[1] - a[1])[0];
+    if (!candidate) { notice.innerHTML = ''; return; }
+    const [tag, count] = candidate;
+    notice.innerHTML = `<div class="notice">
+      <div class="nt">A tag might be a person</div>
+      <div class="nd">“${W.escapeHtml(tag)}” follows ${count} of ${state.all.length} transactions. If it names someone, turn it into a person so it can own rows and carry a split. The tag is removed from those rows.</div>
+      <div class="na">
+        <button type="button" class="btn primary sm" id="migrateTag">Make ${W.escapeHtml(tag)} a person</button>
+        <button type="button" class="btn ghost sm" id="dismissMigrate">Not a person</button>
+      </div>
+    </div>`;
+    notice.querySelector('#migrateTag')?.addEventListener('click', async () => {
+      const name = await W.promptDialog({
+        title: 'Name this person',
+        description: `“${tag}” will become a person and be removed from the tagged transactions.`,
+        label: 'Name',
+        value: tag.charAt(0).toUpperCase() + tag.slice(1),
+        confirmLabel: 'Make person',
+      });
+      if (!name) return;
+      try {
+        await W.api('/people/from-tag', { method: 'POST', body: JSON.stringify({ tag, name }) });
+        await loadAll();
+        W.toast('Tag became a person.');
+      } catch (error) {
+        W.toast(error.message, { tone: 'danger' });
+      }
+    });
+    notice.querySelector('#dismissMigrate')?.addEventListener('click', () => {
+      localStorage.setItem(`wally_dismiss_migrate_${tag}`, '1');
+      notice.innerHTML = '';
+    });
+  }
+
+  async function addPerson() {
+    const name = await W.promptDialog({
+      title: 'Add person',
+      description: 'A person can own transactions and take part in a shared split.',
+      label: 'Name',
+      placeholder: 'e.g. Alex',
+      confirmLabel: 'Add person',
+    });
+    if (!name) return;
+    try {
+      const person = await W.api('/people', { method: 'POST', body: JSON.stringify({ name }) });
+      await loadAll();
+      if (!W.defaultOwner()) W.setDefaultOwner(person.id);
+      W.toast(`${person.name} added.`);
+      location.hash = 'people';
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
+  async function editPerson(id) {
+    const person = W.state.people.find((p) => p.id === id);
+    if (!person) return;
+    const body = `
+      <label class="field"><span class="flabel">Name</span><input class="input" id="personName" maxlength="60" value="${W.escapeHtml(person.name)}"></label>
+      <label class="check"><input type="checkbox" id="personSelf" ${person.is_self ? 'checked' : ''}> Use this person as “this browser”</label>
+      <p class="card-note">Renaming is safe. Transactions keep their owner; only the label changes.</p>`;
+    const result = await W.dialog({
+      title: 'Edit person',
+      body,
+      confirmLabel: 'Save',
+      onConfirm: async (el) => {
+        const name = el.querySelector('#personName').value.trim();
+        if (!name) throw new Error('A person needs a name.');
+        const makeSelf = el.querySelector('#personSelf').checked;
+        if (name !== person.name || makeSelf !== person.is_self) {
+          await W.api(`/people/${person.id}`, { method: 'PUT', body: JSON.stringify({ name, is_self: makeSelf }) });
+        }
+        return true;
+      },
+    });
+    if (result) {
+      await loadAll();
+      W.toast('Person updated.');
+    }
+  }
+
+  async function deletePerson(id) {
+    const person = W.state.people.find((p) => p.id === id);
+    if (!person) return;
+    const ok = await W.confirmDialog({
+      title: `Delete ${person.name}?`,
+      message: 'Every transaction stays. Their rows become unowned, and a shared split loses their part. This cannot be undone.',
+      confirmLabel: 'Delete person',
+    });
+    if (!ok) return;
+    try {
+      await W.api(`/people/${person.id}`, { method: 'DELETE' });
+      if (W.defaultOwner() === person.id) W.setDefaultOwner(null);
+      await loadAll();
+      W.toast(`${person.name} removed.`);
+      if (!W.hasPeople()) location.hash = 'general';
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
+  /* -------------------------- categories/tags ----------------------- */
+  function renderTokens(kind) {
+    const isCat = kind === 'categories';
+    const container = isCat ? $('categoryTokens') : $('tagTokens');
+    const counts = isCat ? categoryCounts() : tagCounts();
+    const items = isCat ? W.state.categories : W.state.tags;
+    const editing = isCat ? state.editCats : state.editTags;
+    const selected = isCat ? state.selectedCats : state.selectedTags;
+    const editButton = isCat ? $('editCategories') : $('editTags');
+    const hint = isCat ? $('categoryHint') : $('tagHint');
+    editButton.textContent = editing ? 'Done' : 'Edit';
+
+    if (!items.length) {
+      container.innerHTML = `<span class="card-note">Nothing here yet.</span>`;
+      hint.textContent = isCat ? 'Tap a token to rename it.' : 'Tap a tag to rename it.';
       return;
     }
 
-    const json = await response.json();
+    container.innerHTML = items.map((name) => {
+      const on = selected.has(name);
+      return `<button type="button" class="token ${on ? 'sel' : ''}" data-kind="${kind}" data-name="${W.escapeHtml(name)}" ${editing ? `aria-pressed="${on}"` : `aria-label="Rename ${W.escapeHtml(name)}"`}>
+        ${W.escapeHtml(name)} <span class="cnt">${counts.get(name) || 0}</span>
+        ${editing && on ? `<span class="x" aria-hidden="true">${W.icon('check')}</span>` : ''}
+      </button>`;
+    }).join('');
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
+    container.querySelectorAll('[data-name]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.name;
+        if (editing) {
+          if (selected.has(name)) selected.delete(name); else selected.add(name);
+          renderTokens(kind);
+        } else {
+          renameItem(kind, name);
+        }
+      });
+    });
+
+    if (editing && selected.size) {
+      hint.innerHTML = `<b style="color:var(--ink)">${selected.size} selected</b> <button type="button" class="link danger" id="deleteTokens">Delete</button>`;
+      hint.querySelector('#deleteTokens')?.addEventListener('click', () => deleteTokens(kind));
+    } else if (editing) {
+      hint.textContent = isCat ? 'Select categories to remove. A category in use stays.' : 'Select tags to remove. They leave every transaction.';
+    } else {
+      hint.textContent = isCat ? 'Tap a token to rename it.' : 'Tap a tag to rename it.';
     }
-
-    // Reset form
-
-    // Hide the API keys modal
-    const apiKeysModalEl = document.getElementById('apiKeysModal');
-    const apiKeysModal = bootstrap.Modal.getInstance(apiKeysModalEl);
-    apiKeysModal.hide();
-
-    // Show the created key modal with the plaintext key
-    document.getElementById('apiKeyCreatedValue').textContent = json.key;
-    document.getElementById('apiKeyCreatedUsageValue').textContent = json.key;
-    // Populate URL placeholders in created modal usage section
-    document.querySelectorAll('#apiKeyCreatedModal .api-url-placeholder').forEach(el => {
-      el.textContent = window.location.origin + '/api';
-    });
-    const createdModalEl = document.getElementById('apiKeyCreatedModal');
-    const createdModal = new bootstrap.Modal(createdModalEl);
-    createdModal.show();
-
-    // When created modal closes, reopen the API keys modal with refreshed list
-    createdModalEl.addEventListener('hidden.bs.modal', async function handler() {
-      createdModalEl.removeEventListener('hidden.bs.modal', handler);
-      const apiKeysModal = new bootstrap.Modal(document.getElementById('apiKeysModal'));
-      apiKeysModal.show();
-      await loadApiKeys();
-    });
-
-    // Show toast
-    bootstrap.showToast({body: i18n.t('settings.messages.api_key_created'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
+
+  function toggleTokenEdit(kind) {
+    if (kind === 'categories') {
+      state.editCats = !state.editCats;
+      state.selectedCats.clear();
+    } else {
+      state.editTags = !state.editTags;
+      state.selectedTags.clear();
+    }
+    renderTokens(kind);
   }
-}
 
-function copyApiKey() {
-  const el = document.getElementById('apiKeyCreatedValue');
-  navigator.clipboard.writeText(el.textContent);
-  bootstrap.showToast({body: i18n.t('settings.messages.api_key_copied'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-}
-
-function confirmDeleteApiKey(id) {
-  apiKeyDeleteId = id;
-  document.getElementById('apiKeyDeleteName').textContent = id;
-
-  // Hide the API keys list modal
-  const apiKeysModalEl = document.getElementById('apiKeysModal');
-  const apiKeysModal = bootstrap.Modal.getInstance(apiKeysModalEl);
-  apiKeysModal.hide();
-
-  // Show delete confirmation modal
-  const deleteModal = new bootstrap.Modal(document.getElementById('apiKeyDeleteModal'));
-  deleteModal.show();
-}
-
-async function deleteApiKeySubmit(event) {
-  event.preventDefault();
-
-  try {
-    const response = await fetch(`${API_URL}/api-keys/${apiKeyDeleteId}`, {
-      method: 'DELETE',
-      credentials: 'include',
+  async function renameItem(kind, name) {
+    const isCat = kind === 'categories';
+    const next = await W.promptDialog({
+      title: isCat ? 'Rename category' : 'Rename tag',
+      description: isCat
+        ? 'Transactions and recurring rules that use it move with the name.'
+        : 'Transactions and recurring rules that carry it move with the name.',
+      label: 'Name',
+      value: name,
+      confirmLabel: 'Rename',
     });
+    if (!next || next === name) return;
+    try {
+      await W.api(`/${isCat ? 'categories' : 'tags'}/${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: next }),
+      });
+      await loadAll();
+      W.toast(`${name} renamed to ${next}.`);
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
 
-    if (response.status === 401) {
-      window.location.href = '/login';
+  async function addToken(kind) {
+    const isCat = kind === 'categories';
+    const name = await W.promptDialog({
+      title: isCat ? 'Add category' : 'Add tag',
+      label: 'Name',
+      placeholder: isCat ? 'e.g. Education' : 'e.g. reimbursable',
+      confirmLabel: 'Add',
+    });
+    if (!name) return;
+    try {
+      await W.api(`/${isCat ? 'categories' : 'tags'}`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      await loadAll();
+      W.toast(`${name} added.`);
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
+  async function deleteTokens(kind) {
+    const isCat = kind === 'categories';
+    const selected = isCat ? state.selectedCats : state.selectedTags;
+    const names = [...selected];
+    if (!names.length) return;
+    const ok = await W.confirmDialog({
+      title: `Delete ${names.length} ${names.length === 1 ? (isCat ? 'category' : 'tag') : (isCat ? 'categories' : 'tags')}?`,
+      message: isCat
+        ? 'Categories still used by a transaction or rule cannot be removed. Wally will keep those and report them.'
+        : 'Tags are removed from every transaction and recurring rule that carries them. The transactions stay.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    const failures = [];
+    for (const name of names) {
+      try {
+        await W.api(`/${isCat ? 'categories' : 'tags'}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      } catch (error) {
+        failures.push(name);
+      }
+    }
+    selected.clear();
+    await loadAll();
+    if (failures.length) {
+      W.toast(`${failures.length} could not be removed because they are still in use.`, { tone: 'danger' });
+    } else {
+      W.toast(`${names.length} removed.`);
+    }
+  }
+
+  /* ----------------------------- recurring -------------------------- */
+  function advanceDate(date, frequency) {
+    const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (frequency === 'daily') next.setDate(next.getDate() + 1);
+    else if (frequency === 'weekly') next.setDate(next.getDate() + 7);
+    else if (frequency === 'monthly') {
+      const day = next.getDate();
+      next.setDate(1);
+      next.setMonth(next.getMonth() + 1);
+      const last = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+      next.setDate(Math.min(day, last));
+    } else {
+      const day = next.getDate();
+      next.setDate(1);
+      next.setFullYear(next.getFullYear() + 1);
+      next.setMonth(date.getMonth());
+      const last = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+      next.setDate(Math.min(day, last));
+    }
+    return next;
+  }
+
+  function nextOccurrence(rule) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = W.parseDate(rule.endDate);
+    let cursor = W.parseDate(rule.startDate);
+    if (end < today) return null;
+    for (let i = 0; i < 5000 && cursor < today; i += 1) cursor = advanceDate(cursor, rule.frequency);
+    if (cursor > end) return null;
+    return cursor;
+  }
+
+  function frequencyLabel(frequency) {
+    return { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly' }[frequency] || frequency;
+  }
+
+  function renderRules() {
+    const active = state.rules.filter((r) => W.parseDate(r.endDate) >= new Date()).length;
+    $('rulesCount').textContent = state.rules.length
+      ? `${state.rules.length} ${state.rules.length === 1 ? 'rule' : 'rules'} · ${active} active`
+      : 'No rules yet';
+
+    if (!state.rules.length) {
+      $('rulesList').innerHTML = `<div class="empty" style="padding:28px 18px">
+        <span class="eic">${W.icon('repeat')}</span>
+        <b>Nothing repeats yet</b>
+        <span>A rule writes occurrences on its own. Rent, a salary, a subscription.</span>
+        <button type="button" class="btn primary sm" id="emptyAddRule" style="margin-top:8px">Add a rule</button>
+      </div>`;
+      $('rulesList').querySelector('#emptyAddRule')?.addEventListener('click', () => openRuleDialog());
       return;
     }
 
-    if (response.status === 405) {
-      bootstrap.showToast({body: i18n.t('settings.messages.demo_action_unavailable'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-      return;
-    }
+    $('rulesList').innerHTML = state.rules.map((rule) => {
+      const next = nextOccurrence(rule);
+      const owner = rule.person_id ? W.personName(rule.person_id) : 'No owner';
+      return `<button type="button" class="wrule" data-rule="${rule.id}">
+        <span class="ric">${W.icon('repeat')}</span>
+        <span>
+          <span class="rn">${W.escapeHtml(rule.name || rule.category)}</span>
+          <span class="rs">${frequencyLabel(rule.frequency)} · ${next ? `next ${W.shortDate(next)}` : 'ended'} · ${W.escapeHtml(owner)}</span>
+        </span>
+        <span class="ra" style="${rule.type === 'income' ? 'color:var(--positive)' : ''}">${W.money(rule.amount, { signed: true, sign: rule.type === 'income' ? '+' : '−' })}</span>
+        <span class="rmore" aria-hidden="true">${W.icon('chevronRight')}</span>
+      </button>`;
+    }).join('');
 
-    const json = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-
-    // Hide delete modal
-    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('apiKeyDeleteModal'));
-    deleteModal.hide();
-
-    // Show toast
-    bootstrap.showToast({body: i18n.t('settings.messages.api_key_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-    // Re-open the API keys modal with refreshed list
-    setTimeout(async () => {
-      const apiKeysModal = new bootstrap.Modal(document.getElementById('apiKeysModal'));
-      apiKeysModal.show();
-      await loadApiKeys();
-    }, 300);
+    $('rulesList').querySelectorAll('[data-rule]').forEach((button) => {
+      button.addEventListener('click', () => openRuleDialog(state.rules.find((r) => r.id === button.dataset.rule)));
+    });
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
 
-// -------------------
-// - IMPORT / EXPORT -
-// -------------------
+  function openRuleDialog(rule = null) {
+    const categories = [...new Set([...(W.state.categories || []), rule?.category].filter(Boolean))];
+    const tags = [...new Set([...(W.state.tags || []), ...(rule?.tags || [])])];
+    const today = new Date();
+    const defaultEnd = W.dateISO(W.addYears(today, 1));
+    const defaultPerson = rule ? rule.person_id : (W.defaultOwner() === 'shared' ? null : W.defaultOwner());
+    const body = `
+      <label class="field"><span class="flabel">Name</span><input class="input" id="ruleName" maxlength="80" value="${W.escapeHtml(rule?.name || '')}" placeholder="e.g. Rent"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label class="field"><span class="flabel">Amount</span><input class="input" id="ruleAmount" inputmode="decimal" value="${rule ? Number(rule.amount).toFixed(2) : ''}" placeholder="0.00"></label>
+        <label class="field"><span class="flabel">Type</span><select class="input" id="ruleType"><option value="expense" ${rule?.type !== 'income' ? 'selected' : ''}>Expense</option><option value="income" ${rule?.type === 'income' ? 'selected' : ''}>Income</option></select></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label class="field"><span class="flabel">Category</span><select class="input" id="ruleCategory">${categories.map((c) => `<option value="${W.escapeHtml(c)}" ${c === rule?.category ? 'selected' : ''}>${W.escapeHtml(c)}</option>`).join('')}</select></label>
+        <label class="field"><span class="flabel">Repeats</span><select class="input" id="ruleFrequency">${['daily', 'weekly', 'monthly', 'yearly'].map((f) => `<option value="${f}" ${(rule?.frequency || 'monthly') === f ? 'selected' : ''}>${frequencyLabel(f)}</option>`).join('')}</select></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label class="field"><span class="flabel">Starts</span><input class="input" type="date" id="ruleStart" value="${rule?.startDate || W.dateISO(today)}" ${rule ? 'disabled' : ''}></label>
+        <label class="field"><span class="flabel">Ends</span><input class="input" type="date" id="ruleEnd" value="${rule?.endDate || defaultEnd}"></label>
+      </div>
+      ${W.hasPeople() ? `<label class="field"><span class="flabel">Owner</span><select class="input" id="rulePerson"><option value="">No owner</option>${W.state.people.map((p) => `<option value="${p.id}" ${defaultPerson === p.id ? 'selected' : ''}>${W.escapeHtml(p.name)}</option>`).join('')}</select></label>` : ''}
+      <div class="field"><span class="flabel">Tags</span><div class="chips" id="ruleTags">${tags.map((tag) => `<button type="button" class="chip2 ${rule?.tags?.includes(tag) ? 'on' : ''}" data-rule-tag="${W.escapeHtml(tag)}">${W.escapeHtml(tag)}</button>`).join('') || '<span class="card-note">No tags yet. Add them in Categories &amp; tags.</span>'}</div></div>
+      ${rule ? `<label class="field"><span class="flabel">Apply changes to</span><select class="input" id="ruleApply"><option value="future">Future occurrences</option><option value="all">Every occurrence</option></select></label>` : ''}
+      ${rule ? `<button type="button" class="danger-link" id="deleteRuleButton">${W.icon('trash')} Delete this rule</button>` : ''}`;
 
-// Tags are stored as arrays internally but must fit in a single CSV cell.
-// We embed a "sub-CSV": the cell value is itself a comma-separated list where
-// each tag is CSV-quoted only if it contains a comma, quote, or newline. Using
-// Papa for both directions keeps the round-trip symmetric — a tag like
-// "Home, Office" survives export+import as a single tag instead of being
-// silently split.
-function tagsToCsvCell(tags) {
-  if (!Array.isArray(tags) || tags.length === 0) return '';
-  const normalized = tags.map(t => (t == null ? '' : String(t)));
-  return Papa.unparse([normalized], { header: false }).replace(/\r?\n$/, '');
-}
-
-function csvCellToTags(cell) {
-  if (cell == null) return [];
-  const str = String(cell).trim();
-  if (str === '') return [];
-  const { data } = Papa.parse(str, { header: false, skipEmptyLines: false });
-  const row = data?.[0];
-  if (!Array.isArray(row)) return [];
-  // Trim whitespace (forgiving for hand-edited CSVs) and drop empty entries.
-  return row.map(t => (t == null ? '' : String(t).trim())).filter(t => t !== '');
-}
-
-async function exportToCSV() {
-  try {
-    const response = await fetch(`${API_URL}/transactions`, {
-      method: 'GET',
-      credentials: 'include',
+    const pending = W.dialog({
+      title: rule ? 'Edit rule' : 'Add rule',
+      description: rule ? 'The start date is fixed. Changes can leave the past alone.' : 'A rule writes its own rows from the start date until the end date.',
+      body,
+      confirmLabel: rule ? 'Save' : 'Add rule',
+      onConfirm: async (el) => {
+        const name = el.querySelector('#ruleName').value.trim();
+        const amount = W.parseAmount(el.querySelector('#ruleAmount').value);
+        const category = el.querySelector('#ruleCategory').value;
+        const type = el.querySelector('#ruleType').value;
+        const frequency = el.querySelector('#ruleFrequency').value;
+        const start = rule?.startDate || el.querySelector('#ruleStart').value;
+        const end = el.querySelector('#ruleEnd').value;
+        const person = el.querySelector('#rulePerson')?.value || null;
+        const selectedTags = [...el.querySelectorAll('[data-rule-tag].on')].map((b) => b.dataset.ruleTag);
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter an amount above zero.');
+        if (!category) throw new Error('Choose a category.');
+        if (!end) throw new Error('Choose an end date.');
+        if (W.parseDate(end) <= W.parseDate(start)) throw new Error('The end date must be after the start date.');
+        const payload = { name, category, tags: selectedTags, amount, type, endDate: end, frequency, person_id: person };
+        if (rule) {
+          payload.applyTo = el.querySelector('#ruleApply').value;
+          await W.api(`/recurring/${rule.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        } else {
+          payload.startDate = start;
+          await W.api('/recurring', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        return true;
+      },
     });
 
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
+    pending.then(async (result) => {
+      if (result) {
+        await loadAll();
+        W.toast(rule ? 'Rule updated.' : 'Rule added.');
+      }
+    });
 
-    const json = await response.json()
+    setTimeout(() => {
+      const deleteButton = document.querySelector('dialog.dialog[open] #deleteRuleButton');
+      deleteButton?.addEventListener('click', async () => {
+        const dialog = deleteButton.closest('dialog');
+        dialog.close();
+        setTimeout(() => dialog.remove(), 200);
+        const applyTo = await W.choiceDialog({
+          title: 'Delete this rule?',
+          description: 'Choose what happens to the occurrences it already wrote.',
+          options: [
+            { value: 'future', label: 'Keep past occurrences', detail: 'Only future rows are removed. Past rows stay as one-offs.' },
+            { value: 'all', label: 'Delete every occurrence', detail: 'Past and future rows created by this rule are removed.' },
+          ],
+          value: 'future',
+          confirmLabel: 'Delete rule',
+          danger: true,
+        });
+        if (!applyTo) return;
+        try {
+          await W.api(`/recurring/${rule.id}`, { method: 'DELETE', body: JSON.stringify({ applyTo }) });
+          await loadAll();
+          W.toast('Rule deleted.');
+        } catch (error) {
+          W.toast(error.message, { tone: 'danger' });
+        }
+      });
+    }, 40);
+  }
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
+  /* ------------------------------- data ----------------------------- */
+  function renderData() {
+    const last = localStorage.getItem('wally_last_export');
+    $('lastExport').textContent = last ? `Last export ${W.dateTimeLabel(last)}` : 'No export from this browser yet.';
+    $('importStatus').innerHTML = state.importStatus;
+  }
+
+  async function exportAll() {
+    try {
+      if (!state.all.length) { W.toast('There is nothing to export yet.'); return; }
+      const withPeople = W.hasPeople();
+      const columns = ['name', 'category', 'tags', 'amount', 'type', 'date'];
+      if (withPeople) columns.push('person');
+      const rows = state.all.map((t) => ({
+        name: t.name || '',
+        category: t.category || '',
+        tags: W.csv.tagsToCell(t.tags || []),
+        amount: Number(t.amount).toFixed(2),
+        type: t.type,
+        date: t.date,
+        person: t.person_id ? (W.personName(t.person_id) || '') : (W.sharesFor(t).length ? 'Shared' : ''),
+      }));
+      const stamp = W.dateISO(new Date());
+      W.download(`wally-${stamp}.csv`, W.csv.stringify(rows, columns));
+      localStorage.setItem('wally_last_export', new Date().toISOString());
+      renderData();
+      W.toast(`${rows.length} ${rows.length === 1 ? 'transaction' : 'transactions'} exported.`);
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
     }
-    else {
-      if (!json.length) {
-        bootstrap.showToast({body: i18n.t('settings.messages.no_transactions'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-        return;
+  }
+
+  function normalizeDateCell(value) {
+    const text = String(value ?? '').trim();
+    if (!text) throw new Error('A date is required.');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) throw new Error(`The date “${text}” could not be read.`);
+    return W.dateISO(parsed);
+  }
+
+  async function importFile(file) {
+    if (!file) return;
+    state.importStatus = '<b>Reading the file…</b>';
+    renderData();
+    try {
+      const text = await file.text();
+      const parsed = W.csv.parse(text);
+      const byLower = Object.fromEntries(parsed.headers.map((h) => [h.toLowerCase().trim(), h]));
+      const get = (row, key) => {
+        const header = byLower[key.toLowerCase()];
+        return header === undefined ? '' : row[header];
+      };
+      if (!parsed.rows.length) throw new Error('The file has no data rows.');
+      for (const required of ['date', 'name', 'amount']) {
+        if (!(required in byLower)) throw new Error(`The file is missing the “${required}” column.`);
       }
 
-      // Serialize each transaction's tag array into a single CSV cell value
-      // so tags containing commas/quotes survive the round-trip.
-      const rows = json.map(tx => ({ ...tx, tags: tagsToCsvCell(tx.tags) }));
-      const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-      const csv = Papa.unparse(rows, {
-        columns: mandatoryColumns
+      const peopleByName = new Map(W.state.people.map((p) => [p.name.toLowerCase(), p]));
+      const unknownPeople = new Set();
+      for (const row of parsed.rows) {
+        const person = String(get(row, 'person') ?? '').trim();
+        if (person && person.toLowerCase() !== 'shared' && !peopleByName.has(person.toLowerCase())) unknownPeople.add(person);
+      }
+      for (const name of unknownPeople) {
+        try {
+          const person = await W.api('/people', { method: 'POST', body: JSON.stringify({ name }) });
+          peopleByName.set(person.name.toLowerCase(), person);
+        } catch (error) {
+          throw new Error(`Could not add “${name}”: ${error.message}`);
+        }
+      }
+
+      const payload = parsed.rows.map((row, index) => {
+        const line = index + 2;
+        const name = String(get(row, 'name') ?? '').trim();
+        const category = String(get(row, 'category') ?? '').trim() || 'Miscellaneous';
+        const type = String(get(row, 'type') ?? 'expense').trim().toLowerCase() || 'expense';
+        if (type !== 'expense' && type !== 'income') throw new Error(`Row ${line}: type must be expense or income.`);
+        const amount = W.parseAmount(get(row, 'amount'));
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error(`Row ${line}: the amount must be above zero.`);
+        let person_id = null;
+        const personCell = String(get(row, 'person') ?? '').trim();
+        if (personCell && personCell.toLowerCase() !== 'shared') {
+          const person = peopleByName.get(personCell.toLowerCase());
+          if (!person) throw new Error(`Row ${line}: “${personCell}” is not a person.`);
+          person_id = person.id;
+        }
+        return {
+          name,
+          category,
+          tags: W.csv.cellToTags(get(row, 'tags')),
+          amount,
+          type,
+          date: normalizeDateCell(get(row, 'date')),
+          person_id,
+          shares: [],
+        };
       });
 
-      // Create Blob and trigger download
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'transactions.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function importFromCSV() {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  // Read file content
-  const csvText = await file.text();
-
-  // Parse CSV to JSON using PapaParse
-  const { data, errors, meta } = Papa.parse(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    transform: (value, column) => {
-      if (column === "tags") return csvCellToTags(value);
-      return value;
-    }
-  });
-
-  // Check for missing mandatory columns
-  const mandatoryColumns = ["name", "category", "tags", "amount", "type", "date"];
-  const missing = mandatoryColumns.filter(col => !meta.fields.includes(col));
-  if (missing.length > 0) {
-    errors.unshift({message: `Missing CSV columns: ${missing.join(", ")}`});
-  }
-
-  if (errors.length) {
-    bootstrap.showToast({body: errors[0].message, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
-  }
-
-  // Send data
-  try {
-    const response = await fetch(`${API_URL}/transactions/import`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Show confirmation message
-      bootstrap.showToast({body: i18n.t('settings.messages.transactions_imported'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 2000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-// --------------------------
-// - RECURRING TRANSACTIONS -
-// --------------------------
-document.getElementById('recurringModal').addEventListener('shown.bs.modal', () => {
-  document.getElementById('nameInput').focus()
-});
-
-document.getElementById('amountInput').addEventListener('input', (event) => {
-  if (event.target.value.includes(',')) {
-    event.target.value = event.target.value.replace(',', '.');
-  }
-});
-
-async function getRecurring() {
-  const response = await fetch(`${API_URL}/recurring`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json()
-  gridApi.setGridOption('rowData', data)
-}
-
-async function initGrid() {
-  let myTheme;
-  const theme = localStorage.getItem('theme') || 'system';
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-    myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
-  }
-  else {
-    myTheme = agGrid.themeQuartz.withParams({
-      backgroundColor: '#212529',
-      foregroundColor: '#b5b9bd',
-      headerTextColor: '#b5b9bd',
-      headerBackgroundColor: '#272b30',
-      oddRowBackgroundColor: '#272b30',
-      headerColumnResizeHandleColor: '#b5b9bd',
-    });
-  }
-
-  const gridOptions = {
-    theme: myTheme,
-    domLayout: 'autoHeight',
-    suppressMovableColumns: true,
-    rowData: [],
-    defaultColDef: {
-      flex: 1,
-      minWidth: 150,
-    },
-    overlayNoRowsTemplate: `<span style="padding: 10px; border: 1px solid var(--bs-border-color); background: var(--bs-body-bg);">${i18n.t('common.no_recurring_transactions')}</span>`,
-    onGridReady: params => {
-      gridApi = params.api;
-      getRecurring();
-    },
-    onFilterChanged: params => {
-      updateRowCount(params.api);
-    },
-    columnDefs: [
-      {
-        field: "name",
-        headerName: i18n.t('settings.recurring.columns.name'),
-        filter: true,
-        wrapText: true,
-        autoHeight: true,
-        cellRenderer: (params) => {
-          const container = document.createElement('span');
-
-          if (params.data?.recurringID) {
-            // SVG icon
-            container.innerHTML = `
-            <i data-lucide="refresh-ccw" width="10" height="10" style="vertical-align: middle; margin-right: 6px;"></i>
-            `;
-            // Add the name text after the SVG
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = params.data?.name;
-            container.appendChild(nameSpan);
-          } else {
-            // Just the name if no recurringID
-            container.textContent = params.data?.name;
-          }
-          renderIcons(container);
-          return container;
-        }
-      },
-      {
-        field: "category",
-        headerName: i18n.t('settings.recurring.columns.category'),
-        filter: true,
-      },
-      {
-        field: "tags",
-        headerName: i18n.t('settings.recurring.columns.tags'),
-        filter: true,
-        valueFormatter: (params) => {
-          return params.value ? params.value.join(", ") : "";
-        },
-      },
-      {
-        field: "startDate",
-        headerName: i18n.t('settings.recurring.columns.start_date'),
-        filter: true,
-      },
-      {
-        field: "endDate",
-        headerName: i18n.t('settings.recurring.columns.end_date'),
-        filter: true,
-      },
-      {
-        field: "frequency",
-        headerName: i18n.t('settings.recurring.columns.frequency'),
-        filter: true,
-        valueFormatter: (params) => {
-          return params.value ? params.value.charAt(0).toUpperCase() + params.value.slice(1) : "";
-        },
-      },
-      {
-        field: "amount",
-        headerName: i18n.t('settings.recurring.columns.amount'),
-        valueFormatter: (params) => {
-          const amount = params.value;
-          const sign = params.data?.type === 'expense' ? '-' : '';
-
-          if (currency.position === 'left') {
-            return `${sign}${currency.symbol}${amount}`;
-          }
-          else {
-            return `${sign}${amount} ${currency.symbol}`;
-          }
-        },
-        cellClass: (params) => {
-          if (params.data?.type === 'income') return 'text-green';
-          if (params.data?.type === 'expense') return 'text-red';
-        },
-        comparator: (valueA, valueB, nodeA, nodeB, isInverted) => {
-          const aData = nodeA.data;
-          const bData = nodeB.data;
-
-          // Calculate "sort value" for aData.amount based on type
-          const aVal = (aData.type === 'expense' ? -aData.amount : aData.amount);
-          const bVal = (bData.type === 'expense' ? -bData.amount : bData.amount);
-
-          // Normal numeric compare
-          if (aVal < bVal) return -1;
-          if (aVal > bVal) return 1;
-          return 0;
-        }
-      },
-      {
-        field: "actions",
-        headerName: i18n.t('settings.recurring.columns.actions'),
-        width: 100,
-        cellRenderer: (params) => {
-          const container = document.createElement("div");
-          container.style.display = "flex";
-          container.style.alignItems = "center";
-
-          // Edit button
-          const editButton = document.createElement("span");
-          editButton.innerHTML = `
-          <i data-lucide="square-pen" width="16.5" height="16.5" style="display: inline-block; vertical-align: middle;"></i>
-          `;
-          editButton.style.display = "flex";
-          editButton.style.justifyContent = "center";
-          editButton.style.alignItems = "center";
-          editButton.style.width = "35px";
-          editButton.style.height = "35px";
-          editButton.style.borderRadius = "50%";
-          editButton.style.cursor = "pointer";
-          editButton.style.marginRight = "1px";
-          editButton.style.color = "#007AFF"; // black
-          editButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
-          editButton.style.backgroundColor = "transparent";
-          editButton.style.lineHeight = "0";
-          editButton.style.filter = "opacity(0.8)";
-          editButton.title = "Edit Recurring Transaction";
-
-          editButton.addEventListener("mouseenter", () => {
-            editButton.style.color = "#0051CC";
-            editButton.style.backgroundColor = "#cce4ff";
-          });
-          editButton.addEventListener("mouseleave", () => {
-            editButton.style.color = "#007AFF" // "black";
-            editButton.style.backgroundColor = "transparent";
-          });
-          editButton.addEventListener("click", () => {
-            selectedRow = params.data;
-            editRecurring()
-          });
-
-          // Delete button
-          const deleteButton = document.createElement("span");
-          deleteButton.innerHTML = `
-          <i data-lucide="trash-2" width="16" height="16" style="display: inline-block; vertical-align: middle;"></i>
-          `;
-          deleteButton.style.display = "flex";
-          deleteButton.style.justifyContent = "center";
-          deleteButton.style.alignItems = "center";
-          deleteButton.style.width = "35px";
-          deleteButton.style.height = "35px";
-          deleteButton.style.borderRadius = "50%";
-          deleteButton.style.cursor = "pointer";
-          deleteButton.style.marginLeft = "1px";
-          deleteButton.style.color = "#FF3B30" // "black";
-          deleteButton.style.transition = "color 0.3s ease, background-color 0.3s ease";
-          deleteButton.style.backgroundColor = "transparent";
-          deleteButton.style.lineHeight = "0";
-          deleteButton.style.filter = "opacity(0.8)";
-          deleteButton.title = "Delete Recurring Transaction";
-
-          deleteButton.addEventListener("mouseenter", () => {
-            deleteButton.style.color = "red";
-            deleteButton.style.backgroundColor = "#ffc9c9";
-          });
-          deleteButton.addEventListener("mouseleave", () => {
-            deleteButton.style.color = "#FF3B30" // "black";
-            deleteButton.style.backgroundColor = "transparent";
-          });
-          deleteButton.addEventListener("click", () => {
-            selectedRow = params.data;
-            deleteRecurring()
-          });
-
-          container.appendChild(editButton);
-          container.appendChild(deleteButton);
-
-          renderIcons(container);
-          return container;
-        }
+      state.importStatus = `<b>Importing ${payload.length} ${payload.length === 1 ? 'row' : 'rows'}…</b>`;
+      renderData();
+      const chunk = 400;
+      for (let i = 0; i < payload.length; i += chunk) {
+        await W.api('/transactions/import', { method: 'POST', body: JSON.stringify(payload.slice(i, i + chunk)) });
       }
-    ]
+      await loadAll();
+      state.importStatus = `<b>${payload.length} ${payload.length === 1 ? 'row' : 'rows'} imported.</b> ${unknownPeople.size ? `${unknownPeople.size} ${unknownPeople.size === 1 ? 'person' : 'people'} created.` : ''} Dates, names, amounts and tags were read; person was matched by name.`;
+      renderData();
+      W.toast(`${payload.length} imported.`);
+    } catch (error) {
+      state.importStatus = `<b style="color:var(--danger)">Import stopped.</b> ${W.escapeHtml(error.message)}`;
+      renderData();
+      W.toast(error.message, { tone: 'danger' });
+    }
   }
 
-  // Destroy existing grid instance if it exists
-  if (gridInstance) {
-    gridInstance.destroy();
+  /* ------------------------------ access ---------------------------- */
+  function renderAccess() {
+    const enabled = state.loginEnabled;
+    $('loginStatus').textContent = enabled ? 'On' : 'Off';
+    $('loginStatus').className = `status ${enabled ? 'ok' : 'off'}`;
+    $('loginStatusSub').textContent = enabled
+      ? 'A password is required. A session lasts up to a year on this browser.'
+      : 'Anyone who can reach this host can open the ledger.';
+    $('loginToggle').textContent = enabled ? 'Disable' : 'Enable';
+    $('loginToggle').classList.toggle('ghost', enabled);
+
+    const list = $('apiKeyList');
+    if (!state.keys.length) {
+      list.innerHTML = `<div class="set-row"><div class="l"><b>No keys yet</b><small>A key lets a script read and write the ledger without a browser session.</small></div></div>`;
+    } else {
+      list.innerHTML = state.keys.map((key) => `<div class="set-row">
+        <div class="l"><b>${W.escapeHtml(key.id)}</b><small>Created ${W.dateTimeLabel(key.created_at)}</small></div>
+        <span class="v">${key.last_used ? `Used ${W.dateTimeLabel(key.last_used)}` : 'Never used'}</span>
+        <button type="button" class="icon-btn small" data-delete-key="${key.id}" aria-label="Delete key ${W.escapeHtml(key.id)}">${W.icon('trash')}</button>
+      </div>`).join('');
+      list.querySelectorAll('[data-delete-key]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const ok = await W.confirmDialog({
+            title: 'Delete API key?',
+            message: 'Any script using this key stops working immediately.',
+            confirmLabel: 'Delete key',
+          });
+          if (!ok) return;
+          try {
+            await W.api(`/api-keys/${encodeURIComponent(button.dataset.deleteKey)}`, { method: 'DELETE' });
+            state.keys = await W.api('/api-keys');
+            renderAccess();
+            W.toast('Key deleted.');
+          } catch (error) {
+            W.toast(error.message, { tone: 'danger' });
+          }
+        });
+      });
+    }
+    $('addKeyButton').disabled = state.keys.length >= 3;
+    $('addKeyButton').title = state.keys.length >= 3 ? 'Three keys is the limit.' : '';
   }
 
-  // Creating the AG Grid
-  const myGridElement = document.querySelector('#myGrid');
-  gridInstance = agGrid.createGrid(myGridElement, gridOptions);
-}
-
-function updateRowCount(api) {
-  const rowCount = api.getDisplayedRowCount();
-  document.getElementById('rowCount').innerText = `Rows shown: ${rowCount}`;
-}
-
-function onFilterTextBoxChanged() {
-  gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
-}
-
-function addRecurring() {
-  modalMode = 'add';
-  document.getElementById('recurringModalLabel').textContent = i18n.t('settings.recurring.modal_add_title');
-  document.getElementById('modalSubmitButton').textContent = i18n.t('settings.recurring.add_btn');
-  document.getElementById('recurringForm').reset();
-  document.getElementById('categorySelect').value = "";
-  document.getElementById('frequencySelect').value = "";
-  tagsInput.clearOptions();
-  tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=false);
-  });
-  tagsInput.setValue([]);
-  document.getElementById('startDateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-  document.getElementById('startDateInput').disabled = false;
-  document.getElementById('recurringModalApplyTo').style.display = 'none';
-}
-
-function editRecurring() {
-  modalMode = 'edit';
-  document.getElementById('recurringModalLabel').textContent = i18n.t('settings.recurring.modal_edit_title');
-  document.getElementById('modalSubmitButton').textContent = i18n.t('settings.recurring.update_btn');
-
-  // Assign values
-  document.getElementById('nameInput').value = selectedRow.name
-  document.getElementById('categorySelect').value = selectedRow.category
-  tagsInput.clearOptions();
-  selectedRow.tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=true);
-  });
-  tagsInput.setValue(selectedRow.tags);
-  document.getElementById('amountInput').value = selectedRow.amount
-  document.getElementById('typeSelect').value = selectedRow.type
-  document.getElementById('startDateInput').value = selectedRow.startDate
-  document.getElementById('startDateInput').disabled = true;
-  document.getElementById('endDateInput').value = selectedRow.endDate
-  document.getElementById('frequencySelect').value = selectedRow.frequency
-  document.getElementById('recurringModalApplyTo').style.display = 'block';
-  document.getElementById('recurringEditRadioFuture').checked = true;
-  document.getElementById('recurringEditRadioAll').checked = false;
-
-  // Open modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModal'));
-  modal.show();
-}
-
-function deleteRecurring() {
-  modalMode = 'delete';
-  document.getElementById('recurringDeleteRadioFuture').checked = true;
-  document.getElementById('recurringDeleteRadioAll').checked = false;
-
-  // Open modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('recurringModalDelete'));
-  modal.show();
-}
-
-function submitRecurring(event) {
-  if (modalMode === 'add') submitRecurringAdd(event);
-  else if (modalMode === 'edit') submitRecurringEdit(event);
-  else if (modalMode === 'delete') submitRecurringDelete(event);
-}
-
-async function submitRecurringAdd(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  // Check if start date is before end date
-  if (new Date(data.startDate) >= new Date(data.endDate)) {
-    bootstrap.showToast({body: i18n.t('settings.messages.end_date_later'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
+  function copyText(text) {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); } catch { /* no clipboard */ }
+    area.remove();
+    return Promise.resolve();
   }
 
-  // Check: end date cannot be more than 100 years after start date
-  const yearDiff = new Date(data.endDate).getFullYear() - new Date(data.startDate).getFullYear();
-  if (yearDiff > 100) {
-    bootstrap.showToast({body: i18n.t('settings.messages.end_date_max_years'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/recurring`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
+  async function toggleLogin() {
+    if (state.loginEnabled) {
+      const ok = await W.confirmDialog({
+        title: 'Disable login?',
+        message: 'Anyone who can reach this host will be able to read and change the ledger. The session on this browser ends.',
+        confirmLabel: 'Disable login',
+      });
+      if (!ok) return;
+      try {
+        await W.api('/login/password', { method: 'POST', body: JSON.stringify({ password: '' }) });
+        await W.api('/logout', { method: 'POST' });
+        location.assign('/');
+      } catch (error) {
+        W.toast(error.message, { tone: 'danger' });
+      }
       return;
     }
 
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.recurring_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getRecurring();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-async function submitRecurringEdit(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  // Check if startDate is before endDate
-  if (new Date(data.startDate) >= new Date(data.endDate)) {
-    bootstrap.showToast({body: i18n.t('settings.messages.end_date_later'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+    const result = await W.dialog({
+      title: 'Enable login',
+      description: 'A password protects this ledger on every device that can reach it.',
+      body: `<label class="field"><span class="flabel">Password</span><input class="input" type="password" id="newLoginPassword" autocomplete="new-password"></label>
+        <label class="field"><span class="flabel">Repeat password</span><input class="input" type="password" id="newLoginPassword2" autocomplete="new-password"></label>
+        <p class="card-note">There is no email reset. A recovery file on the host is the way back in.</p>`,
+      confirmLabel: 'Enable login',
+      onConfirm: async (el) => {
+        const password = el.querySelector('#newLoginPassword').value;
+        const repeat = el.querySelector('#newLoginPassword2').value;
+        if (password.length < 4) throw new Error('Use at least four characters.');
+        if (password !== repeat) throw new Error('The passwords do not match.');
+        await W.api('/login/password', { method: 'POST', body: JSON.stringify({ password }) });
+        await W.api('/login', { method: 'POST', body: JSON.stringify({ password }) });
+        state.loginEnabled = true;
+        await loadAll();
+        return true;
+      },
     });
+    if (result) W.toast('Login enabled.');
+  }
 
-    if (response.status === 401) {
-      window.location.href = '/login';
+  async function changePassword() {
+    const result = await W.dialog({
+      title: state.loginEnabled ? 'Change password' : 'Set a password',
+      description: state.loginEnabled ? 'Rotate the password without touching the ledger.' : 'Setting a password also turns login on.',
+      body: `<label class="field"><span class="flabel">New password</span><input class="input" type="password" id="changePassword" autocomplete="new-password"></label>
+        <label class="field"><span class="flabel">Repeat password</span><input class="input" type="password" id="changePassword2" autocomplete="new-password"></label>`,
+      confirmLabel: 'Save password',
+      onConfirm: async (el) => {
+        const password = el.querySelector('#changePassword').value;
+        const repeat = el.querySelector('#changePassword2').value;
+        if (password.length < 4) throw new Error('Use at least four characters.');
+        if (password !== repeat) throw new Error('The passwords do not match.');
+        await W.api('/login/password', { method: 'POST', body: JSON.stringify({ password }) });
+        await W.api('/login', { method: 'POST', body: JSON.stringify({ password }) });
+        state.loginEnabled = true;
+        return true;
+      },
+    });
+    if (result) {
+      renderAccess();
+      W.toast('Password changed.');
+    }
+  }
+
+  async function recoverPassword() {
+    const ok = await W.confirmDialog({
+      title: 'Generate a recovery password?',
+      message: 'Wally writes a single-use password to /wally/password.txt on the host. Sign in with it, and the file is deleted. Anyone who can read that file can enter this ledger.',
+      confirmLabel: 'Generate file',
+    });
+    if (!ok) return;
+    try {
+      const response = await W.api('/login/recover', { method: 'POST' });
+      await W.dialog({
+        title: 'Recovery file written',
+        description: 'One use, then it is gone.',
+        body: `<p class="dialog-message">Open the file on the host and copy the password.</p>
+          <div class="keybox">${W.escapeHtml(response.file || '/wally/password.txt')}</div>
+          <p class="card-note">The next successful sign-in deletes the file. If you do not use it, generate another to replace it.</p>`,
+        confirmLabel: 'Done',
+        cancelLabel: 'Close',
+      });
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
+  async function createKey() {
+    if (state.keys.length >= 3) {
+      W.toast('Three keys is the limit. Delete one first.', { tone: 'danger' });
       return;
     }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.recurring_edited'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getRecurring();
+    try {
+      const created = await W.api('/api-keys', { method: 'POST' });
+      state.keys = await W.api('/api-keys');
+      renderAccess();
+      await W.dialog({
+        title: 'API key created',
+        description: 'Copy it now. Wally keeps only a hash.',
+        body: `<p class="dialog-message">Use it as a bearer token against the API.</p>
+          <div class="keybox" id="newKeyValue">${W.escapeHtml(created.key)}</div>
+          <p class="card-note">This is the only time the key is shown.</p>`,
+        confirmLabel: 'Copy and close',
+        cancelLabel: 'Close',
+        onConfirm: async () => {
+          await copyText(created.key);
+          W.toast('Key copied.');
+          return true;
+        },
+      });
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
     }
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-async function submitRecurringDelete(event) {
-  event.preventDefault();
 
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const response = await fetch(`${API_URL}/recurring/${selectedRow.id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  async function logout() {
+    const ok = await W.confirmDialog({
+      title: 'Log out?',
+      message: 'The session on this browser ends. The ledger stays where it is.',
+      confirmLabel: 'Log out',
     });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('recurringModalDelete'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('settings.messages.recurring_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getRecurring();
+    if (!ok) return;
+    try {
+      await W.api('/logout', { method: 'POST' });
+      location.assign('/login');
+    } catch {
+      location.assign('/login');
     }
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
 
-// --------
-// - AUTH -
-// --------
-async function checkLogin() {
-  const response = await fetch(`${API_URL}/login/check`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
+  /* ------------------------------ about ----------------------------- */
+  function renderAbout() {
+    $('aboutVersion').textContent = W.state.version;
+    $('versionPill').textContent = `v${W.state.version}`;
   }
 
-  const enabled = await response.json()
-  if (enabled) document.getElementById('logoutButton').style.display = 'block'
-}
+  /* ------------------------------- bind ----------------------------- */
+  function bind() {
+    $('editCategories').onclick = () => toggleTokenEdit('categories');
+    $('editTags').onclick = () => toggleTokenEdit('tags');
+    $('addCategory').onclick = () => addToken('categories');
+    $('addTag').onclick = () => addToken('tags');
+    $('addPersonButton').onclick = addPerson;
+    $('addRuleButton').onclick = () => openRuleDialog();
+    $('exportButton').onclick = exportAll;
 
-async function logout() {
-  await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-  window.location.href = '/login';
-}
+    const drop = $('dropZone');
+    drop.onclick = () => $('csvFile').click();
+    drop.onkeydown = (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        $('csvFile').click();
+      }
+    };
+    drop.ondragover = (event) => { event.preventDefault(); drop.classList.add('over'); };
+    drop.ondragleave = () => drop.classList.remove('over');
+    drop.ondrop = (event) => {
+      event.preventDefault();
+      drop.classList.remove('over');
+      importFile(event.dataTransfer.files?.[0]);
+    };
+    $('csvFile').onchange = (event) => {
+      importFile(event.target.files?.[0]);
+      event.target.value = '';
+    };
+
+    $('loginToggle').onclick = toggleLogin;
+    $('changePasswordRow').onclick = changePassword;
+    $('recoverRow').onclick = recoverPassword;
+    $('logoutRow').onclick = logout;
+    $('addKeyButton').onclick = createKey;
+
+    window.addEventListener('hashchange', () => {
+      showSection(location.hash.replace('#', ''));
+    });
+    window.addEventListener('resize', () => {
+      showSection(location.hash.replace('#', ''), { scroll: false });
+    });
+    $('settingsBack').addEventListener('click', () => {
+      if (location.hash) history.replaceState(null, '', location.pathname);
+      showSection('', { scroll: true });
+    });
+  }
+
+  async function boot() {
+    W.initShell('settings');
+    W.installThemeListener();
+    await i18n.init();
+    bind();
+    try {
+      await loadAll();
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+      $('peopleCount').textContent = error.message;
+    }
+    const avatar = $('navAvatar');
+    avatar.textContent = W.initials(W.state.people.find((p) => p.is_self)?.name || 'PA');
+    const composer = new W.Composer({ onSaved: () => loadAll() });
+    document.querySelectorAll('[data-compose]').forEach((button) => {
+      button.addEventListener('click', () => composer.open());
+    });
+  }
+
+  W.ready(boot);
+})();

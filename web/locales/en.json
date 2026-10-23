@@ -4,7 +4,8 @@
     "transactions": "Transactions",
     "settings": "Settings",
     "logout": "Logout",
-    "logout_title": "Logout"
+    "logout_title": "Logout",
+    "overview": "Overview"
   },
   "dashboard": {
     "title": "Wally | Dashboards",
@@ -95,7 +96,8 @@
       "transaction_deleted": "Transaction deleted.",
       "recurring_added": "Recurring transaction added.",
       "end_date_later": "The end date must be later than the start date."
-    }
+    },
+    "search_people": "Search names, categories, tags, people…"
   },
   "settings": {
     "title": "Wally | Settings",

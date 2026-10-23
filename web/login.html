@@ -1,53 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wally | Login</title>
-    <link rel="icon" type="image/png" href="assets/wally.png">
-    <meta name="robots" content="index,follow" />
-    <meta name="description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-    <meta property="author" content="Pol Alzina" />
-    <meta property="og:title" content="Wally" />
-    <meta property="og:description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="assets/wally.png" />
-  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
-    <link href="css/login.css" rel="stylesheet">
-  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
-  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
-    <script src="js/i18n.js"></script>
-
-    <script>
-      (function() {
-        const theme = localStorage.getItem('theme') || 'system';
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-bs-theme', resolved);
-        document.documentElement.style.colorScheme = resolved;
-      })();
-    </script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>Sign in · Wally</title>
+  <link rel="icon" href="/assets/wally.png">
+  <link rel="stylesheet" href="css/wally.css?v=210">
+  <script>
+    try {
+      const pref = localStorage.getItem('theme') || 'system';
+      const dark = pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.documentElement.dataset.themePreference = pref;
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    } catch (e) {}
+  </script>
 </head>
-
-<body class="text-center" data-i18n-document-title="login.title">
-  <main class="form-signin w-100 m-auto">
-    <form onsubmit="login(event)" >
-      <div href="/" class="text-center d-block" style="cursor: default">
-        <img src="assets/wally.png" alt="Wally Logo" width="88" height="96" class="mb-3">
-        <div class="fw-bold" style="font-size: 2.4rem; letter-spacing: -0.02em;">Wally</div>
-        <div class="text-secondary mt-1" style="font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em;" data-i18n="login.header">LOGIN</div>
+<body>
+  <main class="login-page">
+    <button type="button" class="icon-btn login-theme" id="loginTheme" aria-label="Switch appearance"></button>
+    <div class="login-card">
+      <div class="login-face">
+        <div class="login-mark"><img src="/assets/wally.png" alt="Wally"></div>
+        <div class="login-head">
+          <div class="ltitle" id="loginTitle">Welcome back</div>
+          <p class="lsub" id="loginSub">Enter the password for this ledger. It never leaves your host.</p>
+        </div>
+        <form class="login-form" id="loginForm" novalidate>
+          <div class="login-field" id="passwordField">
+            <label class="sr-only" for="passwordInput">Password</label>
+            <input id="passwordInput" name="password" type="password" autocomplete="current-password" placeholder="Password" data-i18n-placeholder="settings.login.password_placeholder" aria-describedby="loginError" required autofocus>
+            <button type="button" class="eye" id="passwordReveal" aria-label="Show password" aria-pressed="false"></button>
+          </div>
+          <p class="lerr" id="loginError" role="alert" hidden><span class="bang" aria-hidden="true">!</span><span id="loginErrorText"></span></p>
+          <button type="submit" class="btn primary login-btn" id="loginButton">
+            <span id="loginButtonLabel">Continue</span>
+          </button>
+        </form>
+        <div class="llinks">
+          <span>Lost the password?</span>
+          <button type="button" class="lnk" id="forgotButton">Use the recovery file</button>
+        </div>
       </div>
-      <div class="form-floating" style="margin-top: 2rem">
-        <input id="password" name="password" type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password" data-i18n-placeholder="login.password_placeholder" autofocus required>
-        <label for="floatingPassword" data-i18n="login.password_label">Password</label>
-      </div>
-      <button id="submit" type="submit" class="w-100 btn btn-lg btn-primary mt-2 mb-4">
-        <span id="loading" class="spinner-border spinner-border-sm"  style="display: none; border-width: 2px; margin-right: 5px; margin-bottom: 1px" aria-hidden="true"></span>
-        <span data-i18n="login.login_button">Log in</span>
-      </button>
-    </form>
-    <a href="" onclick="recoverPassword(event)" style="text-decoration: none" data-i18n="login.forgot_password">Forgot password</a>
+      <div class="login-foot" id="loginFoot">Wally · a quiet ledger on your own host</div>
+    </div>
   </main>
-  <script src="js/login.js"></script>
+
+  <script src="js/i18n.js?v=210"></script>
+  <script src="js/common.js?v=210"></script>
+  <script src="js/login.js?v=210"></script>
 </body>
 </html>

@@ -2,396 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally | Dashboards</title>
-  <link rel="icon" type="image/png" href="assets/wally.png">
-  <meta name="robots" content="index,follow" />
-  <meta name="description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="author" content="Pol Alzina" />
-  <meta property="og:title" content="Wally" />
-  <meta property="og:description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="assets/wally.png" />
-  <!-- CSS -->
-  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.bootstrap5.min.css" rel="stylesheet">
-  <link href="css/index.css" rel="stylesheet">
-  <!-- JS -->
-  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
-  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
-  <script src="js/vendors/ag-grid-community.min.noStyle.js" defer></script>
-  <script src="js/vendors/tom-select.complete.min.js"></script>
-  <script src="js/vendors/chart.umd.min.js" defer></script>
-  <script src="js/vendors/decimal.min.js" defer></script>
-  <script src="js/vendors/lucide.min.js" defer></script>
-  <script src="js/icons.js" defer></script>
-  <script src="js/i18n.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>Overview · Wally</title>
+  <link rel="icon" href="/assets/wally.png">
+  <link rel="stylesheet" href="css/wally.css?v=210">
   <script>
-    (function() {
-      const theme = localStorage.getItem('theme') || 'system';
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', resolved);
-      document.documentElement.style.colorScheme = resolved;
-    })();
+    try {
+      const pref = localStorage.getItem('theme') || 'system';
+      const dark = pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.documentElement.dataset.themePreference = pref;
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    } catch (e) {}
   </script>
-
 </head>
-<body data-i18n-document-title="dashboard.title">
-  <!-- Header -->
-  <header>
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand d-flex align-items-center gap-2 ms-1 me-4" href="/">
-          <img src="assets/wally.png" alt="Wally" width="42" height="42">
-          <span style="font-size: 1.6rem; font-weight: 700;">Wally</span>
-        </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav gap-1">
-            <li class="nav-item ms-2"><a class="nav-link active" href="/" data-i18n="nav.dashboards">Dashboards</a></li>
-            <li class="nav-item ms-2"><a class="nav-link" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
-            <li class="nav-item ms-2"><a class="nav-link" href="settings" data-i18n="nav.settings">Settings</a></li>
-          </ul>
-          <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
-            <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
-              <i data-lucide="log-out" width="22" height="22" style="color: var(--pill-color);"></i>
-            </li>
-          </ul>
-        </div>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="appbar">
+    <div class="appbar-in">
+      <a class="brand" href="/" aria-label="Wally overview">
+        <img src="/assets/wally.png" alt="">
+        <span>Wally</span>
+      </a>
+      <nav class="tabs" aria-label="Main">
+        <a class="tab on" href="/" data-nav="overview" aria-current="page" data-i18n="nav.overview">Overview</a>
+        <a class="tab" href="/transactions.html" data-nav="transactions" data-i18n="nav.transactions">Transactions</a>
+        <a class="tab" href="/settings.html" data-nav="settings" data-i18n="nav.settings">Settings</a>
       </nav>
+      <div class="appbar-right">
+        <a class="avatar-btn" id="navAvatar" href="/settings.html" aria-label="Settings">PA</a>
+      </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="container" style="margin-top: 0; margin-bottom: 0;">
-
-    <!-- Month Header -->
-    <div id="monthHeader" class="month-navigation">
-      <div id="prevMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-left" width="22" height="22"></i>
+  <main class="page" id="main">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Ledger</div>
+        <h1>
+          <button type="button" class="tx-month" id="rangeButton" aria-haspopup="dialog" aria-expanded="false">
+            <span id="rangeLabel">October 2026</span>
+            <span class="chev" aria-hidden="true">⌄</span>
+          </button>
+        </h1>
+        <p class="sub" id="pageSub">Loading your ledger…</p>
       </div>
-      <div id="currentMonth" class="current-month"></div>
-      <div id="nextMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-right" width="22" height="22"></i>
-      </div>
-    </div>
-    <div id="monthHeaderAll" class="month-navigation current-month" style="display: none; height: 40px"></div>
-
-    <!-- Action buttons -->
-    <div class="d-flex justify-content-center align-items-center gap-2 my-3">
-      <button type="button" class="btn btn-success d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.9rem; min-width: 150px; height: 42px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
-        <i data-lucide="plus" width="15" height="15"></i>
-        <span data-i18n="dashboard.add">Add</span>
-      </button>
-      <button type="button" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.9rem; min-width: 150px; height: 42px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#dashboardModal">
-        <i data-lucide="chart-line" width="15" height="15"></i>
-        <span data-i18n="dashboard.filter">Filter</span>
-      </button>
-    </div>
-
-    <!-- Group By Toggle -->
-    <div class="d-flex justify-content-center mb-2">
-      <div class="group-by-toggle" role="group" aria-label="Group by">
-        <button type="button" class="group-by-btn active" data-group="category" data-i18n="dashboard.group_by.categories">Categories</button>
-        <button type="button" class="group-by-btn" data-group="tags" data-i18n="dashboard.group_by.tags">Tags</button>
+      <div class="head-actions">
+        <button type="button" class="btn ghost" id="rangeShortcut">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.8 4.5h10.4M4.5 8h7M6.3 11.5h3.4"/></svg>
+          <span>Range</span>
+        </button>
+        <button type="button" class="btn primary" data-compose>
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+          <span data-i18n="dashboard.add">Add</span>
+        </button>
       </div>
     </div>
 
-    <!-- Chart & Legend Box -->
-    <div class="chart-cashflow-wrapper">
-      <div class="row chart-container">
-        <div id="noDataMessage" class="no-data" style="display: none; width: 100%;" data-i18n="dashboard.no_expenses">There are no expenses.</div>
-        <div class="col-lg-6 chart-box">
-          <canvas id="chartCanvas"></canvas>
+    <div class="dash-tools" id="dashTools" hidden>
+      <div class="scope" id="scopeBar" role="group" aria-label="Whose spending"></div>
+      <span class="dash-tools-note" id="scopeNote"></span>
+    </div>
+
+    <section class="hero" aria-labelledby="heroHeading">
+      <div class="hero-left">
+        <div class="hero-lbl" id="heroHeading">Spent · <span id="heroRange">this month</span></div>
+        <div class="hero-num" id="heroSpent">—</div>
+        <div class="hero-sub" id="heroSub">—</div>
+        <div>
+          <span class="hero-delta" id="heroDelta" hidden></span>
         </div>
-        <div id="customLegend" class="col-lg-6 legend-box"></div>
+        <p class="hero-note" id="heroNote"></p>
       </div>
-
-    <!-- Cashflow Section -->
-    <div id="cashflow-section" class="cashflow-container" style="display: none">
-      <div class="cashflow-item income">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="trending-up"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.income">Income</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-income"></div>
-      </div>
-      <div class="cashflow-item expenses">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="trending-down"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.expenses">Expenses</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-expenses"></div>
-      </div>
-      <div class="cashflow-item balance">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="scale"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.balance">Balance</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-balance"></div>
-      </div>
-    </div>
-    </div>
-  </main>
-
-  <main class="container">
-    <!-- Dashboard Modal -->
-    <div class="modal fade" id="dashboardModal" tabindex="-1" aria-labelledby="dashboardModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <form id="dashboardForm" class="modal-content" onsubmit="submitDashboard(event)">
-          <div class="modal-header">
-            <h5 class="modal-title" id="dashboardModalLabel" data-i18n="dashboard.modal.title">Change Dashboard</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p data-i18n="dashboard.modal.select_prompt">Select a dashboard to view:</p>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="currentMonth" id="currentMonthRadio" checked>
-              <label class="form-check-label" for="currentMonthRadio" data-i18n="dashboard.modal.current_month">
-                Current Month
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastThreeMonths" id="lastThreeMonthsRadio">
-              <label class="form-check-label" for="lastThreeMonthsRadio" data-i18n="dashboard.modal.past_3_months">
-                Last 3 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastSixMonths" id="lastSixMonthsRadio">
-              <label class="form-check-label" for="lastSixMonthsRadio" data-i18n="dashboard.modal.past_6_months">
-                Last 6 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastYear" id="lastYearRadio">
-              <label class="form-check-label" for="lastYearRadio" data-i18n="dashboard.modal.past_12_months">
-                Last 12 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="yearToDate" id="yearToDateRadio">
-              <label class="form-check-label" for="yearToDateRadio" data-i18n="dashboard.modal.year_to_date">
-                Year to Date
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="range" value="allData" id="allDataRadio">
-              <label class="form-check-label" for="allDataRadio" data-i18n="dashboard.modal.to_date">
-                All Data
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="customRange" id="customRangeRadio">
-              <label class="form-check-label" for="customRangeRadio" data-i18n="dashboard.modal.custom_range">
-                Custom Range
-              </label>
-            </div>
-            <div id="customRangeInputs" class="custom-range-inputs">
-              <div class="mb-3">
-                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.from">From</label>
-                <div class="row g-2">
-                  <div class="col-7">
-                    <select class="form-select" id="fromMonthSelect" required>
-                      <option value="" data-i18n="common.months.select_month">Select month</option>
-                      <option value="01" data-i18n="common.months.january">January</option>
-                      <option value="02" data-i18n="common.months.february">February</option>
-                      <option value="03" data-i18n="common.months.march">March</option>
-                      <option value="04" data-i18n="common.months.april">April</option>
-                      <option value="05" data-i18n="common.months.may">May</option>
-                      <option value="06" data-i18n="common.months.june">June</option>
-                      <option value="07" data-i18n="common.months.july">July</option>
-                      <option value="08" data-i18n="common.months.august">August</option>
-                      <option value="09" data-i18n="common.months.september">September</option>
-                      <option value="10" data-i18n="common.months.october">October</option>
-                      <option value="11" data-i18n="common.months.november">November</option>
-                      <option value="12" data-i18n="common.months.december">December</option>
-                    </select>
-                  </div>
-                  <div class="col-5">
-                    <input type="number" class="form-control" id="fromYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
-                  </div>
-                </div>
-              </div>
-              <div class="mb-2">
-                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.to">To</label>
-                <div class="row g-2">
-                  <div class="col-7">
-                    <select class="form-select" id="toMonthSelect" required>
-                      <option value="" data-i18n="common.months.select_month">Select month</option>
-                      <option value="01" data-i18n="common.months.january">January</option>
-                      <option value="02" data-i18n="common.months.february">February</option>
-                      <option value="03" data-i18n="common.months.march">March</option>
-                      <option value="04" data-i18n="common.months.april">April</option>
-                      <option value="05" data-i18n="common.months.may">May</option>
-                      <option value="06" data-i18n="common.months.june">June</option>
-                      <option value="07" data-i18n="common.months.july">July</option>
-                      <option value="08" data-i18n="common.months.august">August</option>
-                      <option value="09" data-i18n="common.months.september">September</option>
-                      <option value="10" data-i18n="common.months.october">October</option>
-                      <option value="11" data-i18n="common.months.november">November</option>
-                      <option value="12" data-i18n="common.months.december">December</option>
-                    </select>
-                  </div>
-                  <div class="col-5">
-                    <input type="number" class="form-control" id="toYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Chart Type -->
-            <hr class="my-3">
-            <p class="mb-2 fw-medium" data-i18n="dashboard.modal.chart_type_label">Chart type:</p>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="chartType" value="line" id="chartTypeLine" checked>
-              <label class="form-check-label" for="chartTypeLine" data-i18n="dashboard.chart_type.line">
-                Line
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="chartType" value="stacked" id="chartTypeStacked">
-              <label class="form-check-label" for="chartTypeStacked" data-i18n="dashboard.chart_type.stacked">
-                Stacked
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="dashboardModalSubmitButton" style="min-width: 120px" data-i18n="dashboard.modal.apply">Change</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </main>
-
-  <!-- Transaction Modal (Add and Edit) -->
-  <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form id="transactionForm" class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalLabel" data-i18n="transactions.modal_add_title">Add Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <!-- Name -->
-          <div class="mb-3">
-            <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter transaction name" data-i18n-placeholder="transactions.name_placeholder" autocomplete="off" />
-          </div>
-
-          <!-- Category -->
-          <div class="mb-3">
-            <label for="categorySelect" class="form-label" data-i18n="transactions.category_label">Category</label>
-            <select class="form-select" id="categorySelect" name="category" required></select>
-          </div>
-
-          <!-- Tags -->
-          <div class="mb-3">
-            <label class="form-label" data-i18n="transactions.tags_label">Tags</label>
-            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="transactions.tags_placeholder" autocomplete="off">
-          </div>
-
-          <!-- Amount -->
-          <div class="mb-3">
-            <label for="amountInput" class="form-label" data-i18n="transactions.amount_label">Amount</label>
-            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" placeholder="0.00" data-i18n-placeholder="transactions.amount_placeholder" required />
-          </div>
-
-          <!-- Type -->
-          <div class="mb-3">
-            <label for="typeSelect" class="form-label" data-i18n="transactions.type_label">Type</label>
-            <select class="form-select" id="typeSelect" name="type" required>
-              <option value="expense" data-i18n="transactions.type_expense">Expense</option>
-              <option value="income" data-i18n="transactions.type_income">Income</option>
-            </select>
-          </div>
-
-          <!-- Date -->
+      <div class="chart">
+        <div class="chart-h">
           <div>
-            <label for="dateInput" class="form-label" data-i18n="transactions.date_label">Date</label>
-            <input type="date" class="form-control" id="dateInput" name="date" required />
+            <b>Six months</b>
+            <small id="trendSub">Spending against income</small>
           </div>
-
-          <!-- Recurring -->
-          <div id="recurringElement" class="form-check mt-3">
-            <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
-            <label class="form-check-label" for="recurringCheck" data-i18n="transactions.recurring_label">
-              Recurring
-            </label>
-          </div>
-
-          <div id="recurringDiv" class="card mt-3" style="display: none;">
-            <div class="card-body">
-              <div class="row">
-                <!-- Start Date -->
-                <div class="col-6 mb-3">
-                  <label for="startDateInput" class="form-label" data-i18n="transactions.start_date_label">Start Date</label>
-                  <input type="date" class="form-control" id="startDateInput" name="startDate" />
-                </div>
-                <!-- End Date -->
-                <div class="col-6 mb-3">
-                  <label for="endDateInput" class="form-label" data-i18n="transactions.end_date_label">End Date</label>
-                  <input type="date" class="form-control" id="endDateInput" name="endDate" />
-                </div>
-              </div>
-
-              <!-- Frequency -->
-              <div>
-                <label for="frequencySelect" class="form-label" data-i18n="transactions.frequency_label">Frequency</label>
-                <select class="form-select" id="frequencySelect" name="frequency">
-                  <option value="" disabled selected data-i18n="transactions.frequency_placeholder">Select frequency</option>
-                  <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
-                  <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
-                  <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
-                  <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
+          <span class="card-note" id="trendPeak"></span>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="min-width: 120px" data-i18n="transactions.add">Add</button>
+        <div class="chart-legend" aria-hidden="true">
+          <span><i style="--c:var(--positive)"></i>Income</span>
+          <span><i style="--c:var(--muted)"></i>Spent</span>
+          <span><i class="band"></i>Kept</span>
         </div>
-      </form>
+        <div class="plot" id="trendPlot"></div>
+        <div class="plot-axis" id="trendAxis" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="card people-card" id="peopleCard" hidden aria-labelledby="peopleHeading">
+      <div class="card-head pc-head">
+        <div>
+          <div class="card-title" id="peopleHeading">People</div>
+          <div class="card-sub" id="peopleSub">Who spent and who earned</div>
+        </div>
+        <div class="seg small" id="peopleMode" role="group" aria-label="People breakdown">
+          <button type="button" class="on" data-mode="months" aria-pressed="true">Months</button>
+          <button type="button" data-mode="categories" aria-pressed="false">Categories</button>
+        </div>
+      </div>
+      <div id="peopleBody"></div>
+    </section>
+
+    <div class="dash-grid">
+      <section class="card" aria-labelledby="rankHeading">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="rankHeading">Where it went</div>
+            <div class="card-sub" id="rankSub">—</div>
+          </div>
+          <div class="seg small" id="rankMode" role="group" aria-label="Group by">
+            <button type="button" class="on" data-mode="categories" aria-pressed="true">Categories</button>
+            <button type="button" data-mode="tags" aria-pressed="false">Tags</button>
+          </div>
+        </div>
+        <div id="categoryRank"></div>
+        <div class="sharebar" id="categoryShare" aria-hidden="true"></div>
+        <p class="rank-note" id="rankNote"></p>
+      </section>
+
+      <section class="card" aria-labelledby="insightsHeading">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="insightsHeading">Reading the period</div>
+            <div class="card-sub">Three things worth knowing</div>
+          </div>
+        </div>
+        <div class="facts-list" id="insights"></div>
+      </section>
     </div>
-  </div>
 
-  <!-- Transaction Modal Delete -->
-  <div class="modal fade" id="transactionModalDelete" tabindex="-1" aria-labelledby="transactionModalDeleteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalDeleteLabel" data-i18n="transactions.modal_delete_title">Delete Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <section class="card" aria-labelledby="recentHeading">
+      <div class="card-head">
+        <div>
+          <div class="card-title" id="recentHeading">Recent</div>
+          <div class="card-sub" id="recentSub">The last few entries</div>
         </div>
-        <div class="modal-body text-center py-4">
-          <div class="dialog-warning-icon mb-3">
-            <i data-lucide="triangle-alert" width="32" height="32"></i>
-          </div>
-          <p class="mb-0 fs-6" data-i18n="transactions.delete_confirm">Are you sure you want to delete this transaction?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  <script src="js/index.js"></script>
+        <a class="link" href="/transactions.html">All transactions</a>
+      </div>
+      <div id="recentList"></div>
+    </section>
+
+    <section class="card" id="dashEmpty" hidden>
+      <div class="empty">
+        <span class="eic">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg>
+        </span>
+        <b>No transactions in this range</b>
+        <span>Add one, or choose a wider date range. Your ledger starts the moment you write in it.</span>
+        <button type="button" class="btn primary sm" data-compose style="margin-top:8px">Add a transaction</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="/" class="on" data-nav="overview"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M3.2 12.8V8.4M8 12.8V3.4M12.8 12.8v-6"/></svg>Overview</a>
+    <a href="/transactions.html" data-nav="transactions"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg>Transactions</a>
+    <button type="button" class="fab" data-compose aria-label="Add transaction"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+    <a href="/settings.html" data-nav="settings"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h4M9.5 4.5h4M2.5 8h6M11.5 8h2M2.5 11.5h4M9.5 11.5h4"/><circle cx="8" cy="4.5" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="8" cy="11.5" r="1.2"/></svg>Settings</a>
+  </nav>
+
+  <script src="js/i18n.js?v=210"></script>
+  <script src="js/common.js?v=210"></script>
+  <script src="js/index.js?v=210"></script>
 </body>
 </html>
