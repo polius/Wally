@@ -613,7 +613,21 @@ const W = (() => {
     return icon(CATEGORY_ICONS[name] || 'miscellaneous');
   }
 
+  const CATEGORY_COLORS = {
+    Groceries: '#E8665D',
+    Food: '#E59A52',
+    Rent: '#E7C65B',
+    Entertainment: '#78C99A',
+    Shopping: '#5BC4C9',
+    Healthcare: '#6AA9E9',
+    Travel: '#9B8BE8',
+    Miscellaneous: '#E88AAE',
+    Utilities: '#C9C9CE',
+    Income: '#0E7C5A',
+  };
+
   function categoryColor(name) {
+    if (CATEGORY_COLORS[name]) return CATEGORY_COLORS[name];
     const palette = ['#E8665D', '#E59A52', '#E7C65B', '#78C99A', '#5BC4C9', '#6AA9E9', '#9B8BE8', '#E88AAE', '#C9C9CE', '#8A8A8F'];
     let hash = 0;
     for (const ch of String(name)) hash = (hash * 31 + ch.charCodeAt(0)) % 997;

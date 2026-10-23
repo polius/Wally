@@ -42,7 +42,8 @@
       "chart_type_label": "Chart type:",
       "apply": "Apply",
       "invalid_date_range": "From month must be before or equal to the to month."
-    }
+    },
+    "add_transaction": "Add transaction"
   },
   "transactions": {
     "title": "Wally | Transactions",
@@ -97,7 +98,7 @@
       "recurring_added": "Recurring transaction added.",
       "end_date_later": "The end date must be later than the start date."
     },
-    "search_people": "Search names, categories, tags, people…"
+    "search_people": "Search transactions"
   },
   "settings": {
     "title": "Wally | Settings",

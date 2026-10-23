@@ -29,9 +29,9 @@
     const sum = W.summarise(state.transactions);
     $('txSummary').innerHTML = state.transactions.length
       ? `<b>${state.transactions.length}</b> ${state.transactions.length === 1 ? 'transaction' : 'transactions'}
-         <span class="sep">·</span><span class="in">+${W.money(sum.income)} in</span>
-         <span class="sep">·</span><span class="out">−${W.money(sum.expense)} out</span>
-         <span class="sep">·</span><span>${sum.net >= 0 ? 'kept' : 'over'} <b>${W.money(Math.abs(sum.net))}</b></span>`
+         <span class="sep">·</span><span>Net <b>${W.money(sum.net, { signed: true, plus: true })}</b></span>
+         <span class="sep tx-extra">·</span><span class="in tx-extra">${W.money(sum.income)} in</span>
+         <span class="sep tx-extra">·</span><span class="out tx-extra">${W.money(sum.expense)} out</span>`
       : 'No transactions in this range';
     document.title = `${rangeLabel(state.range)} · Wally`;
   }
@@ -77,7 +77,8 @@
     const rec = t.recurringID ? `<span class="rec" title="Recurring">${W.icon('repeat')}</span>` : '';
     const tagText = (t.tags || []).length ? ` · ${t.tags.join(', ')}` : '';
     const amountText = W.money(t.amount, { signed: true, sign: t.type === 'income' ? '+' : '−' });
-    const spoken = [t.name || t.category, t.category, ...(t.tags || []), W.ownerLabel(t) || 'No owner', amountText].join(', ');
+    const ownerCell = W.hasPeople() ? `<span class="tx-owner">${ownerMarkup(t)}</span>` : '';
+    const spoken = [t.name || t.category, t.category, ...(t.tags || []), ...(W.hasPeople() ? [W.ownerLabel(t) || 'No owner'] : []), amountText].join(', ');
     return `<div class="tx-row ${selected ? 'sel' : ''}" data-id="${t.id}" tabindex="0" role="button" aria-label="Open ${W.escapeHtml(spoken)}">
       <button type="button" class="tx-cb ${selected ? 'on' : ''}" data-select="${t.id}" aria-label="${selected ? 'Deselect' : 'Select'} ${W.escapeHtml(t.name || t.category)}" aria-pressed="${selected}">${selected ? W.icon('check') : ''}</button>
       <span class="tx-ic">${W.categoryIcon(t.category)}</span>
@@ -86,7 +87,7 @@
         <span class="tx-meta">${W.escapeHtml(t.category)}${W.escapeHtml(tagText)}${W.ownerLabel(t) ? ` · ${W.escapeHtml(W.ownerLabel(t))}` : ''}</span>
       </span>
       <span class="tx-cat-cell"><span class="tx-cat" style="--c:${W.categoryColor(t.category)}"><i></i>${W.escapeHtml(t.category)}</span></span>
-      <span class="tx-owner">${ownerMarkup(t)}</span>
+      ${ownerCell}
       <span class="tx-amt ${t.type === 'income' ? 'in' : ''}">${amountText}</span>
       <button type="button" class="tx-more" data-more="${t.id}" aria-label="More about ${W.escapeHtml(t.name || t.category)}">${W.icon('more')}</button>
     </div>`;
@@ -114,7 +115,7 @@
       scroll.innerHTML = groups.map((group) => `
         <section class="tx-day" aria-label="${W.escapeHtml(W.dayLabel(group.date))}">
           <div class="tx-day-h">
-            <b>${W.dayLabel(group.date)}</b>
+            <b>${W.dayLabel(group.date)}${/^(Today|Yesterday)$/.test(W.dayLabel(group.date)) ? ` · ${W.shortDate(group.date)}` : ''}</b>
             <span class="net ${group.net >= 0 ? 'in' : ''}">${group.net === 0 ? '—' : W.money(group.net, { signed: true, sign: group.net > 0 ? '+' : '−' })}</span>
           </div>
           ${group.items.map(rowMarkup).join('')}
@@ -170,8 +171,8 @@
     const button = $('selectToggle');
     button.querySelector('span').textContent = state.selectMode ? 'Done' : 'Select';
     button.setAttribute('aria-pressed', String(state.selectMode));
-    button.classList.toggle('primary', state.selectMode);
-    button.classList.toggle('ghost', !state.selectMode);
+    button.setAttribute('aria-label', state.selectMode ? 'Finish selecting transactions' : 'Select transactions');
+    button.classList.toggle('on', state.selectMode);
     $('txScroll').classList.toggle('selecting', state.selectMode);
     renderList();
   }
@@ -499,7 +500,6 @@
       if (filterPop) closeFilter(); else openFilter($('filterButton'));
     });
     $('rangeButton').addEventListener('click', () => openRange($('rangeButton')));
-    $('rangeShortcut').addEventListener('click', () => openRange($('rangeShortcut')));
     $('searchInput').addEventListener('input', (event) => {
       state.search = event.target.value;
       renderList();
@@ -546,6 +546,7 @@
     await i18n.init();
     bind();
     await W.loadCore();
+    document.body.classList.toggle('has-people', W.hasPeople());
     $('navAvatar').textContent = W.initials(W.state.people.find((p) => p.is_self)?.name || 'PA');
     await load();
     await applyUrl();

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f5f5f7">
   <title>Overview · Wally</title>
   <link rel="icon" href="/assets/wally.png">
-  <link rel="stylesheet" href="css/wally.css?v=210">
+  <link rel="stylesheet" href="css/wally.css?v=221">
   <script>
     try {
       const pref = localStorage.getItem('theme') || 'system';
@@ -40,23 +40,19 @@
   <main class="page" id="main">
     <div class="page-head">
       <div>
-        <div class="eyebrow">Ledger</div>
+        <div class="eyebrow" data-i18n="nav.overview">Overview</div>
         <h1>
           <button type="button" class="tx-month" id="rangeButton" aria-haspopup="dialog" aria-expanded="false">
             <span id="rangeLabel">October 2026</span>
             <span class="chev" aria-hidden="true">⌄</span>
           </button>
         </h1>
-        <p class="sub" id="pageSub">Loading your ledger…</p>
+        <p class="sub" id="pageSub">Income, spending, and what’s left.</p>
       </div>
       <div class="head-actions">
-        <button type="button" class="btn ghost" id="rangeShortcut">
-          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.8 4.5h10.4M4.5 8h7M6.3 11.5h3.4"/></svg>
-          <span>Range</span>
-        </button>
         <button type="button" class="btn primary" data-compose>
           <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-          <span data-i18n="dashboard.add">Add</span>
+          <span data-i18n="dashboard.add_transaction">Add transaction</span>
         </button>
       </div>
     </div>
@@ -68,21 +64,17 @@
 
     <section class="hero" aria-labelledby="heroHeading">
       <div class="hero-left">
-        <div class="hero-lbl" id="heroHeading">Spent · <span id="heroRange">this month</span></div>
+        <div class="hero-lbl" id="heroHeading"><span id="heroLabel">Left</span> <span id="heroRange">this month</span></div>
         <div class="hero-num" id="heroSpent">—</div>
         <div class="hero-sub" id="heroSub">—</div>
-        <div>
-          <span class="hero-delta" id="heroDelta" hidden></span>
-        </div>
         <p class="hero-note" id="heroNote"></p>
       </div>
       <div class="chart">
         <div class="chart-h">
           <div>
-            <b>Six months</b>
-            <small id="trendSub">Spending against income</small>
+            <b>Income and spending</b>
           </div>
-          <span class="card-note" id="trendPeak"></span>
+          <span class="card-note">Last 6 months</span>
         </div>
         <div class="chart-legend" aria-hidden="true">
           <span><i style="--c:var(--positive)"></i>Income</span>
@@ -94,25 +86,11 @@
       </div>
     </section>
 
-    <section class="card people-card" id="peopleCard" hidden aria-labelledby="peopleHeading">
-      <div class="card-head pc-head">
-        <div>
-          <div class="card-title" id="peopleHeading">People</div>
-          <div class="card-sub" id="peopleSub">Who spent and who earned</div>
-        </div>
-        <div class="seg small" id="peopleMode" role="group" aria-label="People breakdown">
-          <button type="button" class="on" data-mode="months" aria-pressed="true">Months</button>
-          <button type="button" data-mode="categories" aria-pressed="false">Categories</button>
-        </div>
-      </div>
-      <div id="peopleBody"></div>
-    </section>
-
-    <div class="dash-grid">
+    <div class="dash-stack">
       <section class="card" aria-labelledby="rankHeading">
         <div class="card-head">
           <div>
-            <div class="card-title" id="rankHeading">Where it went</div>
+            <div class="card-title" id="rankHeading">Spending by category</div>
             <div class="card-sub" id="rankSub">—</div>
           </div>
           <div class="seg small" id="rankMode" role="group" aria-label="Group by">
@@ -125,27 +103,41 @@
         <p class="rank-note" id="rankNote"></p>
       </section>
 
+      <section class="card" aria-labelledby="recentHeading">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="recentHeading">Recent</div>
+            <div class="card-sub" id="recentSub">The last five transactions</div>
+          </div>
+          <a class="link" href="/transactions.html">See all ›</a>
+        </div>
+        <div id="recentList"></div>
+      </section>
+
+      <section class="card people-card" id="peopleCard" hidden aria-labelledby="peopleHeading">
+        <div class="card-head pc-head">
+          <div>
+            <div class="card-title" id="peopleHeading">People</div>
+            <div class="card-sub" id="peopleSub">Six months, one scale</div>
+          </div>
+          <div class="seg small" id="peopleMode" role="group" aria-label="People breakdown">
+            <button type="button" class="on" data-mode="months" aria-pressed="true">Months</button>
+            <button type="button" data-mode="categories" aria-pressed="false">Categories</button>
+          </div>
+        </div>
+        <div id="peopleBody"></div>
+      </section>
+
       <section class="card" aria-labelledby="insightsHeading">
         <div class="card-head">
           <div>
-            <div class="card-title" id="insightsHeading">Reading the period</div>
-            <div class="card-sub">Three things worth knowing</div>
+            <div class="card-title" id="insightsHeading">What to look at</div>
+            <div class="card-sub" id="insightsSub">Three things worth knowing</div>
           </div>
         </div>
         <div class="facts-list" id="insights"></div>
       </section>
     </div>
-
-    <section class="card" aria-labelledby="recentHeading">
-      <div class="card-head">
-        <div>
-          <div class="card-title" id="recentHeading">Recent</div>
-          <div class="card-sub" id="recentSub">The last few entries</div>
-        </div>
-        <a class="link" href="/transactions.html">All transactions</a>
-      </div>
-      <div id="recentList"></div>
-    </section>
 
     <section class="card" id="dashEmpty" hidden>
       <div class="empty">
@@ -166,8 +158,8 @@
     <a href="/settings.html" data-nav="settings"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h4M9.5 4.5h4M2.5 8h6M11.5 8h2M2.5 11.5h4M9.5 11.5h4"/><circle cx="8" cy="4.5" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="8" cy="11.5" r="1.2"/></svg>Settings</a>
   </nav>
 
-  <script src="js/i18n.js?v=210"></script>
-  <script src="js/common.js?v=210"></script>
-  <script src="js/index.js?v=210"></script>
+  <script src="js/i18n.js?v=221"></script>
+  <script src="js/common.js?v=221"></script>
+  <script src="js/index.js?v=221"></script>
 </body>
 </html>

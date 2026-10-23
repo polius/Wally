@@ -187,7 +187,10 @@
     });
 
     $('currencyValue').textContent = `${W.state.currency.name} · ${W.state.currency.symbol}`;
+    $('currencyPositionValue').textContent = W.state.currency.position === 'left' ? 'Before' : 'After';
     $('languageValue').textContent = languageLabel(i18n.locale);
+    $('categoryRowSub').textContent = `${W.state.categories.length} categories · ${state.month.length} transactions this month`;
+    $('tagRowSub').textContent = `${W.state.tags.length} tags · filter chips on transactions`;
     if (W.hasPeople()) {
       const names = W.state.people.map((p) => p.name);
       $('peopleRowValue').textContent = names.length <= 2 ? names.join(' & ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
@@ -205,7 +208,10 @@
         : W.personName(owner) || 'First person';
 
     $('currencyRow').onclick = openCurrencyDialog;
+    $('currencyPositionRow').onclick = openCurrencyPositionDialog;
     $('languageRow').onclick = openLanguageDialog;
+    $('manageCategoriesRow').onclick = () => { location.hash = 'categories'; };
+    $('manageTagsRow').onclick = () => { location.hash = 'categories'; };
     $('peopleRow').onclick = () => {
       if (W.hasPeople()) location.hash = 'people';
       else addPerson();
@@ -261,6 +267,29 @@
     }
   }
 
+  async function openCurrencyPositionDialog() {
+    const current = W.state.currency.position;
+    const result = await W.choiceDialog({
+      title: 'Symbol position',
+      description: 'Where the currency symbol sits in an amount.',
+      options: [
+        { value: 'left', label: 'Before the amount', detail: `${W.state.currency.symbol}12.34` },
+        { value: 'right', label: 'After the amount', detail: `12.34 ${W.state.currency.symbol}` },
+      ],
+      value: current,
+      confirmLabel: 'Use position',
+    });
+    if (!result || result === current) return;
+    try {
+      await W.api(`/currency/position/${result}`, { method: 'PUT' });
+      await W.loadCore(true);
+      renderGeneral();
+      W.toast('Symbol position updated.');
+    } catch (error) {
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
   async function openLanguageDialog() {
     const result = await W.choiceDialog({
       title: 'Language',
@@ -303,8 +332,6 @@
 
   function renderPeople() {
     const list = $('peopleList');
-    const balance = $('balanceList');
-    $('balanceSurface').hidden = !W.hasPeople();
     $('peopleCount').textContent = W.hasPeople()
       ? `${W.state.people.length} ${W.state.people.length === 1 ? 'person' : 'people'} · ${state.month.length} transactions this month`
       : 'No people yet';
@@ -317,27 +344,43 @@
         <button type="button" class="btn primary sm" id="emptyAddPerson" style="margin-top:8px">Add the first person</button>
       </div>`;
       list.querySelector('#emptyAddPerson')?.addEventListener('click', addPerson);
-      balance.innerHTML = '';
-      $('balanceNote').textContent = '';
+      $('householdSub').textContent = '—';
+      $('householdNet').textContent = '—';
       $('peopleNotice').innerHTML = '';
       return;
     }
 
     const sum = sharedRow();
-    const max = Math.max(1, ...Object.values(sum.perPerson).map((p) => Math.max(p.spent, p.shares)));
-    list.innerHTML = W.state.people.map((person) => {
+    const rows = W.state.people.map((person) => {
       const row = sum.perPerson[person.id] || { spent: 0, earned: 0, net: 0, shares: 0, count: 0 };
       return `<div class="person-row">
         ${W.avatar(person)}
         <button type="button" class="pn-wrap" data-edit-person="${person.id}">
           <span class="pn">${W.escapeHtml(person.name)}</span>
-          <span class="ps">${person.is_self ? 'This browser' : 'Person'} · ${row.count} ${row.count === 1 ? 'transaction' : 'transactions'}${row.shares ? ` · ${W.money(row.shares)} shared` : ''}</span>
+          <span class="ps">${person.is_self ? 'This browser' : 'Person'} · ${row.count} ${row.count === 1 ? 'transaction' : 'transactions'}</span>
         </button>
-        <span class="pval ${row.net - row.shares > 0 ? 'pos' : row.net - row.shares < 0 ? 'muted' : ''}">${W.money(row.net - row.shares, { signed: true })}</span>
+        <span class="pval ${row.net - row.shares > 0 ? 'pos' : row.net - row.shares < 0 ? 'muted' : ''}">${W.money(row.net - row.shares, { signed: true, plus: true })}</span>
         <button type="button" class="icon-btn small" data-delete-person="${person.id}" aria-label="Delete ${W.escapeHtml(person.name)}">${W.icon('trash')}</button>
       </div>`;
     }).join('');
 
+    const shared = sum.shared;
+    const partEntries = Object.entries(shared.parts);
+    const equalParts = partEntries.length > 1 && partEntries.every(([, amount]) => Math.abs(amount - partEntries[0][1]) < 0.01);
+    const splitNote = equalParts
+      ? `${W.money(partEntries[0][1])} each`
+      : partEntries.map(([pid, amount]) => `${W.personName(pid)} ${W.money(amount)}`).join(' · ');
+    const sharedRowMarkup = shared.count ? `<div class="person-row shared-row">
+      <span class="avatar-person shared">${W.icon('people')}</span>
+      <span class="pn-wrap static">
+        <span class="pn">Shared</span>
+        <span class="ps">${shared.count} ${shared.count === 1 ? 'transaction' : 'transactions'}${splitNote ? ` · ${W.escapeHtml(splitNote)}` : ''}</span>
+      </span>
+      <span class="pval muted">${W.money(-shared.spent, { signed: true })}</span>
+    </div>` : '';
+
+    list.innerHTML = rows + sharedRowMarkup + `<button type="button" class="add-person-row" id="addPersonRow">+ Add person</button>`;
+    list.querySelector('#addPersonRow')?.addEventListener('click', addPerson);
     list.querySelectorAll('[data-edit-person]').forEach((button) => {
       button.addEventListener('click', () => editPerson(button.dataset.editPerson));
     });
@@ -345,33 +388,10 @@
       button.addEventListener('click', () => deletePerson(button.dataset.deletePerson));
     });
 
-    const peopleRows = W.state.people.map((person) => {
-      const row = sum.perPerson[person.id] || { spent: 0, earned: 0, net: 0, shares: 0 };
-      return `<div class="bal">
-        <span class="who">${W.avatar(person, 'tiny')}<b>${W.escapeHtml(person.name)}</b></span>
-        <span class="balbar" aria-hidden="true"><u style="width:${((row.spent + row.shares) / max * 100).toFixed(1)}%"></u></span>
-        <span class="num">${W.money(row.spent + row.shares)}</span>
-        <span class="num">${W.money(row.earned)}</span>
-      </div>`;
-    }).join('');
-
-    const shared = sum.shared;
-    const sharedParts = Object.entries(shared.parts)
-      .map(([pid, amount]) => `${W.personName(pid)} ${W.money(amount)}`)
-      .join(' · ');
-    balance.innerHTML = peopleRows + (shared.count ? `<div class="bal">
-      <span class="who"><span class="avatar-person tiny shared">${W.icon('people')}</span><span class="who-txt"><b>Shared</b>${sharedParts ? `<small>${W.escapeHtml(sharedParts)}</small>` : ''}</span></span>
-      <span class="balbar" aria-hidden="true"><u style="width:${(shared.spent / max * 100).toFixed(1)}%"></u></span>
-      <span class="num">${W.money(shared.spent)}</span>
-      <span class="num">—</span>
-    </div>` : '') + `<div class="bal total">
-      <span class="who"><b>Household</b></span>
-      <span class="balbar" aria-hidden="true"></span>
-      <span class="num">${W.money(sum.expense)}</span>
-      <span class="num">${W.money(sum.income)}</span>
-    </div>`;
-
-    $('balanceNote').textContent = `${W.monthLabel(new Date())}. Personal rows exclude the shared pot. ${shared.count ? `${shared.count} shared ${shared.count === 1 ? 'cost' : 'costs'}, ${W.money(shared.spent)} in total.` : 'No shared costs this month.'}`;
+    const keptRate = sum.income > 0 ? (sum.net / sum.income) * 100 : 0;
+    $('householdSub').textContent = `${state.month.length} transactions · ${keptRate.toFixed(1)}% of income kept`;
+    $('householdNet').textContent = W.money(sum.net, { signed: true, plus: true });
+    $('householdNet').style.color = sum.net >= 0 ? 'var(--positive)' : 'var(--danger)';
 
     renderMigration();
   }
@@ -1101,7 +1121,7 @@
     $('editTags').onclick = () => toggleTokenEdit('tags');
     $('addCategory').onclick = () => addToken('categories');
     $('addTag').onclick = () => addToken('tags');
-    $('addPersonButton').onclick = addPerson;
+    $('addPersonButton')?.addEventListener('click', addPerson);
     $('addRuleButton').onclick = () => openRuleDialog();
     $('exportButton').onclick = exportAll;
 

@@ -36,7 +36,7 @@ DEFAULT_CURRENCIES = [
     {"name": "CHF", "symbol": "Fr", "position": "left", "selected": False},
     {"name": "CNY", "symbol": "¥", "position": "left", "selected": False},
     {"name": "DKK", "symbol": "kr.", "position": "right", "selected": False},
-    {"name": "EUR", "symbol": "€", "position": "right", "selected": True},
+    {"name": "EUR", "symbol": "€", "position": "left", "selected": True},
     {"name": "GBP", "symbol": "£", "position": "left", "selected": False},
     {"name": "HKD", "symbol": "HK$", "position": "left", "selected": False},
     {"name": "IDR", "symbol": "Rp", "position": "left", "selected": False},
@@ -64,6 +64,9 @@ DEFAULT_CONFIG = [
     {"key": 'LOGIN_PAGE', "value": False},
     {"key": 'LOGIN_PASSWORD', "value": ''},
     {"key": 'LOGIN_TOKEN', "value": ''},
+    {"key": 'SELECTED_CURRENCY', "value": 'EUR'},
+    {"key": 'CURRENCY_POSITION', "value": 'left'},
+    {"key": 'LANGUAGE', "value": 'en'},
 ]
 
 CATEGORY_TAGS = {

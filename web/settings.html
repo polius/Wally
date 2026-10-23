@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f5f5f7">
   <title>Settings · Wally</title>
   <link rel="icon" href="/assets/wally.png">
-  <link rel="stylesheet" href="css/wally.css?v=210">
+  <link rel="stylesheet" href="css/wally.css?v=221">
   <script>
     try {
       const pref = localStorage.getItem('theme') || 'system';
@@ -79,6 +79,11 @@
               <span class="v" id="currencyValue">EUR · €</span>
               <span class="end" aria-hidden="true"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 4.5 10 8l-3.5 3.5"/></svg></span>
             </button>
+            <button type="button" class="set-row" id="currencyPositionRow">
+              <div class="l"><b>Symbol position</b><small>Where the currency symbol sits in an amount.</small></div>
+              <span class="v" id="currencyPositionValue">Before</span>
+              <span class="end" aria-hidden="true"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 4.5 10 8l-3.5 3.5"/></svg></span>
+            </button>
             <button type="button" class="set-row" id="languageRow">
               <div class="l"><b data-i18n="settings.language.title">Language</b><small>New labels fall back to English until a translation arrives.</small></div>
               <span class="v" id="languageValue">English</span>
@@ -92,6 +97,37 @@
           </div>
 
           <div class="surface">
+            <button type="button" class="set-row" id="manageCategoriesRow">
+              <div class="l"><b>Categories</b><small id="categoryRowSub">—</small></div>
+              <span class="v">Manage ›</span>
+            </button>
+            <button type="button" class="set-row" id="manageTagsRow">
+              <div class="l"><b>Tags</b><small id="tagRowSub">—</small></div>
+              <span class="v">Manage ›</span>
+            </button>
+          </div>
+
+        </section>
+
+        <section class="settings-panel" data-panel="people" aria-labelledby="peopleHeadingSetting">
+          <div class="settings-head">
+            <div>
+              <h2 id="peopleHeadingSetting">People</h2>
+              <p>People own transactions. A shared cost is one transaction with a split, not two rows that can drift apart.</p>
+            </div>
+          </div>
+          <div class="surface">
+            <div class="surf-h"><div><b>In this ledger</b><small id="peopleCount">—</small></div></div>
+            <div class="people-list" id="peopleList"></div>
+          </div>
+          <div class="surface">
+            <div class="set-row">
+              <div class="l"><b>Household net</b><small id="householdSub">—</small></div>
+              <span class="v" id="householdNet">—</span>
+            </div>
+          </div>
+          <div id="peopleNotice"></div>
+          <div class="surface">
             <button type="button" class="set-row" id="ownerDefaultRow">
               <div class="l"><b>This browser</b><small>The owner a new transaction starts with here. It never leaves this device.</small></div>
               <span class="v" id="ownerDefaultValue">—</span>
@@ -103,27 +139,6 @@
               <button type="button" class="btn ghost sm" id="ownerDefaultReset">Use first person</button>
             </div>
           </div>
-        </section>
-
-        <section class="settings-panel" data-panel="people" aria-labelledby="peopleHeadingSetting">
-          <div class="settings-head">
-            <div>
-              <h2 id="peopleHeadingSetting">People</h2>
-              <p>People own transactions. A shared cost is one transaction with a split, not two rows that can drift apart.</p>
-            </div>
-            <div class="acts"><button type="button" class="btn primary" id="addPersonButton">Add person</button></div>
-          </div>
-          <div class="surface">
-            <div class="surf-h"><div><b>In this ledger</b><small id="peopleCount">—</small></div></div>
-            <div class="people-list" id="peopleList"></div>
-          </div>
-          <div class="surface" id="balanceSurface">
-            <div class="surf-h"><div><b>Shared and household</b><small>Spending by person, with the shared pot kept apart.</small></div></div>
-            <div class="bal-h"><span>Person</span><span>Share of spending</span><span>Spent</span><span>Earned</span></div>
-            <div id="balanceList"></div>
-            <div class="surf-f"><span class="card-note" id="balanceNote"></span></div>
-          </div>
-          <div id="peopleNotice"></div>
         </section>
 
         <section class="settings-panel" data-panel="categories" aria-labelledby="categoriesHeading">
@@ -180,6 +195,7 @@
               <div class="kv"><span>Export columns</span><b>name, category, tags, amount, type, date</b></div>
               <div class="kv"><span>Import needs</span><b>date, name and amount</b></div>
               <div class="kv"><span>People</span><b>Optional person column, added when people exist</b></div>
+              <div class="kv"><span>Storage</span><b>SQLite · /wally/data/wally.db</b></div>
             </div>
             <div class="surf-f"><span class="card-note" id="lastExport">No export from this browser yet.</span><span class="spacer"></span><button type="button" class="btn primary sm" id="exportButton">Download CSV</button></div>
           </div>
@@ -262,8 +278,8 @@
     <a href="/settings.html" class="on" data-nav="settings"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h4M9.5 4.5h4M2.5 8h6M11.5 8h2M2.5 11.5h4M9.5 11.5h4"/><circle cx="8" cy="4.5" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="8" cy="11.5" r="1.2"/></svg>Settings</a>
   </nav>
 
-  <script src="js/i18n.js?v=210"></script>
-  <script src="js/common.js?v=210"></script>
-  <script src="js/settings.js?v=210"></script>
+  <script src="js/i18n.js?v=221"></script>
+  <script src="js/common.js?v=221"></script>
+  <script src="js/settings.js?v=221"></script>
 </body>
 </html>

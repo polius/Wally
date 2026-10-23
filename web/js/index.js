@@ -41,18 +41,13 @@
 
   function setPageMeta() {
     const txs = state.transactions;
-    const { from, to } = W.rangeToFromTo(state.range);
-    let span = '';
-    if (from && to) {
-      span = from.getTime() === to.getTime()
-        ? W.monthLabel(to)
-        : `${W.shortDate(from)} – ${W.longDate(to).replace(/^\w+, /, '')}`;
-    }
     $('pageSub').innerHTML = state.loading
       ? 'Loading your ledger…'
-      : `${countRange(txs)} ${countRange(txs) === 1 ? 'transaction' : 'transactions'} · ${span} · <b>${W.state.currency.name}</b>`;
+      : 'Income, spending, and what’s left.';
     $('rangeLabel').textContent = rangeLabel(state.range);
-    $('heroRange').textContent = state.scope ? W.personName(state.scope) : rangeLabel(state.range).toLowerCase();
+    $('heroRange').textContent = state.scope
+      ? W.personName(state.scope)
+      : (state.range.type === 'all' ? 'all time' : 'this month');
     document.title = `${rangeLabel(state.range)} · Wally`;
   }
 
@@ -119,7 +114,7 @@
     const empty = state.transactions.length === 0;
     $('dashEmpty').hidden = !empty;
     document.querySelector('.hero').hidden = empty;
-    document.querySelector('.dash-grid').hidden = empty;
+    document.querySelector('.dash-stack').hidden = empty;
     if (empty) $('peopleCard').hidden = true;
   }
 
@@ -131,31 +126,12 @@
     const kept = earned - spent;
     const keptRate = earned > 0 ? Math.round((kept / earned) * 100) : null;
 
-    $('heroSpent').textContent = W.money(spent);
+    $('heroLabel').textContent = kept < 0 ? 'Over' : 'Left';
+    $('heroSpent').textContent = W.money(kept, { signed: true });
     $('heroSub').innerHTML = earned > 0
-      ? `<b>${W.money(earned)}</b> income · ${keptRate}% kept`
+      ? `<b>${keptRate}%</b> of income kept`
       : 'No income recorded in this range';
-    $('heroNote').textContent = state.scope
-      ? 'Shared costs are not included in a personal scope; they live in the People card.'
-      : (sum.shared.count
-        ? `Shared costs are counted once, in the household total. ${sum.shared.count} ${sum.shared.count === 1 ? 'cost' : 'costs'} this range.`
-        : `Every amount is in ${W.state.currency.name}. The ledger stores cents, not estimates.`);
-
-    const prevSum = W.summarise(state.previousTransactions).expense;
-    const delta = $('heroDelta');
-    if (state.range.type !== 'all' && prevSum > 0 && spent > 0) {
-      const change = ((spent - prevSum) / prevSum) * 100;
-      const rounded = Math.abs(change).toFixed(change < 1 && change > 0 ? 1 : 0);
-      delta.hidden = false;
-      delta.className = `hero-delta ${change < -0.5 ? '' : change > 0.5 ? 'neg' : 'flat'}`;
-      delta.textContent = change < -0.5
-        ? `↓ ${rounded}% less than the previous period`
-        : change > 0.5
-          ? `↑ ${rounded}% more than the previous period`
-          : 'About the same as the previous period';
-    } else {
-      delta.hidden = true;
-    }
+    $('heroNote').innerHTML = `${W.money(earned)} in · ${W.money(spent)} out`;
 
     renderTrend();
   }
@@ -194,8 +170,6 @@
     const expensePath = `M${expensePoints.join(' L')}`;
     const gap = `M${incomePoints.join(' L')} L${[...expensePoints].reverse().join(' L')} Z`;
     const last = series.length - 1;
-    const peak = Math.max(...series.map((s) => Math.max(s.income, s.expense)));
-    $('trendPeak').textContent = peak > 0 ? `Peak ${W.money(peak)}` : '';
 
     $('trendPlot').innerHTML = `
       <svg class="lines" viewBox="0 0 ${w} ${h}" role="img" aria-label="Income and spending for the last six months">
@@ -209,8 +183,6 @@
         ${series.map((s, i) => `<circle class="${i === last ? 'dot' : 'dots'}" cx="${x(i).toFixed(1)}" cy="${y(s.income).toFixed(1)}" r="${i === last ? 3 : 2.1}"/>`).join('')}
       </svg>`;
     $('trendAxis').innerHTML = months.map((m, i) => `<span class="${i === last ? 'now' : ''}">${W.monthLabel(m, true).split(' ')[0]}</span>`).join('');
-    const latest = series[last];
-    $('trendSub').textContent = latest ? `${W.money(latest.expense)} spent · ${W.money(latest.income)} in` : 'Spending against income';
   }
 
   function personMonthly(personId, months) {
@@ -238,10 +210,10 @@
     if (!W.hasPeople() || state.transactions.length === 0) { card.hidden = true; return; }
     card.hidden = false;
     const sum = W.summarise(state.transactions);
-    $('peopleSub').textContent = `${rangeLongLabel(state.range)} · ${state.transactions.length} ${state.transactions.length === 1 ? 'transaction' : 'transactions'}`;
+    const useMonths = state.peopleMode === 'months';
+    $('peopleSub').textContent = `${rangeLongLabel(state.range)} · ${useMonths ? 'six months, one scale' : 'the four categories that carry the month'}`;
     const end = W.rangeToFromTo(state.range).to || new Date();
     const rangeMonths = Array.from({ length: 6 }, (_, i) => W.addMonths(end, i - 5));
-    const useMonths = state.peopleMode === 'months';
     const max = Math.max(1, ...W.state.people.flatMap((p) => personMonthly(p.id, rangeMonths).flatMap((m) => [m.income, m.expense])));
 
     const rows = W.state.people.map((person) => {
@@ -268,7 +240,7 @@
             <span class="pc-tot">
               <span><i>Spent</i><b>${W.money(row.spent + row.shares)}</b></span>
               <span><i>Earned</i><b class="k">${W.money(row.earned)}</b></span>
-              <span><i>Net</i><b class="${row.net - row.shares >= 0 ? 'k' : ''}">${W.money(row.net - row.shares, { signed: true })}</b></span>
+              <span><i>Kept</i><b class="${row.net - row.shares >= 0 ? 'k' : ''}">${W.money(row.net - row.shares, { signed: true, plus: true })}</b></span>
             </span>
           </div>
           <div class="pc-chart">
@@ -280,18 +252,23 @@
     const axis = useMonths ? `<div class="pc-axisrow"><span></span><div class="pc-axis">${rangeMonths.map((m, i) => `<span class="${i === rangeMonths.length - 1 ? 'now' : ''}">${W.monthLabel(m, true).split(' ')[0]}</span>`).join('')}</div></div>` : '';
 
     const shared = sum.shared;
+    const partEntries = Object.entries(shared.parts);
+    const equalParts = partEntries.length > 1 && partEntries.every(([, amount]) => Math.abs(amount - partEntries[0][1]) < 0.01);
+    const sharedParts = equalParts
+      ? `${W.money(partEntries[0][1])} each`
+      : partEntries.map(([pid, amount]) => `${W.escapeHtml(W.personName(pid) || '—')} <em>${W.money(amount)}</em>`).join(' · ');
     const sharedRow = shared.count ? `
       <div class="pc-shared">
-        <div><b>Shared</b><small>${shared.count} ${shared.count === 1 ? 'cost' : 'costs'}</small></div>
-        <div class="pcs-meta">${Object.entries(shared.parts).map(([pid, amount]) => `${W.escapeHtml(W.personName(pid) || '—')} <em>${W.money(amount)}</em>`).join(' · ') || 'Split equally'}</div>
+        <div><b>Shared</b><small>${shared.count} ${shared.count === 1 ? 'transaction' : 'transactions'}</small></div>
+        <div class="pcs-meta">${W.money(shared.spent)} spent · ${sharedParts || 'split equally'}</div>
         <span class="pcs-net">${W.money(-shared.spent, { signed: true })}</span>
       </div>` : '';
 
+    const keptRate = sum.income > 0 ? (sum.net / sum.income) * 100 : 0;
     $('peopleBody').innerHTML = rows + axis + sharedRow + `
-      <div class="pc-shared" style="border-top:1px solid var(--line);margin-top:7px">
-        <div><b>Household</b><small>${state.transactions.length} transactions</small></div>
-        <div class="pcs-meta">${W.money(sum.expense)} spent · ${W.money(sum.income)} earned</div>
-        <span class="pcs-net">${W.money(sum.net, { signed: true })}</span>
+      <div class="legend-foot pc-foot">
+        <span>Household · ${state.transactions.length} transactions</span>
+        <span>Net <b>${W.money(sum.net, { signed: true, plus: true })}</b> · <b>${keptRate.toFixed(1)}%</b> kept</span>
       </div>`;
 
     document.querySelectorAll('#peopleMode [data-mode]').forEach((button) => {
@@ -332,13 +309,15 @@
     const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
     const max = Math.max(1, ...sorted.map(([, v]) => v));
     const shown = sorted.slice(0, 9);
-    const expenses = total;
+    const visibleTotal = sorted.filter(([name]) => !hidden.has(name)).reduce((sum, [, value]) => sum + value, 0);
+    const visibleCount = sorted.filter(([name]) => !hidden.has(name)).length;
+    $('rankHeading').textContent = mode === 'tags' ? 'Spending by tag' : 'Spending by category';
     $('rankSub').textContent = mode === 'tags'
-      ? `${rangeLongLabel(state.range)} · A transaction with two tags counts twice`
-      : `${rangeLongLabel(state.range)} · ${W.money(expenses)} spent`;
+      ? `${W.money(visibleTotal)} across ${visibleCount} tags · a transaction with two tags counts twice`
+      : `${W.money(visibleTotal)} across ${visibleCount} categories`;
     $('rankNote').innerHTML = mode === 'tags'
-      ? 'Tags overlap, so these totals are not additive. Select a tag to hide it from the breakdown.'
-      : 'Select a row to hide it from the breakdown. The hero total does not change.';
+      ? 'Tags overlap, so these totals are not additive. Tap a row to include or exclude it.'
+      : 'Tap a row to include or exclude it. The category total follows.';
 
     if (!shown.length) {
       $('categoryRank').innerHTML = `<div class="empty"><span class="eic">${W.icon('tag')}</span><b>Nothing to rank yet</b><span>Expenses will appear here by ${mode === 'tags' ? 'tag' : 'category'} once the range has some.</span></div>`;
@@ -348,33 +327,35 @@
 
     $('categoryRank').innerHTML = shown.map(([name, amount], index) => {
       const off = hidden.has(name);
-      const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
       const color = mode === 'tags'
         ? `hsl(${(index * 41 + 8) % 360} 46% 58%)`
         : W.categoryColor(name);
-      return `<div class="rank ${off ? 'off' : ''}" style="--c:${color}">
+      return `<div class="rank ${off ? 'off' : ''}" style="--c:${color}" role="button" tabindex="0" data-hide="${W.escapeHtml(name)}" aria-pressed="${!off}" aria-label="${off ? 'Include' : 'Exclude'} ${W.escapeHtml(name)}, ${W.escapeHtml(W.money(amount))}">
         <span class="rdot" aria-hidden="true"></span>
         <span class="rname">${W.escapeHtml(name)}</span>
         <span class="rbar" aria-hidden="true"><i style="width:${Math.max(3, (amount / max) * 100).toFixed(1)}%"></i></span>
         <span class="ramt">${W.money(amount)}</span>
-        <span class="rpct">${pct.toFixed(pct < 10 ? 1 : 0)}%</span>
-        <button type="button" class="reye" data-hide="${W.escapeHtml(name)}" aria-label="${off ? 'Show' : 'Hide'} ${W.escapeHtml(name)} in the breakdown" aria-pressed="${off}">${W.icon(off ? 'eyeOff' : 'eye')}</button>
       </div>`;
     }).join('');
 
-    $('categoryRank').querySelectorAll('[data-hide]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const name = button.dataset.hide;
+    $('categoryRank').querySelectorAll('[data-hide]').forEach((row) => {
+      const toggle = () => {
+        const name = row.dataset.hide;
         if (hidden.has(name)) hidden.delete(name); else hidden.add(name);
         renderRank();
+        [...$('categoryRank').querySelectorAll('.rank')].find((item) => item.dataset.hide === name)?.focus();
+      };
+      row.addEventListener('click', toggle);
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggle();
+        }
       });
     });
 
-    const palette = shown.map(([name], index) => mode === 'tags' ? `hsl(${(index * 41 + 8) % 360} 46% 58%)` : W.categoryColor(name));
-    const visible = shown.filter(([name]) => !hidden.has(name));
-    const visibleTotal = visible.reduce((sum, [, v]) => sum + v, 0) || 1;
-    $('categoryShare').innerHTML = visible.map(([name], i) => `<i style="--c:${palette[shown.findIndex(([n]) => n === name)]};width:${((shown.find(([n]) => n === name)?.[1] || 0) / visibleTotal * 100).toFixed(2)}%"></i>`).join('');
-    $('categoryShare').hidden = mode === 'tags';
+    $('categoryShare').innerHTML = '';
+    $('categoryShare').hidden = true;
     if (hidden.size) {
       $('rankNote').innerHTML += ` <button type="button" class="tx-reset" id="unhideAll">Show ${hidden.size} hidden</button>`;
       $('unhideAll')?.addEventListener('click', () => { hidden.clear(); renderRank(); });
@@ -441,6 +422,7 @@
       });
     }
 
+    $('insightsSub').textContent = rangeLongLabel(state.range);
     $('insights').innerHTML = facts.slice(0, 3).map((f) => `
       <div class="fact-row">
         <span class="fact-ic">${W.icon(f.icon)}</span>
@@ -450,19 +432,21 @@
 
   function renderRecent() {
     const txs = [...scopeTransactions()].sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_date || '').localeCompare(String(a.created_date || ''))).slice(0, 5);
-    $('recentSub').textContent = txs.length ? `${txs.length} of ${scopeTransactions().length} entries` : 'The last few entries';
+    $('recentSub').textContent = 'The last five transactions';
     if (!txs.length) {
       $('recentList').innerHTML = `<div class="empty"><span class="eic">${W.icon('transactions')}</span><b>No recent entries</b><span>Add a transaction and it will appear here.</span></div>`;
       return;
     }
     $('recentList').innerHTML = txs.map((t) => {
       const owner = W.ownerLabel(t);
-      const meta = [t.category, owner].filter(Boolean).join(' · ');
+      const when = /^(Today|Yesterday)$/.test(W.dayLabel(t.date))
+        ? `${W.dayLabel(t.date)} · ${W.shortDate(t.date)}`
+        : W.dayLabel(t.date).replace(/^(\w+) /, '$1, ');
+      const meta = [when, t.category, owner].filter(Boolean).join(' · ');
       return `<a class="rec-row" href="/transactions.html?focus=${encodeURIComponent(t.id)}">
         <span class="rec-ic">${W.categoryIcon(t.category)}</span>
         <span class="rec-t"><b>${W.escapeHtml(t.name || t.category)}</b><small>${W.escapeHtml(meta)}</small></span>
         <span class="rec-a ${t.type === 'income' ? 'in' : ''}">${W.money(t.amount, { signed: true, sign: t.type === 'income' ? '+' : '−' })}</span>
-        <span class="rec-day">${W.shortDate(t.date)}</span>
       </a>`;
     }).join('');
   }
@@ -483,8 +467,6 @@
       button.addEventListener('click', () => composer.open());
     });
     $('rangeButton').addEventListener('click', () => openRange($('rangeButton')));
-    $('rangeShortcut').setAttribute('aria-label', 'Choose date range');
-    $('rangeShortcut').addEventListener('click', () => openRange($('rangeShortcut')));
     $('rankMode').querySelectorAll('[data-mode]').forEach((button) => {
       button.addEventListener('click', () => {
         state.rankMode = button.dataset.mode;

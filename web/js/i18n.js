@@ -42,7 +42,7 @@ class I18n {
   async loadTranslations(lang) {
     this.locale = lang;
     document.documentElement.lang = lang;
-    const cache = '3';
+    const cache = '4';
 
     try {
       const response = await fetch(`locales/${lang}.json?v=${cache}`);
