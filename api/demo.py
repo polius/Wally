@@ -1,6 +1,7 @@
 from pathlib import Path
 from sqlmodel import SQLModel, Session, create_engine
 from datetime import date
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import random
 import calendar
@@ -11,6 +12,8 @@ from .models.categories import Category
 from .models.tags import Tag
 from .models.currency import Currency
 from .models.app import AppConfig
+from .models.people import Person
+from .models.recurring_transactions import RecurringTransaction
 
 # ------------------------
 # Defaults
@@ -33,7 +36,7 @@ DEFAULT_CURRENCIES = [
     {"name": "CHF", "symbol": "Fr", "position": "left", "selected": False},
     {"name": "CNY", "symbol": "¥", "position": "left", "selected": False},
     {"name": "DKK", "symbol": "kr.", "position": "right", "selected": False},
-    {"name": "EUR", "symbol": "€", "position": "right", "selected": True},
+    {"name": "EUR", "symbol": "€", "position": "left", "selected": True},
     {"name": "GBP", "symbol": "£", "position": "left", "selected": False},
     {"name": "HKD", "symbol": "HK$", "position": "left", "selected": False},
     {"name": "IDR", "symbol": "Rp", "position": "left", "selected": False},
@@ -61,6 +64,9 @@ DEFAULT_CONFIG = [
     {"key": 'LOGIN_PAGE', "value": False},
     {"key": 'LOGIN_PASSWORD', "value": ''},
     {"key": 'LOGIN_TOKEN', "value": ''},
+    {"key": 'SELECTED_CURRENCY', "value": 'EUR'},
+    {"key": 'CURRENCY_POSITION', "value": 'left'},
+    {"key": 'LANGUAGE', "value": 'en'},
 ]
 
 CATEGORY_TAGS = {
@@ -155,16 +161,58 @@ def generate_demo():
         session.add_all([Tag(name=t) for t in DEFAULT_TAGS])
         session.add_all([Currency(**c) for c in DEFAULT_CURRENCIES])
         session.add_all([AppConfig(**c) for c in DEFAULT_CONFIG])
+        session.add(Person(id="alex", name="Alex", is_self=True))
+        session.add(Person(id="ana", name="Ana"))
         session.commit()
 
+        owner_ids = ["alex", "ana"]
         current_year = date.today().year
+        current_month = date.today().month
         years = [current_year - 2, current_year - 1, current_year, current_year + 1, current_year + 2]
 
         for year in years:
             for month in range(1, 12 + 1):
                 txs = generate_month_transactions(year, month, n=random.randint(50, 100))
+                for tx in txs:
+                    tx.person_id = random.choice(owner_ids)
+                    tx.shares = []
+                # One shared cost in the current month, split 50/50.
+                if year == current_year and month == current_month:
+                    candidates = [t for t in txs if t.type == "expense"]
+                    if candidates:
+                        shared = random.choice(candidates)
+                        shared.name = "Groceries shared"
+                        shared.category = "Groceries"
+                        shared.amount = Decimal("37.34")
+                        shared.person_id = None
+                        shared.shares = [
+                            {"person_id": "alex", "amount": "18.67"},
+                            {"person_id": "ana", "amount": "18.67"},
+                        ]
                 session.add_all(txs)
                 session.commit()
+
+        # Three rules, already carrying an owner, that fire from next month on.
+        next_month = (date.today().replace(day=1) + relativedelta(months=1))
+        end = next_month + relativedelta(years=2)
+        session.add_all([
+            RecurringTransaction(
+                name="Rent share", category="Rent", tags=["monthly", "recurring"],
+                amount=Decimal("236.08"), type="expense", startDate=next_month,
+                endDate=end, frequency="monthly", person_id="alex",
+            ),
+            RecurringTransaction(
+                name="Netflix", category="Entertainment", tags=["subscription"],
+                amount=Decimal("15.99"), type="expense", startDate=next_month,
+                endDate=end, frequency="monthly", person_id="ana",
+            ),
+            RecurringTransaction(
+                name="Salary", category="Income", tags=["monthly", "bonus"],
+                amount=Decimal("2418.44"), type="income", startDate=next_month,
+                endDate=end, frequency="monthly", person_id="ana",
+            ),
+        ])
+        session.commit()
 
     print(f"✅ Database 'wally.db' created in {db_path.resolve()}.")
 

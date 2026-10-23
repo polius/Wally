@@ -1,1031 +1,554 @@
-const API_URL = '/api';
-
-let categories;
-let tags;
-let currency;
-
-let gridInstance;
-let gridApi;
-
-let modalMode = 'add';
-let selectedRow;
-
-let currentDate = new Date();
-let tagsInput;
-let nameInput;
-let activeCategoryFilter = null;
-
-// Execute the main function when DOM has loaded
-document.addEventListener('DOMContentLoaded', () => main());
-
-async function main() {
-  await checkLogin();
-  await i18n.init();
-
-  // Check for category filter in URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const categoryParam = urlParams.get('category');
-  if (categoryParam) {
-    activeCategoryFilter = decodeURIComponent(categoryParam);
-  }
-
-  // Show current month
-  renderMonth();
-
-  // Get categories, tags and default currency
-  [categories, tags, currency] = await Promise.all([
-    getCategories(),
-    getTags(),
-    getCurrency(),
-  ]);
-
-  // Render categories, tags and name autocomplete
-  await renderCategories();
-  await renderTags();
-  nameInput = document.getElementById('nameInput');
-  renderNameAutocomplete();
-
-  // Initialize the grid
-  gridApi = await initGrid();
-
-  // Show page after all translations are applied
-  i18n.showPage();
-
-  // Set Viewport Height (for mobile devices)
-  window.addEventListener('load', setViewportHeight);
-  window.addEventListener('resize', setViewportHeight);
-  setViewportHeight();
-
-  // Event listeners
-  setupEventListeners();
-}
-
-function setViewportHeight() {
-  let vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
-
-async function getCategories() {
-  const response = await fetch(`${API_URL}/categories`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  return response.json();
-}
-
-async function getTags() {
-  const response = await fetch(`${API_URL}/tags`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  return response.json();
-}
-
-async function getCurrency() {
-  const response = await fetch(`${API_URL}/currency`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  return {
-    name: data.selected,
-    symbol: data.currencies.find(c => c.name === data.selected)?.symbol,
-    position: data.position
+(() => {
+  const state = {
+    range: { type: 'current', from: new Date(), to: new Date() },
+    transactions: [],
+    search: '',
+    person: '',
+    categories: new Set(),
+    tags: new Set(),
+    selectMode: false,
+    selected: new Set(),
+    inspectorId: null,
+    pending: [],
+    lastFocus: null,
   };
-}
 
-async function renderCategories() {
-  const select = document.getElementById('categorySelect');
+  const $ = (id) => document.getElementById(id);
+  const composer = new W.Composer({ onSaved: () => load() });
 
-  // Clear any existing options
-  select.innerHTML = "";
+  function rangeLabel(range) {
+    if (range.type === 'all') return 'All time';
+    if (range.type === 'custom') return `${W.monthLabel(range.from, true)} – ${W.monthLabel(range.to, true)}`;
+    if (range.type === 'current') return W.monthLabel(range.to);
+    if (range.type === 'ytd') return 'Year to date';
+    return `Last ${range.type.replace('m', '')} months`;
+  }
 
-  // First static placeholder option
-  const placeholder = document.createElement('option');
-  placeholder.value = "";
-  placeholder.textContent = "Select category";
-  placeholder.selected = true;
-  placeholder.disabled = true;
-  select.appendChild(placeholder);
+  function setMeta() {
+    $('rangeLabel').textContent = rangeLabel(state.range);
+    const sum = W.summarise(state.transactions);
+    $('txSummary').innerHTML = state.transactions.length
+      ? `<b>${state.transactions.length}</b> ${state.transactions.length === 1 ? 'transaction' : 'transactions'}
+         <span class="sep">·</span><span>Net <b>${W.money(sum.net, { signed: true, plus: true })}</b></span>
+         <span class="sep tx-extra">·</span><span class="in tx-extra">${W.money(sum.income)} in</span>
+         <span class="sep tx-extra">·</span><span class="out tx-extra">${W.money(sum.expense)} out</span>`
+      : 'No transactions in this range';
+    document.title = `${rangeLabel(state.range)} · Wally`;
+  }
 
-  // Then your dynamic options
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
-    option.selected = false;
-    select.appendChild(option);
-  });
-}
-
-async function renderTags() {
-  tagsInput = new TomSelect('#tagsInput', {
-    plugins: {
-      remove_button: {
-        title: 'Remove this tag',
+  function filtered() {
+    const term = state.search.trim().toLowerCase();
+    return state.transactions.filter((t) => {
+      if (state.person === 'shared') {
+        if (t.person_id || !W.sharesFor(t).length) return false;
+      } else if (state.person && t.person_id !== state.person) {
+        return false;
       }
-    },
-    persist: false,
-    create: true,
-    render: {
-      no_results: function(data, escape) {
-        return '';
-      },
-    }
-  });
-
-  tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=false);
-  });
-}
-
-function renderNameAutocomplete() {
-  const nameCategoryMap = new Map();
-
-  // Custom dropdown — native <datalist> popups ignore color-scheme on most
-  // Chromium builds and render dark even when the page is in light mode.
-  const wrapper = document.createElement('div');
-  wrapper.className = 'name-autocomplete-wrapper';
-  nameInput.parentNode.insertBefore(wrapper, nameInput);
-  wrapper.appendChild(nameInput);
-
-  const dropdown = document.createElement('div');
-  dropdown.className = 'name-autocomplete-dropdown';
-  dropdown.setAttribute('role', 'listbox');
-  dropdown.hidden = true;
-  wrapper.appendChild(dropdown);
-
-  let currentResults = [];
-  let activeIndex = -1;
-
-  const escapeHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  };
-
-  const applyCategoryFor = (name) => {
-    const category = nameCategoryMap.get(name);
-    if (!category) return;
-    const categorySelect = document.getElementById('categorySelect');
-    if ([...categorySelect.options].some(o => o.value === category)) {
-      categorySelect.value = category;
-    }
-  };
-
-  const hideDropdown = () => {
-    dropdown.hidden = true;
-    activeIndex = -1;
-  };
-
-  const render = () => {
-    if (currentResults.length === 0) {
-      hideDropdown();
-      return;
-    }
-    dropdown.innerHTML = currentResults.map((r, i) =>
-      `<div class="name-autocomplete-item${i === activeIndex ? ' active' : ''}" role="option" data-index="${i}">${escapeHtml(r.name)}</div>`
-    ).join('');
-    dropdown.hidden = false;
-  };
-
-  const selectIndex = (i) => {
-    const item = currentResults[i];
-    if (!item) return;
-    nameInput.value = item.name;
-    applyCategoryFor(item.name);
-    hideDropdown();
-  };
-
-  let searchTimer;
-  nameInput.addEventListener('input', () => {
-    applyCategoryFor(nameInput.value);
-
-    clearTimeout(searchTimer);
-    const query = nameInput.value.trim();
-    if (!query) {
-      currentResults = [];
-      hideDropdown();
-      return;
-    }
-    searchTimer = setTimeout(async () => {
-      const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
-      if (response.status === 401) return window.location.href = '/login';
-      if (!response.ok) return;
-      const results = await response.json();
-      results.forEach(r => nameCategoryMap.set(r.name, r.category));
-      currentResults = results;
-      activeIndex = -1;
-      render();
-    }, 300);
-  });
-
-  nameInput.addEventListener('keydown', (e) => {
-    if (dropdown.hidden || currentResults.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      activeIndex = (activeIndex + 1) % currentResults.length;
-      render();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      activeIndex = activeIndex <= 0 ? currentResults.length - 1 : activeIndex - 1;
-      render();
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      selectIndex(activeIndex);
-    } else if (e.key === 'Escape') {
-      hideDropdown();
-    }
-  });
-
-  // mousedown fires before the input's blur, so the selection still applies
-  dropdown.addEventListener('mousedown', (e) => {
-    const item = e.target.closest('.name-autocomplete-item');
-    if (!item) return;
-    e.preventDefault();
-    selectIndex(parseInt(item.dataset.index, 10));
-  });
-
-  nameInput.addEventListener('blur', () => {
-    setTimeout(hideDropdown, 150);
-  });
-
-  // Reset state whenever the modal closes so the dropdown doesn't reappear
-  // with stale results on the next open.
-  document.getElementById('transactionModal').addEventListener('hidden.bs.modal', () => {
-    currentResults = [];
-    hideDropdown();
-  });
-}
-
-async function initGrid() {
-  let myTheme;
-  const theme = localStorage.getItem('theme') || 'system';
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (theme === 'light' || (theme === 'system' && !systemPrefersDark)) {
-    myTheme = agGrid.themeQuartz.withPart(agGrid.colorSchemeLightWarm);
-  }
-  else {
-    myTheme = agGrid.themeQuartz.withParams({
-      backgroundColor: '#212529',
-      foregroundColor: '#b5b9bd',
-      headerTextColor: '#b5b9bd',
-      headerBackgroundColor: '#272b30',
-      oddRowBackgroundColor: '#272b30',
-      headerColumnResizeHandleColor: '#b5b9bd',
-    });
-  }
-
-  const gridOptions = {
-    theme: myTheme,
-    suppressMovableColumns: true,
-    rowData: [],
-    rowSelection: {
-      mode: 'multiRow',
-      checkboxes: true,
-      headerCheckbox: true,
-      enableClickSelection: false
-    },
-    defaultColDef: {
-      flex: 1,
-      minWidth: 150,
-    },
-    overlayNoRowsTemplate: `<span style="padding: 10px; border: 1px solid var(--bs-border-color); background: var(--bs-body-bg);">${i18n.t('common.no_rows')}</span>`,
-    onGridReady: async params => {
-      gridApi = params.api;
-      await getTransactions();
-
-      // Apply category filter if present from URL
-      if (activeCategoryFilter) {
-        applyCategoryFilter(activeCategoryFilter);
+      if (state.categories.size && !state.categories.has(t.category)) return false;
+      if (state.tags.size && !(t.tags || []).some((tag) => state.tags.has(tag))) return false;
+      if (term) {
+        const haystack = [
+          t.name,
+          t.category,
+          ...(t.tags || []),
+          W.personName(t.person_id) || (W.sharesFor(t).length ? 'shared' : ''),
+          t.type,
+          String(t.amount),
+        ].join(' ').toLowerCase();
+        if (!haystack.includes(term)) return false;
       }
-    },
-    onFilterChanged: params => {
-      updateFooter(params.api);
-    },
-    onSelectionChanged: () => {
-      updateDeleteButton();
-    },
-    columnDefs: [
-      {
-        width: 50,
-        minWidth: 50,
-        maxWidth: 50,
-        suppressHeaderMenuButton: true,
-        filter: false,
-        resizable: false,
-      },
-      {
-        field: "name",
-        headerName: i18n.t('transactions.columns.name'),
-        filter: true,
-        wrapText: true,
-        autoHeight: true,
-        cellRenderer: (params) => {
-          const container = document.createElement('span');
-          const name = params.data?.name ?? '';
+      return true;
+    }).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_date || '').localeCompare(String(a.created_date || '')));
+  }
 
-          const appendName = () => {
-            if (name) {
-              const nameSpan = document.createElement('span');
-              nameSpan.textContent = name;
-              container.appendChild(nameSpan);
-            } else {
-              // Em-dash for empty names — typographic "no value" convention,
-              // disambiguates from a user-typed "-".
-              const blank = document.createElement('span');
-              blank.className = 'text-secondary fst-italic';
-              blank.textContent = '—';
-              container.appendChild(blank);
-            }
-          };
+  function ownerMarkup(t) {
+    if (t.person_id) {
+      const person = W.state.people.find((p) => p.id === t.person_id);
+      return `${W.avatar(person, 'tiny')}<span>${W.escapeHtml(person?.name || '—')}</span>`;
+    }
+    if (W.sharesFor(t).length) {
+      return `${W.icon('people')}<span>Shared</span>`;
+    }
+    return `<span class="card-note">No owner</span>`;
+  }
 
-          if (params.data?.recurringID) {
-            container.innerHTML = `
-            <i data-lucide="refresh-ccw" width="10" height="10" style="vertical-align: middle; margin-right: 6px;"></i>
-            `;
-          }
-          appendName();
-          renderIcons(container);
-          return container;
+  function rowMarkup(t) {
+    const selected = state.selected.has(t.id);
+    const rec = t.recurringID ? `<span class="rec" title="Recurring">${W.icon('repeat')}</span>` : '';
+    const tagText = (t.tags || []).length ? ` · ${t.tags.join(', ')}` : '';
+    const amountText = W.money(t.amount, { signed: true, sign: t.type === 'income' ? '+' : '−' });
+    const ownerCell = W.hasPeople() ? `<span class="tx-owner">${ownerMarkup(t)}</span>` : '';
+    const spoken = [t.name || t.category, t.category, ...(t.tags || []), ...(W.hasPeople() ? [W.ownerLabel(t) || 'No owner'] : []), amountText].join(', ');
+    return `<div class="tx-row ${selected ? 'sel' : ''}" data-id="${t.id}" tabindex="0" role="button" aria-label="Open ${W.escapeHtml(spoken)}">
+      <button type="button" class="tx-cb ${selected ? 'on' : ''}" data-select="${t.id}" aria-label="${selected ? 'Deselect' : 'Select'} ${W.escapeHtml(t.name || t.category)}" aria-pressed="${selected}">${selected ? W.icon('check') : ''}</button>
+      <span class="tx-ic">${W.categoryIcon(t.category)}</span>
+      <span class="tx-name">
+        <span class="tx-main">${W.escapeHtml(t.name || t.category)} ${rec}</span>
+        <span class="tx-meta">${W.escapeHtml(t.category)}${W.escapeHtml(tagText)}${W.ownerLabel(t) ? ` · ${W.escapeHtml(W.ownerLabel(t))}` : ''}</span>
+      </span>
+      <span class="tx-cat-cell"><span class="tx-cat" style="--c:${W.categoryColor(t.category)}"><i></i>${W.escapeHtml(t.category)}</span></span>
+      ${ownerCell}
+      <span class="tx-amt ${t.type === 'income' ? 'in' : ''}">${amountText}</span>
+      <button type="button" class="tx-more" data-more="${t.id}" aria-label="More about ${W.escapeHtml(t.name || t.category)}">${W.icon('more')}</button>
+    </div>`;
+  }
+
+  function renderList() {
+    const rows = filtered();
+    const scroll = $('txScroll');
+    if (!state.transactions.length) {
+      scroll.innerHTML = `<div class="empty tx-empty">
+        <span class="eic">${W.icon('transactions')}</span>
+        <b>No transactions in this range</b>
+        <span>Add one, or choose a wider range. The ledger only knows what you write in it.</span>
+        <button type="button" class="btn primary sm" data-empty-add style="margin-top:8px">Add a transaction</button>
+      </div>`;
+    } else if (!rows.length) {
+      scroll.innerHTML = `<div class="empty tx-empty">
+        <span class="eic">${W.icon('search')}</span>
+        <b>Nothing matches</b>
+        <span>Try a shorter search, or clear the filters. The range still holds ${state.transactions.length} ${state.transactions.length === 1 ? 'entry' : 'entries'}.</span>
+        <button type="button" class="btn ghost sm" data-clear-all style="margin-top:8px">Clear search and filters</button>
+      </div>`;
+    } else {
+      const groups = W.groupByDay(rows);
+      scroll.innerHTML = groups.map((group) => `
+        <section class="tx-day" aria-label="${W.escapeHtml(W.dayLabel(group.date))}">
+          <div class="tx-day-h">
+            <b>${W.dayLabel(group.date)}${/^(Today|Yesterday)$/.test(W.dayLabel(group.date)) ? ` · ${W.shortDate(group.date)}` : ''}</b>
+            <span class="net ${group.net >= 0 ? 'in' : ''}">${group.net === 0 ? '—' : W.money(group.net, { signed: true, sign: group.net > 0 ? '+' : '−' })}</span>
+          </div>
+          ${group.items.map(rowMarkup).join('')}
+        </section>`).join('');
+    }
+
+    scroll.querySelectorAll('[data-id]').forEach((row) => {
+      row.addEventListener('click', () => {
+        if (state.selectMode) toggleSelected(row.dataset.id);
+        else openInspector(row.dataset.id, row);
+      });
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (state.selectMode) toggleSelected(row.dataset.id);
+          else openInspector(row.dataset.id, row);
         }
-      },
-      {
-        field: "category",
-        headerName: i18n.t('transactions.columns.category'),
-        filter: true,
-      },
-      {
-        field: "tags",
-        headerName: i18n.t('transactions.columns.tags'),
-        filter: true,
-        valueFormatter: (params) => {
-          return params.value ? params.value.join(", ") : "";
-        },
-      },
-      {
-        field: "date",
-        headerName: i18n.t('transactions.columns.date'),
-        valueFormatter: (params) => {
-          const [year, month, day] = params.value.split("-");
-          const date = new Date(Number(year), Number(month) - 1, Number(day));
-          const monthNames = [
-            i18n.t('common.months.january'),
-            i18n.t('common.months.february'),
-            i18n.t('common.months.march'),
-            i18n.t('common.months.april'),
-            i18n.t('common.months.may'),
-            i18n.t('common.months.june'),
-            i18n.t('common.months.july'),
-            i18n.t('common.months.august'),
-            i18n.t('common.months.september'),
-            i18n.t('common.months.october'),
-            i18n.t('common.months.november'),
-            i18n.t('common.months.december')
-          ];
-          const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          const weekday = weekdayNames[date.getDay()];
-          const monthName = monthNames[date.getMonth()].substring(0, 3);
-          return `${weekday}, ${monthName} ${day}, ${year}`;
-        }
-      },
-      {
-        field: "amount",
-        headerName: i18n.t('transactions.columns.amount'),
-        valueFormatter: (params) => {
-          const amount = params.value;
-          const sign = params.data?.type === 'expense' ? '-' : '';
-
-          if (currency.position === 'left') {
-            return `${sign}${currency.symbol}${amount}`;
-          }
-          else {
-            return `${sign}${amount} ${currency.symbol}`;
-          }
-        },
-        cellClass: (params) => {
-          if (params.data?.type === 'income') return 'text-green';
-          if (params.data?.type === 'expense') return 'text-red';
-        },
-        comparator: (valueA, valueB, nodeA, nodeB, isInverted) => {
-          const aData = nodeA.data;
-          const bData = nodeB.data;
-
-          // Calculate "sort value" for aData.amount based on type
-          const aVal = (aData.type === 'expense' ? -aData.amount : aData.amount);
-          const bVal = (bData.type === 'expense' ? -bData.amount : bData.amount);
-
-          // Normal numeric compare
-          if (aVal < bVal) return -1;
-          if (aVal > bVal) return 1;
-          return 0;
-        }
-      },
-      {
-        field: "actions",
-        headerName: i18n.t('transactions.columns.actions'),
-        width: 100,
-        cellRenderer: (params) => {
-          const container = document.createElement("div");
-          container.className = "actions-container";
-
-          // Edit button
-          const editButton = document.createElement("button");
-          editButton.className = "grid-action-btn grid-btn-edit";
-          editButton.type = "button";
-          editButton.title = i18n.t('common.edit');
-          editButton.innerHTML = `
-            <i data-lucide="square-pen" width="14" height="14"></i>
-          `;
-          editButton.addEventListener("click", () => {
-            selectedRow = params.data;
-            editTransaction();
-          });
-
-          // Delete button
-          const deleteButton = document.createElement("button");
-          deleteButton.className = "grid-action-btn grid-btn-delete";
-          deleteButton.type = "button";
-          deleteButton.title = i18n.t('common.delete');
-          deleteButton.innerHTML = `
-            <i data-lucide="trash-2" width="14" height="14"></i>
-          `;
-          deleteButton.addEventListener("click", () => {
-            selectedRow = params.data;
-            deleteTransaction();
-          });
-
-          container.appendChild(editButton);
-          container.appendChild(deleteButton);
-
-          renderIcons(container);
-          return container;
-        }
-      }
-    ]
-  }
-
-  // Destroy existing grid instance if it exists
-  if (gridInstance) {
-    gridInstance.destroy();
-  }
-
-  // Creating the AG Grid
-  const myGridElement = document.querySelector('#myGrid');
-  gridInstance = agGrid.createGrid(myGridElement, gridOptions);
-
-  return gridInstance;
-}
-
-function renderMonth() {
-  const monthNames = [
-    i18n.t('common.months.january'),
-    i18n.t('common.months.february'),
-    i18n.t('common.months.march'),
-    i18n.t('common.months.april'),
-    i18n.t('common.months.may'),
-    i18n.t('common.months.june'),
-    i18n.t('common.months.july'),
-    i18n.t('common.months.august'),
-    i18n.t('common.months.september'),
-    i18n.t('common.months.october'),
-    i18n.t('common.months.november'),
-    i18n.t('common.months.december')
-  ];
-  const monthText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-  document.getElementById('currentMonth').textContent = monthText;
-}
-
-function onFilterTextBoxChanged() {
-  gridApi.setGridOption("quickFilterText", document.getElementById("searchInput").value);
-}
-
-function applyCategoryFilter(category) {
-  activeCategoryFilter = category;
-
-  // Show filter indicator
-  const indicator = document.getElementById('categoryFilterIndicator');
-  indicator.style.display = 'flex';
-  indicator.classList.add('d-flex');
-  document.getElementById('filteredCategoryName').textContent = category;
-
-  // Apply the filter model
-  gridApi.setFilterModel({
-    category: {
-      filterType: 'text',
-      type: 'equals',
-      filter: category
-    }
-  });
-
-  // Disable category column filtering
-  const column = gridApi.getColumn('category');
-  if (column) {
-    const colDef = column.getColDef();
-    colDef.filter = false;
-    gridApi.refreshHeader();
-  }
-}
-
-function clearCategoryFilter() {
-  activeCategoryFilter = null;
-
-  // Hide filter indicator
-  const indicator = document.getElementById('categoryFilterIndicator');
-  indicator.style.display = 'none';
-  indicator.classList.remove('d-flex');
-  document.getElementById('filteredCategoryName').textContent = '';
-
-  // Re-enable category column filtering
-  const column = gridApi.getColumn('category');
-  if (column) {
-    const colDef = column.getColDef();
-    colDef.filter = true;
-    gridApi.refreshHeader();
-  }
-
-  // Clear grid filter
-  gridApi.setFilterModel(null);
-
-  // Remove URL parameter
-  const url = new URL(window.location);
-  url.searchParams.delete('category');
-  window.history.replaceState({}, '', url);
-}
-
-async function getTransactions() {
-  const showAll = document.getElementById('showAllTransactions').checked;
-  const monthHeader = document.getElementById('monthHeader');
-  const monthHeaderAll = document.getElementById('monthHeaderAll');
-
-  if (showAll) {
-    monthHeader.style.display = 'none';
-    monthHeaderAll.style.display = 'flex';
-
-    // Fetch all transactions
-    const response = await fetch(`${API_URL}/transactions`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const data = await response.json()
-    gridApi.setGridOption('rowData', data)
-  }
-  else {
-    monthHeader.style.display = 'flex';
-    monthHeaderAll.style.display = 'none';
-
-    // Fetch only current month transactions
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const year = currentDate.getFullYear(); // 2025
-    const response = await fetch(`${API_URL}/transactions/date/${year}-${month}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const data = await response.json()
-    gridApi.setGridOption('rowData', data)
-  }
-  updateFooter(gridApi);
-}
-
-function setupEventListeners() {
-  // Prev month button
-  document.getElementById('prevMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() - 1);
-    renderMonth();
-    getTransactions();
-  });
-
-  // Next month button
-  document.getElementById('nextMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderMonth();
-    getTransactions();
-  });
-
-  document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
-    document.getElementById('nameInput').focus()
-  });
-
-  document.getElementById('amountInput').addEventListener('input', (event) => {
-    if (event.target.value.includes(',')) {
-      event.target.value = event.target.value.replace(',', '.');
-    }
-  });
-}
-
-function updateFooter(api) {
-  const rowCount = api.getDisplayedRowCount();
-
-  // Get total expense amount using AG Grid API
-  let income = 0;
-  let expense = 0;
-  api.forEachNodeAfterFilterAndSort(node => {
-    if (node.data.type === 'income') income = Decimal.add(income, node.data.amount).toNumber();
-    else if (node.data.type === 'expense') expense = Decimal.add(expense, node.data.amount).toNumber();
-  });
-
-  if (currency.position === 'left') {
-    income = `${currency.symbol}${income}`;
-    expense = `${currency.symbol}${expense}`;
-  }
-  else {
-    income = `${income} ${currency.symbol}`;
-    expense = `${expense} ${currency.symbol}`;
-  }
-
-  // Update footer values
-  document.getElementById('rowCount').innerText = rowCount;
-  document.getElementById('incomeAmount').innerText = income;
-  document.getElementById('expenseAmount').innerText = expense;
-}
-
-function addTransaction() {
-  modalMode = 'add';
-  document.getElementById('transactionModalLabel').textContent = i18n.t('transactions.modal_add_title');
-  document.getElementById('modalSubmitButton').textContent = i18n.t('transactions.add');
-  document.getElementById('transactionForm').reset();
-  document.getElementById('categorySelect').value = "";
-  tagsInput.setValue([]);
-  document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-  document.getElementById('recurringElement').style.display = 'block';
-  toggleRecurring(false);
-}
-
-function editTransaction() {
-  modalMode = 'edit';
-  document.getElementById('transactionModalLabel').textContent = i18n.t('transactions.modal_edit_title');
-  document.getElementById('modalSubmitButton').textContent = i18n.t('common.update');
-  document.getElementById('recurringElement').style.display = 'none';
-  toggleRecurring(false);
-
-  // Assign values
-  nameInput.value = selectedRow.name;
-  document.getElementById('categorySelect').value = selectedRow.category
-  selectedRow.tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=true);
-  });
-  tagsInput.setValue(selectedRow.tags);
-  document.getElementById('amountInput').value = selectedRow.amount
-  document.getElementById('typeSelect').value = selectedRow.type
-  document.getElementById('dateInput').value = selectedRow.date
-
-  // Open modal
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModal'));
-  modal.show();
-}
-
-function deleteTransaction() {
-  modalMode = 'delete';
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModalDelete'));
-  modal.show();
-}
-
-function submitTransaction(event) {
-  if (modalMode === 'add') {
-    if (event.target.recurringCheck.checked) submitRecurringAdd(event);
-    else submitTransactionAdd(event);
-  }
-  else if (modalMode === 'edit') submitTransactionEdit(event);
-  else if (modalMode === 'delete') submitTransactionDelete(event);
-}
-
-async function submitRecurringAdd(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  // Check if startDate is before endDate
-  if (new Date(data.startDate) >= new Date(data.endDate)) {
-    bootstrap.showToast({body: i18n.t('transactions.messages.end_date_later'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/recurring`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.recurring_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getTransactions();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function submitTransactionAdd(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  try {
-    const response = await fetch(`${API_URL}/transactions`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.transaction_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getTransactions();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function submitTransactionEdit(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  try {
-    const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.transaction_edited'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getTransactions();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function submitTransactionDelete(event) {
-  event.preventDefault();
-
-  try {
-    const response = await fetch(`${API_URL}/transactions/${selectedRow.id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDelete'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.transaction_deleted'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the grid
-      getTransactions();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-function toggleRecurring(enabled) {
-  const recurringDiv = document.getElementById('recurringDiv');
-  const date = document.getElementById('dateInput');
-  const startDate = document.getElementById('startDateInput');
-  const endDate = document.getElementById('endDateInput');
-  const frequencySelect = document.getElementById('frequencySelect');
-
-  if (enabled) {
-    recurringDiv.style.display = 'block';
-    date.disabled = true;
-    startDate.value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-    startDate.required = true;
-    endDate.required = true;
-    frequencySelect.required = true;
-  } else {
-    recurringDiv.style.display = 'none';
-    date.disabled = false;
-    startDate.required = false;
-    endDate.required = false;
-    frequencySelect.required = false;
-  }
-}
-
-function updateDeleteButton() {
-  const selectedRows = gridApi.getSelectedRows();
-  const deleteBtn = document.getElementById('deleteSelectedBtn');
-  const selectedCount = document.getElementById('selectedCount');
-  const container = document.getElementById('actionButtonsContainer');
-
-  if (selectedRows.length > 0) {
-    selectedCount.textContent = selectedRows.length;
-    // First: compact the existing buttons
-    container.classList.add('compact-buttons');
-    // Then: reveal the delete button after buttons have resized
-    deleteBtn.style.display = '';
-    deleteBtn.classList.add('d-flex');
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        deleteBtn.classList.add('show-delete');
       });
     });
-  } else {
-    // First: hide the delete button
-    deleteBtn.classList.remove('show-delete');
-    // Then: after transition, remove compact and hide fully
-    setTimeout(() => {
-      deleteBtn.classList.remove('d-flex');
-      deleteBtn.style.display = 'none';
-      container.classList.remove('compact-buttons');
-    }, 250);
-  }
-}
-
-function deleteSelectedTransactions() {
-  const selectedRows = gridApi.getSelectedRows();
-  const count = selectedRows.length;
-
-  document.getElementById('deleteMultipleMessage').innerHTML =
-    i18n.t('transactions.delete_multiple_confirm').replace('{count}', `<strong>${count}</strong>`);
-
-  const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionModalDeleteMultiple'));
-  modal.show();
-}
-
-async function submitTransactionDeleteMultiple(event) {
-  event.preventDefault();
-
-  const selectedRows = gridApi.getSelectedRows();
-  const transactionIds = selectedRows.map(row => row.id);
-
-  try {
-    const deletePromises = transactionIds.map(id =>
-    fetch(`${API_URL}/transactions/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-    );
-
-    const responses = await Promise.all(deletePromises);
-
-    // Check if any request failed
-    const failedResponse = responses.find(r => !r.ok);
-    if (failedResponse) {
-      if (failedResponse.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
-      throw new Error("An error occurred while deleting transactions.");
-    }
-
-    // Hide the modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModalDeleteMultiple'));
-    modal.hide();
-
-    // Show toast
-    const count = transactionIds.length;
-    bootstrap.showToast({
-      body: `${count} transaction${count === 1 ? '' : 's'} deleted.`,
-      delay: 1000,
-      position: "top-0 start-50 translate-middle-x",
-      toastClass: "text-bg-success"
+    scroll.querySelectorAll('[data-select]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!state.selectMode) toggleSelectMode(true);
+        toggleSelected(button.dataset.select);
+      });
     });
+    scroll.querySelectorAll('[data-more]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openInspector(button.dataset.more, button);
+      });
+    });
+    scroll.querySelector('[data-empty-add]')?.addEventListener('click', () => composer.open());
+    scroll.querySelector('[data-clear-all]')?.addEventListener('click', clearFilters);
 
-    // Refresh the grid
-    getTransactions();
+    $('txFoot').hidden = !rows.length;
+    $('txAllLabel').innerHTML = `Showing <b>${rows.length}</b> of ${state.transactions.length}`;
+    renderBulk();
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
 
-// --------
-// - AUTH -
-// --------
-async function checkLogin() {
-  const response = await fetch(`${API_URL}/login/check`, {
-    method: 'GET',
-    credentials: 'include',
+  function toggleSelected(id) {
+    if (state.selected.has(id)) state.selected.delete(id);
+    else state.selected.add(id);
+    if (!state.selected.size && state.selectMode) {
+      // Selection mode stays on until Done; an empty selection is a valid state.
+    }
+    renderList();
+  }
+
+  function toggleSelectMode(force) {
+    state.selectMode = typeof force === 'boolean' ? force : !state.selectMode;
+    if (!state.selectMode) state.selected.clear();
+    const button = $('selectToggle');
+    button.querySelector('span').textContent = state.selectMode ? 'Done' : 'Select';
+    button.setAttribute('aria-pressed', String(state.selectMode));
+    button.setAttribute('aria-label', state.selectMode ? 'Finish selecting transactions' : 'Select transactions');
+    button.classList.toggle('on', state.selectMode);
+    $('txScroll').classList.toggle('selecting', state.selectMode);
+    renderList();
+  }
+
+  function renderBulk() {
+    const count = state.selected.size;
+    $('bulkBar').hidden = !state.selectMode;
+    $('bulkCount').textContent = `${count} selected`;
+    $('bulkExport').disabled = count === 0;
+    $('bulkDelete').disabled = count === 0;
+    $('bulkExport').style.opacity = count ? '1' : '.4';
+    $('bulkDelete').style.opacity = count ? '1' : '.4';
+  }
+
+  function filterCount() {
+    return (state.person ? 1 : 0) + state.categories.size + state.tags.size;
+  }
+
+  function updateFilterButton() {
+    const count = filterCount();
+    $('filterCount').hidden = count === 0;
+    $('filterCount').textContent = String(count);
+    $('filterButton').classList.toggle('on', count > 0);
+  }
+
+  function clearFilters() {
+    state.search = '';
+    state.person = '';
+    state.categories.clear();
+    state.tags.clear();
+    $('searchInput').value = '';
+    updateFilterButton();
+    renderList();
+  }
+
+  function rangeCounts() {
+    const people = new Map();
+    const categories = new Map();
+    const tags = new Map();
+    for (const t of state.transactions) {
+      if (t.person_id) people.set(t.person_id, (people.get(t.person_id) || 0) + 1);
+      else if (W.sharesFor(t).length) people.set('shared', (people.get('shared') || 0) + 1);
+      categories.set(t.category, (categories.get(t.category) || 0) + 1);
+      for (const tag of t.tags || []) tags.set(tag, (tags.get(tag) || 0) + 1);
+    }
+    return { people, categories, tags };
+  }
+
+  let filterPop = null;
+  function openFilter(anchor) {
+    closeFilter();
+    const counts = rangeCounts();
+    const pop = document.createElement('div');
+    pop.className = 'filter-pop';
+    const personOptions = [
+      `<button type="button" class="facet-opt ${!state.person ? 'on' : ''}" data-person="" aria-pressed="${!state.person}">Everyone</button>`,
+      ...W.state.people.map((p) => `<button type="button" class="facet-opt ${state.person === p.id ? 'on' : ''}" data-person="${p.id}" aria-pressed="${state.person === p.id}">${W.escapeHtml(p.name)}<span class="cnt">${counts.people.get(p.id) || 0}</span></button>`),
+      `<button type="button" class="facet-opt ${state.person === 'shared' ? 'on' : ''}" data-person="shared" aria-pressed="${state.person === 'shared'}">Shared<span class="cnt">${counts.people.get('shared') || 0}</span></button>`,
+    ].join('');
+
+    const cats = [...counts.categories.entries()].sort((a, b) => b[1] - a[1]);
+    const tagList = [...counts.tags.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+    pop.innerHTML = `
+      <div class="range-head"><b>Filter</b><button type="button" class="icon-btn small filter-close" aria-label="Close">${W.icon('close')}</button></div>
+      ${W.hasPeople() ? `<div class="facet"><div class="facet-h"><span>People</span></div><div class="facet-options">${personOptions}</div></div>` : ''}
+      <div class="facet"><div class="facet-h"><span>Category</span><span>${state.categories.size || ''}</span></div><div class="facet-options">${cats.map(([name, count]) => `<button type="button" class="facet-opt ${state.categories.has(name) ? 'on' : ''}" data-cat="${W.escapeHtml(name)}" aria-pressed="${state.categories.has(name)}">${W.escapeHtml(name)}<span class="cnt">${count}</span></button>`).join('') || '<span class="card-note">No categories yet.</span>'}</div></div>
+      <div class="facet"><div class="facet-h"><span>Tags</span><span>${state.tags.size || ''}</span></div><div class="facet-options">${tagList.map(([name, count]) => `<button type="button" class="facet-opt ${state.tags.has(name) ? 'on' : ''}" data-tag="${W.escapeHtml(name)}" aria-pressed="${state.tags.has(name)}">${W.escapeHtml(name)}<span class="cnt">${count}</span></button>`).join('') || '<span class="card-note">No tags yet.</span>'}</div></div>
+      <div class="surf-f" style="margin:10px -13px -13px;padding:10px 13px"><button type="button" class="link filter-clear">Clear all</button></div>`;
+
+    document.body.appendChild(pop);
+    pop.style.position = 'absolute';
+    pop.style.zIndex = '70';
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.min(292, window.innerWidth - 24);
+    pop.style.width = `${width}px`;
+    pop.style.left = `${Math.max(12, Math.min(rect.left + window.scrollX, window.innerWidth - width - 12 + window.scrollX))}px`;
+    pop.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    filterPop = pop;
+    anchor.setAttribute('aria-expanded', 'true');
+
+    pop.querySelector('.facet-opt')?.focus();
+    pop.querySelectorAll('[data-person]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.person = button.dataset.person;
+        openFilter(anchor);
+        updateFilterButton();
+        renderList();
+      });
+    });
+    pop.querySelectorAll('[data-cat]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.cat;
+        if (state.categories.has(name)) state.categories.delete(name); else state.categories.add(name);
+        button.classList.toggle('on', state.categories.has(name));
+        button.setAttribute('aria-pressed', String(state.categories.has(name)));
+        updateFilterButton();
+        renderList();
+      });
+    });
+    pop.querySelectorAll('[data-tag]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.tag;
+        if (state.tags.has(name)) state.tags.delete(name); else state.tags.add(name);
+        button.classList.toggle('on', state.tags.has(name));
+        button.setAttribute('aria-pressed', String(state.tags.has(name)));
+        updateFilterButton();
+        renderList();
+      });
+    });
+    pop.querySelector('.filter-close').addEventListener('click', () => closeFilter());
+    pop.querySelector('.filter-clear').addEventListener('click', () => {
+      clearFilters();
+      closeFilter();
+    });
+    setTimeout(() => {
+      const onDoc = (event) => {
+        if (!pop.contains(event.target) && !anchor.contains(event.target)) {
+          closeFilter();
+          document.removeEventListener('pointerdown', onDoc);
+        }
+      };
+      document.addEventListener('pointerdown', onDoc);
+      pop._onDoc = onDoc;
+    }, 0);
+  }
+
+  function closeFilter() {
+    if (!filterPop) return;
+    if (filterPop._onDoc) document.removeEventListener('pointerdown', filterPop._onDoc);
+    filterPop.remove();
+    filterPop = null;
+    $('filterButton').setAttribute('aria-expanded', 'false');
+  }
+
+  async function load() {
+    setMeta();
+    try {
+      await W.loadCore();
+      state.transactions = await W.fetchRangeTransactions(state.range);
+      await W.refreshRecurring().catch(() => {});
+      W.state.people = await W.api('/people');
+      setMeta();
+      renderList();
+      updateFilterButton();
+    } catch (error) {
+      $('txScroll').innerHTML = `<div class="empty tx-empty"><b>Could not read the ledger</b><span>${W.escapeHtml(error.message)}</span><button type="button" class="btn ghost sm" onclick="location.reload()" style="margin-top:8px">Try again</button></div>`;
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
+
+  /* ----------------------------- inspector ----------------------------- */
+  function openInspector(id, trigger) {
+    const t = state.transactions.find((x) => x.id === id);
+    if (!t) return;
+    state.inspectorId = id;
+    state.lastFocus = trigger || document.activeElement;
+    const shares = W.sharedPeople(t);
+    const rule = W.state.recurring.find((r) => r.id === t.recurringID);
+    const owner = W.ownerLabel(t);
+    $('inspectorBody').innerHTML = `
+      <div class="lgi-top">
+        <span class="lgi-ic">${W.categoryIcon(t.category)}</span>
+        <div><div class="lgi-name">${W.escapeHtml(t.name || t.category)}</div><div class="lgi-cat">${W.escapeHtml(t.category)}</div></div>
+      </div>
+      <div class="lgi-amt ${t.type === 'income' ? 'in' : ''}">${W.money(t.amount, { signed: true, sign: t.type === 'income' ? '+' : '−' })}</div>
+      <div class="lgi-date">${W.longDate(t.date)}</div>
+      <div class="lgi-kv">
+        <div class="kv"><span>Type</span><b>${t.type === 'income' ? 'Income' : 'Expense'}</b></div>
+        <div class="kv"><span>Owner</span><b>${W.escapeHtml(owner || 'No owner')}</b></div>
+        <div class="kv"><span>Tags</span><span class="lgi-tags">${(t.tags || []).length ? t.tags.map((tag) => `<span class="pill">${W.escapeHtml(tag)}</span>`).join('') : '<span class="card-note">None</span>'}</span></div>
+        <div class="kv"><span>Repeat</span><b>${rule ? W.escapeHtml(rule.frequency[0].toUpperCase() + rule.frequency.slice(1)) : (t.recurringID ? 'Recurring occurrence' : 'One-off')}</b></div>
+        ${rule ? `<div class="kv"><span>Rule</span><b>${W.escapeHtml(rule.name)}</b></div>` : ''}
+        <div class="kv"><span>Added</span><b>${W.dateTimeLabel(t.created_date)}</b></div>
+      </div>
+      ${shares.length ? `<div class="splitbox" style="margin-top:14px"><div class="split-h"><span>Shared split</span><span>${W.money(t.amount)}</span></div>${shares.map((s) => `<div class="split-row"><span class="split-name">${W.escapeHtml(s.name)}</span><span class="input split-input"><span>${W.state.currency.symbol}</span><input readonly value="${W.formatNumber(s.amount)}" aria-label="${W.escapeHtml(s.name)} share"></span></div>`).join('')}</div>` : ''}`;
+    $('inspectorDelete').dataset.id = id;
+    W.openDialog($('inspector'));
+  }
+
+  function closeInspector() {
+    W.closeDialog($('inspector'));
+  }
+
+  async function deleteOne(id) {
+    const t = state.transactions.find((x) => x.id === id);
+    if (!t) return;
+    const ok = await W.confirmDialog({
+      title: 'Delete transaction?',
+      message: `“${t.name || t.category}” will be removed. You can undo for six seconds.`,
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    closeInspector();
+    scheduleDelete([t]);
+  }
+
+  function scheduleDelete(txs) {
+    if (!txs.length) return;
+    const ids = new Set(txs.map((t) => t.id));
+    state.transactions = state.transactions.filter((t) => !ids.has(t.id));
+    state.selected.clear();
+    if (state.selectMode) toggleSelectMode(false);
+    setMeta();
+    renderList();
+    const record = { txs, timer: null };
+    record.timer = setTimeout(() => flush(record), 6000);
+    state.pending.push(record);
+    W.toast(`${txs.length} ${txs.length === 1 ? 'transaction' : 'transactions'} deleted.`, {
+      actionLabel: 'Undo',
+      duration: 6000,
+      onAction: () => {
+        clearTimeout(record.timer);
+        state.pending = state.pending.filter((p) => p !== record);
+        state.transactions.push(...txs);
+        setMeta();
+        renderList();
+        W.toast('Restored.');
+      },
+    });
+  }
+
+  async function flush(record) {
+    state.pending = state.pending.filter((p) => p !== record);
+    const results = await Promise.allSettled(record.txs.map((t) => W.api(`/transactions/${t.id}`, { method: 'DELETE' })));
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length) {
+      W.toast(`${failed.length} could not be deleted. Reloading.`, { tone: 'danger' });
+      load();
+    }
+  }
+
+  function flushAll() {
+    for (const record of [...state.pending]) {
+      clearTimeout(record.timer);
+      flush(record);
+    }
+  }
+
+  /* ------------------------------- csv -------------------------------- */
+  function csvFor(txs) {
+    const withPeople = W.hasPeople();
+    const columns = ['name', 'category', 'tags', 'amount', 'type', 'date'];
+    if (withPeople) columns.push('person');
+    const rows = txs.map((t) => ({
+      name: t.name || '',
+      category: t.category || '',
+      tags: W.csv.tagsToCell(t.tags || []),
+      amount: Number(t.amount).toFixed(2),
+      type: t.type,
+      date: t.date,
+      person: t.person_id ? (W.personName(t.person_id) || '') : (W.sharesFor(t).length ? 'Shared' : ''),
+    }));
+    return W.csv.stringify(rows, columns);
+  }
+
+  function exportRows(txs, filename = 'transactions.csv') {
+    if (!txs.length) { W.toast('There is nothing to export yet.', { tone: 'default' }); return; }
+    W.download(filename, csvFor(txs));
+    W.toast(`${txs.length} ${txs.length === 1 ? 'row' : 'rows'} exported.`);
+  }
+
+  function bulkExport() {
+    const txs = state.transactions.filter((t) => state.selected.has(t.id));
+    exportRows(txs, `wally-selection-${W.dateISO(new Date())}.csv`);
+  }
+
+  function bulkDelete() {
+    const txs = state.transactions.filter((t) => state.selected.has(t.id));
+    if (!txs.length) return;
+    W.confirmDialog({
+      title: `Delete ${txs.length} ${txs.length === 1 ? 'transaction' : 'transactions'}?`,
+      message: 'The rows leave the ledger together. Undo stays available for six seconds.',
+      confirmLabel: `Delete ${txs.length}`,
+    }).then((ok) => { if (ok) scheduleDelete(txs); });
+  }
+
+  /* ------------------------------ range ------------------------------- */
+  function openRange(anchor) {
+    anchor.setAttribute('aria-expanded', 'true');
+    W.openRangePopover(anchor, state.range, (range) => {
+      anchor.setAttribute('aria-expanded', 'false');
+      state.range = range;
+      load();
+    });
+  }
+
+  /* ------------------------------ boot -------------------------------- */
+  async function applyUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const category = params.get('category');
+    const tag = params.get('tag');
+    const person = params.get('person');
+    const focus = params.get('focus');
+    if (category) state.categories.add(category);
+    if (tag) state.tags.add(tag);
+    if (person) state.person = person;
+    updateFilterButton();
+    renderList();
+
+    if (focus) {
+      try {
+        const rows = await W.api(`/transactions/id/${encodeURIComponent(focus)}`);
+        const tx = rows?.[0];
+        if (tx) {
+          const d = W.parseDate(tx.date);
+          state.range = { type: 'current', from: d, to: d };
+          await load();
+          setTimeout(() => openInspector(tx.id, $('txScroll')), 250);
+        }
+      } catch { /* the row may be gone; leave the default range */ }
+    }
+  }
+
+  function bind() {
+    document.querySelectorAll('[data-compose]').forEach((button) => {
+      button.addEventListener('click', () => composer.open());
+    });
+    $('selectToggle').setAttribute('aria-label', 'Select transactions');
+    $('selectToggle').addEventListener('click', () => toggleSelectMode());
+    $('bulkClear').addEventListener('click', () => toggleSelectMode(false));
+    $('bulkDelete').addEventListener('click', bulkDelete);
+    $('bulkExport').addEventListener('click', bulkExport);
+    $('filterButton').addEventListener('click', () => {
+      if (filterPop) closeFilter(); else openFilter($('filterButton'));
+    });
+    $('rangeButton').addEventListener('click', () => openRange($('rangeButton')));
+    $('searchInput').addEventListener('input', (event) => {
+      state.search = event.target.value;
+      renderList();
+    });
+    document.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        $('searchInput').focus();
+        $('searchInput').select();
+      }
+      if (event.key === 'Escape') {
+        closeRangeFilter();
+      }
+    });
+    function closeRangeFilter() {
+      W.closeRangePopover();
+      closeFilter();
+    }
+    $('inspectorClose').addEventListener('click', closeInspector);
+    $('inspectorDelete').addEventListener('click', () => {
+      if (state.inspectorId) deleteOne(state.inspectorId);
+    });
+    $('inspectorEdit').addEventListener('click', () => {
+      const t = state.transactions.find((x) => x.id === state.inspectorId);
+      if (!t) return;
+      closeInspector();
+      composer.open({ transaction: t });
+    });
+    $('inspectorDuplicate').addEventListener('click', () => {
+      const t = state.transactions.find((x) => x.id === state.inspectorId);
+      if (!t) return;
+      closeInspector();
+      setTimeout(() => composer.open({ transaction: t, duplicate: true }), 120);
+    });
+    $('inspector').addEventListener('close', () => {
+      if (state.lastFocus && typeof state.lastFocus.focus === 'function') state.lastFocus.focus();
+    });
+    window.addEventListener('pagehide', flushAll);
+  }
+
+  W.ready(async () => {
+    W.initShell('transactions');
+    W.installThemeListener();
+    await i18n.init();
+    bind();
+    await W.loadCore();
+    document.body.classList.toggle('has-people', W.hasPeople());
+    $('navAvatar').textContent = W.initials(W.state.people.find((p) => p.is_self)?.name || 'PA');
+    await load();
+    await applyUrl();
   });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const enabled = await response.json()
-  if (enabled) document.getElementById('logoutButton').style.display = 'block'
-}
-
-async function logout() {
-  await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-  window.location.href = '/login';
-}
+})();

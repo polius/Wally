@@ -4,14 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
-from .database import create_db_and_tables, engine
+from .database import create_db_and_tables, migrate_db, engine
 from .demo import generate_demo
-from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys
+from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, people
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
+from .models.people import Person
 
-VERSION = "1.16"
+VERSION = "2.0"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
     # Live version
     else:
         create_db_and_tables()
+        migrate_db()
 
     # Init database session
     with Session(engine) as db:
@@ -64,6 +66,7 @@ app.include_router(tags.router)
 app.include_router(currency.router)
 app.include_router(auth.router)
 app.include_router(api_keys.router)
+app.include_router(people.router)
 
 # Add root route
 @app.get("/", tags=["Root"])

@@ -5,6 +5,7 @@ class I18n {
   constructor() {
     this.locale = DEFAULT_LANG;
     this.translations = {};
+    this.fallbackTranslations = {};
     this.onLanguageChangeCallbacks = [];
   }
 
@@ -41,9 +42,10 @@ class I18n {
   async loadTranslations(lang) {
     this.locale = lang;
     document.documentElement.lang = lang;
+    const cache = '4';
 
     try {
-      const response = await fetch(`locales/${lang}.json`);
+      const response = await fetch(`locales/${lang}.json?v=${cache}`);
       if (!response.ok) {
         throw new Error(`Could not load translations for ${lang}`);
       }
@@ -52,7 +54,23 @@ class I18n {
       console.error('Error loading translations:', error);
       if (lang !== DEFAULT_LANG) {
         await this.loadTranslations(DEFAULT_LANG);
+        return;
       }
+      this.translations = {};
+    }
+
+    // English is the source of truth. A locale that has not caught up with a
+    // new key falls back to English instead of printing the raw key.
+    try {
+      if (lang === DEFAULT_LANG) {
+        this.fallbackTranslations = this.translations;
+      } else {
+        const fallbackResponse = await fetch(`locales/${DEFAULT_LANG}.json?v=${cache}`);
+        this.fallbackTranslations = fallbackResponse.ok ? await fallbackResponse.json() : {};
+      }
+    } catch (error) {
+      console.error('Error loading English fallback:', error);
+      this.fallbackTranslations = {};
     }
   }
 
@@ -89,7 +107,15 @@ class I18n {
   }
 
   t(key) {
-    return key.split('.').reduce((obj, k) => obj?.[k], this.translations) ?? key;
+    const read = (source) => key.split('.').reduce((obj, k) => obj?.[k], source);
+    const value = read(this.translations) ?? read(this.fallbackTranslations);
+    if (typeof value === 'string') return value;
+
+    // Never print a raw dotted key. If neither locale has it (for example a
+    // new label that has not reached the English file yet), show the last
+    // segment as plain words until the translation lands.
+    const label = String(key).split('.').pop()?.replace(/_/g, ' ') || '';
+    return label ? label.charAt(0).toUpperCase() + label.slice(1) : String(key);
   }
 
   updatePage() {

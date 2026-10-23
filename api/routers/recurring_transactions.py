@@ -123,6 +123,7 @@ def create_transactions_from_recurring(
                 type=recurring_transaction.type,
                 date=current_date,
                 recurringID=str(recurring_transaction.id),
+                person_id=recurring_transaction.person_id,
             ))
         n += 1
         if frequency == "daily":

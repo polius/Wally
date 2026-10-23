@@ -24,6 +24,12 @@ class LoginPassword(BaseModel):
 ACCESS_EXPIRE_MINUTES = 5
 REFRESH_EXPIRE_DAYS = 365
 
+
+def recovery_file() -> Path:
+    """The recovery password lives beside the app in Docker (/wally)."""
+    base = Path("/wally") if Path("/wally").is_dir() else Path.cwd()
+    return base / "password.txt"
+
 def is_https(request: Request) -> bool:
     """Auto-detect if the request was made over HTTPS using the X-Forwarded-Proto header."""
     return request.headers.get("x-forwarded-proto", "http") == "https"
@@ -50,13 +56,12 @@ def login(
     database_match = bcrypt.checkpw(login.password.encode('utf-8'), login_password.encode('utf-8'))
 
     # Check recovery password if it exists
-    recover_password_file = Path("password.txt").resolve()
+    recover_password_file = recovery_file()
     recover_match = False
 
     if recover_password_file.exists():
         recover_password_value = recover_password_file.read_text(encoding="utf-8").strip()
-        recover_password_hash = bcrypt.hashpw(recover_password_value.encode('utf-8'), bcrypt.gensalt())
-        recover_match = bcrypt.checkpw(login.password.encode('utf-8'), recover_password_hash)
+        recover_match = login.password == recover_password_value
         if recover_match:
             # Remove recovery file after successful use
             recover_password_file.unlink(missing_ok=True)
@@ -188,7 +193,7 @@ def recover_password():
     password = ''.join(random.choices(chars, k=12))
 
     # Save to a file
-    file_path = Path("password.txt").resolve()
+    file_path = recovery_file()
     file_path.write_text(password, encoding="utf-8")
 
     return {"message": "Recovery password generated.", "file": str(file_path)}

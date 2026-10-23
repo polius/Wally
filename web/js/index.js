@@ -1,1153 +1,495 @@
-const API_URL = '/api';
+(() => {
+  const state = {
+    range: { type: 'current', from: new Date(), to: new Date() },
+    transactions: [],
+    trendTransactions: [],
+    previousTransactions: [],
+    scope: null,
+    rankMode: 'categories',
+    peopleMode: 'months',
+    hiddenCategories: new Set(),
+    hiddenTags: new Set(),
+    loading: true,
+  };
 
-let currentDate = new Date();
-let categories;
-let tags;
-let currency;
+  const $ = (id) => document.getElementById(id);
+  const composer = new W.Composer({ onSaved: () => load() });
 
-let chart;
-let chartSelected = "currentMonth";
-let chartGroupBy = 'category';
-// 'line' or 'stacked' — only meaningful when chartSelected !== 'currentMonth'.
-// Persisted so the user's choice survives reloads.
-let chartType = localStorage.getItem('chartType') === 'stacked' ? 'stacked' : 'line';
-let chartDisabledFields = new Set();
+  function rangeLabel(range) {
+    if (range.type === 'all') return 'All time';
+    if (range.type === 'custom') return `${W.monthLabel(range.from, true)} – ${W.monthLabel(range.to, true)}`;
+    if (range.type === 'current') return W.monthLabel(range.to);
+    if (range.type === 'ytd') return `Year to date`;
+    return `Last ${range.type.replace('m', '')} months`;
+  }
 
-let tagsInput;
-let nameInput;
+  function rangeLongLabel(range) {
+    if (range.type === 'all') return 'Every month';
+    const { from, to } = W.rangeToFromTo(range);
+    if (from && to && from.getTime() === to.getTime()) return W.monthLabel(to);
+    return from && to ? `${W.monthLabel(from)} – ${W.monthLabel(to)}` : W.monthLabel(range.to);
+  }
 
-// Execute the main function when DOM has loaded
-document.addEventListener('DOMContentLoaded', () => main());
+  function scopeTransactions() {
+    if (!state.scope) return state.transactions;
+    return state.transactions.filter((t) => t.person_id === state.scope);
+  }
 
-async function main() {
-  await checkLogin();
-  await i18n.init();
-  updateMonthHeaderAll();
+  function countRange(txs) {
+    return txs.length;
+  }
 
-  // Update monthHeaderAll when language changes
-  i18n.onLanguageChange(() => {
-    updateMonthHeaderAll();
-  });
+  function setPageMeta() {
+    const txs = state.transactions;
+    $('pageSub').innerHTML = state.loading
+      ? 'Loading your ledger…'
+      : 'Income, spending, and what’s left.';
+    $('rangeLabel').textContent = rangeLabel(state.range);
+    $('heroRange').textContent = state.scope
+      ? W.personName(state.scope)
+      : (state.range.type === 'all' ? 'all time' : 'this month');
+    document.title = `${rangeLabel(state.range)} · Wally`;
+  }
 
-  document.getElementById('dashboardForm').reset();
-  [categories, tags, currency] = await Promise.all([
-    getCategories(),
-    getTags(),
-    getCurrency(),
-    renderMonth(),
-  ]);
+  function renderScope() {
+    const bar = $('scopeBar');
+    const tools = $('dashTools');
+    if (!W.hasPeople()) { tools.hidden = true; return; }
+    tools.hidden = false;
+    const options = [{ id: null, name: 'Everyone' }, ...W.state.people.map((p) => ({ id: p.id, name: p.name }))];
+    bar.innerHTML = options.map((o) => `<button type="button" class="${state.scope === o.id ? 'on' : ''}" data-scope="${o.id ?? ''}" aria-pressed="${state.scope === o.id}">${W.escapeHtml(o.name)}</button>`).join('');
+    bar.querySelectorAll('[data-scope]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.scope = button.dataset.scope || null;
+        renderAll();
+      });
+    });
+    $('scopeNote').textContent = state.scope
+      ? `Only ${W.personName(state.scope)}’s own transactions. Shared costs stay in the People card.`
+      : 'Everyone, including shared costs.';
+  }
 
-  // Load chart
-  await loadChart();
+  function previousRange(range) {
+    const { from } = W.rangeToFromTo(range);
+    if (!from) return null;
+    const to = state.range.to;
+    if (range.type === 'current') return { type: 'custom', from: W.addMonths(from, -1), to: W.addMonths(from, -1) };
+    if (range.type === '3m') return { type: 'custom', from: W.addMonths(from, -3), to: W.addMonths(to, -3) };
+    if (range.type === '6m') return { type: 'custom', from: W.addMonths(from, -6), to: W.addMonths(to, -6) };
+    if (range.type === '12m') return { type: 'custom', from: W.addMonths(from, -12), to: W.addMonths(to, -12) };
+    if (range.type === 'ytd') return { type: 'custom', from: W.addMonths(from, -12), to: W.addMonths(to, -12) };
+    return null;
+  }
 
-  // Render categories, tags and name autocomplete
-  await renderCategories();
-  await renderTags();
-  await renderNameAutocomplete();
+  async function load() {
+    state.loading = true;
+    setPageMeta();
+    try {
+      await W.loadCore();
+      state.transactions = await W.fetchRangeTransactions(state.range);
+      const prev = previousRange(state.range);
+      state.previousTransactions = prev ? await W.fetchRangeTransactions(prev).catch(() => []) : [];
 
-  // Group by toggle
-  setupGroupByToggle();
-  setupChartTypeModalControls();
+      const { from, to } = W.rangeToFromTo(state.range);
+      const end = to || new Date();
+      const start = from ? W.addMonths(from, -5) : W.addMonths(new Date(), -5);
+      state.trendTransactions = await W.api(`/transactions/range/${start.getFullYear()}-${start.getMonth() + 1}/${end.getFullYear()}-${end.getMonth() + 1}`).catch(() => []);
+      state.loading = false;
+      renderAll();
+    } catch (error) {
+      state.loading = false;
+      setPageMeta();
+      W.toast(error.message, { tone: 'danger' });
+    }
+  }
 
-  // Show page after all translations are applied
-  i18n.showPage();
+  function renderAll() {
+    setPageMeta();
+    renderScope();
+    renderHero();
+    renderPeopleCard();
+    renderRank();
+    renderInsights();
+    renderRecent();
+    const empty = state.transactions.length === 0;
+    $('dashEmpty').hidden = !empty;
+    document.querySelector('.hero').hidden = empty;
+    document.querySelector('.dash-stack').hidden = empty;
+    if (empty) $('peopleCard').hidden = true;
+  }
 
-  // Populate year dropdowns for custom range
-  populateYearDropdowns();
+  function renderHero() {
+    const scoped = scopeTransactions();
+    const sum = W.summarise(scoped);
+    const spent = sum.expense;
+    const earned = sum.income;
+    const kept = earned - spent;
+    const keptRate = earned > 0 ? Math.round((kept / earned) * 100) : null;
 
-  // Add event listeners for custom range toggle
-  const customRangeRadio = document.getElementById('customRangeRadio');
-  const customRangeInputs = document.getElementById('customRangeInputs');
-  const rangeRadios = document.querySelectorAll('input[name="range"]');
+    $('heroLabel').textContent = kept < 0 ? 'Over' : 'Left';
+    $('heroSpent').textContent = W.money(kept, { signed: true });
+    $('heroSub').innerHTML = earned > 0
+      ? `<b>${keptRate}%</b> of income kept`
+      : 'No income recorded in this range';
+    $('heroNote').innerHTML = `${W.money(earned)} in · ${W.money(spent)} out`;
 
-  rangeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (customRangeRadio.checked) {
-        customRangeInputs.classList.add('active');
+    renderTrend();
+  }
+
+  function monthlyTotals(txs, months) {
+    return months.map((month) => {
+      const key = W.monthKey(month);
+      let income = 0;
+      let expense = 0;
+      for (const t of txs) {
+        if (!String(t.date).startsWith(key)) continue;
+        if (t.type === 'income') income += W.parseAmount(t.amount);
+        else expense += W.parseAmount(t.amount);
+      }
+      return { month, income, expense };
+    });
+  }
+
+  function renderTrend() {
+    const end = W.rangeToFromTo(state.range).to || new Date();
+    const months = Array.from({ length: 6 }, (_, i) => W.addMonths(end, i - 5));
+    const series = monthlyTotals(state.trendTransactions, months);
+    const max = Math.max(1, ...series.flatMap((s) => [s.income, s.expense]));
+    const w = 400;
+    const h = 116;
+    const padL = 2;
+    const padR = 2;
+    const padT = 8;
+    const padB = 6;
+    const x = (i) => padL + (i * (w - padL - padR)) / (series.length - 1);
+    const y = (v) => padT + (1 - v / max) * (h - padT - padB);
+
+    const incomePoints = series.map((s, i) => `${x(i).toFixed(1)},${y(s.income).toFixed(1)}`);
+    const expensePoints = series.map((s, i) => `${x(i).toFixed(1)},${y(s.expense).toFixed(1)}`);
+    const incomePath = `M${incomePoints.join(' L')}`;
+    const expensePath = `M${expensePoints.join(' L')}`;
+    const gap = `M${incomePoints.join(' L')} L${[...expensePoints].reverse().join(' L')} Z`;
+    const last = series.length - 1;
+
+    $('trendPlot').innerHTML = `
+      <svg class="lines" viewBox="0 0 ${w} ${h}" role="img" aria-label="Income and spending for the last six months">
+        <g class="grid">
+          ${[0.25, 0.5, 0.75].map((p) => `<line x1="${padL}" x2="${w - padR}" y1="${(padT + p * (h - padT - padB)).toFixed(1)}" y2="${(padT + p * (h - padT - padB)).toFixed(1)}"/>`).join('')}
+        </g>
+        <path class="gap" d="${gap}"/>
+        <path class="spend" d="${expensePath}"/>
+        <path class="income" d="${incomePath}"/>
+        ${series.map((s, i) => `<circle class="${i === last ? 'dot' : 'dots'}" cx="${x(i).toFixed(1)}" cy="${y(s.expense).toFixed(1)}" r="${i === last ? 3 : 2.1}"/>`).join('')}
+        ${series.map((s, i) => `<circle class="${i === last ? 'dot' : 'dots'}" cx="${x(i).toFixed(1)}" cy="${y(s.income).toFixed(1)}" r="${i === last ? 3 : 2.1}"/>`).join('')}
+      </svg>`;
+    $('trendAxis').innerHTML = months.map((m, i) => `<span class="${i === last ? 'now' : ''}">${W.monthLabel(m, true).split(' ')[0]}</span>`).join('');
+  }
+
+  function personMonthly(personId, months) {
+    const source = state.trendTransactions.length ? state.trendTransactions : state.transactions;
+    return months.map((month) => {
+      const key = W.monthKey(month);
+      let income = 0;
+      let expense = 0;
+      for (const t of source) {
+        if (!String(t.date).startsWith(key)) continue;
+        if (t.person_id === personId) {
+          if (t.type === 'income') income += W.parseAmount(t.amount);
+          else expense += W.parseAmount(t.amount);
+        } else if (!t.person_id && t.type === 'expense') {
+          const share = W.sharesFor(t).find((s) => s.person_id === personId);
+          if (share) expense += W.parseAmount(share.amount);
+        }
+      }
+      return { month, income, expense };
+    });
+  }
+
+  function renderPeopleCard() {
+    const card = $('peopleCard');
+    if (!W.hasPeople() || state.transactions.length === 0) { card.hidden = true; return; }
+    card.hidden = false;
+    const sum = W.summarise(state.transactions);
+    const useMonths = state.peopleMode === 'months';
+    $('peopleSub').textContent = `${rangeLongLabel(state.range)} · ${useMonths ? 'six months, one scale' : 'the four categories that carry the month'}`;
+    const end = W.rangeToFromTo(state.range).to || new Date();
+    const rangeMonths = Array.from({ length: 6 }, (_, i) => W.addMonths(end, i - 5));
+    const max = Math.max(1, ...W.state.people.flatMap((p) => personMonthly(p.id, rangeMonths).flatMap((m) => [m.income, m.expense])));
+
+    const rows = W.state.people.map((person) => {
+      const row = sum.perPerson[person.id] || { spent: 0, earned: 0, count: 0, shares: 0 };
+      const monthly = personMonthly(person.id, rangeMonths);
+      const bars = monthly.map((m) => {
+        const spend = (m.expense / max) * 38;
+        const kept = Math.max(0, (m.income - m.expense) / max) * 38;
+        return `<span class="minibar" title="${W.monthLabel(m.month)}: ${W.money(m.expense)} spent"><i class="mkept" style="height:${kept.toFixed(1)}px"></i><i class="mspend" style="height:${spend.toFixed(1)}px"></i></span>`;
+      }).join('');
+      const topCats = (() => {
+        const totals = new Map();
+        for (const t of state.transactions) {
+          if (t.person_id !== person.id || t.type !== 'expense') continue;
+          totals.set(t.category, (totals.get(t.category) || 0) + W.parseAmount(t.amount));
+        }
+        return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+      })();
+      const catMax = Math.max(1, ...topCats.map((c) => c[1]));
+      return `
+        <div class="pc-row">
+          <div class="pc-who">
+            <b>${W.avatar(person, 'tiny')}${W.escapeHtml(person.name)}${person.is_self ? '<span class="pill" style="font-size:7.5px;padding:2px 5px">this browser</span>' : ''}</b>
+            <span class="pc-tot">
+              <span><i>Spent</i><b>${W.money(row.spent + row.shares)}</b></span>
+              <span><i>Earned</i><b class="k">${W.money(row.earned)}</b></span>
+              <span><i>Kept</i><b class="${row.net - row.shares >= 0 ? 'k' : ''}">${W.money(row.net - row.shares, { signed: true, plus: true })}</b></span>
+            </span>
+          </div>
+          <div class="pc-chart">
+            ${useMonths ? `<div class="minirow" role="img" aria-label="${W.escapeHtml(person.name)}: income, spending and what was kept, ${W.monthLabel(rangeMonths[0])} to ${W.monthLabel(rangeMonths[5])}">${bars}</div>` : `<div class="pcat-list">${topCats.length ? topCats.map(([name, amount]) => `<span class="pcat"><span class="pcat-n">${W.escapeHtml(name)}</span><span class="pcat-b"><i style="width:${((amount / catMax) * 100).toFixed(0)}%"></i></span><span class="pcat-v">${W.money(amount)}</span></span>`).join('') : '<span class="card-note">No spending in this range.</span>'}</div>`}
+          </div>
+        </div>`;
+    }).join('');
+
+    const axis = useMonths ? `<div class="pc-axisrow"><span></span><div class="pc-axis">${rangeMonths.map((m, i) => `<span class="${i === rangeMonths.length - 1 ? 'now' : ''}">${W.monthLabel(m, true).split(' ')[0]}</span>`).join('')}</div></div>` : '';
+
+    const shared = sum.shared;
+    const partEntries = Object.entries(shared.parts);
+    const equalParts = partEntries.length > 1 && partEntries.every(([, amount]) => Math.abs(amount - partEntries[0][1]) < 0.01);
+    const sharedParts = equalParts
+      ? `${W.money(partEntries[0][1])} each`
+      : partEntries.map(([pid, amount]) => `${W.escapeHtml(W.personName(pid) || '—')} <em>${W.money(amount)}</em>`).join(' · ');
+    const sharedRow = shared.count ? `
+      <div class="pc-shared">
+        <div><b>Shared</b><small>${shared.count} ${shared.count === 1 ? 'transaction' : 'transactions'}</small></div>
+        <div class="pcs-meta">${W.money(shared.spent)} spent · ${sharedParts || 'split equally'}</div>
+        <span class="pcs-net">${W.money(-shared.spent, { signed: true })}</span>
+      </div>` : '';
+
+    const keptRate = sum.income > 0 ? (sum.net / sum.income) * 100 : 0;
+    $('peopleBody').innerHTML = rows + axis + sharedRow + `
+      <div class="legend-foot pc-foot">
+        <span>Household · ${state.transactions.length} transactions</span>
+        <span>Net <b>${W.money(sum.net, { signed: true, plus: true })}</b> · <b>${keptRate.toFixed(1)}%</b> kept</span>
+      </div>`;
+
+    document.querySelectorAll('#peopleMode [data-mode]').forEach((button) => {
+      button.classList.toggle('on', button.dataset.mode === state.peopleMode);
+      button.setAttribute('aria-pressed', String(button.dataset.mode === state.peopleMode));
+      if (!button.dataset.bound) {
+        button.dataset.bound = '1';
+        button.addEventListener('click', () => {
+          state.peopleMode = button.dataset.mode;
+          renderPeopleCard();
+        });
+      }
+    });
+  }
+
+  function categoryTotals(txs, mode) {
+    const totals = new Map();
+    let total = 0;
+    for (const t of txs) {
+      if (t.type !== 'expense') continue;
+      const amount = W.parseAmount(t.amount);
+      total += amount;
+      if (mode === 'tags') {
+        const tags = t.tags?.length ? t.tags : ['Untagged'];
+        for (const tag of tags) totals.set(tag, (totals.get(tag) || 0) + amount);
       } else {
-        customRangeInputs.classList.remove('active');
+        totals.set(t.category || 'Miscellaneous', (totals.get(t.category || 'Miscellaneous') || 0) + amount);
       }
-    });
-  });
-}
-
-async function getCategories() {
-  const response = await fetch(`${API_URL}/categories`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
+    }
+    return { totals, total };
   }
 
-  const data = await response.json();
-  return data;
-}
+  function renderRank() {
+    const txs = scopeTransactions();
+    const mode = state.rankMode;
+    const { totals, total } = categoryTotals(txs, mode);
+    const hidden = mode === 'tags' ? state.hiddenTags : state.hiddenCategories;
+    const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...sorted.map(([, v]) => v));
+    const shown = sorted.slice(0, 9);
+    const visibleTotal = sorted.filter(([name]) => !hidden.has(name)).reduce((sum, [, value]) => sum + value, 0);
+    const visibleCount = sorted.filter(([name]) => !hidden.has(name)).length;
+    $('rankHeading').textContent = mode === 'tags' ? 'Spending by tag' : 'Spending by category';
+    $('rankSub').textContent = mode === 'tags'
+      ? `${W.money(visibleTotal)} across ${visibleCount} tags · a transaction with two tags counts twice`
+      : `${W.money(visibleTotal)} across ${visibleCount} categories`;
+    $('rankNote').innerHTML = mode === 'tags'
+      ? 'Tags overlap, so these totals are not additive. Tap a row to include or exclude it.'
+      : 'Tap a row to include or exclude it. The category total follows.';
 
-async function getTags() {
-  const response = await fetch(`${API_URL}/tags`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  return data;
-}
-
-async function getCurrency() {
-  const response = await fetch(`${API_URL}/currency`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const data = await response.json();
-  return {
-    name: data.selected,
-    symbol: data.currencies.find(c => c.name === data.selected)?.symbol,
-    position: data.position
-  };
-}
-
-async function getTransactions() {
-  let endpoint;
-  if (chartSelected == 'currentMonth') {
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const year = currentDate.getFullYear();
-    endpoint = `${API_URL}/transactions/date/${year}-${month}`;
-  }
-  else if (chartSelected == 'lastThreeMonths') {
-    endpoint = `${API_URL}/transactions/past-3-months`;
-  }
-  else if (chartSelected == 'lastSixMonths') {
-    endpoint = `${API_URL}/transactions/past-6-months`;
-  }
-  else if (chartSelected == 'lastYear') {
-    endpoint = `${API_URL}/transactions/past-12-months`;
-  }
-  else if (chartSelected == 'yearToDate') {
-    endpoint = `${API_URL}/transactions/year-to-date`;
-  }
-  else if (chartSelected == 'customRange') {
-    const fromParts = window.customRangeFrom.split('-');
-    const toParts = window.customRangeTo.split('-');
-    endpoint = `${API_URL}/transactions/range/${fromParts[0]}-${fromParts[1]}/${toParts[0]}-${toParts[1]}`;
-  }
-  else if (chartSelected == 'allData') {
-    endpoint = `${API_URL}/transactions/to-date`;
-  }
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
+    if (!shown.length) {
+      $('categoryRank').innerHTML = `<div class="empty"><span class="eic">${W.icon('tag')}</span><b>Nothing to rank yet</b><span>Expenses will appear here by ${mode === 'tags' ? 'tag' : 'category'} once the range has some.</span></div>`;
+      $('categoryShare').innerHTML = '';
       return;
     }
 
-    const json = await response.json()
+    $('categoryRank').innerHTML = shown.map(([name, amount], index) => {
+      const off = hidden.has(name);
+      const color = mode === 'tags'
+        ? `hsl(${(index * 41 + 8) % 360} 46% 58%)`
+        : W.categoryColor(name);
+      return `<div class="rank ${off ? 'off' : ''}" style="--c:${color}" role="button" tabindex="0" data-hide="${W.escapeHtml(name)}" aria-pressed="${!off}" aria-label="${off ? 'Include' : 'Exclude'} ${W.escapeHtml(name)}, ${W.escapeHtml(W.money(amount))}">
+        <span class="rdot" aria-hidden="true"></span>
+        <span class="rname">${W.escapeHtml(name)}</span>
+        <span class="rbar" aria-hidden="true"><i style="width:${Math.max(3, (amount / max) * 100).toFixed(1)}%"></i></span>
+        <span class="ramt">${W.money(amount)}</span>
+      </div>`;
+    }).join('');
 
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
+    $('categoryRank').querySelectorAll('[data-hide]').forEach((row) => {
+      const toggle = () => {
+        const name = row.dataset.hide;
+        if (hidden.has(name)) hidden.delete(name); else hidden.add(name);
+        renderRank();
+        [...$('categoryRank').querySelectorAll('.rank')].find((item) => item.dataset.hide === name)?.focus();
+      };
+      row.addEventListener('click', toggle);
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggle();
+        }
+      });
+    });
+
+    $('categoryShare').innerHTML = '';
+    $('categoryShare').hidden = true;
+    if (hidden.size) {
+      $('rankNote').innerHTML += ` <button type="button" class="tx-reset" id="unhideAll">Show ${hidden.size} hidden</button>`;
+      $('unhideAll')?.addEventListener('click', () => { hidden.clear(); renderRank(); });
     }
-    return json;
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
 
-function renderMonth() {
-  const monthNames = [
-    i18n.t('common.months.january'),
-    i18n.t('common.months.february'),
-    i18n.t('common.months.march'),
-    i18n.t('common.months.april'),
-    i18n.t('common.months.may'),
-    i18n.t('common.months.june'),
-    i18n.t('common.months.july'),
-    i18n.t('common.months.august'),
-    i18n.t('common.months.september'),
-    i18n.t('common.months.october'),
-    i18n.t('common.months.november'),
-    i18n.t('common.months.december')
-  ];
-  const monthText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-  document.getElementById('currentMonth').textContent = monthText;
-}
+  function renderInsights() {
+    const txs = scopeTransactions();
+    const sum = W.summarise(txs);
+    const { totals, total } = categoryTotals(txs, 'categories');
+    const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+    const top = sorted[0];
+    const fixed = ['Rent', 'Utilities'].reduce((acc, name) => acc + (totals.get(name) || 0), 0);
+    const sharedTx = txs.filter((t) => !t.person_id && W.sharesFor(t).length);
+    const sharedTotal = sharedTx.reduce((acc, t) => acc + W.parseAmount(t.amount), 0);
 
-// Prev month button
-document.getElementById('prevMonth').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth() - 1);
-  renderMonth();
-  loadChart();
-});
+    const merchantCounts = new Map();
+    for (const t of txs) {
+      if (t.type !== 'expense' || !t.name) continue;
+      merchantCounts.set(t.name, (merchantCounts.get(t.name) || 0) + 1);
+    }
+    const topMerchant = [...merchantCounts.entries()].sort((a, b) => b[1] - a[1])[0];
 
-// Next month button
-document.getElementById('nextMonth').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth() + 1);
-  renderMonth();
-  loadChart();
-});
-
-async function loadChart() {
-  const transactions = await getTransactions();
-  const chartBox = document.querySelector('.chart-box');
-  const legendBox = document.getElementById('customLegend');
-  const cashflowSection = document.getElementById('cashflow-section');
-  const noDataMessage = document.getElementById('noDataMessage');
-  const hasExpenses = transactions.some(t => t.type === 'expense');
-
-  if (!hasExpenses) {
-    chartBox.style.display = 'none';
-    legendBox.style.display = 'none';
-    cashflowSection.style.display = 'none';
-    noDataMessage.style.display = 'block';
-  }
-  else {
-    chartBox.style.display = 'flex';
-    legendBox.style.display = 'flex';
-    cashflowSection.style.display = 'flex';
-    noDataMessage.style.display = 'none';
-
-    const data = calculateBreakdown(transactions);
-    updateChart(data);
-    updateLegend(transactions, data);
-    updateCashflow(transactions);
-  }
-}
-
-function updateCashflow(transactions) {
-  const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => Decimal.add(acc, t.amount).toNumber(), 0);
-  const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => Decimal.add(acc, t.amount).toNumber(), 0);
-  const balance = Decimal.sub(income, expense);
-
-  document.getElementById('cashflow-income').textContent = formatCurrency(income);
-  document.getElementById('cashflow-expenses').textContent = formatCurrency(expense);
-  document.getElementById('cashflow-balance').textContent = formatCurrency(balance);
-
-  const balanceElement = document.getElementById('cashflow-balance');
-  if (balance >= 0) {
-    balanceElement.classList.add('positive');
-    balanceElement.classList.remove('negative');
-  } else {
-    balanceElement.classList.add('negative');
-    balanceElement.classList.remove('positive');
-  }
-}
-
-const chartColors = [
-  '#FF6B6B',
-  '#FFA94D',
-  '#FFE066',
-  '#8CE99A',
-  '#66D9E8',
-  '#74C0FC',
-  '#9775FA',
-  '#F783AC',
-  '#E9ECEF'
-];
-
-// Theme-aware tooltip styling shared by the doughnut and line/bar charts.
-// Kept near-opaque so the chart underneath doesn't bleed through the text.
-function getChartTooltipStyle() {
-  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-  return {
-    backgroundColor: isDark ? 'rgba(43, 43, 43, 0.97)' : 'rgba(255, 255, 255, 0.98)',
-    titleColor: isDark ? '#ffffff' : '#0f172a',
-    bodyColor: isDark ? '#e5e5e5' : '#374151',
-    footerColor: isDark ? '#ffffff' : '#0f172a',
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.08)',
-    borderWidth: 1,
-    cornerRadius: 8,
-    padding: 12,
-    titleFont: { size: 13, weight: '600' },
-    bodyFont: { size: 13 },
-    bodySpacing: 6,
-    footerFont: { size: 13, weight: '600' },
-    footerMarginTop: 8,
-    footerSpacing: 4,
-    displayColors: true,
-    usePointStyle: true,
-    boxPadding: 6,
-    caretSize: 6,
-  };
-}
-
-function updateChart(data) {
-  if (chart) chart.destroy();
-
-  if (chartSelected == 'currentMonth') {
-    chart = new Chart('chartCanvas', {
-      type: 'doughnut',
-      data: {
-        labels: data.map(x => x.name),
-        datasets: [{
-          data: data.map(x => x.total),
-          backgroundColor: chartColors,
-          borderColor: '#1a1a1a',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        onHover: (event, elements) => {
-          event.native.target.style.cursor = elements.length > 0 && chartGroupBy === 'category' ? 'pointer' : 'default';
-        },
-        onClick: (event, elements) => {
-          if (elements.length > 0 && chartGroupBy === 'category') {
-            const index = elements[0].index;
-            const category = data[index].name;
-            window.location.href = `transactions?category=${encodeURIComponent(category)}`;
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            ...getChartTooltipStyle(),
-            callbacks: {
-              label: (context) => {
-                const value = context.raw;
-                const total = context.dataset.data.reduce((sum, val) => Decimal.add(sum, val).toNumber(), 0);
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                return `${formatCurrency(value)} (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-  else {
-    // Compute labels based on the selected range
-    let range;
-    if (chartSelected === 'lastThreeMonths') range = getLastNMonths(3);
-    else if (chartSelected === 'lastSixMonths') range = getLastNMonths(6);
-    else if (chartSelected === 'lastYear') range = getLastNMonths(12);
-    else if (chartSelected === 'yearToDate') range = getYearToDate();
-    else if (chartSelected === 'customRange') range = getCustomMonthRange(window.customRangeFrom, window.customRangeTo);
-    else if (chartSelected === 'allData') range = getAllMonths(data);
-
-    const isStacked = chartType === 'stacked';
-
-    const datasets = data.map((item, index) => {
-      const color = chartColors[index % chartColors.length];
-      const base = {
-        label: item.name,
-        data: range.map(m => {
-          const idx = item.dates.indexOf(m);
-          return idx !== -1 ? item.amounts[idx] : 0;
-        }),
-        backgroundColor: color,
-        borderColor: color,
-      };
-      if (isStacked) {
-        return { ...base, borderWidth: 0, borderRadius: 4, maxBarThickness: 48 };
-      }
-      return {
-        ...base,
-        fill: false,
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: color,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: color,
-        pointHoverBorderWidth: 2,
-        tension: 0.3,
-      };
-    });
-
-    chart = new Chart('chartCanvas', {
-      type: isStacked ? 'bar' : 'line',
-      data: {
-        labels: range.map(x => formatDate(x)),
-        datasets,
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        scales: {
-          x: {
-            stacked: isStacked,
-            grid: {
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: true,
-              color: 'rgba(0, 0, 0, 0.05)',
-            },
-            ticks: {
-              maxRotation: 45,
-              minRotation: 0,
-            }
-          },
-          y: {
-            stacked: isStacked,
-            beginAtZero: true,
-            grid: {
-              display: true,
-              color: 'rgba(0, 0, 0, 0.05)',
-            },
-            ticks: {
-              callback: function(value) {
-                return formatCurrency(value);
-              }
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            ...getChartTooltipStyle(),
-            callbacks: {
-              label: (context) => {
-                const value = context.raw;
-                const total = context.dataset.data.reduce((sum, val) => Decimal.add(sum, val).toNumber(), 0);
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                return `${context.dataset.label}: ${formatCurrency(value)} (${percentage}%)`;
-              },
-              beforeFooter: () => {
-                return '─'.repeat(20);
-              },
-              footer: (tooltipItems) => {
-                const total = tooltipItems.reduce((sum, item) => Decimal.add(sum, item.raw).toNumber(), 0);
-                return `Total: ${formatCurrency(total)}`;
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-}
-
-function calculateBreakdown(transactions) {
-  const breakdownMap = {};
-  const untaggedLabel = i18n.t('dashboard.group_by.untagged');
-
-  for (const { type, amount, date, category, tags: txTags } of transactions) {
-    if (type !== 'expense') continue;
-
-    const monthKey = date.slice(0, 7); // YYYY-MM
-
-    if (chartGroupBy === 'tags') {
-      const groupKeys = txTags && txTags.length > 0 ? txTags : [untaggedLabel];
-      const share = Decimal.div(amount, groupKeys.length).toNumber();
-      for (const groupValue of groupKeys) {
-        if (chartDisabledFields.has(groupValue)) continue;
-        if (!breakdownMap[groupValue]) breakdownMap[groupValue] = { total: 0, months: {} };
-        breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, share).toNumber();
-        breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), share).toNumber();
-      }
+    const facts = [];
+    if (top && total > 0) {
+      facts.push({
+        icon: 'spark',
+        title: `${top[0]} is the largest category`,
+        detail: `${(top[1] / total * 100).toFixed(0)}% of spending — <b>${W.money(top[1])}</b> of ${W.money(total)}.`,
+      });
     } else {
-      const groupValue = category;
-      if (chartDisabledFields.has(groupValue)) continue;
-      if (!breakdownMap[groupValue]) breakdownMap[groupValue] = { total: 0, months: {} };
-      breakdownMap[groupValue].total = Decimal.add(breakdownMap[groupValue].total, amount).toNumber();
-      breakdownMap[groupValue].months[monthKey] = Decimal.add((breakdownMap[groupValue].months[monthKey] || 0), amount).toNumber();
+      facts.push({ icon: 'spark', title: 'A clean page', detail: 'No expenses in this range yet. The first entry sets the shape.' });
     }
+    if (fixed > 0) {
+      facts.push({
+        icon: 'repeat',
+        title: 'Fixed costs',
+        detail: `Rent and utilities take <b>${W.money(fixed)}</b>, ${(fixed / Math.max(total, 1) * 100).toFixed(0)}% of what left the account.`,
+      });
+    } else {
+      facts.push({
+        icon: 'repeat',
+        title: 'No fixed costs recorded',
+        detail: 'Rent and utilities would be counted here when they appear.',
+      });
+    }
+    if (sharedTx.length) {
+      facts.push({
+        icon: 'people',
+        title: `${sharedTx.length} shared ${sharedTx.length === 1 ? 'cost' : 'costs'}`,
+        detail: `<b>${W.money(sharedTotal)}</b> split between ${W.state.people.length} people. Each person’s part sits in the People card.`,
+      });
+    } else if (topMerchant) {
+      facts.push({
+        icon: 'wallet',
+        title: `${topMerchant[0]} appears ${topMerchant[1]} ${topMerchant[1] === 1 ? 'time' : 'times'}`,
+        detail: 'The most repeated name in this range. Recurring rules would make that explicit.',
+      });
+    } else {
+      facts.push({
+        icon: 'wallet',
+        title: 'No shared costs',
+        detail: W.hasPeople() ? 'Everything in this range has one owner.' : 'Add people in Settings to split a cost.',
+      });
+    }
+
+    $('insightsSub').textContent = rangeLongLabel(state.range);
+    $('insights').innerHTML = facts.slice(0, 3).map((f) => `
+      <div class="fact-row">
+        <span class="fact-ic">${W.icon(f.icon)}</span>
+        <div><div class="fact-t">${f.title}</div><div class="fact-d">${f.detail}</div></div>
+      </div>`).join('');
   }
 
-  const result = Object.entries(breakdownMap)
-  .map(([name, { total, months }]) => {
-    const sortedMonths = Object.keys(months).sort();
-    return {
-      name,
-      total,
-      dates: sortedMonths,
-      amounts: sortedMonths.map(m => months[m])
-    };
-  })
-  .sort((a, b) => b.total - a.total);
-
-  const grandTotal = result.reduce((sum, item) => Decimal.add(sum, item.total).toNumber(), 0);
-
-  // Add percentage field
-  return result.map(item => ({
-    ...item,
-    percentage: grandTotal ? (item.total / grandTotal) * 100 : 0
-  }));
-}
-
-function updateLegend(transactions, data) {
-  const legendContainer = document.getElementById('customLegend');
-  legendContainer.innerHTML = '';
-
-  const monthExpenses = transactions.filter(t => t.type === 'expense');
-  const labelMap = new Map(data.map(x => [x.name, x]));
-  const untaggedLabel = i18n.t('dashboard.group_by.untagged');
-
-  // Collect unique labels based on groupBy
-  let uniqueLabels;
-  if (chartGroupBy === 'tags') {
-    const labelSet = new Set();
-    monthExpenses.forEach(exp => {
-      if (exp.tags && exp.tags.length > 0) exp.tags.forEach(t => labelSet.add(t));
-      else labelSet.add(untaggedLabel);
-    });
-    uniqueLabels = Array.from(labelSet);
-  } else {
-    uniqueLabels = monthExpenses.map(exp => exp.category).filter((v, i, a) => a.indexOf(v) === i);
-  }
-
-  uniqueLabels
-  .sort((a, b) => {
-    const da = labelMap.get(a), db = labelMap.get(b);
-    if (da && db) return db.total - da.total;
-    if (da) return -1;
-    if (db) return 1;
-    return a.localeCompare(b);
-  })
-  .forEach((label, index) => {
-    const itemData = labelMap.get(label);
-    const color = chartColors[index % chartColors.length];
-    const percentage = itemData ? ` (${itemData.percentage.toFixed(1)}%)` : '';
-    const amount = itemData ? formatCurrency(itemData.total) : '';
-    const item = document.createElement('div');
-    item.className = `legend-item${chartDisabledFields.has(label) ? ' disabled' : ''}`;
-    item.innerHTML = `
-    <div class="color-box" style="background-color: ${color}"></div>
-    <div class="legend-text">
-    <span>${label}${percentage}</span>
-    <span class="amount">${amount}</span>
-    </div>
-    `;
-    item.addEventListener('click', () => toggleLegend(label));
-    legendContainer.appendChild(item);
-  });
-
-  // Calculate active total — always the real expense sum (never inflated)
-  let activeTotal;
-  if (chartGroupBy === 'tags') {
-    // Only count transactions whose tags are not ALL disabled
-    activeTotal = monthExpenses
-    .filter(tx => {
-      const keys = tx.tags && tx.tags.length > 0 ? tx.tags : [untaggedLabel];
-      return keys.some(t => !chartDisabledFields.has(t));
-    })
-    .reduce((sum, x) => Decimal.add(sum, x.amount).toNumber(), 0);
-  } else {
-    activeTotal = monthExpenses
-    .filter(x => !chartDisabledFields.has(x.category))
-    .reduce((sum, x) => Decimal.add(sum, x.amount).toNumber(), 0);
-  }
-
-  legendContainer.insertAdjacentHTML('beforeend', `
-  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--bs-border-color);">
-  <div style="display: flex; justify-content: flex-end; align-items: center;">
-  <span class="amount">Total: <span style="font-weight: bold">${formatCurrency(activeTotal)}</span></span>
-  </div>
-  </div>
-  `);
-}
-
-function formatCurrency(amount) {
-  if (currency.position === 'left') {
-    if (Decimal(amount) < 0) return `-${currency.symbol}${Decimal(amount).abs()}`;
-    else return `${currency.symbol}${amount}`;
-  }
-  else return `${amount} ${currency.symbol}`;
-}
-
-function toggleLegend(label) {
-  if (chartDisabledFields.has(label)) chartDisabledFields.delete(label);
-  else chartDisabledFields.add(label);
-  loadChart();
-}
-
-function setupGroupByToggle() {
-  const buttons = document.querySelectorAll('.group-by-btn');
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.classList.contains('active')) return;
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      chartGroupBy = btn.dataset.group;
-      chartDisabledFields = new Set();
-      loadChart();
-    });
-  });
-}
-
-// Chart-type radios live inside the dashboard modal. They're disabled when the
-// selected range is currentMonth (which renders a doughnut, ignoring this).
-function setupChartTypeModalControls() {
-  const modal = document.getElementById('dashboardModal');
-  if (!modal) return;
-
-  // When the modal opens, seed it with the current global state so the radios
-  // reflect what the user is actually looking at right now.
-  modal.addEventListener('show.bs.modal', () => {
-    const target = document.querySelector(`input[name="chartType"][value="${chartType}"]`);
-    if (target) target.checked = true;
-    syncChartTypeRadioState();
-  });
-
-  // Track range changes inside the modal so the chart-type radios reflect
-  // whether they apply to the about-to-be-applied range.
-  document.querySelectorAll('input[name="range"]').forEach(radio => {
-    radio.addEventListener('change', syncChartTypeRadioState);
-  });
-}
-
-function syncChartTypeRadioState() {
-  const checkedRange = document.querySelector('input[name="range"]:checked');
-  const disabled = checkedRange?.value === 'currentMonth';
-  document.querySelectorAll('input[name="chartType"]').forEach(r => {
-    r.disabled = disabled;
-  });
-}
-
-function populateYearDropdowns() {
-  const currentYear = new Date().getFullYear();
-  const now = new Date();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-
-  // Set current month and year as defaults
-  document.getElementById('fromMonthSelect').value = currentMonth;
-  document.getElementById('fromYearSelect').value = currentYear;
-  document.getElementById('toMonthSelect').value = currentMonth;
-  document.getElementById('toYearSelect').value = currentYear;
-}
-
-function submitDashboard(event) {
-  event.preventDefault();
-
-  // Get form data
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-
-  // Store the selected range and group in the global variable
-  chartSelected = data.range;
-  // For currentMonth the chart-type field is disabled, so FormData omits it —
-  // keep whatever the user had previously chosen for non-currentMonth ranges.
-  if (data.chartType === 'line' || data.chartType === 'stacked') {
-    chartType = data.chartType;
-    localStorage.setItem('chartType', chartType);
-  }
-
-  // Validate custom range if selected
-  if (chartSelected === 'customRange') {
-    const fromMonth = document.getElementById('fromMonthSelect').value;
-    const fromYear = document.getElementById('fromYearSelect').value;
-    const toMonth = document.getElementById('toMonthSelect').value;
-    const toYear = document.getElementById('toYearSelect').value;
-
-    // Parse values
-    const fromYearNum = parseInt(fromYear);
-    const toYearNum = parseInt(toYear);
-    const fromMonthStr = `${fromYear}-${fromMonth}`;
-    const toMonthStr = `${toYear}-${toMonth}`;
-
-    if (fromMonthStr > toMonthStr) {
-      alert(i18n.t('dashboard.modal.invalid_date_range'));
+  function renderRecent() {
+    const txs = [...scopeTransactions()].sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_date || '').localeCompare(String(a.created_date || ''))).slice(0, 5);
+    $('recentSub').textContent = 'The last five transactions';
+    if (!txs.length) {
+      $('recentList').innerHTML = `<div class="empty"><span class="eic">${W.icon('transactions')}</span><b>No recent entries</b><span>Add a transaction and it will appear here.</span></div>`;
       return;
     }
-
-    // Store custom range values globally
-    window.customRangeFrom = fromMonthStr;
-    window.customRangeTo = toMonthStr;
+    $('recentList').innerHTML = txs.map((t) => {
+      const owner = W.ownerLabel(t);
+      const when = /^(Today|Yesterday)$/.test(W.dayLabel(t.date))
+        ? `${W.dayLabel(t.date)} · ${W.shortDate(t.date)}`
+        : W.dayLabel(t.date).replace(/^(\w+) /, '$1, ');
+      const meta = [when, t.category, owner].filter(Boolean).join(' · ');
+      return `<a class="rec-row" href="/transactions.html?focus=${encodeURIComponent(t.id)}">
+        <span class="rec-ic">${W.categoryIcon(t.category)}</span>
+        <span class="rec-t"><b>${W.escapeHtml(t.name || t.category)}</b><small>${W.escapeHtml(meta)}</small></span>
+        <span class="rec-a ${t.type === 'income' ? 'in' : ''}">${W.money(t.amount, { signed: true, sign: t.type === 'income' ? '+' : '−' })}</span>
+      </a>`;
+    }).join('');
   }
 
-  // Update header
-  const monthHeader = document.getElementById('monthHeader');
-  const monthHeaderAll = document.getElementById('monthHeaderAll');
-  if (chartSelected == 'currentMonth') {
-    monthHeader.style.display = 'flex';
-    monthHeaderAll.style.display = 'none';
-  }
-  else {
-    monthHeader.style.display = 'none';
-    monthHeaderAll.style.display = 'flex';
-    const mapRange = {
-      "lastThreeMonths": i18n.t('dashboard.modal.past_3_months'),
-      "lastSixMonths": i18n.t('dashboard.modal.past_6_months'),
-      "lastYear": i18n.t('dashboard.modal.past_12_months'),
-      "yearToDate": i18n.t('dashboard.modal.year_to_date'),
-      "allData": i18n.t('dashboard.modal.to_date')
-    };
-    monthHeaderAll.innerText = chartSelected === 'customRange'
-    ? `${formatDate(window.customRangeFrom)} - ${formatDate(window.customRangeTo)}`
-    : mapRange[chartSelected];
-  }
-
-  // Load the chart with the new selection
-  chartDisabledFields = new Set();
-  loadChart();
-
-  // Hide the modal
-  const modal = bootstrap.Modal.getInstance(document.getElementById('dashboardModal'));
-  modal.hide();
-}
-
-function getLastNMonths(n) {
-  // Generate previous n months including current month
-  const months = [];
-  const today = new Date();
-
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    months.push(`${d.getFullYear()}-${month}`);
-  }
-  return months;
-}
-
-function getYearToDate() {
-  const months = [];
-  const today = new Date();
-  const year = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-indexed
-
-  for (let m = 0; m <= currentMonth; m++) {
-    const month = String(m + 1).padStart(2, '0');
-    months.push(`${year}-${month}`);
-  }
-  return months;
-}
-
-function getCustomMonthRange(fromMonth, toMonth) {
-  const months = [];
-  const [fromYear, fromMonthNum] = fromMonth.split('-').map(Number);
-  const [toYear, toMonthNum] = toMonth.split('-').map(Number);
-
-  let currentYear = fromYear;
-  let currentMonth = fromMonthNum;
-
-  while (currentYear < toYear || (currentYear === toYear && currentMonth <= toMonthNum)) {
-    const monthStr = String(currentMonth).padStart(2, '0');
-    months.push(`${currentYear}-${monthStr}`);
-
-    currentMonth++;
-    if (currentMonth > 12) {
-      currentMonth = 1;
-      currentYear++;
-    }
-  }
-
-  return months;
-}
-
-function getAllMonths(data) {
-  let minDate = null;
-  let maxDate = null;
-
-  data.forEach(item => {
-    item.dates.forEach(d => {
-      const [year, month] = d.split('-').map(Number);
-      const date = new Date(year, month - 1);
-      if (!minDate || date < minDate) minDate = date;
-      if (!maxDate || date > maxDate) maxDate = date;
+  function openRange(anchor) {
+    anchor.setAttribute('aria-expanded', 'true');
+    W.openRangePopover(anchor, state.range, (range) => {
+      anchor.setAttribute('aria-expanded', 'false');
+      state.range = range;
+      state.hiddenCategories.clear();
+      state.hiddenTags.clear();
+      load();
     });
-  });
-
-  const result = [];
-  let current = new Date(minDate.getTime());
-
-  while (current <= maxDate) {
-    const monthStr = current.getMonth() + 1; // 1-12
-    const yearStr = current.getFullYear();
-    result.push(`${yearStr}-${monthStr.toString().padStart(2, '0')}`);
-    current.setMonth(current.getMonth() + 1);
-  }
-  return result;
-}
-
-function alignData(dateArrays, amountArrays, refMonths) {
-  return refMonths.map(m => {
-    const idx = dateArrays.indexOf(m);
-    return idx !== -1 ? amountArrays[idx] : 0;
-  });
-}
-
-function formatDate(yyyymm) {
-  const [year, month] = yyyymm.split('-').map(Number);
-  const monthNames = [
-    i18n.t('common.months.january'),
-    i18n.t('common.months.february'),
-    i18n.t('common.months.march'),
-    i18n.t('common.months.april'),
-    i18n.t('common.months.may'),
-    i18n.t('common.months.june'),
-    i18n.t('common.months.july'),
-    i18n.t('common.months.august'),
-    i18n.t('common.months.september'),
-    i18n.t('common.months.october'),
-    i18n.t('common.months.november'),
-    i18n.t('common.months.december')
-  ];
-  return `${monthNames[month - 1].substring(0, 3)} ${year}`;
-}
-
-function updateMonthHeaderAll() {
-  if (chartSelected !== 'currentMonth') {
-    const monthHeaderAll = document.getElementById('monthHeaderAll');
-    const mapRange = {
-      "lastThreeMonths": i18n.t('dashboard.modal.past_3_months'),
-      "lastSixMonths": i18n.t('dashboard.modal.past_6_months'),
-      "lastYear": i18n.t('dashboard.modal.past_12_months'),
-      "yearToDate": i18n.t('dashboard.modal.year_to_date'),
-      "allData": i18n.t('dashboard.modal.to_date')
-    };
-    monthHeaderAll.innerText = chartSelected === 'customRange'
-    ? `${formatDate(window.customRangeFrom)} - ${formatDate(window.customRangeTo)}`
-    : mapRange[chartSelected];
-  }
-}
-
-// ----------------
-// - Transactions -
-// ----------------
-document.getElementById('transactionModal').addEventListener('shown.bs.modal', () => {
-  document.getElementById('nameInput').focus()
-});
-
-document.getElementById('amountInput').addEventListener('input', (event) => {
-  if (event.target.value.includes(',')) {
-    event.target.value = event.target.value.replace(',', '.');
-  }
-});
-
-async function renderTags() {
-  tagsInput = new TomSelect('#tagsInput', {
-    plugins: {
-      remove_button: {
-        title: 'Remove this tag',
-      }
-    },
-    persist: false,
-    create: true,
-    render: {
-      no_results: function(data, escape) {
-        return '';
-      },
-    }
-  });
-
-  tags.forEach(tag => {
-    tagsInput.addOption({ value: tag, text: tag }, user_created=false);
-  });
-}
-
-async function renderNameAutocomplete() {
-  nameInput = document.getElementById('nameInput');
-  const nameCategoryMap = new Map();
-
-  // Custom dropdown — keeps the name field consistent with the Transactions
-  // page and avoids the native <datalist>'s theme-ignoring popup.
-  const wrapper = document.createElement('div');
-  wrapper.className = 'name-autocomplete-wrapper';
-  nameInput.parentNode.insertBefore(wrapper, nameInput);
-  wrapper.appendChild(nameInput);
-
-  const dropdown = document.createElement('div');
-  dropdown.className = 'name-autocomplete-dropdown';
-  dropdown.setAttribute('role', 'listbox');
-  dropdown.hidden = true;
-  wrapper.appendChild(dropdown);
-
-  let currentResults = [];
-  let activeIndex = -1;
-
-  const escapeHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  };
-
-  const applyCategoryFor = (name) => {
-    const category = nameCategoryMap.get(name);
-    if (!category) return;
-    const categorySelect = document.getElementById('categorySelect');
-    if ([...categorySelect.options].some(o => o.value === category)) {
-      categorySelect.value = category;
-    }
-  };
-
-  const hideDropdown = () => {
-    dropdown.hidden = true;
-    activeIndex = -1;
-  };
-
-  const render = () => {
-    if (currentResults.length === 0) {
-      hideDropdown();
-      return;
-    }
-    dropdown.innerHTML = currentResults.map((r, i) =>
-      `<div class="name-autocomplete-item${i === activeIndex ? ' active' : ''}" role="option" data-index="${i}">${escapeHtml(r.name)}</div>`
-    ).join('');
-    dropdown.hidden = false;
-  };
-
-  const selectIndex = (i) => {
-    const item = currentResults[i];
-    if (!item) return;
-    nameInput.value = item.name;
-    applyCategoryFor(item.name);
-    hideDropdown();
-  };
-
-  let searchTimer;
-  nameInput.addEventListener('input', () => {
-    applyCategoryFor(nameInput.value);
-
-    clearTimeout(searchTimer);
-    const query = nameInput.value.trim();
-    if (!query) {
-      currentResults = [];
-      hideDropdown();
-      return;
-    }
-    searchTimer = setTimeout(async () => {
-      const response = await fetch(`${API_URL}/transactions/names/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
-      if (response.status === 401) return window.location.href = '/login';
-      if (!response.ok) return;
-      const results = await response.json();
-      results.forEach(r => nameCategoryMap.set(r.name, r.category));
-      currentResults = results;
-      activeIndex = -1;
-      render();
-    }, 300);
-  });
-
-  nameInput.addEventListener('keydown', (e) => {
-    if (dropdown.hidden || currentResults.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      activeIndex = (activeIndex + 1) % currentResults.length;
-      render();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      activeIndex = activeIndex <= 0 ? currentResults.length - 1 : activeIndex - 1;
-      render();
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      selectIndex(activeIndex);
-    } else if (e.key === 'Escape') {
-      hideDropdown();
-    }
-  });
-
-  // mousedown fires before the input's blur, so the selection still applies
-  dropdown.addEventListener('mousedown', (e) => {
-    const item = e.target.closest('.name-autocomplete-item');
-    if (!item) return;
-    e.preventDefault();
-    selectIndex(parseInt(item.dataset.index, 10));
-  });
-
-  nameInput.addEventListener('blur', () => {
-    setTimeout(hideDropdown, 150);
-  });
-
-  document.getElementById('transactionModal').addEventListener('hidden.bs.modal', () => {
-    currentResults = [];
-    hideDropdown();
-  });
-}
-
-async function renderCategories() {
-  const select = document.getElementById('categorySelect');
-
-  // Clear any existing options
-  select.innerHTML = "";
-
-  // First static placeholder option
-  const placeholder = document.createElement('option');
-  placeholder.value = "";
-  placeholder.textContent = i18n.t('transactions.category_placeholder');
-  placeholder.selected = true;
-  placeholder.disabled = true;
-  select.appendChild(placeholder);
-
-  // Then your dynamic options
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
-    option.selected = false;
-    select.appendChild(option);
-  });
-}
-
-function addTransaction() {
-  document.getElementById('transactionForm').reset();
-  document.getElementById('categorySelect').value = "";
-  tagsInput.setValue([]);
-  document.getElementById('dateInput').value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-  document.getElementById('recurringElement').style.display = 'block';
-  toggleRecurring(false);
-}
-
-function submitTransaction(event) {
-  if (event.target.recurringCheck.checked) submitRecurringAdd(event);
-  else submitTransactionAdd(event);
-}
-
-async function submitRecurringAdd(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  // Check if startDate is before endDate
-  if (new Date(data.startDate) >= new Date(data.endDate)) {
-    bootstrap.showToast({body: i18n.t('transactions.messages.end_date_later'), delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"});
-    return;
   }
 
-  try {
-    const response = await fetch(`${API_URL}/recurring`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  function bind() {
+    document.querySelectorAll('[data-compose]').forEach((button) => {
+      button.addEventListener('click', () => composer.open());
     });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.recurring_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the chart
-      loadChart();
-    }
-  }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
-
-async function submitTransactionAdd(event) {
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData.entries());
-  data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
-
-  try {
-    const response = await fetch(`${API_URL}/transactions`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+    $('rangeButton').addEventListener('click', () => openRange($('rangeButton')));
+    $('rankMode').querySelectorAll('[data-mode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.rankMode = button.dataset.mode;
+        $('rankMode').querySelectorAll('[data-mode]').forEach((b) => {
+          b.classList.toggle('on', b === button);
+          b.setAttribute('aria-pressed', String(b === button));
+        });
+        renderRank();
+      });
     });
-
-    if (response.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const json = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 422) throw new Error(json.detail[0].msg)
-      else if ([400, 404].includes(response.status)) throw new Error(json.detail)
-      throw new Error("An error occurred.")
-    }
-    else {
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-      modal.hide();
-
-      // Show toast
-      bootstrap.showToast({body: i18n.t('transactions.messages.transaction_added'), delay: 1000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-success"})
-
-      // Refresh the chart
-      loadChart();
-    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') W.closeRangePopover();
+    });
   }
-  catch (error) {
-    bootstrap.showToast({body: `${error}`, delay: 3000, position: "top-0 start-50 translate-middle-x", toastClass: "text-bg-danger"})
-  }
-}
 
-function toggleRecurring(enabled) {
-  const recurringDiv = document.getElementById('recurringDiv');
-  const date = document.getElementById('dateInput');
-  const startDate = document.getElementById('startDateInput');
-  const endDate = document.getElementById('endDateInput');
-  const frequencySelect = document.getElementById('frequencySelect');
-
-  if (enabled) {
-    recurringDiv.style.display = 'block';
-    date.disabled = true;
-    startDate.value = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD (Local time)
-    startDate.required = true;
-    endDate.required = true;
-    frequencySelect.required = true;
-  } else {
-    recurringDiv.style.display = 'none';
-    date.disabled = false;
-    startDate.required = false;
-    endDate.required = false;
-    frequencySelect.required = false;
-  }
-}
-
-// --------
-// - AUTH -
-// --------
-async function checkLogin() {
-  const response = await fetch(`${API_URL}/login/check`, {
-    method: 'GET',
-    credentials: 'include',
+  W.ready(async () => {
+    W.initShell('overview');
+    W.installThemeListener();
+    await i18n.init();
+    bind();
+    await W.loadCore();
+    const navAvatar = $('navAvatar');
+    navAvatar.textContent = W.initials(W.state.people.find((p) => p.is_self)?.name || 'PA');
+    load();
   });
-
-  if (response.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-
-  const enabled = await response.json()
-  if (enabled) document.getElementById('logoutButton').style.display = 'block'
-}
-
-async function logout() {
-  await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-  window.location.href = '/login';
-}
+})();

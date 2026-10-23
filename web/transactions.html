@@ -2,273 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally | Transactions</title>
-  <link rel="icon" type="image/png" href="assets/wally.png">
-  <meta name="robots" content="index,follow" />
-  <meta name="description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="author" content="Pol Alzina" />
-  <meta property="og:title" content="Wally" />
-  <meta property="og:description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="assets/wally.png" />
-  <!-- CSS -->
-  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.bootstrap5.min.css" rel="stylesheet">
-  <link href="css/transactions.css" rel="stylesheet">
-  <!-- JS -->
-  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
-  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
-  <script src="js/vendors/ag-grid-community.min.noStyle.js"></script>
-  <script src="js/vendors/tom-select.complete.min.js"></script>
-  <script src="js/vendors/decimal.min.js"></script>
-  <script src="js/vendors/lucide.min.js" defer></script>
-  <script src="js/icons.js" defer></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/transactions.js"></script>
-
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>Transactions · Wally</title>
+  <link rel="icon" href="/assets/wally.png">
+  <link rel="stylesheet" href="css/wally.css?v=221">
   <script>
-    (function() {
-      const theme = localStorage.getItem('theme') || 'system';
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', resolved);
-      document.documentElement.style.colorScheme = resolved;
-    })();
+    try {
+      const pref = localStorage.getItem('theme') || 'system';
+      const dark = pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.documentElement.dataset.themePreference = pref;
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    } catch (e) {}
   </script>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand d-flex align-items-center gap-2 ms-1 me-4" href="/">
-          <img src="assets/wally.png" alt="Wally" width="42" height="42">
-          <span style="font-size: 1.6rem; font-weight: 700;">Wally</span>
-        </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav gap-1">
-            <li class="nav-item ms-2"><a class="nav-link" href="/" data-i18n="nav.dashboards">Dashboards</a></li>
-            <li class="nav-item ms-2"><a class="nav-link active" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
-            <li class="nav-item ms-2"><a class="nav-link" href="settings" data-i18n="nav.settings">Settings</a></li>
-          </ul>
-          <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
-            <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
-              <i data-lucide="log-out" width="22" height="22" style="color: var(--pill-color);"></i>
-            </li>
-          </ul>
-        </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="appbar">
+    <div class="appbar-in">
+      <a class="brand" href="/" aria-label="Wally overview">
+        <img src="/assets/wally.png" alt="">
+        <span>Wally</span>
+      </a>
+      <nav class="tabs" aria-label="Main">
+        <a class="tab" href="/" data-nav="overview" data-i18n="nav.overview">Overview</a>
+        <a class="tab on" href="/transactions.html" data-nav="transactions" aria-current="page">Transactions</a>
+        <a class="tab" href="/settings.html" data-nav="settings">Settings</a>
       </nav>
+      <div class="appbar-right">
+        <a class="avatar-btn" id="navAvatar" href="/settings.html" aria-label="Settings">PA</a>
+      </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="container" style="margin-top: 0; margin-bottom: 0;">
-
-    <!-- Month Header -->
-    <div id="monthHeader" class="month-navigation">
-      <div id="prevMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-left" width="22" height="22"></i>
+  <main class="page" id="main">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow" data-i18n="nav.transactions">Transactions</div>
+        <h1>
+          <button type="button" class="tx-month" id="rangeButton" aria-haspopup="dialog" aria-expanded="false">
+            <span id="rangeLabel">October 2026</span>
+            <span class="chev" aria-hidden="true">⌄</span>
+          </button>
+        </h1>
+        <div class="tx-summary" id="txSummary"><span>Loading…</span></div>
       </div>
-      <div id="currentMonth" class="current-month"></div>
-      <div id="nextMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-right" width="22" height="22"></i>
-      </div>
-    </div>
-
-    <div id="monthHeaderAll" class="month-navigation" style="display: none; height: 40px">
-      <div class="current-month" data-i18n="dashboard.modal.to_date">All Transactions</div>
-    </div>
-
-    <!-- Action buttons -->
-    <div id="actionButtonsContainer" class="d-flex flex-wrap justify-content-center align-items-center mb-3" style="margin-top: 12px; gap: 5px;">
-      <button type="button" class="btn btn-success d-flex align-items-center justify-content-center btn-action" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
-        <i data-lucide="plus" width="16" height="16"></i>
-        <span class="btn-text" data-i18n="transactions.add">Add</span>
-      </button>
-      <button id="deleteSelectedBtn" type="button" class="btn btn-danger align-items-center justify-content-center btn-action" style="display:none;" onclick="deleteSelectedTransactions()">
-        <i data-lucide="minus" width="16" height="16"></i>
-        <span class="btn-text">Delete (</span><span id="selectedCount">0</span><span class="btn-text">)</span>
-      </button>
-      <div class="d-flex justify-content-center">
-        <label class="btn btn-primary d-flex align-items-center gap-2 justify-content-center btn-action" style="user-select:none; cursor:pointer;">
-          <i data-lucide="list-checks" width="16" height="16"></i>
-          <span class="btn-text" data-i18n="transactions.show_all">Show All</span>
-          <input id="showAllTransactions" type="checkbox" class="form-check-input" style="margin: 0; display: none;" onchange="getTransactions()" />
-        </label>
+      <div class="head-actions">
+        <button type="button" class="btn primary" data-compose>
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+          <span data-i18n="dashboard.add_transaction">Add transaction</span>
+        </button>
       </div>
     </div>
 
-    <!-- Category Filter Indicator -->
-    <div id="categoryFilterIndicator" class="justify-content-center mb-3" style="display: none;">
-      <button type="button" class="btn d-flex align-items-center gap-2 category-filter-btn" onclick="clearCategoryFilter()" style="border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; height: 40px; background-color: transparent; transition: all 0.2s ease;">
-        <i data-lucide="filter" width="14" height="14" style="flex-shrink: 0;"></i>
-        <span style="font-weight: 500;"><span data-i18n="transactions.filtered_by">Filtered by</span>: <span id="filteredCategoryName"></span></span>
-        <i data-lucide="x" width="10" height="10" style="flex-shrink: 0;"></i>
+    <div class="tx-toolbar">
+      <label class="tx-search" for="searchInput">
+        <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2 14 14"/></svg>
+        <input id="searchInput" type="search" placeholder="Search names, categories, tags, people…" data-i18n-placeholder="transactions.search_people" autocomplete="off" aria-label="Search transactions">
+        <kbd class="tx-kbd" aria-hidden="true">⌘K</kbd>
+      </label>
+      <button type="button" class="tx-filter" id="filterButton" aria-haspopup="dialog" aria-expanded="false">
+        <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h11M4.5 8h7M6.5 12h3"/></svg>
+        Filter <b id="filterCount" hidden>0</b>
       </button>
+      <button type="button" class="tx-select-link" id="selectToggle"><span>Select</span></button>
     </div>
 
-    <!-- Grid Filter -->
-    <div class="mb-2 position-relative">
-      <i data-lucide="search" class="search-icon" width="15" height="15"></i>
-      <input type="text" class="form-control search-input" id="searchInput" placeholder="Search..." data-i18n-placeholder="transactions.search_placeholder" oninput="onFilterTextBoxChanged()" />
+    <div class="tx-bulk" id="bulkBar" hidden>
+      <span class="tx-bulk-count" id="bulkCount">0 selected</span>
+      <button type="button" class="tx-bulk-a" id="bulkExport">Export</button>
+      <button type="button" class="tx-bulk-a danger" id="bulkDelete">Delete</button>
+      <button type="button" class="tx-bulk-a clear" id="bulkClear">Done</button>
     </div>
 
-    <!-- AG Grid Table -->
-    <div id="myGrid"></div>
-
-    <!-- AG Grid Table Footer -->
-    <div id="myGridFooter" style="font-weight: 400; color: var(--bs-secondary-color);">
-      <span><span data-i18n="transactions.footer.rows">Rows</span>:&nbsp;<span id="rowCount" style="font-weight: 600; color:#007AFF">0</span></span>
-      <span class="footer-separator" style="opacity: 0.3;">•</span>
-      <span><span data-i18n="transactions.footer.income">Income</span>:&nbsp;<span id="incomeAmount" style="font-weight: 600; color: #198754">0</span></span>
-      <span class="footer-separator" style="opacity: 0.3;">•</span>
-      <span><span data-i18n="transactions.footer.expense">Expense</span>:&nbsp;<span id="expenseAmount" style="font-weight: 600; color:#ea4152">0</span></span>
+    <div class="tx-scroll" id="txScroll" aria-live="polite"></div>
+    <div class="tx-foot" id="txFoot" hidden>
+      <span class="tx-all" id="txAllLabel"></span>
+      <span>·</span>
+      <span>Rows follow the day they happened, then the moment they were entered.</span>
     </div>
   </main>
 
-  <!-- Transaction Modal (Add and Edit) -->
-  <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form id="transactionForm" class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalLabel" data-i18n="transactions.modal_add_title">Add Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
+  <nav class="tabbar" aria-label="Main">
+    <a href="/" data-nav="overview"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M3.2 12.8V8.4M8 12.8V3.4M12.8 12.8v-6"/></svg>Overview</a>
+    <a href="/transactions.html" class="on" data-nav="transactions"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg>Transactions</a>
+    <button type="button" class="fab" data-compose aria-label="Add transaction"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+    <a href="/settings.html" data-nav="settings"><svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h4M9.5 4.5h4M2.5 8h6M11.5 8h2M2.5 11.5h4M9.5 11.5h4"/><circle cx="8" cy="4.5" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="8" cy="11.5" r="1.2"/></svg>Settings</a>
+  </nav>
 
-          <!-- Name -->
-          <div class="mb-3">
-            <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter transaction name" data-i18n-placeholder="transactions.name_placeholder" autocomplete="off" />
-          </div>
-
-          <!-- Category -->
-          <div class="mb-3">
-            <label for="categorySelect" class="form-label" data-i18n="transactions.category_label">Category</label>
-            <select class="form-select" id="categorySelect" name="category" required></select>
-          </div>
-
-          <!-- Tags -->
-          <div class="mb-3">
-            <label class="form-label" data-i18n="transactions.tags_label">Tags</label>
-            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="transactions.tags_placeholder" autocomplete="off">
-          </div>
-
-          <!-- Amount -->
-          <div class="mb-3">
-            <label for="amountInput" class="form-label" data-i18n="transactions.amount_label">Amount</label>
-            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" placeholder="0.00" data-i18n-placeholder="transactions.amount_placeholder" required />
-          </div>
-
-          <!-- Type -->
-          <div class="mb-3">
-            <label for="typeSelect" class="form-label" data-i18n="transactions.type_label">Type</label>
-            <select class="form-select" id="typeSelect" name="type" required>
-              <option value="expense" data-i18n="transactions.type_expense">Expense</option>
-              <option value="income" data-i18n="transactions.type_income">Income</option>
-            </select>
-          </div>
-
-          <!-- Date -->
-          <div>
-            <label for="dateInput" class="form-label" data-i18n="transactions.date_label">Date</label>
-            <input type="date" class="form-control" id="dateInput" name="date" required />
-          </div>
-
-          <!-- Recurring -->
-          <div id="recurringElement" class="form-check mt-3">
-            <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
-            <label class="form-check-label" for="recurringCheck" data-i18n="transactions.recurring_label">
-              Recurring
-            </label>
-          </div>
-
-          <div id="recurringDiv" class="card mt-3" style="display: none;">
-            <div class="card-body">
-              <div class="row">
-                <!-- Start Date -->
-                <div class="col-6 mb-3">
-                  <label for="startDateInput" class="form-label" data-i18n="transactions.start_date_label">Start Date</label>
-                  <input type="date" class="form-control" id="startDateInput" name="startDate" />
-                </div>
-                <!-- End Date -->
-                <div class="col-6 mb-3">
-                  <label for="endDateInput" class="form-label" data-i18n="transactions.end_date_label">End Date</label>
-                  <input type="date" class="form-control" id="endDateInput" name="endDate" />
-                </div>
-              </div>
-
-              <!-- Frequency -->
-              <div>
-                <label for="frequencySelect" class="form-label" data-i18n="transactions.frequency_label">Frequency</label>
-                <select class="form-select" id="frequencySelect" name="frequency">
-                  <option value="" disabled selected data-i18n="transactions.frequency_placeholder">Select frequency</option>
-                  <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
-                  <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
-                  <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
-                  <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="min-width: 120px" data-i18n="transactions.add">Add</button>
-        </div>
-      </form>
+  <dialog class="inspector" id="inspector" aria-label="Transaction details">
+    <div class="inspector-panel">
+      <div class="lgi-h">
+        <span class="eyebrow">Transaction</span>
+        <button type="button" class="icon-btn" id="inspectorClose" aria-label="Close details">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+        </button>
+      </div>
+      <div class="lgi-body" id="inspectorBody"></div>
+      <div class="lgi-actions" id="inspectorActions">
+        <button type="button" class="btn ghost" id="inspectorEdit">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 13h2.6l7-7a1.8 1.8 0 0 0-2.6-2.6l-7 7V13Z"/></svg>
+          Edit
+        </button>
+        <button type="button" class="btn ghost" id="inspectorDuplicate">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="5" y="5" width="8" height="8" rx="1.4"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>
+          Duplicate
+        </button>
+        <button type="button" class="btn danger" id="inspectorDelete" aria-label="Delete transaction">
+          <svg class="i" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.6 9h5.8l.6-9"/></svg>
+        </button>
+      </div>
     </div>
-  </div>
+  </dialog>
 
-  <!-- Transaction Modal Delete -->
-  <div class="modal fade" id="transactionModalDelete" tabindex="-1" aria-labelledby="transactionModalDeleteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalDeleteLabel" data-i18n="transactions.modal_delete_title">Delete Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center py-4">
-          <div class="dialog-warning-icon mb-3">
-            <i data-lucide="triangle-alert" width="32" height="32"></i>
-          </div>
-          <p class="mb-0 fs-6" data-i18n="transactions.delete_confirm">Are you sure you want to delete this transaction?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Transaction Modal Delete Multiple -->
-  <div class="modal fade" id="transactionModalDeleteMultiple" tabindex="-1" aria-labelledby="transactionModalDeleteMultipleLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="submitTransactionDeleteMultiple(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalDeleteMultipleLabel" data-i18n="transactions.delete_multiple_title">Delete Transactions</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center py-4">
-          <div class="dialog-warning-icon mb-3">
-            <i data-lucide="triangle-alert" width="32" height="32"></i>
-          </div>
-          <p class="mb-0 fs-6" id="deleteMultipleMessage"></p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  
-
+  <script src="js/i18n.js?v=221"></script>
+  <script src="js/common.js?v=221"></script>
+  <script src="js/transactions.js?v=221"></script>
+</body>
+</html>
