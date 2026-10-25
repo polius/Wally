@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="/css/review.css">
   <script>
     /* Theme before first paint: Auto follows the device */
-    (function () { try { var t = localStorage.getItem("wally.theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {} })();
+    (function () { try { var t = localStorage.getItem("wally.theme"); if (t === "light" || t === "dark") { document.documentElement.setAttribute("data-theme", t); document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = t === "dark" ? "#0E0F12" : "#F4F5F8"; }); } } catch (e) {} })();
   </script>
 </head>
 <body class="w">

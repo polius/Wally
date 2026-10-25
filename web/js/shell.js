@@ -124,6 +124,11 @@ export function setHide(on) {
 export function setTheme(mode) {
   if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
   else document.documentElement.removeAttribute("data-theme");
+  // The browser bar follows the chosen theme; Auto lets each tag's media query pick
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    const dark = mode === "dark" || (mode !== "light" && m.media.includes("dark"));
+    m.content = dark ? "#0E0F12" : "#F4F5F8";
+  });
   try { localStorage.setItem("wally.theme", mode); } catch (e) { /* fine */ }
 }
 export function theme() { try { return localStorage.getItem("wally.theme") || "auto"; } catch (e) { return "auto"; } }
