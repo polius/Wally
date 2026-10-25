@@ -1,0 +1,187 @@
+/* The add and edit sheet. Its base (w-sheet, w-amount, w-frow, w-chips, w-sub, w-rsum…) comes from
+   the prototype's CSS in wally.css; this file adds what the live sheet needs, the phone steps and
+   the offline queue note. Logical properties throughout, for right-to-left. */
+
+/* Under confirmation dialogs (65) and toasts (70), over the page and its tooltips */
+.w-addwrap{z-index:58}
+html.w-addopen{overflow:hidden}
+.w-add{animation:w-addin 260ms var(--ease)}
+@keyframes w-addin{from{transform:translateY(10px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+.w-add .vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.w-add .w-contents{display:contents}
+.w-add .w-sheet-h{gap:10px;justify-content:flex-start}
+.w-add .w-addx{margin-inline-start:auto}
+.w-add .w-calc{margin-left:0;margin-inline-start:auto}
+.w-add .w-sub{margin-left:0;margin-inline-start:80px}
+.w-add .w-frow > label{font-size:12.5px;color:var(--w-ink3)}
+.w-add .w-indent{margin-inline-start:80px}
+.w-add .w-sugg button{text-align:start}
+.w-add .w-sugg button > span:nth-child(2){min-width:0}
+.w-add .w-sugg small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-add .w-chip .x{margin-left:0;margin-inline-start:2px}
+.w-add .w-note{width:100%;height:32px}
+.w-add .w-tagin{width:150px;min-width:0}
+.w-add .w-num{width:90px;text-align:end;font-variant-numeric:tabular-nums}
+.w-add input[type="number"].w-num{width:64px}
+.w-add .w-wrapseg{flex-wrap:wrap}
+.w-add .w-countw{gap:6px}
+.w-add .w-inline .lbl{width:auto;min-width:40px}
+.w-add .w-bylbl{min-width:0}
+.w-add .w-switch[hidden]{display:none}
+.w-add #add-rep-l .w-link{margin-inline-start:4px;font-size:12.5px}
+.w-add .w-splitchip{color:var(--w-ink3);border-style:dashed}
+.w-add .w-splitchip:hover{color:var(--w-ink)}
+.w-add .w-dup{margin:-6px 0 0}
+
+/* The main button names what is missing; it stays clickable to take you there */
+.w-add .w-btn.primary[aria-disabled="true"]{background:var(--w-fill2);color:var(--w-ink2);box-shadow:none;filter:none;cursor:pointer}
+.w-add .w-btn.ghost[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.w-add .w-sheet-f .w-kbd{margin-right:0;margin-inline-end:auto}
+
+/* Shares between three or more people */
+.w-splitn{display:grid;gap:6px}
+.w-splitp{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--w-ink2);font-variant-numeric:tabular-nums}
+.w-splitp > span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-splitp b{color:var(--w-ink);font-weight:600}
+.w-splitp small{color:var(--w-ink3);font-size:12px;min-width:36px;text-align:end}
+.w-splitleft{font-size:12px;color:var(--w-ink3);text-align:end}
+.w-add .w-splitv input{margin-inline-start:2px}
+
+/* Budget hint under the category */
+.w-budget{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--w-ink2);margin:-6px 0 0;margin-inline-start:80px}
+.w-budget small{color:var(--w-ink3);font-size:12px}
+.w-bmeter{width:44px;height:5px;border-radius:3px;background:var(--w-fill2);overflow:hidden;flex:none}
+.w-bmeter i{display:block;height:100%;border-radius:3px;background:var(--w-accent)}
+.w-budget.over{color:var(--w-bad)}
+.w-budget.over small{color:var(--w-bad)}
+.w-budget.over .w-bmeter i{background:var(--w-bad)}
+
+/* Split a receipt */
+.w-parts .w-parth{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+.w-parts .w-parth b{font-weight:600}
+.w-add .w-splitrows .w-partrow{padding:4px 6px;padding-inline-start:10px;background:var(--w-panel)}
+.w-add .w-splitrows b{margin-left:0;margin-inline-start:auto}
+.w-partrow .w-partcat{flex:1;min-width:0}
+.w-partrow .w-x{flex:none}
+.w-partrow input[aria-invalid="true"]{border-color:var(--w-bad);box-shadow:0 0 0 3px var(--w-bad-soft)}
+.w-add .w-splitrows .left.bad{color:var(--w-bad);border-color:var(--w-bad)}
+.w-parts .w-btn.ghost svg.i{width:13px;height:13px}
+
+/* ---------- the offline queue ---------- */
+.w-queue{position:fixed;inset-inline-start:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;align-items:center;gap:8px;padding:7px 8px;padding-inline-start:12px;border-radius:999px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:var(--w-shadow);font-size:12.5px;color:var(--w-ink2);font-family:var(--w-font)}
+.w-queue svg.i{width:14px;height:14px;color:var(--w-ink3)}
+.w-queue .w-link{padding:4px 8px;border-radius:999px;font-size:12.5px}
+.w-queue .w-link:hover{background:var(--w-accent-soft)}
+
+/* ---------- phone: three steps, from the bottom, full height ---------- */
+@media (max-width:767px){
+  .w-addwrap{place-items:end stretch;padding:0}
+  .w-add.w-addp{max-width:none;width:100%;height:calc(100dvh - max(10px, env(safe-area-inset-top,0px)));max-height:none;border-radius:22px 22px 0 0;
+    padding:8px 16px 0;display:block;overflow-y:auto;overscroll-behavior:contain;background:var(--w-panel2);animation:w-up 260ms var(--ease)}
+  .w-addp .w-pstep{display:flex;flex-direction:column;gap:10px;min-height:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .w-addp .w-pstep[hidden]{display:none}
+  .w-addp .w-grab{flex:none;margin-bottom:2px}
+  .w-addp .w-mh{gap:8px;min-height:44px}
+  .w-addp .w-plink{min-height:44px;display:inline-flex;align-items:center;gap:2px;font-size:15px;padding:0 2px}
+  .w-addp .w-plink svg.i{width:18px;height:18px}
+  .w-addp .w-mh .w-x{width:44px;height:44px;margin-inline-end:-10px}
+  .w-addp .w-ptitle{font-size:15px;font-weight:600;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .w-addp .w-mh .w-seg button{min-height:36px;padding:0 14px}
+  .w-addp .w-peditp{align-self:center}
+
+  /* step 1: the amount and the keypad, in thumb reach */
+  .w-addp .w-pamt{padding:26px 0 4px;min-height:96px}
+  .w-addp .w-pamt input{font:inherit;letter-spacing:inherit;border:0;background:none;outline:0;padding:0;color:var(--w-ink);caret-color:var(--w-accent);text-align:center;min-width:1.2em;max-width:100%}
+  .w-addp .w-pamt input::placeholder{color:var(--w-ink3)}
+  .w-addp .w-pamt.err input{color:var(--w-bad)}
+  .w-addp .w-pamt .cur{font-size:30px;color:var(--w-ink3);font-weight:500}
+  .w-addp .w-pcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:15px;min-height:22px;font-variant-numeric:tabular-nums}
+  .w-addp .w-pcenter{text-align:center;margin:0}
+  .w-addp .w-pscroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
+  .w-addp .w-pscroll::-webkit-scrollbar{display:none}
+  .w-addp .w-chips .w-chip{height:44px;padding:0 14px;font-size:13.5px;flex:none}
+  .w-addp .w-again-a{color:var(--w-ink3);font-weight:400}
+  .w-addp .w-pkeys{margin-top:auto;gap:7px}
+  .w-addp .w-pkeys button{height:54px;border-radius:12px;background:var(--w-panel);display:grid;place-items:center;font-size:22px;font-weight:500;box-shadow:0 1px 0 var(--w-line);color:var(--w-ink);font-variant-numeric:tabular-nums}
+  .w-addp .w-pkeys button:active{background:var(--w-fill2)}
+  .w-addp .w-pkeys button.op{background:var(--w-fill2);box-shadow:none}
+  .w-addp .w-pkeys button.go{background:var(--w-accent);color:var(--w-on-accent);font-size:16px;font-weight:600;box-shadow:none}
+  .w-addp .w-pkeys svg.i{width:22px;height:22px}
+
+  /* step 2: the details */
+  .w-addp .w-input input{height:48px;font-size:16px}
+  .w-addp .w-sub,.w-addp .w-budget,.w-addp .w-indent{margin-inline-start:0}
+  .w-addp .w-budget{margin-top:-2px}
+  .w-addp .w-psplit{display:grid;gap:10px}
+  .w-addp .w-psplit[hidden]{display:none}
+  .w-addp .w-psplit .w-seg{display:flex}
+  .w-addp .w-psplit .w-seg button{flex:1;min-height:38px}
+  .w-addp .w-psplit .w-subh{display:grid;gap:6px}
+  .w-addp .w-range{height:32px}
+  .w-addp .w-cells .w-cell{width:100%;min-height:50px;font-size:15px;text-align:start;color:var(--w-ink)}
+  .w-addp .w-cells .w-cell > span:first-child{color:var(--w-ink)}
+  .w-addp .w-cellsel{border:0;background:none;text-align:end;font-weight:500;color:var(--w-ink);font-size:15px;padding:6px 0;max-width:60%;-webkit-appearance:none;appearance:none}
+  .w-addp .w-pdate{position:relative;cursor:pointer}
+  .w-addp .w-pdate input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .w-addp .w-cellin{border:0;background:none;outline:0;text-align:end;flex:1;min-width:0;font-weight:500;font-size:15px;color:var(--w-ink);height:44px}
+  .w-addp .w-ptags{flex-wrap:wrap;align-items:center}
+  .w-addp .w-ptags .w-chips{justify-content:flex-end;flex:1}
+  .w-addp .w-ptags .w-chip{height:34px}
+  .w-addp .w-ptags .w-tagin{height:36px;width:120px;font-size:15px}
+  .w-addp .w-pnote{font-size:13.5px;color:var(--w-ink2);display:block;line-height:1.5;padding-block:12px}
+  .w-addp .w-pcell{margin:0;padding:6px 14px 10px}
+  .w-addp .w-pfoot{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom,0px));margin-top:auto;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--w-panel2) 14px);display:grid;gap:10px;z-index:4}
+  .w-addp .w-pfoot .w-submit{width:100%;height:52px;font-size:15.5px;border-radius:14px}
+  .w-addp .w-pdel{justify-content:center;color:var(--w-bad);font-weight:500}
+  .w-addp .w-dup,.w-addp .w-err{margin:0}
+
+  /* step 3: Repeat with checkmarks */
+  .w-addp .w-cell .ck{display:inline-grid;place-items:center;color:var(--w-accent)}
+  .w-addp .w-cell .ck svg.i{width:18px;height:18px}
+  .w-addp .w-chev{color:var(--w-ink3)}
+  .w-addp .w-chev svg.i{width:16px;height:16px}
+  .w-addp .w-pend{padding-block:0;gap:8px}
+  .w-addp .w-pend > button{flex:1;text-align:start;min-height:50px;font-size:15px}
+  .w-addp .w-pend:not(.on) .ck{display:none}
+  .w-addp .w-pend .w-mini{height:36px;font-size:15px}
+  .w-addp .w-pdone{font-weight:600}
+  .w-addp .w-pcustom .w-mini{height:36px;font-size:15px}
+  .w-addp .w-rsum{border-top:0;padding:0 4px}
+  .w-addp .w-rsum p{font-size:13px;color:var(--w-ink2);font-weight:400}
+
+  .w-queue{bottom:calc(var(--tabbar) + 12px + env(safe-area-inset-bottom,0px))}
+}
+[dir="rtl"] .w-add .w-amount input,[dir="rtl"] .w-addp .w-pamt input,.w-add .w-num{direction:ltr}
+[dir="rtl"] .w-add .w-num{text-align:start}
+
+/* Type sizes from the prototype, kept even where a page-wide `font:inherit` would flatten them */
+.w-add .w-amount input{font-size:52px;font-weight:600;letter-spacing:-.045em;min-width:.6em;max-width:100%;flex:0 1 auto}
+.w-add .w-input input{font-size:14px;font-weight:500}
+.w-add .w-mini{font-size:13px}
+.w-add .w-chip{font-size:12.5px;font-weight:500}
+.w-add .w-seg button{font-size:12.5px;font-weight:500}
+.w-add .w-seg.sm button{font-size:12px}
+.w-add .w-btn{font-size:13.5px;font-weight:600}
+.w-add .w-btn.ghost{font-size:12.5px;font-weight:500}
+.w-add .w-link{font-weight:500}
+@media (max-width:767px){
+  .w-addp .w-pamt input{font-size:58px;font-weight:600;letter-spacing:-.045em}
+  .w-addp .w-input input{font-size:16px}
+  .w-addp .w-chips .w-chip{font-size:13.5px}
+  .w-addp .w-mh .w-seg button{font-size:13px}
+  .w-addp .w-pkeys button{font-size:22px}
+  .w-addp .w-pkeys button.go{font-size:16px;font-weight:600}
+  .w-addp .w-mini,.w-addp .w-cellsel,.w-addp .w-cellin,.w-addp .w-cells .w-cell{font-size:15px}
+  .w-addp .w-pfoot .w-submit{font-size:15.5px}
+  .w-addp .w-plink{font-size:15px}
+}
+@media (max-width:767px){
+  .w-addp input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+  .w-addp input[type="number"]::-webkit-inner-spin-button,.w-addp input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+}
+/* Sums and totals read left to right in every language */
+.w-add .w-calc,.w-addp .w-pcalc,.w-add .w-next span{direction:ltr;unicode-bidi:isolate}
+[dir="rtl"] .w-add .w-switch::after{left:auto;right:2px}
+[dir="rtl"] .w-add .w-switch[aria-checked="true"]::after{transform:translateX(-14px)}
+.w-addp .w-pkeys{direction:ltr}
+[dir="rtl"] .w-addp .w-pkeys svg.i use{transform:none}

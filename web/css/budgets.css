@@ -1,0 +1,99 @@
+/* Budgets (2.1) and savings goals (2.2) */
+[data-page="budgets"] .w-brow{text-align:start;text-decoration:none;color:inherit}
+[data-page="budgets"] .w-budbar > span{left:auto;inset-inline-start:0}
+[data-page="budgets"] .w-ph b.num{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bud-back{display:none;text-decoration:none;align-items:center;gap:2px;justify-self:start}
+.bud-back svg.i{width:18px;height:18px}
+.bud-head .w-title{align-items:center;gap:10px}
+.bud-goals .w-ph .w-btn{white-space:nowrap;flex:none}
+.bud-col{display:grid;gap:16px;align-content:start}
+.bud-empty{padding:32px 16px}
+.bud-paid{display:inline-flex;align-items:center;gap:4px;color:var(--w-good)!important}
+.bud-paid svg.i{width:14px;height:14px}
+.up-bad{color:var(--w-bad)!important}
+
+/* Edit budgets */
+.bud-fill{justify-self:start;font-size:13px}
+.bud-ed{max-height:min(56vh,520px);overflow-y:auto;overscroll-behavior:contain;margin:0 -20px;padding:0 20px;border-top:1px solid var(--w-line2);border-bottom:1px solid var(--w-line2)}
+.bud-er{display:grid;grid-template-columns:28px minmax(0,1fr) 124px 104px auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--w-line2)}
+.bud-er:first-child{border-top:0}
+.bud-ern{display:grid;min-width:0}
+.bud-ern b{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-ern small{font-size:11.5px;color:var(--w-ink3)}
+.bud-er .w-mini{width:100%;min-width:0}
+.bud-amt{text-align:end;font-variant-numeric:tabular-nums}
+.bud-roll{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--w-ink2);white-space:nowrap}
+.bud-roll input{accent-color:var(--w-accent);width:15px;height:15px;margin:0}
+.bud-roll:has(input:disabled){opacity:.45}
+
+/* Goal dialogs */
+.bud-form{display:grid;gap:12px}
+.bud-fld{display:grid;gap:6px;font-size:12.5px;color:var(--w-ink3)}
+.bud-fld small{color:var(--w-ink3);font-size:11.5px;opacity:.8}
+.bud-fld .w-mini{height:42px;border-radius:11px;font-size:14px}
+.bud-gdel{display:flex}
+
+/* Savings goals */
+.bud-glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.bud-goal{display:grid;gap:10px;align-content:start;padding:14px 16px;border-radius:14px;background:var(--w-panel2);border:1px solid var(--w-line2)}
+.bud-gh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.bud-gi{background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.bud-gi.done{background:var(--w-good-soft);color:var(--w-good)}
+.bud-gt h5{font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-gt p{font-size:12px;color:var(--w-ink3)}
+.bud-gnum{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.bud-gof{font-size:13px;color:var(--w-ink2);font-variant-numeric:tabular-nums}
+.bud-gnum .w-pill{margin-inline-start:auto}
+.bud-goal .w-budbar{margin-top:0}
+.bud-gline{font-size:12.5px;color:var(--w-ink2)}
+.bud-gline b{color:var(--w-ink);font-weight:600}
+.bud-gok{display:inline-flex;align-items:flex-start;gap:6px;color:var(--w-good)}
+.bud-gok svg.i{width:15px;height:15px;flex:none;margin-top:1px}
+.bud-gwho{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--w-ink2)}
+.bud-gwho span{display:inline-flex;align-items:center;gap:5px}
+.bud-gwho b{font-weight:600;color:var(--w-ink)}
+.bud-gacts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bud-gacts .w-btn.primary{height:32px;font-size:12.5px;padding:0 11px}
+.bud-ghb{display:inline-flex;align-items:center;gap:3px;margin-inline-start:auto;font-size:12.5px;padding:6px 2px}
+.bud-ghb svg.i,.bud-doneh svg.i{width:14px;height:14px;transition:transform 180ms var(--ease)}
+.bud-ghb[aria-expanded="true"] svg.i,.bud-doneh[aria-expanded="true"] svg.i{transform:rotate(180deg)}
+.bud-ghist{list-style:none;margin:0;padding:0;border-top:1px solid var(--w-line2)}
+.bud-ghist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--w-line2)}
+.bud-ghist li:last-child{border-bottom:0}
+.bud-ghist li:not(:has(.w-av)){grid-template-columns:minmax(0,1fr) auto auto}
+.bud-ghd{color:var(--w-ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-ghist b{font-weight:600;font-variant-numeric:tabular-nums}
+.bud-doneh{width:100%;margin-top:8px;text-align:start;cursor:pointer;position:static}
+.bud-doneh span{display:inline-flex;align-items:center;gap:6px}
+.bud-dlist{display:grid}
+.bud-drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 4px;border-top:1px solid var(--w-line2)}
+.bud-drow:first-child{border-top:0}
+.bud-drow b{font-weight:500;display:block}
+.bud-drow small{font-size:12px;color:var(--w-ink3);font-variant-numeric:tabular-nums}
+
+/* ---------- under 1024 px: one column ---------- */
+@media (max-width:1023px){
+  .bud-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---------- phones: reached from the Dashboard's Budgets card ---------- */
+@media (max-width:767px){
+  .bud-back{display:inline-flex;min-height:44px;margin:-8px 0 -10px}
+  .bud-head .w-title h3{font-size:24px}
+  .bud-head .w-head-r{width:100%;margin:0}
+  .bud-head .w-head-r .w-btn{flex:1;min-height:40px}
+  .bud-head .w-step button{width:40px;height:40px}
+  [data-page="budgets"] .w-big{font-size:36px}
+  [data-page="budgets"] .w-brow{min-height:44px}
+  .bud-glist{grid-template-columns:minmax(0,1fr)}
+  .bud-gacts .w-btn{min-height:40px}
+  .bud-ghist .w-x{width:40px;height:40px}
+  /* The list scrolls; the title and the Save button stay in reach */
+  .bud-ed{max-height:calc(90dvh - 290px);margin:0 -18px;padding:0 18px}
+  .bud-er{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);row-gap:6px}
+  .bud-er .w-mini{height:40px}
+  .bud-er [data-kind]{grid-column:2}
+  .bud-er [data-amt]{grid-column:3}
+  .bud-er .bud-ern{grid-column:2 / 4}
+  .bud-er .bud-roll{grid-column:2 / 4;min-height:32px}
+}

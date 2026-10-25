@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
 from ..models.categories import Category, CategoryCreate, CategoryPublic, CategoryUpdate
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
+from ..models.money import Budget, ImportRule
 from .auth import check_login
 
 router = APIRouter(tags=["Categories"], dependencies=[Depends(check_login)])
@@ -18,6 +20,15 @@ def read_categories(
     statement = select(Category).order_by(Category.name)
     categories = db.exec(statement).all()
     return sorted([c.name for c in categories], key=str.lower)
+
+@router.get("/categories/stats")
+def category_stats(
+    db: Annotated[Session, Depends(get_session)]
+):
+    """Every category with how many transactions use it."""
+    counts = dict(db.exec(select(Transaction.category, func.count()).group_by(Transaction.category)).all())
+    names = sorted({c.name for c in db.exec(select(Category)).all()}, key=str.lower)
+    return [{"name": n, "count": counts.get(n, 0)} for n in names]
 
 @router.post("/categories", response_model=CategoryPublic)
 def create_category(
@@ -60,6 +71,10 @@ def update_category(
         recurring_transaction.category = new_category_name
         db.add(recurring_transaction)
     
+    # Budgets and import rules follow the category
+    db.exec(update(Budget).where(Budget.category == category_name).values(category=new_category_name))
+    db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=new_category_name))
+
     # Update the category with new data
     category_data = category_update.model_dump(exclude_unset=True)
     category.sqlmodel_update(category_data)
@@ -73,35 +88,40 @@ def update_category(
         db.rollback()
         raise HTTPException(status_code=400, detail="A category with this name already exists.")
 
-@router.delete("/categories/{category_name}")
-def delete_category(
+@router.get("/categories/{category_name}/usage")
+def category_usage(
     category_name: str,
     db: Annotated[Session, Depends(get_session)]
 ):
+    """How many transactions and rules use a category, for the delete confirmation."""
+    transactions = db.exec(select(func.count()).select_from(Transaction).where(Transaction.category == category_name)).one()
+    recurring = db.exec(select(func.count()).select_from(RecurringTransaction).where(RecurringTransaction.category == category_name)).one()
+    return {"transactions": transactions, "recurring": recurring}
+
+@router.delete("/categories/{category_name}")
+def delete_category(
+    category_name: str,
+    db: Annotated[Session, Depends(get_session)],
+    move_to: str | None = None,
+):
+    """Delete a category. Transactions and rules using it move to another category first."""
     category = db.get(Category, category_name)
     if not category:
         raise HTTPException(status_code=404, detail="This category does not exist.")
-    
-    # Check if any transactions are using this category
-    statement = select(Transaction).where(Transaction.category == category_name)
-    transactions_count = len(db.exec(statement).all())
-    
-    if transactions_count > 0:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Cannot delete category. {transactions_count} transaction{'s' if transactions_count != 1 else ''} {'are' if transactions_count != 1 else 'is'} using this category. Please reassign or delete those transactions first."
-        )
-    
-    # Check if any recurring transactions are using this category
-    statement = select(RecurringTransaction).where(RecurringTransaction.category == category_name)
-    recurring_count = len(db.exec(statement).all())
-    
-    if recurring_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot delete category. {recurring_count} recurring transaction{'s' if recurring_count != 1 else ''} {'are' if recurring_count != 1 else 'is'} using this category. Please reassign or delete those recurring transactions first."
-        )
-    
+
+    used = category_usage(category_name, db)
+    if used["transactions"] or used["recurring"]:
+        if not move_to or move_to == category_name or not db.get(Category, move_to):
+            count = used["transactions"]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete category. {count} transaction{'s' if count != 1 else ''} {'are' if count != 1 else 'is'} using this category. Choose where to move them."
+            )
+        db.exec(update(Transaction).where(Transaction.category == category_name).values(category=move_to))
+        db.exec(update(RecurringTransaction).where(RecurringTransaction.category == category_name).values(category=move_to))
+        db.exec(update(Budget).where(Budget.category == category_name).values(category=move_to))
+        db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=move_to))
+
     db.delete(category)
     db.commit()
     return {"ok": True}

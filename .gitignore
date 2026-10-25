@@ -2,3 +2,4 @@ wally.db
 __pycache__
 .DS_Store
 password.txt
+tests/e2e/node_modules
