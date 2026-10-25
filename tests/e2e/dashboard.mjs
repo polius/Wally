@@ -173,6 +173,19 @@ try {
   await page.locator("#cats [data-k]").first().focus();
   ok((await text(page, "#tip")).includes("Share"), "a category row has a tooltip on focus");
   await page.mouse.move(5, 5);
+  // A day on the chart that spent something opens its transactions
+  let dayX = null;
+  for (let fr = 0.1; fr < 0.75 && dayX === null; fr += 0.03) {
+    await page.mouse.move(box.x + box.width * fr, box.y + box.height * 0.5);
+    if ((await text(page, "#tip")).includes("Click to see its transactions")) dayX = box.x + box.width * fr;
+  }
+  ok(dayX !== null && (await text(page, "#tip")).includes("That day"), "a past day's tooltip shows what was spent that day");
+  await page.mouse.click(dayX, box.y + box.height * 0.5);
+  await page.waitForURL(/\/transactions\?view=cal&day=\d{4}-\d\d-\d\d/);
+  ok(true, "clicking it opens that day in Transactions: " + new URL(page.url()).search);
+  await page.goBack();
+  await page.waitForSelector("#c-hero svg");
+  await page.mouse.move(5, 5);
 
   console.log("Person switch");
   const allBig = await text(page, "#h-big");

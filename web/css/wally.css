@@ -891,6 +891,7 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-tip b{font-weight:600}
 .w-tip .r{display:flex;justify-content:space-between;gap:14px;color:var(--w-ink2);align-items:center}
 .w-tip .r b{color:var(--w-ink);font-weight:500}
+.w-tip .w-tiphint{display:block;margin-top:5px;padding-top:5px;border-top:1px solid var(--w-line2);color:var(--w-ink3);font-size:11.5px}
 .w-tip .r i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
 .w-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:70;font-family:var(--w-font);background:var(--w-toast);color:var(--w-toast-ink);border-radius:12px;padding:10px 14px;font-size:13px;display:flex;gap:14px;align-items:center;box-shadow:var(--w-shadow);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .w-toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}

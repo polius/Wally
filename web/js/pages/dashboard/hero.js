@@ -7,7 +7,7 @@ import {
 } from "../../core.js";
 import { chart, el, txt, niceMax, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, active } from "../../sched.js";
-import { view, prevOf } from "./range.js";
+import { view, prevOf, goTx } from "./range.js";
 
 const $ = (id) => document.getElementById(id);
 const DASH = '<div class="r d-sum"><span>';
@@ -117,8 +117,12 @@ function heroDaily(svg, w, h, o) {
   const d1 = el("circle", { r: 4.5, fill: "var(--w-panel)", stroke: "var(--w-accent)", "stroke-width": 2.5, opacity: 0 }, svg);
   const d2 = el("circle", { r: 4, fill: "var(--w-panel)", stroke: "var(--w-ink3)", "stroke-width": 2, opacity: 0 }, svg);
   const hit = el("rect", { x: m.l, y: m.t, width: w - m.l - m.r, height: h - m.t - m.b, fill: "transparent" }, svg);
+  const at = (ev) => { const b = svg.getBoundingClientRect(); return Math.max(0, Math.min(len - 1, Math.round(((ev.clientX - b.left - m.l) / (w - m.l - m.r)) * (len - 1)))); };
+  // Only a mouse opens a day: on touch, the tap that shows the tooltip would also leave the page
+  let mouse = true;
   const move = (ev) => {
-    const b = svg.getBoundingClientRect(), i = Math.max(0, Math.min(len - 1, Math.round(((ev.clientX - b.left - m.l) / (w - m.l - m.r)) * (len - 1))));
+    const i = at(ev);
+    mouse = ev.pointerType === "mouse";
     const cv = i <= ci ? o.cur[i] : o.proj ? o.proj[i - ci] : null, cmpv = o.cmp ? o.cmp[i] : null;
     cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", 1);
     if (cv != null) { d1.setAttribute("cx", X(i)); d1.setAttribute("cy", Y(cv)); d1.setAttribute("opacity", 1); } else d1.setAttribute("opacity", 0);
@@ -127,8 +131,13 @@ function heroDaily(svg, w, h, o) {
     if (cv != null) html += row(i <= ci ? esc(o.curName) : t("Projected"), f(cv), "var(--w-accent)");
     if (cmpv != null) html += row(esc(o.cmpName), f(cmpv), "var(--w-ink3)");
     if (cv != null && cmpv != null) { const df = cv - cmpv; html += row(t("Difference"), '<span class="' + (df > 0 ? "up-bad" : "dn-good") + '">' + (df > 0 ? "+" : "−") + f(Math.abs(df)) + "</span>"); }
+    // A day that has happened shows what it spent, and one that spent something opens in Transactions
+    const spent = i <= ci ? o.cur[i] - (i ? o.cur[i - 1] : 0) : 0;
+    if (i <= ci) html += row(t("That day"), f(spent)) + (mouse && spent > 0 ? '<small class="w-tiphint">' + t("Click to see its transactions") + "</small>" : "");
+    hit.style.cursor = mouse && spent > 0 ? "pointer" : "";
     showTip(html, ev);
   };
+  hit.addEventListener("click", (ev) => { const i = at(ev); if (mouse && i <= ci && o.cur[i] - (i ? o.cur[i - 1] : 0) > 0) { hideTip(); goTx({ day: addD(o.start, i) }); } });
   hit.addEventListener("pointermove", move);
   hit.addEventListener("pointerdown", move);
   hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity", 0); d1.setAttribute("opacity", 0); d2.setAttribute("opacity", 0); hideTip(); });
@@ -386,7 +395,7 @@ function renderPace(r, p, delta, legend) {
   }
   const label = () => t("Spent so far: {amount} by {date}", { amount: f(d.cur[idx]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[idx]) }) : "") +
     (d.proj ? ". " + t("Projected: {amount}", { amount: f(d.proj[d.proj.length - 1]) }) : "");
-  chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroDaily(svg, w, h, { len, cur: d.cur, cmp: d.cmp, proj: d.proj, today: r.current, curName: d.curName, cmpName: d.cmpName, cmpShort: d.cmpShort, ticks, xlab }), label);
+  chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroDaily(svg, w, h, { start: r.start, len, cur: d.cur, cmp: d.cmp, proj: d.proj, today: r.current, curName: d.curName, cmpName: d.cmpName, cmpShort: d.cmpShort, ticks, xlab }), label);
 }
 
 function monthsOf(r) {

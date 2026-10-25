@@ -33,7 +33,8 @@ export function phoneHtml() {
       '<div class="w-pamt" id="add-amtrow">' + amountField() + '</div>' +
       '<p class="w-pcalc" id="add-calc" aria-live="polite"></p>' +
       '<p class="w-err w-pcenter" id="add-aerr" hidden role="alert"></p>' +
-      '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
+      '<div id="add-namerow"><div class="w-plabel" id="lbl-name"></div>' +
+        '<div class="w-input"><input id="add-name" autocomplete="off" aria-labelledby="lbl-name" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div></div>' +
       '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
       '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + "</div>" + catBox() + "</div>" +
       '<div class="w-sub w-parts" id="add-parts" hidden></div>' +

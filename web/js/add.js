@@ -172,9 +172,10 @@ function deskHtml() {
       '<button type="button" class="w-x w-addx" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
     amountRow() +
     '<p class="w-err" id="add-aerr" hidden role="alert"></p>' +
-    '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
-      '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
-    '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
+    '<div class="w-frow" id="add-namerow"><label for="add-name" id="lbl-name"></label>' +
+      '<div class="w-input"><input id="add-name" autocomplete="off" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
+      '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div></div>' +
+    '<p class="w-err w-indent" id="add-nerr" hidden role="alert"></p>' +
     '<div class="w-frow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
     '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
     '<p class="w-budget" id="add-budget" hidden></p>' +
@@ -245,6 +246,7 @@ function render() {
   setVal("add-name", ad.name);
   const nm = $("add-name");
   if (nm) nm.placeholder = inc ? t("Where is it from?") : t("What was it for?");
+  setText("lbl-name", inc ? t("Source") : t("Merchant"));
 
   // category, or the parts of a split receipt
   show("add-catrow", !inc && !ad.split);
