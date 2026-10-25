@@ -74,10 +74,11 @@ async function clickSave(page, pathRe = /\/api\/transactions$/) {
   await page.click("#add-go");
   return (await resp).json();
 }
+// The category is a combobox: type and Enter
 async function pickCat(p, name) {
-  const sel = '#add-cats [data-ac="' + name + '"]';
-  if (!(await p.$(sel))) await p.click("#add-cats [data-more]");
-  await p.click(sel);
+  await p.click("#add-cat");
+  await p.fill("#add-cat", name);
+  await p.keyboard.press("Enter");
 }
 // The date's calendar: open it, step to the month, pick the day
 async function pickDate(p, iso) {
@@ -117,7 +118,7 @@ check(await page.getAttribute("#add-name", "aria-expanded") === "true" && await 
 check(await page.$$eval("#add-sugg [role=option]", (l) => l.length) >= 1, "options in a listbox");
 await page.keyboard.press("Enter");
 check(/^Mercadona/.test(await page.inputValue("#add-name")), "Enter picks the payee", await page.inputValue("#add-name"));
-check(await page.getAttribute('[data-ac="Groceries"]', "aria-checked") === "true", "payee fills its category");
+check(await page.inputValue("#add-cat") === "Groceries", "payee fills its category");
 check(await page.$eval("#add-name", (n) => n.placeholder) === "What was it for?", "the name is not optional");
 const whoPicked = await page.$eval("#add-who [aria-checked=true]", (n) => n.dataset.aw);
 check(!!whoPicked, "payee fills its person", whoPicked);
@@ -132,17 +133,28 @@ await toastText(page, /Undone/);
 check((await api(page, "GET", "/transactions/id/" + saved.id)).data.length === 0, "Undo removes what was just added");
 check(!(await core(page, (c, id) => c.state.tx.some((x) => x.id === id), saved.id)), "and from the browser's ledger");
 
-section("Keys: radio groups, focus trap, Escape");
+section("Keys: the category combobox, radio groups, focus trap, Escape");
 await open(page);
 await page.keyboard.type("4");
-const firstCat = await page.$eval('#add-cats [role="radio"][tabindex="0"]', (n) => n.dataset.ac);
-await page.focus('#add-cats [role="radio"][tabindex="0"]');
-await page.keyboard.press("ArrowRight");
-const nowCat = await page.$eval("#add-cats [aria-checked=true]", (n) => n.dataset.ac);
-check(nowCat && nowCat !== firstCat && (await focused(page)) === nowCat, "arrows choose within Category", [firstCat, nowCat]);
-check(await page.$$eval('#add-cats [role="radio"][tabindex="0"]', (l) => l.length) === 1, "Category is one Tab stop");
+await page.focus("#add-cat");
+check(await visible(page, "#add-catlist") && await page.getAttribute("#add-cat", "aria-expanded") === "true" && await page.getAttribute("#add-cat", "aria-activedescendant") === "add-co-0", "Category opens its list on focus");
+check(await page.$$eval("#add-catlist [role=option]", (l) => l.length) >= 5, "every category is offered");
+await page.keyboard.press("ArrowDown");
+const second = await text(page, "#add-co-1 b");
+await page.keyboard.press("Enter");
+check(await page.inputValue("#add-cat") === second && !(await visible(page, "#add-catlist")) && await focused(page) === "add-cat", "arrows and Enter pick a category", second);
+await page.keyboard.type("gro");
+check(await text(page, "#add-co-0 b") === "Groceries", "typing filters the list");
 await page.keyboard.press("Tab");
-check(!(await page.evaluate(() => document.activeElement.getAttribute("role") === "radio")), "Tab leaves the radio group");
+check(await page.inputValue("#add-cat") === "Groceries" && await focused(page) !== "add-cat", "Tab takes the match and moves on");
+await page.focus("#add-cat");
+await page.keyboard.type("Board games");
+check(/New category/.test(await text(page, "#add-catlist")), "a name that matches nothing is offered as a new category");
+await page.keyboard.press("Escape");
+check(await isOpen(page) && !(await visible(page, "#add-catlist")) && await page.inputValue("#add-cat") === "Groceries", "Escape closes the list and keeps the category");
+await page.keyboard.type("Board games");
+await page.keyboard.press("Enter");
+check(await page.inputValue("#add-cat") === "Board games", "Enter takes the new category");
 await page.focus('#add-who [role="radio"][tabindex="0"]');
 const w0 = await page.$eval("#add-who [aria-checked=true]", (n) => n.dataset.aw);
 await page.keyboard.press("ArrowRight");
@@ -193,7 +205,7 @@ check(await focused(page) === "add-name" && /Enter what it was for/.test(await t
 await page.fill("#add-name", "Errand");
 check(!(await visible(page, "#add-nerr")), "the error goes once a name is typed");
 await page.click("#add-go", { force: true });
-check(await page.evaluate(() => document.activeElement.getAttribute("role") === "radio" && document.activeElement.closest("#add-cats") !== null), "then to the category");
+check(await focused(page) === "add-cat", "then to the category");
 // a date in the future needs Repeat
 await pickCat(page, "Food");
 await page.click("#add-pickb");
@@ -343,7 +355,7 @@ saved = await clickSave(page);
 check(saved.date === addDays(TODAY, -40), "other date saved", saved.date);
 await toastText(page, /Added/);
 
-section("Add another");
+section("Add another (Shift+Cmd+Enter)");
 await open(page);
 await page.keyboard.type("2");
 await page.fill("#add-name", "Kiosk");
@@ -361,16 +373,6 @@ await pickCat(page, "Food");
 saved = await clickSave(page);
 check(saved.person_id === 2 && saved.date === addDays(TODAY, -1), "second one has the same person and date");
 await toastText(page, /Added/);
-// "Add another" button
-await open(page);
-await page.keyboard.type("1");
-await page.fill("#add-name", "Kiosk");
-await pickCat(page, "Food");
-const p1 = page.waitForResponse((r) => r.url().endsWith("/api/transactions") && r.request().method() === "POST");
-await page.click("#add-more");
-await p1;
-check(await isOpen(page), "Add another button keeps the sheet open");
-await page.click("[data-close]");
 
 section("Repeat");
 async function ruleSave(setup) {
@@ -468,7 +470,7 @@ check(await page.getAttribute("#add-rep", "aria-checked") === "true" && await vi
 await page.click("[data-close]");
 // "Make it a rule" from Recurring: everything prefilled
 await open(page, { repeat: true, name: "Power", amount: 61.5, category: "Utilities", person: null, date: addDays(TODAY, 5), type: "expense", freq: "monthly", every: 2, about: true });
-check(await page.inputValue("#add-name") === "Power" && await page.inputValue("#add-amt") === "61.50" && await page.getAttribute('[data-ac="Utilities"]', "aria-checked") === "true"
+check(await page.inputValue("#add-name") === "Power" && await page.inputValue("#add-amt") === "61.50" && await page.inputValue("#add-cat") === "Utilities"
   && await page.getAttribute('[data-aw="shared"]', "aria-checked") === "true" && await page.getAttribute('[data-fq="custom"]', "aria-pressed") === "true"
   && await page.inputValue("#add-every") === "2" && await page.inputValue("#add-unit") === "monthly", "prefill: name, amount, category, person, every 2 months");
 await clearToast(page);
@@ -488,7 +490,7 @@ const victim = (await core(page, (c, d) => c.state.tx.find((x) => x.type === "ex
 await open(page, { txId: victim.id });
 check(/Edit expense/.test(await text(page, "#add-title")) && /Editing · /.test(await text(page, "#add-editing")), "edit title and Editing pill");
 check(await page.inputValue("#add-name") === victim.n, "fields filled");
-check(!(await visible(page, "#add-more")) && await visible(page, "#add-del"), "edit shows Delete, not Add another");
+check(await visible(page, "#add-del"), "edit shows Delete");
 await page.fill("#add-amt", "77.70");
 check(/Save changes · /.test(await text(page, "#add-go")), "button: Save changes · amount");
 saved = await clickSave(page, /\/api\/transactions\/[0-9a-f-]+$/);
@@ -568,7 +570,9 @@ await open(page);
 await page.keyboard.type("86.40");
 await page.fill("#add-name", "Hypermarket");
 await pickCat(page, "Groceries");
-await page.click("[data-splitrx]");
+await page.click("#add-cat");
+check(/Split across categories/.test(await text(page, "#add-catlist [role=option]:last-child")), "Split is the last choice in the category list");
+await page.click("#add-catlist [role=option]:last-child");
 check(await visible(page, "#add-parts") && !(await visible(page, "#add-catrow")), "Split shows the parts");
 check(!(await visible(page, "#add-reprow")), "no Repeat on a split receipt");
 await page.fill('[data-pa="0"]', "61.20");
@@ -667,7 +671,7 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await p.waitForSelector("#add-form.w-addp");
   const sheet = await p.$eval("#add-form", (n) => n.getBoundingClientRect());
   check(sheet.height > 800 && sheet.bottom >= 843, "phone: full height from the bottom", sheet);
-  check(await visible(p, "#add-keypad") && await visible(p, "#add-name") && await visible(p, "#add-cats") && !(await visible(p, "#add-go")),
+  check(await visible(p, "#add-keypad") && await visible(p, "#add-name") && await visible(p, "#add-cat") && !(await visible(p, "#add-go")),
     "one page: the keypad in the main button’s place, with the name and categories above it");
   const pad = await p.$eval("#add-keypad", (n) => n.getBoundingClientRect());
   check(pad.bottom >= 843 && pad.top > 844 / 2, "the keypad sits at the bottom, in thumb reach", pad);
@@ -682,7 +686,9 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   check(await p.$eval("#add-amt", (i) => i.scrollWidth <= i.clientWidth), "phone: the whole amount shows");
   const keyH = await p.$eval('[data-k="5"]', (n) => n.getBoundingClientRect().height);
   check(keyH >= 44, "keys at least 44 px", keyH);
-  check(await p.$$eval("#add-form .w-chip", (l) => l.every((c) => c.closest("#add-cats, #add-who, #add-tags"))), "no chips but categories, people and tags: nothing that looks like a second category row");
+  check(await p.$$eval("#add-form .w-chip", (l) => l.every((c) => c.closest("#add-who, #add-tags"))), "no chips but people and tags");
+  const catH = await p.$eval("#add-cat", (n) => [n.getBoundingClientRect().height, parseFloat(getComputedStyle(n).fontSize)]);
+  check(catH[0] >= 44 && catH[1] >= 16, "phone: the category field is touch size, with text iOS won't zoom", catH);
   await shot(p, "phone-1");
   check(await text(p, "#add-knext") === "Next", "the keypad’s last key: Next, with no name yet");
   await p.tap("#add-knext");
@@ -742,7 +748,7 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await p.tap("#add-knext");
   const pickName = await p.$eval('[data-si="0"] b', (n) => n.textContent);
   await p.tap('[data-si="0"]');
-  check(await p.inputValue("#add-name") === pickName && await p.$("#add-cats [aria-checked=true]") && !(await visible(p, "#add-keypad")) && await focused(p) !== "add-name" && /Add expense · 7\.00/.test(await text(p, "#add-go")),
+  check(await p.inputValue("#add-name") === pickName && !!(await p.inputValue("#add-cat")) && !(await visible(p, "#add-keypad")) && await focused(p) !== "add-name" && /Add expense · 7\.00/.test(await text(p, "#add-go")),
     "a pick fills the payee and category, keeps the amount, and it is ready to add", pickName);
   await p.click('#add-form section:not([hidden]) [data-close]');
   if (await visible(p, "#dlg .w-dialog")) await p.click("#dlg [data-dlg-ok]");

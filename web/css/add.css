@@ -29,14 +29,33 @@ html.w-addopen{overflow:hidden}
 .w-add .w-bylbl{min-width:0}
 .w-add .w-switch[hidden]{display:none}
 .w-add #add-rep-l .w-link{margin-inline-start:4px;font-size:12.5px}
-.w-add .w-splitchip{color:var(--w-ink3);border-style:dashed}
-.w-add .w-splitchip:hover{color:var(--w-ink)}
 .w-add .w-dup{margin:-6px 0 0}
 
 /* The main button names what is missing; it stays clickable to take you there */
 .w-add .w-btn.primary[aria-disabled="true"]{background:var(--w-fill2);color:var(--w-ink2);box-shadow:none;filter:none;cursor:pointer}
 .w-add .w-btn.ghost[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
-.w-add .w-sheet-f .w-kbd{margin-right:0;margin-inline-end:auto}
+.w-add .w-sheet-f .w-submit{flex:1;min-width:0}
+
+/* Fewer outlines: who and when are segmented controls, categories soft chips; only a choice is drawn */
+.w-add .w-frow > :is(#add-who,#add-date){justify-self:start;gap:2px;padding:3px;border-radius:11px;background:var(--w-fill)}
+.w-add .w-frow > :is(#add-who,#add-date) .w-chip{border-color:transparent;background:none;border-radius:8px}
+.w-add .w-frow > :is(#add-who,#add-date) .w-chip.on{background:var(--w-knob);color:var(--w-ink);box-shadow:var(--w-knob-shadow)}
+
+/* Category: one field to pick from or type in; Split is the last choice in its list */
+.w-catbox{position:relative;width:100%;max-width:300px}
+.w-add .w-catbox input{width:100%;height:32px;padding-inline:34px 30px;font-weight:500;cursor:pointer}
+.w-add .w-catbox input:focus{cursor:text}
+.w-caticon{position:absolute;inset-inline-start:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none;color:var(--w-ink3)}
+.w-caticon svg.i{width:14px;height:14px}
+.w-catchev{position:absolute;inset-inline-end:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--w-ink3);pointer-events:none}
+.w-catlist{max-height:268px;overflow-y:auto;overscroll-behavior:contain}
+.w-catlist button{grid-template-columns:26px minmax(0,1fr) auto;padding:5px 8px}
+.w-catlist .w-ico{width:26px;height:26px;border-radius:7px}
+.w-catlist .w-ico svg.i{width:14px;height:14px}
+.w-catlist .w-conew{background:var(--w-fill);color:var(--w-ink2)}
+.w-coon{width:14px;height:14px;color:var(--w-accent-ink)}
+.w-catlist .w-cosplit{border-top:1px solid var(--w-line2);border-radius:0 0 8px 8px;margin-top:3px;padding-top:8px}
+.w-cosplit b{color:var(--w-ink2)}
 
 /* Shares between three or more people */
 .w-splitn{display:grid;gap:6px}
@@ -126,6 +145,15 @@ html.w-addopen{overflow:hidden}
   /* Each group with room around it, its label close to it */
   .w-addp #add-catrow,.w-addp #add-whorow{display:grid;gap:8px;margin-top:12px}
   .w-addp #add-catrow[hidden],.w-addp #add-whorow[hidden]{display:none}
+  /* the category field at touch size; 16px text keeps iOS from zooming in */
+  .w-addp .w-catbox{max-width:none}
+  .w-add.w-addp .w-catbox input{height:46px;font-size:16px;border-radius:12px;padding-inline:42px 36px}
+  .w-addp .w-caticon{inset-inline-start:14px}
+  .w-addp .w-caticon svg.i{width:18px;height:18px}
+  .w-addp .w-catchev{inset-inline-end:13px;width:16px;height:16px}
+  .w-addp .w-catlist{max-height:min(300px,40dvh)}
+  .w-addp .w-catlist button{min-height:46px}
+  .w-addp .w-catlist b{font-size:15px}
   .w-addp #add-cells{margin-top:12px}
   /* The keypad, while the amount is typed: in thumb reach, in the main button's place */
   .w-add.w-addp:not(.kp) .w-pkeys,.w-add.w-addp.kp .w-pfoot{display:none}

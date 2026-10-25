@@ -9,22 +9,23 @@ import { heroHtml, renderHero } from "./dashboard/hero.js";
 import { WIDGETS } from "./dashboard/widgets.js";
 import { phoneHeader, phoneHtml, renderPhone } from "./dashboard/phone.js";
 
-const ORDER = ["hero", "cats", "upcoming", "savings", "unusual", "flow", "cal", "people", "weekday", "subs", "trends", "recent", "payees"];
+const ORDER = ["status", "hero", "cats", "upcoming", "savings", "unusual", "flow", "cal", "people", "weekday", "subs", "trends", "recent", "payees"];
 /* Pairs side by side on wide screens; single keys take the full width */
 const ROWS = [["hero"], ["cats", "upcoming"], ["savings", "unusual"], ["flow"], ["cal", "people"], ["weekday", "subs"], ["trends"], ["recent", "payees"]];
-const DEFAULT = { hero: 1, cats: 1, upcoming: 1, savings: 1, unusual: 1, recent: 1 };
+const DEFAULT = { status: 1, hero: 1, cats: 1, upcoming: 1, savings: 1, unusual: 1, recent: 1 };
 const phoneMQ = matchMedia("(max-width: 767px)");
 
 let root = null, layoutKey = "", mounted = false;
 
 /* ---------- which widgets show ---------- */
-function available(k) { return k === "hero" || !WIDGETS[k].when || WIDGETS[k].when(); }
+/* The status line (On track, Watch, Over) sits on top of the lead panel; phones have none */
+function available(k) { return k === "status" ? !phoneMQ.matches : k === "hero" || !WIDGETS[k].when || WIDGETS[k].when(); }
 function shown(k) {
   if (!available(k)) return false;
   const w = state.prefs.widgets;
   return w && typeof w[k] === "boolean" ? w[k] : !!DEFAULT[k];
 }
-function widgetLabel(k) { return k === "hero" ? t("Status and spending") : WIDGETS[k].label(); }
+function widgetLabel(k) { return k === "status" ? t("Status") : k === "hero" ? t("Spent so far") : WIDGETS[k].label(); }
 function isDefault() { return ORDER.filter(available).every((k) => shown(k) === !!DEFAULT[k]); }
 function allShown() { return ORDER.filter(available).every(shown); }
 
@@ -51,7 +52,7 @@ function customizeHtml() {
   const n = ORDER.filter(available).length;
   return "<h6>" + t("Show on dashboard") + '</h6><div class="d-custlist">' + ORDER.filter(available).map((k) =>
     '<label><input type="checkbox" data-cw="' + k + '"' + (shown(k) ? " checked" : "") + ">" + esc(widgetLabel(k)) + "</label>").join("") + "</div>" +
-    '<button type="button" class="w-link d-custall" data-cust-all>' + (allShown() ? t("Back to the default six") : t("Show all {n} widgets", { n })) + "</button>";
+    '<button type="button" class="w-link d-custall" data-cust-all>' + (allShown() ? t("Back to the defaults") : t("Show all {n} widgets", { n })) + "</button>";
 }
 function desktopHtml() {
   return header() + ROWS.map((keys) => {
@@ -88,7 +89,7 @@ function renderHead(r) {
   document.getElementById("d-next").disabled = !canStep(1);
 }
 function applyVisibility() {
-  root.querySelectorAll("[data-w]").forEach((p) => { if (WIDGETS[p.dataset.w] || p.dataset.w === "hero") p.hidden = !shown(p.dataset.w); });
+  root.querySelectorAll("[data-w]").forEach((p) => { if (WIDGETS[p.dataset.w] || p.dataset.w === "hero" || p.dataset.w === "status") p.hidden = !shown(p.dataset.w); });
   root.querySelectorAll(".w-grid2").forEach((g) => {
     const vis = [...g.children].filter((c) => !c.hidden);
     g.hidden = !vis.length;
@@ -102,11 +103,11 @@ function render() {
   if (phoneMQ.matches) { renderPhone(r, shown); return; }
   applyVisibility();
   if (shown("hero")) renderHero(r);
-  ORDER.forEach((k) => { if (k !== "hero" && shown(k)) WIDGETS[k].render(r); });
+  ORDER.forEach((k) => { if (WIDGETS[k] && shown(k)) WIDGETS[k].render(r); });
 }
 function renderOne(k) {
   const r = rangeOf();
-  if (k === "hero") renderHero(r); else WIDGETS[k].render(r);
+  if (WIDGETS[k]) WIDGETS[k].render(r); else renderHero(r);
 }
 
 /* ---------- popovers: Customize and the menu ---------- */
@@ -146,7 +147,7 @@ function setWidget(k, on) {
   applyVisibility();
   if (on) renderOne(k);
   const all = root.querySelector("[data-cust-all]");
-  if (all) all.textContent = allShown() ? t("Back to the default six") : t("Show all {n} widgets", { n: ORDER.filter(available).length });
+  if (all) all.textContent = allShown() ? t("Back to the defaults") : t("Show all {n} widgets", { n: ORDER.filter(available).length });
 }
 function toggleAll() {
   const showAll = !allShown(), w = {};

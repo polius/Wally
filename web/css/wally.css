@@ -617,6 +617,8 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-dialog h5{font-size:16px;font-weight:600;letter-spacing:-.01em}
 .w-dialog p{font-size:13px;color:var(--w-ink2)}
 .w-dlgf{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+/* In a modal's footer, Cancel stands as tall as the main button beside it */
+:is(.w-dlgf,.w-sheet-f,.w-mrf) .w-btn{height:36px;font-size:13.5px;padding:0 14px}
 .w-btn.primary.dangerbtn{background:var(--w-bad)}
 .w-opts{display:grid;gap:6px}
 .w-opts label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:11px;border:1px solid var(--w-line);cursor:pointer}

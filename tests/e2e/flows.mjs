@@ -61,7 +61,8 @@ async function open(width, height) {
   await page.keyboard.type("100");
   await page.keyboard.press("Enter");
   await page.keyboard.type("Journey test");
-  await page.locator('#add-modal [role="radiogroup"] [role="radio"]').first().click().catch(() => {});
+  await page.click("#add-cat");
+  await page.keyboard.press("Enter");
   await page.keyboard.press(process.platform === "darwin" ? "Meta+Enter" : "Control+Enter");
   await page.waitForSelector("#add-modal", { state: "hidden" });
   await page.waitForTimeout(400);

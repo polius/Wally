@@ -12,7 +12,7 @@
 import {
   $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName, monthIn,
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
-  rerank, MOD, isMac,
+  rerank, MOD,
 } from "./core.js";
 import { toast, openDialog, trapFocus, hideTip, dialogOpen } from "./ui.js";
 import { refresh } from "./shell.js";
@@ -20,7 +20,7 @@ import { describe, nextOf } from "./sched.js";
 import * as C from "./add/calc.js";
 import * as Q from "./add/queue.js";
 import { FQ_LABELS, UNITS, fqOf, formRule, summaryHtml, nextHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
-import { isPhone, phoneHtml, typeSeg, splitInner, press, pickList, freqCells } from "./add/phone.js";
+import { isPhone, phoneHtml, typeSeg, splitInner, catBox, press, pickList, freqCells } from "./add/phone.js";
 import { calHtml, calKey, monthStep } from "./add/datepick.js";
 
 export { flushQueue } from "./add/queue.js";
@@ -39,7 +39,7 @@ function blank(type) {
     mode: "tx", type: type || "expense", amt: "", name: "", cat: null, who: null, sm: "even", pct: 50, custCents: null, custFor: 0, cust: {},
     by: null, date: "today", cal: null, calF: "", tags: [], tagDraft: "", note: "",
     rep: false, fq: "monthly", every: "3", unit: "weekly", end: "never", until: "", count: "12", about: false,
-    split: false, parts: [], showAll: false, sugg: [], hl: 0, touched: {}, edit: null, group: null, rule: null,
+    split: false, parts: [], sugg: [], hl: 0, catQ: null, copts: [], chl: 0, touched: {}, edit: null, group: null, rule: null,
     step: "main", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false,
   };
 }
@@ -175,7 +175,7 @@ function deskHtml() {
     '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
       '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
     '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
-    '<div class="w-frow" id="add-catrow"><span id="lbl-cat">' + t("Category") + '</span><div class="w-chips" id="add-cats" role="radiogroup" aria-labelledby="lbl-cat"></div></div>' +
+    '<div class="w-frow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
     '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
     '<p class="w-budget" id="add-budget" hidden></p>' +
     '<div class="w-frow" id="add-whorow"><span id="lbl-who"></span><div class="w-chips" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
@@ -200,9 +200,8 @@ function deskHtml() {
     "</div>" +
     '<p class="w-dup" id="add-dup" hidden></p>' +
     '<p class="w-err" id="add-serr" hidden role="alert"></p>' +
-    '<div class="w-sheet-f"><span class="w-kbd" id="add-keys"></span>' +
+    '<div class="w-sheet-f">' +
       '<button type="button" class="w-btn ghost danger" id="add-del" hidden>' + icon("trash") + t("Delete") + "</button>" +
-      '<button type="button" class="w-btn ghost" id="add-more" title="' + esc((isMac ? "⇧ ⌘ " : "Shift Ctrl ") + "Enter") + '">' + t("Add another") + "</button>" +
       '<button class="w-btn primary w-submit" type="submit" id="add-go"></button></div>';
 }
 
@@ -218,9 +217,8 @@ function pressed(box, attr, val) {
     x.setAttribute(x.getAttribute("role") === "radio" ? "aria-checked" : "aria-pressed", String(on));
   });
 }
-function chipStyle(col) { return "background:color-mix(in srgb," + col + " 16%,transparent);color:color-mix(in srgb," + col + " 80%,var(--w-ink));box-shadow:inset 0 0 0 1.5px " + col + ";border-color:transparent"; }
-function radioChip(attr, val, on, stop, inner, style) {
-  return '<button type="button" class="w-chip' + (on && !style ? " on" : "") + '" role="radio" data-' + attr + '="' + esc(val) + '" aria-checked="' + on + '" tabindex="' + (on || stop ? 0 : -1) + '"' + (style ? ' style="' + style + '"' : "") + ">" + inner + "</button>";
+function radioChip(attr, val, on, stop, inner) {
+  return '<button type="button" class="w-chip' + (on ? " on" : "") + '" role="radio" data-' + attr + '="' + esc(val) + '" aria-checked="' + on + '" tabindex="' + (on || stop ? 0 : -1) + '">' + inner + "</button>";
 }
 function catSvg(k) { return '<svg class="i" aria-hidden="true" style="color:' + cc(k) + '"><use href="#i-' + cat(k).i + '"/></svg>'; }
 
@@ -250,7 +248,7 @@ function render() {
 
   // category, or the parts of a split receipt
   show("add-catrow", !inc && !ad.split);
-  if (!inc && !ad.split) setHtml("add-cats", catsHtml());
+  if (!inc && !ad.split) renderCat();
   show("add-parts", ad.split);
   if (ad.split) renderParts();
   renderBudget();
@@ -303,16 +301,14 @@ function render() {
   const go = $("add-go");
   if (go) {
     go.setAttribute("aria-disabled", String(!ok || ad.busy));
-    go.textContent = ok ? (isEdit() ? t("Save changes · {amount}", { amount: f(a) }) : inc ? t("Add income · {amount}", { amount: f(a) }) : t("Add expense · {amount}", { amount: f(a) }))
+    const label = ok ? (isEdit() ? t("Save changes · {amount}", { amount: f(a) }) : inc ? t("Add income · {amount}", { amount: f(a) }) : t("Add expense · {amount}", { amount: f(a) }))
       : !a ? t("Enter an amount") : !named() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field");
+    // On a keyboard, the button carries its shortcut
+    setHtml("add-go", esc(label) + (ok && !phone ? "<kbd>" + MOD + " ↵</kbd>" : ""));
   }
-  show("add-more", !isEdit());
-  const more = $("add-more");
-  if (more) more.setAttribute("aria-disabled", String(!ok || ad.busy));
   const canDelete = !!(ad.edit || ad.group);
   show("add-del", canDelete);
   show("add-delcell", canDelete);
-  setHtml("add-keys", '<span><kbd>' + MOD + "</kbd><kbd>↵</kbd>" + (isEdit() ? t("save") : t("add")) + "</span>");
 
   if (phone) renderPhone(a);
 }
@@ -327,17 +323,6 @@ function sizeAmount() {
   i.style.width = "0";
   i.style.width = i.scrollWidth + 2 + "px";
   if (empty) i.value = "";
-}
-function catsHtml() {
-  const used = cache.cats, all = ad.showAll || layout === "phone";
-  let shown = all ? used : used.slice(0, 5);
-  if (ad.cat && !shown.includes(ad.cat)) shown = shown.concat([ad.cat]);
-  const anyOn = shown.includes(ad.cat);
-  let h = shown.map((k, i) => radioChip("ac", k, ad.cat === k, !anyOn && i === 0, catSvg(k) + esc(k), ad.cat === k ? chipStyle(cc(k)) : "")).join("");
-  if (!shown.length) h = '<input id="add-newcat" class="w-mini" autocomplete="off" placeholder="' + esc(t("Name a category, like Groceries")) + '" aria-label="' + esc(t("New category")) + '">';
-  if (!all && used.length > shown.length) h += '<button type="button" class="w-chip" data-more aria-label="' + esc(t("Show all categories")) + '">' + t("More") + "</button>";
-  if (shown.length && !ad.rule) h += '<button type="button" class="w-chip w-splitchip" data-splitrx aria-pressed="false" title="' + esc(t("Split a receipt across categories")) + '">' + icon("split") + t("Split") + "</button>";
-  return h;
 }
 function whoHtml() {
   const list = keys().map((k) => [k, av(k, "sm") + esc(pname(k)) + (k === state.me ? ' <span class="w-you">' + t("you") + "</span>" : "")]);
@@ -656,6 +641,68 @@ function pickSugg(i) {
   render();
   // Picked on a phone, it is ready to add: the keyboard goes, to show the button
   if (layout === "phone" && field) field.blur();
+}
+
+/* ---------- category on the desktop: a combobox; typing filters, or names a new one ---------- */
+function renderCat() {
+  setVal("add-cat", ad.cat || "");
+  const inp = $("add-cat");
+  if (inp) inp.placeholder = cache.cats.length ? t("Pick a category") : t("Name a category, like Groceries");
+  setHtml("add-caticon", ad.cat ? catSvg(ad.cat) : icon("tag"));
+}
+function catOpen() { const b = $("add-catlist"); return b && !b.hidden; }
+const SPLIT = "\u0000split"; // the list's last option: split a receipt across categories
+function openCat() {
+  ad.catQ = "";
+  ad.copts = cache.cats.slice();
+  if (ad.copts.length && !ad.rule) ad.copts.push(SPLIT);
+  ad.chl = Math.max(0, ad.copts.indexOf(ad.cat));
+  renderCatList();
+}
+function closeCat() {
+  const b = $("add-catlist"), i = $("add-cat");
+  ad.catQ = null;
+  if (b) b.hidden = true;
+  if (i) { i.setAttribute("aria-expanded", "false"); i.removeAttribute("aria-activedescendant"); i.value = ad.cat || ""; }
+}
+function filterCat(q) {
+  ad.catQ = q;
+  const k = q.trim().toLowerCase();
+  // Matches keep their usual order, those starting with what was typed first; a new name comes last
+  ad.copts = cache.cats.filter((c) => c.toLowerCase().includes(k)).sort((a, b) => (a.toLowerCase().indexOf(k) > 0) - (b.toLowerCase().indexOf(k) > 0));
+  if (k && !cache.cats.some((c) => c.toLowerCase() === k)) ad.copts.push(q.trim());
+  ad.chl = 0;
+  renderCatList();
+}
+function renderCatList() {
+  const box = $("add-catlist"), inp = $("add-cat");
+  if (!box || !inp) return;
+  if (!ad.copts.length) { box.hidden = true; inp.setAttribute("aria-expanded", "false"); inp.removeAttribute("aria-activedescendant"); return; }
+  box.innerHTML = ad.copts.map((c, i) => {
+    if (c === SPLIT) return '<button type="button" role="option" id="add-co-' + i + '" tabindex="-1" aria-selected="' + (i === ad.chl) + '" class="w-cosplit' + (i === ad.chl ? " hl" : "") + '" data-co="' + i + '">' +
+      '<span class="w-ico w-conew">' + icon("split") + "</span><span><b>" + t("Split across categories") + "</b></span><span></span></button>";
+    const known = cache.cats.includes(c);
+    return '<button type="button" role="option" id="add-co-' + i + '" tabindex="-1" aria-selected="' + (i === ad.chl) + '" class="' + (i === ad.chl ? "hl" : "") + '" data-co="' + i + '">' +
+      (known ? tile(c) + "<span><b>" + esc(c) + "</b></span>" : '<span class="w-ico w-conew">' + icon("plus") + "</span><span><b>" + esc(c) + "</b><small>" + t("New category") + "</small></span>") +
+      (c === ad.cat ? icon("check", "w-coon") : "<span></span>") + "</button>";
+  }).join("");
+  box.hidden = false;
+  inp.setAttribute("aria-expanded", "true");
+  inp.setAttribute("aria-activedescendant", "add-co-" + ad.chl);
+  const hl = $("add-co-" + ad.chl);
+  if (hl) hl.scrollIntoView({ block: "nearest" });
+}
+function pickCat(i) {
+  const c = ad.copts[i];
+  if (!c) return;
+  if (c === SPLIT) { closeCat(); toggleSplit(); return; }
+  ad.cat = c;
+  ad.touched.cat = 1;
+  closeCat();
+  render();
+  // Still in the field: what is typed next replaces it; on a phone the keyboard goes
+  const inp = $("add-cat");
+  if (inp && document.activeElement === inp) { if (layout === "phone") inp.blur(); else inp.select(); }
 }
 
 /* ---------- open and close ---------- */
@@ -1012,7 +1059,7 @@ function focusMissing() {
   if (layout === "phone" && ad.step === "repeat" && !(er && er.f === "rep")) goStep("main");
   if (!amount() || (er && er.f === "amt")) target = $("add-amt");
   if (!target && !named()) { ad.nameTried = true; render(); target = $("add-name"); }
-  if (!target && !ad.split && !ad.cat) target = box.querySelector('#add-cats [role="radio"]') || $("add-newcat");
+  if (!target && !ad.split && !ad.cat) target = $("add-cat");
   if (!target && er) {
     if (er.f === "parts") target = box.querySelector('#add-parts select[data-pc]:invalid, #add-parts [aria-invalid="true"]') || [...box.querySelectorAll("#add-parts [data-pc]")].find((s) => !s.value) || box.querySelector("#add-parts [data-pa]");
     else if (er.f === "cust") target = box.querySelector("[data-cust]");
@@ -1081,7 +1128,7 @@ function toggleSplit() {
     ad.cat = (ad.parts.find((p) => p.c) || {}).c || ad.cat;
     ad.parts = [];
     render();
-    const c = form().querySelector("[data-splitrx]");
+    const c = $("add-cat");
     if (c) c.focus();
   }
 }
@@ -1092,9 +1139,8 @@ function onClick(ev) {
   let x;
   if (at("[data-close]")) return requestClose();
   if ((x = at("[data-at]"))) return setType(x.dataset.at);
-  if (at("[data-more]")) { ad.showAll = true; render(); const rs = $("add-cats").querySelectorAll('[role="radio"]'); if (rs[5]) rs[5].focus(); return; }
-  if (at("[data-splitrx]") || at("[data-nosplit]")) return toggleSplit();
-  if ((x = at("[data-ac]"))) { ad.cat = x.dataset.ac; ad.touched.cat = 1; render(); refocus("add-cats", "data-ac", ad.cat); return; }
+  if (at("[data-nosplit]")) return toggleSplit();
+  if (at("#add-cat")) { if (!catOpen()) openCat(); return; }
   if ((x = at("[data-aw]"))) {
     ad.who = x.dataset.aw; ad.touched.who = 1; render(); refocus("add-who", "data-aw", ad.who); return;
   }
@@ -1133,7 +1179,6 @@ function onClick(ev) {
   if (at("[data-addpart]")) { ad.parts.push({ c: "", amt: "" }); render(); const s = form().querySelector('[data-pc="' + (ad.parts.length - 1) + '"]'); if (s) s.focus(); return; }
   if ((x = at("[data-rmpart]"))) { ad.parts.splice(+x.dataset.rmpart, 1); render(); const s = form().querySelector("[data-addpart]"); if (s) s.focus(); return; }
   if (at("#add-del")) return deleteCurrent();
-  if (at("#add-more")) return commit(true);
   if (at("[data-rule-edit]")) { const rr = state.rules.find((r) => r.id === ad.edit.rid); if (rr) switchTo({ rule: rr }); return; }
   if ((x = at("[data-k]"))) {
     const k = x.dataset.k;
@@ -1152,7 +1197,7 @@ function onInput(ev) {
   if (id === "add-name") { ad.name = n.value; ad.hl = n.value.trim() ? 0 : -1; applyMemory(); renderSugg(); render(); return; }
   if (id === "add-note") { ad.note = n.value; return; }
   if (id === "add-tag") { ad.tagDraft = n.value; if (n.value.includes(",")) { ad.tagDraft = n.value.replace(/,/g, ""); addTag(); } return; }
-  if (id === "add-newcat") { ad.cat = n.value.trim() || null; ad.touched.cat = 1; render(); return; }
+  if (id === "add-cat") { filterCat(n.value); return; }
   if (id === "add-split-r") { ad.sm = "custom"; ad.pct = +n.value; ad.custCents = null; render(); return; }
   if (id === "add-split-a") {
     const a = amount(), r = C.readAmount(n.value);
@@ -1197,18 +1242,27 @@ function onKey(ev) {
   if (ev.key === "Escape") {
     ev.preventDefault();
     if (suggOpen()) { closeSugg(); return; }
+    if (catOpen()) { closeCat(); n.select(); return; }
     if (ad.cal) { ad.cal = null; render(); calClosed(); return; }
     if (layout === "phone" && form().classList.contains("kp")) { keypad(false); return; }
     if (layout === "phone" && ad.step === "repeat") { goStep("main"); return; }
     requestClose();
     return;
   }
+  // Tab after typing takes the highlighted category, as Enter does
+  if (ev.key === "Tab" && id === "add-cat" && catOpen() && ad.catQ.trim()) pickCat(ad.chl);
   if (ev.key === "Tab") { trapFocus(form(), ev); return; }
   if (!wrap.contains(n)) return;
   if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); commit(ev.shiftKey); return; }
   if (id === "add-name" && suggOpen()) {
     if (ev.key === "ArrowDown") { ev.preventDefault(); ad.hl = Math.min(ad.sugg.length - 1, ad.hl + 1); renderSugg(); return; }
     if (ev.key === "ArrowUp") { ev.preventDefault(); ad.hl = Math.max(0, ad.hl - 1); renderSugg(); return; }
+  }
+  if (id === "add-cat" && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) {
+    ev.preventDefault();
+    if (!catOpen()) openCat();
+    else { ad.chl = (ad.chl + (ev.key === "ArrowDown" ? 1 : -1) + ad.copts.length) % ad.copts.length; renderCatList(); }
+    return;
   }
   if (id === "add-tag" && ev.key === "Backspace" && !n.value && ad.tags.length) { ad.tags.pop(); render(); return; }
   if (n.dataset && n.dataset.cd) {
@@ -1232,6 +1286,7 @@ function onKey(ev) {
       else { ad.nameTried = true; render(); }
       return;
     }
+    if (id === "add-cat") { ev.preventDefault(); if (catOpen()) pickCat(ad.chl); else if (layout === "phone") n.blur(); else commit(false); return; }
     if (id === "add-tag") { ev.preventDefault(); addTag(); return; }
     if (n.dataset && n.dataset.pa !== undefined) {
       ev.preventDefault();
@@ -1255,6 +1310,8 @@ function init() {
     if (ev.target === wrap) { ev.preventDefault(); requestClose(); return; }
     const s = ev.target.closest("[data-si]");
     if (s) { ev.preventDefault(); pickSugg(+s.dataset.si); }
+    const co = ev.target.closest("[data-co]");
+    if (co) { ev.preventDefault(); pickCat(+co.dataset.co); }
     // Keys leave the focus, and the caret, in the amount
     if (ev.target.closest("#add-keypad")) ev.preventDefault();
   });
@@ -1271,11 +1328,13 @@ function init() {
   wrap.addEventListener("focusin", (ev) => {
     const id = ev.target.id;
     if (id === "add-name") { if (!ad.name.trim()) ad.hl = -1; renderSugg(); }
+    if (id === "add-cat") { openCat(); ev.target.select(); }
     if (id === "add-amt") keypad(true);
     else if (/^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) keypad(false);
   });
   wrap.addEventListener("focusout", (ev) => {
     if (ev.target.id === "add-name") setTimeout(() => { if (document.activeElement !== $("add-name")) closeSugg(); }, 150);
+    if (ev.target.id === "add-cat") closeCat(); // left without picking: back to the category it had
     if (ev.target.id === "add-amt" && layout !== "phone") normalizeAmount();
     if (ev.target.id === "add-tag" && ad.tagDraft.trim()) addTag();
   });

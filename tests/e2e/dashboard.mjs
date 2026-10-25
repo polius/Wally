@@ -186,7 +186,11 @@ try {
   console.log("Customize");
   await page.click("#d-cust");
   ok(await page.locator("#d-custpop").isVisible() && (await page.getAttribute("#d-cust", "aria-expanded")) === "true", "Customize opens");
-  ok(await page.locator("#d-custpop [data-cw]").count() === 13, "13 widgets with two people");
+  ok(await page.locator("#d-custpop [data-cw]").count() === 14, "13 widgets and the status line with two people");
+  await page.uncheck('[data-cw="status"]');
+  ok(!(await page.locator("#h-status").isVisible()) && await visible("hero"), "status line hidden, the panel stays");
+  await page.check('[data-cw="status"]');
+  ok(await page.locator("#h-status").isVisible(), "status line back");
   await page.uncheck('[data-cw="unusual"]');
   ok(!(await visible("unusual")), "Unusual hidden");
   await page.check('[data-cw="flow"]');
@@ -201,7 +205,7 @@ try {
   for (const k of ["flow", "cal", "people", "weekday", "subs", "trends", "payees", "unusual"]) ok(await visible(k), k + " visible with Show all");
   await shot(page, "04-all");
   await page.click("[data-cust-all]");
-  ok(!(await visible("flow")) && await visible("unusual"), "Back to the default six");
+  ok(!(await visible("flow")) && await visible("unusual"), "Back to the defaults");
   await page.click("[data-cust-all]");
   await page.click("#d-title");
   ok(await page.locator("#d-custpop").isHidden(), "clicking outside closes Customize");
@@ -319,7 +323,7 @@ try {
   page = await open();
   ok(await page.locator("[data-settle]").count() === 0, "no settle up with one person");
   await page.click("#d-cust");
-  ok(await page.locator("#d-custpop [data-cw]").count() === 12 && await page.locator('[data-cw="people"]').count() === 0, "People widget not offered");
+  ok(await page.locator("#d-custpop [data-cw]").count() === 13 && await page.locator('[data-cw="people"]').count() === 0, "People widget not offered");
   await page.click("[data-cust-all]");
   ok(await page.locator('[data-w="people"]').count() === 0, "and not drawn with Show all");
   await shot(page, "08-one");

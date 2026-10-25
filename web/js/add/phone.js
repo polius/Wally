@@ -35,7 +35,7 @@ export function phoneHtml() {
       '<p class="w-err w-pcenter" id="add-aerr" hidden role="alert"></p>' +
       '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
       '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
-      '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + '</div><div class="w-chips w-pscroll" id="add-cats" role="radiogroup" aria-labelledby="lbl-cat"></div></div>' +
+      '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + "</div>" + catBox() + "</div>" +
       '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
       '<p class="w-budget" id="add-budget" hidden></p>' +
       '<div id="add-whorow"><div class="w-plabel" id="lbl-who"></div><div class="w-chips w-pscroll" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
@@ -72,6 +72,12 @@ export function phoneHtml() {
       '<p class="w-err" id="add-rerr" hidden role="alert"></p>' +
       '<div class="w-rsum" id="add-rsumw"><p id="add-rsum"></p><div class="w-next" id="add-next"></div></div>' +
     "</section>";
+}
+/* The category field, the same on both layouts: pick from its list, or type to filter or name a new one */
+export function catBox() {
+  return '<div class="w-catbox"><span class="w-caticon" id="add-caticon" aria-hidden="true"></span>' +
+    '<input id="add-cat" class="w-mini" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="add-catlist" aria-expanded="false" aria-labelledby="lbl-cat" enterkeyhint="done">' + icon("down", "w-catchev") +
+    '<div class="w-sugg w-catlist" id="add-catlist" hidden role="listbox" aria-labelledby="lbl-cat"></div></div>';
 }
 export function typeSeg() {
   return '<div class="w-seg sm" role="group" aria-label="' + esc(t("Type")) + '" id="add-type"><button type="button" data-at="expense" aria-pressed="true">' + t("Expense") + '</button><button type="button" data-at="income" aria-pressed="false">' + t("Income") + "</button></div>";

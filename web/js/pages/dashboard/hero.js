@@ -428,7 +428,7 @@ function showChart(on) { $("c-hero").hidden = !on; $("h-tview").hidden = on; if 
 export function heroHtml() {
   const pill = (v, l) => '<button type="button" data-hv="' + v + '" aria-pressed="false">' + l + "</button>";
   return '<section class="w-panel d-hero" data-w="hero" aria-label="' + esc(t("Status and spending")) + '">' +
-    '<div class="w-status" id="h-status"></div>' +
+    '<div data-w="status"><div class="w-status" id="h-status"></div></div>' +
     '<div class="w-hh" id="h-hh"><div><div class="w-eyebrow" id="h-eye"></div><div class="w-hnum"><span class="w-big" id="h-big"></span><span class="w-delta" id="h-delta"></span></div></div>' +
     '<div class="w-hright"><div class="w-hctl">' +
       '<div class="w-seg sm" id="h-view" role="group" aria-label="' + esc(t("Chart")) + '" hidden>' + pill("pace", t("Spent so far")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category")) + pill("lines", t("Category lines")) + "</div>" +
