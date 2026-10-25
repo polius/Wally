@@ -18,7 +18,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:13.5px;line-height
 /* ---------- app frame ---------- */
 .w-app{display:grid;grid-template-columns:212px minmax(0,1fr);min-height:calc(100dvh - var(--banner-h,0px));background:var(--w-canvas)}
 .w-app > .w-side{position:sticky;top:var(--banner-h,0px);height:calc(100vh - var(--banner-h,0px));height:calc(100dvh - var(--banner-h,0px));overflow-y:auto;overscroll-behavior:contain}
-.w-app > .w-main{width:100%;max-width:1232px;padding:22px 26px 40px;outline:0}
+.w-app > .w-main{width:100%;max-width:1480px;margin-inline:auto;padding:22px 26px 40px;outline:0}
 .w-brand{text-decoration:none}
 .w-side-foot{display:grid;gap:6px}
 .w-me{display:flex;align-items:center;gap:8px;color:var(--w-ink2)}

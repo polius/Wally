@@ -3,7 +3,9 @@
 .w-gate{position:fixed;inset:0;z-index:20;overflow-y:auto;overscroll-behavior:contain;background:var(--w-canvas);display:grid;place-items:center;padding:32px 16px;padding-top:calc(32px + env(safe-area-inset-top,0px))}
 .has-banner .w-gate{top:34px}
 .w-gate:not([hidden]){animation:w-fade 300ms var(--ease)}
-.w-gate .w-signcard{width:min(380px,100%)}
+/* Room between the mark, the heading and the form, and a form that is easy to hit */
+.w-gate .w-signcard{width:min(400px,100%);padding:44px 40px 40px;gap:24px}
+.w-gate .w-sihead p{margin-top:8px;font-size:14px}
 .w-gate .w-signcard.wide{width:min(460px,100%)}
 .w-gate .w-sihead h1{font-size:24px;font-weight:600;letter-spacing:-.03em;line-height:1.2;text-wrap:balance}
 .w-gate .w-sihead p{text-wrap:pretty}
@@ -12,7 +14,10 @@
 .w-gate .w-prof{padding:8px;border-radius:16px;min-width:88px;color:var(--w-ink)}
 .w-gate .w-prof:hover{background:var(--w-fill)}
 .w-gate .w-prof:focus-visible .w-av{box-shadow:0 0 0 3px var(--w-accent)}
-.w-siform{display:grid;gap:10px;width:100%}
+.w-siform{display:grid;gap:14px;width:100%;margin-top:4px}
+.w-gate .w-input input{height:46px;font-size:15px}
+.w-gate .w-eye{top:10px}
+.w-gate .w-signcard .w-submit{height:46px;font-size:14.5px}
 .w-siform .w-err{text-align:start;margin:0}
 .w-siform .w-input input[type="password"]{padding-inline-end:44px}
 .w-gate .w-eye{right:auto;inset-inline-end:8px}
@@ -39,13 +44,23 @@
 .w-gate .w-btn .i{width:15px;height:15px}
 
 /* First run and the upgrade */
-.w-gate .w-onb{width:min(640px,100%)}
-.w-gate .w-onbb h1{font-size:24px;font-weight:600;letter-spacing:-.03em;line-height:1.2}
-.w-gate .w-onbb{min-height:320px}
-.w-gate .w-onbb > .w-err{margin-top:8px}
-.w-gate .w-steps{flex-wrap:wrap}
+.w-gate .w-onb{width:min(660px,100%)}
+/* The steps: numbered, joined by a line that fills in as they are done */
+.w-gate .w-onbh{padding:20px 40px;gap:28px}
+.w-gate .w-steps{gap:12px;font-size:13.5px;min-width:0}
+.w-gate .w-steps li{gap:9px;white-space:nowrap}
+.w-gate .w-steps li + li::before{content:"";width:32px;height:2px;border-radius:1px;background:var(--w-line);margin-inline-end:3px}
+.w-gate .w-steps li.done + li::before{background:var(--w-accent)}
+.w-gate .w-steps span{width:26px;height:26px;font-size:12px;font-weight:600;flex:none}
+.w-gate .w-steps li.done{color:var(--w-ink2)}
 .w-gate .w-steps em{font-style:normal}
-.w-gate .w-steps span .i{width:12px;height:12px;stroke-width:2.4}
+.w-gate .w-steps span .i{width:13px;height:13px;stroke-width:2.4}
+.w-gate .w-onbb{min-height:320px;padding:36px 40px 20px;gap:14px}
+.w-gate .w-onbb h1{font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.2}
+.w-gate .w-onbp{font-size:14.5px;line-height:1.55;margin:-4px 0 10px}
+.w-gate .w-onbf{gap:18px}
+.w-gate .w-onbb .w-mini{height:38px;font-size:14px;border-radius:10px;padding:0 12px}
+.w-gate .w-onbb > .w-err{margin-top:8px}
 .w-onbskip{margin-inline-start:auto;font-size:13px;min-height:32px;padding:4px 8px;border-radius:8px}
 .w-gate .w-onbf label,.w-gate .w-onbrow{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:center;font-size:13px}
 .w-gate .w-onbrow > span:first-child{color:var(--w-ink3)}
@@ -62,7 +77,8 @@
 .w-choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .w-gate .w-choice{text-align:start;min-height:130px}
 .w-gate .w-choice .w-ico{background:var(--w-fill);color:var(--w-ink2)}
-.w-gate .w-onbfoot{gap:10px}
+.w-gate .w-onbfoot{gap:10px;padding:18px 40px;align-items:center}
+.w-gate .w-onbfoot .w-btn{height:42px;padding:0 22px;font-size:14px}
 .w-onbppl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .w-onbppl li{display:flex;align-items:center;gap:10px;font-weight:500}
 .w-onbppl .w-av{width:28px;height:28px;font-size:12px}
@@ -73,25 +89,26 @@
 /* Phone: the whole screen, no card */
 @media (max-width:767px){
   .w-gate{place-items:start stretch;padding:0;background:var(--w-canvas)}
-  .w-gate .w-signcard,.w-gate .w-signcard.wide{width:100%;max-width:none;min-height:100%;border:0;border-radius:0;box-shadow:none;background:transparent;padding:calc(64px + env(safe-area-inset-top,0px)) 20px calc(24px + env(safe-area-inset-bottom,0px));align-content:start}
-  .w-gate .w-signcard .w-submit{height:48px}
-  .w-gate .w-input input{height:48px;font-size:16px}
-  .w-gate .w-eye{top:11px}
+  .w-gate .w-signcard,.w-gate .w-signcard.wide{width:100%;max-width:none;min-height:100%;border:0;border-radius:0;box-shadow:none;background:transparent;padding:calc(80px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));align-content:start;gap:28px}
+  .w-gate .w-signcard .w-submit{height:52px;font-size:15.5px}
+  .w-gate .w-input input{height:52px;font-size:16px}
+  .w-gate .w-eye{top:13px}
   .w-gate .w-prof{min-width:96px;min-height:44px}
   .w-silink{min-height:44px}
   .w-gate .w-onb{width:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-rows:auto 1fr auto}
-  .w-gate .w-onbh{padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));gap:12px}
-  .w-gate .w-steps{gap:10px}
+  .w-gate .w-onbh{padding:14px 20px;padding-top:calc(14px + env(safe-area-inset-top,0px));gap:16px}
+  .w-gate .w-steps{gap:8px}
+  .w-gate .w-steps li + li::before{width:16px}
   .w-gate .w-steps li:not(.on) em{display:none}
-  .w-gate .w-onbb{padding:22px 18px 8px;min-height:0}
+  .w-gate .w-onbb{padding:28px 20px 12px;min-height:0}
   .w-gate .w-onbf label,.w-gate .w-onbrow{grid-template-columns:1fr;gap:6px}
-  .w-gate .w-onbf select.w-mini,.w-onbname .w-mini,.w-onbpw .w-mini{max-width:none;width:100%;height:44px;font-size:16px}
+  .w-gate .w-onbf select.w-mini,.w-onbname .w-mini,.w-onbpw .w-mini,.w-gate .w-onbb .w-mini{max-width:none;width:100%;height:44px;font-size:16px}
   .w-gate .w-onbname{width:100%}
   .w-gate .w-onbname .w-x{width:44px;height:44px;flex:none}
   .w-choices.two{grid-template-columns:1fr}
   .w-gate .w-choice{min-height:0}
-  .w-gate .w-onbfoot{position:sticky;bottom:0;background:var(--w-panel);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
-  .w-gate .w-onbfoot .w-btn{min-height:44px;padding:0 18px}
+  .w-gate .w-onbfoot{position:sticky;bottom:0;background:var(--w-panel);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px))}
+  .w-gate .w-onbfoot .w-btn{height:48px;padding:0 22px}
   .w-onbskip{min-height:44px}
   .w-codes code{font-size:15px}
   .w-gate .w-seg button{min-height:44px;padding:0 14px}

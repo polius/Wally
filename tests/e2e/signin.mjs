@@ -350,9 +350,20 @@ try {
     await page.press("#si-in", "Enter");
     await page.waitForSelector(".w-input.err");
     ok(true, "upgrade: a wrong household password is refused");
-    await page.fill("#si-in", "household");
+    // Forgot it, as in 1.x: a new household password in the file on the server
+    await page.click("#si-forgot");
+    await page.waitForSelector(".w-sifile");
+    ok((await gateText(page)).includes("new household password") && (await page.textContent(".w-sifile code")).endsWith("password.txt"), "upgrade: forgot writes a new household password to the server");
+    await shot(page, "upgrade-forgot");
+    const hline = readFileSync(join(v1.data, "password.txt"), "utf8").split("\n").find((l) => l.startsWith("Household password: "));
+    const household = hline.slice(20).trim();
+    await page.click("#si-back");
+    await page.waitForSelector("#si-forgot");
+    ok((await gateText(page)).includes("Enter the household password"), "upgrade: back on the household password");
+    await page.fill("#si-in", household);
     await page.press("#si-in", "Enter");
     await page.waitForSelector("[data-name]");
+    ok(true, "upgrade: the new household password signs in");
     ok((await gateText(page)).includes("Who uses Wally?"), "upgrade: asks who uses Wally");
     await page.fill('[data-name="0"]', "Alex");
     await page.click("#onb-add");
@@ -378,10 +389,21 @@ try {
     await page.click("#onb-next");
     await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Now sign in as yourself"));
     ok(true, "upgrade: then each person signs in as themselves");
+    // Back, all the way: nothing is lost, and the tags are applied only at the end
+    await page.click("#onb-back");
+    await page.waitForSelector("[data-tagfor]");
+    ok((await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value))).join() === "alex,ana", "upgrade: back on Tags, the picks are as they were left");
+    await page.click("#onb-back");
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Who uses Wally?"));
+    ok((await page.$$eval(".w-onbppl li > span:last-child", (l) => l.map((x) => x.textContent.trim()))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, and no Back on the first step");
+    await page.click("#onb-next");
+    await page.waitForSelector("[data-tagfor]");
+    await page.click("#onb-next");
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Now sign in as yourself"));
     await page.click("#onb-next");
     await page.waitForSelector("#gate .w-prof");
     await page.click("#gate .w-prof >> nth=0");
-    await page.fill("#si-in", "household");
+    await page.fill("#si-in", household);
     await page.press("#si-in", "Enter");
     await page.waitForSelector("#pw-new");
     ok(true, "upgrade: the household password is the first password, and must be changed");

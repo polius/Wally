@@ -15,6 +15,11 @@
 .rec-cal .w-rday.rec-none:hover{border-color:var(--w-line2)!important}
 .rec-cal .w-rday .v{line-height:1.25}
 .rec-nonew{padding:28px 10px}
+.rec-tipw{font-size:inherit;color:var(--w-ink3)}
+/* The day picked in the calendar */
+.rec-day{margin-top:8px}
+.rec-day .w-dayh{position:static;align-items:center;padding-block:8px 6px}
+.rec-day .w-rrow.rec-drow{grid-template-columns:32px minmax(0,1fr) auto}
 
 #rec-page{display:grid;gap:16px}
 /* Wally noticed: the buttons go under the text when the panel is narrow */

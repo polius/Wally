@@ -2,15 +2,19 @@
    Builds on .w-set, .w-setnav, .w-group, .w-gi, .w-glabel and friends from wally.css. */
 
 /* ---------- sidebar of panes (links, styled like the prototype's buttons) ---------- */
-.w-setnav{position:sticky;top:16px}
-.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
+.w-setnav{position:sticky;top:16px;gap:22px}
+.w-setnav .grp{gap:2px}
+.w-setnav .grp > span{padding:0 12px 6px;font-weight:500}
+.w-setnav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
 .w-setnav a:hover{color:var(--w-ink)}
 .w-setnav a[aria-current="page"]{background:var(--w-panel);color:var(--w-ink);box-shadow:0 0 0 1px var(--w-line)}
 .w-setnav a[aria-current="page"] svg{color:var(--w-accent)}
 .w-setnav a span{margin-inline-start:auto;font-size:12px;color:var(--w-ink3);font-weight:400}
 .w-setnav button span{margin-left:0;margin-inline-start:auto}
-.w-setver{font-size:11.5px;color:var(--w-ink3);padding:4px 10px 0}
-.w-set{margin-top:18px}
+.w-setver{font-size:11.5px;color:var(--w-ink3);padding:4px 12px 0}
+.w-set{margin-top:18px;grid-template-columns:224px minmax(0,1fr);gap:40px}
+/* Rows of settings read best at a measured width: the whole page sits centred instead of stretching */
+@media (min-width:1024px){.w-app > #main[data-page="settings"]{max-width:1232px}}
 .w-pane{outline:0;min-width:0}
 .w-pane > *{min-width:0}
 
@@ -136,7 +140,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-main > .w-setver{text-align:center;margin-top:20px}
 
 @media (max-width:1023px){
-  .w-set{grid-template-columns:180px minmax(0,1fr);gap:14px}
+  .w-set{grid-template-columns:190px minmax(0,1fr);gap:24px}
 }
 @media (max-width:767px){
   .w-pane{gap:18px}

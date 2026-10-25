@@ -485,11 +485,23 @@ def test_upgrade_from_v1(make_client, tmp_path):
     r = client.get("/recurring").json()[0]
     assert r["interval"] == 1 and r["last_run"] == TODAY and r["endDate"] == "2027-12-31"
 
+    # A forgotten household password: a new one in password.txt, which signs in once from the file
+    # and stays the household password
+    client.cookies.clear()
+    assert client.post("/login/recover", json={}).status_code == 200
+    name, new = (tmp_path / "password.txt").read_text().strip().split(": ")
+    assert name == "Household password"
+    assert client.post("/login", json={"password": new}).status_code == 200
+    assert not (tmp_path / "password.txt").exists()
+    assert client.post("/login", json={"password": "household"}).status_code == 401
+
     # People added later sign in with the household password, then choose their own
     alex = client.post("/people", json={"name": "Alex"}).json()["id"]
     client.cookies.clear()
-    r = client.post("/login", json={"person_id": alex, "password": "household"})
+    r = client.post("/login", json={"person_id": alex, "password": new})
     assert r.json()["must_change_password"] is True
+    # Once there are people, each one recovers their own
+    assert client.post("/login/recover", json={}).status_code == 400
 
     # Old API keys keep working
     assert client.get("/api-keys").json()[0]["prefix"] == ""

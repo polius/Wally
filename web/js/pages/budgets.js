@@ -136,7 +136,7 @@ function render() {
       : has ? budgetsHtml(compute(ui.y, ui.m)) : '<section class="w-panel">' + emptyBox("coin", t("No budgets yet"),
         t("Give each category an amount, and Wally shows what is left and how much you can spend each day. Fixed bills are only checked, and once-a-year costs fill up month by month."),
         '<button type="button" class="w-btn primary" data-edit>' + t("Set up budgets") + "</button>") + "</section>") +
-    (ui.loaded && !ui.error ? goalsHtml() : "");
+    (ui.loaded && !ui.error && !has ? goalsHtml() : "");
 }
 function emptyBox(ic, title, body, action) {
   return '<div class="w-empty bud-empty"><span class="w-empty-i">' + icon(ic) + "</span><b>" + title + "</b><p>" + body + "</p>" + (action || "") + "</div>";
@@ -147,7 +147,7 @@ function budgetsHtml(B) {
   const mi = B.mi;
   return summary(B) +
     '<div class="w-grid2 bud-grid"><div class="bud-col">' + flexHtml(B) + fixedHtml(B) + "</div>" +
-    '<div class="bud-col">' + yearlyHtml(B) +
+    '<div class="bud-col">' + yearlyHtml(B) + goalsHtml() +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("How it works") + '</h4></div></div><ul class="w-howto">' +
         "<li>" + t("<b>Fixed</b> bills are known in advance. Wally only checks they were paid.") + "</li>" +
         "<li>" + t("<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.") + "</li>" +

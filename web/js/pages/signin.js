@@ -79,11 +79,14 @@ function renderSignin() {
     return;
   }
   if (s === "forgot") {
-    paint(card(mark() + head(t("Check the server"), t("Wally wrote a one-time password for {name} to this file on the server:", { name })) +
+    // Before anyone has been added, it is the household password that was forgotten
+    paint(card(mark() + head(t("Check the server"), si.p ? t("Wally wrote a one-time password for {name} to this file on the server:", { name }) : t("Wally wrote a new household password to this file on the server:")) +
       '<div class="w-keybox w-sifile"><code>' + esc(si.forgotFile) + "</code></div>" +
-      '<p class="w-sip">' + t("Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.", { name }) + "</p>" +
+      '<p class="w-sip">' + (si.p
+        ? t("Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.", { name })
+        : t("Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.")) + "</p>" +
       '<button type="button" class="w-btn primary w-submit w-wide" id="si-back" data-autofocus>' + t("Back to sign in") + "</button>"));
-    root.querySelector("#si-back").addEventListener("click", () => go("pw"));
+    root.querySelector("#si-back").addEventListener("click", () => go(si.p ? "pw" : "household"));
     return;
   }
   const code = s === "code", household = s === "household", bad = !!si.err && !si.wait;
@@ -99,7 +102,7 @@ function renderSignin() {
     top = household ? mark() + head(t("Sign in"), t("Enter the household password")) : bigAv(si.p) + head(t("Hi, {name}", { name }), t("Enter your password"));
     field = (household ? "" : '<input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>') +
       '<div class="w-input' + (bad ? " err" : "") + '"><input type="password" id="si-in" placeholder="' + esc(t("Password")) + '" aria-label="' + esc(t("Password")) + '" aria-invalid="' + bad + '" aria-describedby="si-msg" autocomplete="current-password">' + eye("si-in") + "</div>";
-    links = household ? "" : '<div class="w-silinks">' + (state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
+    links = '<div class="w-silinks">' + (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
       '<button type="button" class="w-link w-silink" id="si-forgot">' + t("Forgot password?") + "</button></div>";
   }
   const msg = si.wait ? waitText() : si.err;
@@ -113,7 +116,7 @@ function renderSignin() {
     root.querySelector("#si-alt").addEventListener("click", () => { si.rec = !si.rec; go("code"); });
     // The code goes as soon as the sixth digit is typed or pasted
     if (!si.rec) input.addEventListener("input", () => { if (input.value.replace(/\D/g, "").length === 6) submitSignin(input.value); });
-  } else if (!household) {
+  } else {
     const not = root.querySelector("#si-not");
     if (not) not.addEventListener("click", () => go("who", null));
     root.querySelector("#si-forgot").addEventListener("click", forgot);
@@ -185,7 +188,7 @@ async function forgot() {
   const btn = root.querySelector("#si-forgot");
   busy(btn, true);
   try {
-    const r = await POST("/login/recover", { person_id: Number(si.p) });
+    const r = await POST("/login/recover", { person_id: si.p ? Number(si.p) : null });
     si.forgotFile = r.file || "password.txt";
     go("forgot");
   } catch (e) {
@@ -484,13 +487,13 @@ function renderUpgrade() {
         up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + '</select><small class="w-hint" id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></label>").join("") +
       '<p class="w-hint" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
       '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label></div>";
-    foot = '<button type="button" class="w-btn ghost" id="onb-skip2">' + t("Skip") + "</button>" + nextBtn(t("Continue"));
+    foot = backBtn() + nextBtn(t("Continue"));
   } else {
     body = '<h1 id="gate-h">' + t("Now sign in as yourself") + '</h1><p class="w-onbp">' + t("Each person signs in with the household password the first time, then chooses their own.") + "</p>" +
       '<ul class="w-onbppl">' + up.people.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span></li>").join("") + "</ul>";
-    foot = "<span></span>" + nextBtn(t("Sign in"));
+    foot = backBtn() + nextBtn(t("Sign in"));
   }
-  paint(onbFrame(steps, s, body, foot, false), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
+  paint(onbFrame(steps, s, body, foot, kind === "tags"), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
   wireNames(up.names, () => renderUpgrade());
   root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
     if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
@@ -500,8 +503,10 @@ function renderUpgrade() {
   if (kind === "tags") { markTaken(); if (!up.preview) previewTags(); }
   const rm = root.querySelector("#up-rm");
   if (rm) rm.addEventListener("change", () => { up.remove = rm.checked; });
-  const skip2 = root.querySelector("#onb-skip2");
-  if (skip2) skip2.addEventListener("click", () => { up.picks = {}; upgradeNext(); });
+  const skip = root.querySelector("#onb-skip"), back = root.querySelector("#onb-back");
+  if (skip) skip.addEventListener("click", () => { up.picks = {}; up.preview = null; upgradeNext(); });
+  // Back keeps everything as it was left: the people are already added, the tags are applied only at the end
+  if (back) back.addEventListener("click", () => { up.step--; renderUpgrade(); });
   const next = root.querySelector("#onb-next");
   next.addEventListener("click", async () => {
     busy(next, true);
@@ -520,16 +525,20 @@ function renderUpgrade() {
           }
         }
       } else if (kind === "tags") {
-        const tags = pickedTags();
-        if (Object.keys(tags).length) await POST("/people/from-tags", { tags, remove_tag: up.remove });
-        up.picks = {};
+        if (s === steps.length - 1) await applyTags();
       } else {
+        await applyTags();
         try { await POST("/logout"); } catch (e) { /* signed out anyway */ }
         return finish();
       }
       upgradeNext();
     } catch (e) { onbError(apiMessage(e)); busy(next, false); }
   });
+}
+async function applyTags() {
+  const tags = pickedTags();
+  if (Object.keys(tags).length) await POST("/people/from-tags", { tags, remove_tag: up.remove });
+  up.picks = {};
 }
 function upgradeNext() {
   up.step++;

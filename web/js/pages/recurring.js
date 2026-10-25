@@ -7,7 +7,7 @@ import {
   amt, tile, cc, av, pname, couple, icon, wkOff, dows, rerank, POST, DEL, fromRule, reloadRules, reloadLedger, savePrefs,
 } from "../core.js";
 import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, PER } from "../sched.js";
-import { hover, row, chart, el, txt, toast, errorToast, openDialog, seg, trapFocus } from "../ui.js";
+import { hover, hideTip, row, chart, el, txt, toast, errorToast, openDialog, seg, trapFocus } from "../ui.js";
 import { refresh, scopeChips } from "../shell.js";
 
 const RECENT = 548;          // a price change from the last 18 months is still news
@@ -17,7 +17,7 @@ const DETECT_MIN = 5;        // seen at least this many times
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 
-const ui = { tab: "all", sel: null, open: false, endedOpen: false, order: [] };
+const ui = { tab: "all", sel: null, open: false, endedOpen: false, order: [], day: null };
 let root = null;
 let H = new Map();           // history per rule, worked out once per render
 
@@ -103,6 +103,7 @@ export function mount(el, route) {
   const id = route.query.get("id");
   ui.sel = id || null;
   ui.open = !!id;
+  ui.day = null;
   root.innerHTML =
     '<header class="w-head rec-head"><div class="w-title"><h3>' + t("Recurring") + "</h3></div>" +
       seg("rec-tab", [["all", t("All")], ["expense", t("Bills")], ["income", t("Income")]], ui.tab, t("Show")) +
@@ -185,7 +186,7 @@ function render() {
     '<div class="w-grid2 rec-top">' +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Next five weeks") + '</h4><p id="rec-cal-sub"></p></div>' +
         '<div class="w-legend"><span><s class="rec-lg-today"></s>' + t("Today") + '</span><span><s class="rec-lg-in"></s>' + t("Money in") + "</span></div></div>" +
-        '<div class="w-rcal rec-cal" id="rec-cal"></div></section>' +
+        '<div class="w-rcal rec-cal" id="rec-cal"></div><div class="rec-day" id="rec-day" hidden></div></section>' +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Wally noticed") + "</h4><p>" + t("Price changes, and payees that look like they repeat") + '</p></div></div><div class="w-list" id="rec-notice">' +
         (noticed(rules) || '<div class="w-empty rec-nonew"><b>' + t("Nothing new") + "</b><p>" + t("No price changes or new patterns.") + "</p></div>") + "</div></section>" +
     "</div>" +
@@ -237,18 +238,34 @@ function calendar() {
     items.forEach((x) => { if (isIncome(x.r)) inn += ruleAmt(x.r); else out += ruleAmt(x.r); });
     const ics = items.slice(0, 3).map((x) => tile(x.r.c, 18)).join("") + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + "</span>" : "");
     const day = +d.slice(8) === 1 ? esc(dlab(d)) : +d.slice(8);
-    const cls = "w-rday" + (d < TODAY ? " past" : "") + (d === TODAY ? " t" : "") + (inn ? " in" : "");
+    const on = d === ui.day && items.length > 0;
+    const cls = "w-rday" + (d < TODAY ? " past" : "") + (d === TODAY ? " t" : "") + (inn ? " in" : "") + (on ? " sel" : "");
     const body = '<span class="d">' + day + '</span><span class="ics">' + ics + '</span><span class="v">' + (inn ? '<b class="pos">' + bdi("+" + esc(fkn(inn))) + "</b> " : "") + (out ? bdi(esc(fkn(out))) : "") + "</span>";
     if (!items.length) { cells += '<span class="' + cls + ' rec-none" aria-hidden="true">' + body + "</span>"; continue; }
-    const label = dlabL(d) + ": " + items.map((x) => x.r.n + " " + (isIncome(x.r) ? "+" : "") + f(ruleAmt(x.r))).join(", ");
-    cells += '<button type="button" class="' + cls + '" data-rd="' + d + '" aria-label="' + esc(label) + '">' + body + "</button>";
+    const label = dlabL(d) + ": " + items.map((x) => x.r.n + (couple() ? " (" + pname(x.r.p) + ")" : "") + " " + (isIncome(x.r) ? "+" : "") + f(ruleAmt(x.r))).join(", ");
+    cells += '<button type="button" class="' + cls + '" data-rd="' + d + '" aria-label="' + esc(label) + '" aria-pressed="' + on + '" aria-controls="rec-day">' + body + "</button>";
   }
   const box = root.querySelector("#rec-cal");
   box.innerHTML = cells;
-  box.querySelectorAll("[data-rd]").forEach((b) => {
+  // The picked day lists its items under the calendar, so only the others get a tooltip
+  box.querySelectorAll("[data-rd]:not(.sel)").forEach((b) => {
     const items = byDay[b.dataset.rd];
-    hover(b, () => "<b>" + esc(dlabL(b.dataset.rd)) + "</b>" + items.map((x) => row(esc(x.r.n), m(ruleAmt(x.r), isIncome(x.r) ? "+" : ""), cc(x.r.c))).join(""));
+    hover(b, () => "<b>" + esc(dlabL(b.dataset.rd)) + "</b>" + items.map((x) => row(esc(x.r.n) + (couple() ? '<small class="rec-tipw"> · ' + esc(pname(x.r.p)) + "</small>" : ""), m(ruleAmt(x.r), isIncome(x.r) ? "+" : ""), cc(x.r.c))).join(""));
   });
+  dayList(byDay[ui.day]);
+}
+/* The day picked in the calendar: what lands on it, each opening its rule */
+function dayList(items) {
+  const box = root.querySelector("#rec-day");
+  box.hidden = !items;
+  if (!items) { box.innerHTML = ""; return; }
+  box.innerHTML = '<div class="w-dayh">' + esc(dlabL(ui.day)) + '<button type="button" class="w-x" data-day-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
+    items.map(({ r }) => {
+      const inc = isIncome(r), who = couple() ? '<span class="rec-who">' + av(r.p, "sm") + esc(pname(r.p)) + "</span> · " : "";
+      return '<button type="button" class="w-rrow rec-drow' + (r.id === ui.sel ? " sel" : "") + '" data-sel="' + r.id + '">' + tile(r.c, 32) +
+        '<div class="rec-rn"><h6>' + esc(r.n) + '</h6><p><span class="rec-meta">' + who + esc(shortDesc(r)) + "</span></p></div>" +
+        '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + "</span></button>";
+    }).join("");
 }
 
 /* ---------- Wally noticed ---------- */
@@ -447,7 +464,7 @@ function closePanel() {
 function rememberFocus() {
   const a = document.activeElement;
   if (!root || !a || !root.contains(a)) return null;
-  for (const attr of ["data-act", "data-rid", "data-ended", "data-close"]) if (a.hasAttribute(attr)) return "[" + attr + (a.getAttribute(attr) ? '="' + a.getAttribute(attr) + '"' : "") + "]";
+  for (const attr of ["data-act", "data-rid", "data-rd", "data-ended", "data-close"]) if (a.hasAttribute(attr)) return "[" + attr + (a.getAttribute(attr) ? '="' + a.getAttribute(attr) + '"' : "") + "]";
   return null;
 }
 function restoreFocus(sel) { if (!sel) return; const n = root.querySelector(sel); if (n) n.focus({ preventScroll: true }); }
@@ -466,10 +483,17 @@ async function onClick(ev) {
   if ((b = g("#rec-tab button"))) { ui.tab = b.dataset.v; render(); return; }
   if (g("#rec-new") || g("[data-new]")) { openAddSheet({ repeat: true }); return; }
   if ((b = g("[data-rid]"))) { select(b.dataset.rid); return; }
-  if ((b = g("[data-sel]"))) { select(b.dataset.sel); return; }
-  if ((b = g("[data-rd]"))) {
-    const d = b.dataset.rd, first = occurrences(d, d).find((x) => ruleAmt(x.r) > 0 && keep(x.r));
-    if (first) select(first.r.id);
+  if ((b = g("[data-sel]"))) {
+    select(b.dataset.sel);
+    // Beside the list, the rule can be out of sight: bring it in
+    if (wide()) root.querySelector("#rec-insp").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    return;
+  }
+  if ((b = g("[data-rd]"))) { hideTip(); ui.day = ui.day === b.dataset.rd ? null : b.dataset.rd; render(); return; }
+  if (g("[data-day-close]")) {
+    const d = ui.day;
+    ui.day = null; render();
+    const c = root.querySelector('[data-rd="' + d + '"]'); if (c) c.focus();
     return;
   }
   if (g("[data-ended]")) { ui.endedOpen = !ui.endedOpen; render(); return; }

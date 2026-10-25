@@ -127,7 +127,14 @@ try {
   const netflix = byName("Netflix");
   const nxt = nextAfterToday(netflix);
   const cell = page.locator('.rec-cal [data-rd="' + nxt + '"]');
-  if (await cell.count()) { await cell.click(); ok((await text(page, "#rec-insp")).includes("Netflix"), "a calendar day selects its rule"); }
+  if (await cell.count()) {
+    await cell.click();
+    ok(await cell.getAttribute("aria-pressed") === "true" && (await text(page, "#rec-day")).includes("Netflix"), "a calendar day lists what lands on it");
+    await page.click('#rec-day [data-sel="' + netflix.id + '"]');
+    ok((await text(page, "#rec-insp")).includes("Netflix"), "an item of the day opens its rule");
+    await page.click("#rec-day [data-day-close]");
+    ok(await page.locator("#rec-day").isHidden() && await cell.getAttribute("aria-pressed") === "false", "the day list closes");
+  }
   await page.click('[data-sel="' + netflix.id + '"]');
   const insp = await text(page, "#rec-insp");
   ok(insp.includes("Every month on day 27"), "the panel describes the rule");

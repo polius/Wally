@@ -32,6 +32,9 @@ MIN_PASSWORD = 8
 def recovery_file() -> Path:
     return Path(os.getenv("WALLY_RECOVERY_FILE", "password.txt")).resolve()
 
+# The line in password.txt for the household password, asked for before anyone has been added
+HOUSEHOLD_LINE = "Household password"
+
 class Login(BaseModel):
     person_id: int | None = None
     password: str
@@ -41,7 +44,7 @@ class LoginCode(BaseModel):
     recovery_code: str = ""
 
 class Recover(BaseModel):
-    person_id: int
+    person_id: int | None = None
 
 @dataclass
 class Actor:
@@ -267,6 +270,10 @@ def login(
     if not ok and person:
         recovered = _use_recovery_password(person.name, login.password)
         ok = recovered
+    elif not ok and not people and _use_recovery_password(HOUSEHOLD_LINE, login.password):
+        # It becomes the household password: everyone added next signs in with it the first time
+        set_config(db, "LOGIN_PASSWORD", hash_password(login.password))
+        ok = True
 
     if not ok:
         left = record_failure(login.person_id)
@@ -379,15 +386,22 @@ def recover_password(
     body: Recover,
     db: Annotated[Session, Depends(get_session)],
 ):
-    """Write a one-time password for this person to password.txt on the server."""
-    person = db.get(Person, body.person_id)
-    if not person:
-        raise HTTPException(status_code=404, detail="This person does not exist.")
+    """Write a one-time password for this person to password.txt on the server, or, before anyone has
+    been added (just upgraded from 1.x), a new household password."""
+    if body.person_id is None:
+        if _people(db):
+            raise HTTPException(status_code=400, detail="Pick who is signing in.")
+        name = HOUSEHOLD_LINE
+    else:
+        person = db.get(Person, body.person_id)
+        if not person:
+            raise HTTPException(status_code=404, detail="This person does not exist.")
+        name = person.name
     chars = string.ascii_letters + string.digits
     password = "".join(secrets.choice(chars) for _ in range(12))
     path = recovery_file()
-    lines = [l for l in (path.read_text(encoding="utf-8").splitlines() if path.exists() else []) if not l.startswith(f"{person.name}: ")]
-    lines.append(f"{person.name}: {password}")
+    lines = [l for l in (path.read_text(encoding="utf-8").splitlines() if path.exists() else []) if not l.startswith(f"{name}: ")]
+    lines.append(f"{name}: {password}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return {"message": "Recovery password written.", "file": str(path)}
 

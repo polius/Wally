@@ -34,7 +34,7 @@
 .bud-gdel{display:flex}
 
 /* Savings goals */
-.bud-glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.bud-glist{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
 .bud-goal{display:grid;gap:10px;align-content:start;padding:14px 16px;border-radius:14px;background:var(--w-panel2);border:1px solid var(--w-line2)}
 .bud-gh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
 .bud-gi{background:var(--w-accent-soft);color:var(--w-accent-ink)}
