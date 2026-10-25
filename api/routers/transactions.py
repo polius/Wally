@@ -168,6 +168,32 @@ def get_transactions_by_range(
 ):
     return _between(db, *_month_bounds(from_year, from_month, to_year, to_month))
 
+# Kept from 1.x for API keys and scripts: this month and the months before it
+def _months_to_date(db: Session, months: int):
+    month = household_today(db).replace(day=1)
+    return _between(db, month - relativedelta(months=months - 1), month + relativedelta(months=1))
+
+@router.get("/transactions/past-3-months", response_model=list[TransactionPublic], deprecated=True)
+def past_3_months(db: Annotated[Session, Depends(get_session)]):
+    return _months_to_date(db, 3)
+
+@router.get("/transactions/past-6-months", response_model=list[TransactionPublic], deprecated=True)
+def past_6_months(db: Annotated[Session, Depends(get_session)]):
+    return _months_to_date(db, 6)
+
+@router.get("/transactions/past-12-months", response_model=list[TransactionPublic], deprecated=True)
+def past_12_months(db: Annotated[Session, Depends(get_session)]):
+    return _months_to_date(db, 12)
+
+@router.get("/transactions/year-to-date", response_model=list[TransactionPublic], deprecated=True)
+def year_to_date(db: Annotated[Session, Depends(get_session)]):
+    today = household_today(db)
+    return _between(db, date(today.year, 1, 1), today.replace(day=1) + relativedelta(months=1))
+
+@router.get("/transactions/to-date", response_model=list[TransactionPublic], deprecated=True)
+def to_date(db: Annotated[Session, Depends(get_session)]):
+    return _between(db, date.min, household_today(db).replace(day=1) + relativedelta(months=1))
+
 @router.get("/transactions/between", response_model=list[TransactionPublic])
 def get_transactions_between(
     db: Annotated[Session, Depends(get_session)],

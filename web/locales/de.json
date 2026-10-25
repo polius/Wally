@@ -14,6 +14,10 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>Variable</b> Kategorien bekommen einen Monatsbetrag. Die Markierung auf jedem Balken zeigt, wo die Ausgaben heute stehen sollten.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>Jährliche</b> Kosten wie Reisen bekommen einen Jahresbetrag, der sich Monat für Monat füllt.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>Übertragen</b> nimmt den Rest oder die Überschreitung in den nächsten Monat mit.",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "one": "Für den nächsten {n} Tag bleiben <b>{amount}</b>, nach {bills} für Rechnungen und <b>{saved}</b> fürs Sparen – weit über deinem üblichen Tempo.",
+  "other": "Für die nächsten {n} Tage bleiben <b>{amount}</b>, nach {bills} für Rechnungen und <b>{saved}</b> fürs Sparen – weit über deinem üblichen Tempo."
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "Ein Backup, das du früher heruntergeladen hast. Die aktuellen Daten werden vorher gesichert.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "Ein Kind, ein Mitbewohner, alle, die Kosten teilen. Jede Person bekommt ihre eigene Ansicht.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Ein Kind, ein Mitbewohner, alle, die Kosten teilen. Du legst ein erstes Passwort fest; bei der ersten Anmeldung wählt die Person ein eigenes.",
@@ -95,7 +99,6 @@
  "After": "Nach",
  "After the amount": "Nach dem Betrag",
  "After the same fix twice, Wally asks before creating anything": "Nach zweimal derselben Korrektur fragt Wally, bevor etwas angelegt wird",
- "Again": "Nochmal",
  "Against the {n} months before": "Gegenüber den {n} Monaten davor",
  "Against usual": "Gegenüber üblich",
  "Against {month}": "Gegenüber {month}",
@@ -213,7 +216,6 @@
  "Change": "Ändern",
  "Change category": "Kategorie ändern",
  "Change password": "Passwort ändern",
- "Change the amount, {amount}": "Betrag ändern, {amount}",
  "Change the rule": "Regel ändern",
  "Change who": "Person ändern",
  "Change your password": "Ändere dein Passwort",
@@ -393,6 +395,8 @@
  "Enter the 6-digit code it shows": "Gib den angezeigten 6-stelligen Code ein",
  "Enter the code first.": "Gib zuerst den Code ein.",
  "Enter the household password": "Haushaltspasswort eingeben",
+ "Enter what it was for": "Gib an, wofür es war",
+ "Enter where it is from": "Gib an, woher es kommt",
  "Enter your password": "Passwort eingeben",
  "Enter your password first.": "Gib zuerst dein Passwort ein.",
  "Entry deleted": "Eintrag gelöscht",
@@ -1304,10 +1308,10 @@
  "What is this key for?": "Wofür ist dieser Schlüssel?",
  "What it already added stays. Nothing is added after this day.": "Bereits Hinzugefügtes bleibt. Nach diesem Tag kommt nichts mehr dazu.",
  "What to do with {name}": "Was mit {name} passieren soll",
- "What was it for? Optional": "Wofür war es? Optional",
+ "What was it for?": "Wofür war es?",
  "What {column} holds": "Was {column} enthält",
  "When someone pays the other back, Settle up records it here.": "Wenn jemand dem anderen Geld zurückzahlt, erfasst Ausgleichen das hier.",
- "Where is it from? Optional": "Woher kommt es? Optional",
+ "Where is it from?": "Woher kommt es?",
  "Where it goes most": "Wohin das meiste geht",
  "Where it went": "Wohin es ging",
  "Where this range's income went": "Wohin die Einnahmen dieses Zeitraums gingen",
@@ -1734,6 +1738,10 @@
  "{n} transaction has #{tag}. It becomes {name}’s.": {
   "one": "{n} Transaktion hat #{tag}. Sie gehört dann {name}.",
   "other": "{n} Transaktionen haben #{tag}. Sie gehören dann {name}."
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "one": "{n} Transaktion hat mehrere dieser Tags und bleibt geteilt",
+  "other": "{n} Transaktionen haben mehrere dieser Tags und bleiben geteilt"
  },
  "{n} transaction of their own": {
   "one": "{n} eigene Transaktion",

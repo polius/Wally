@@ -97,7 +97,6 @@ export function renderSide() {
     '<div class="w-side-foot">' +
       (me ? '<div class="w-me">' + av(me, "sm") + '<span class="w-lbl">' + esc(pname(me)) + "</span>" + (state.people.length > 1 ? '<button type="button" class="w-so" data-switch>' + t("Switch") + "</button>" : "") + "</div>" : "") +
       (s.signin ? '<button type="button" class="w-so" data-signout>' + t("Sign out") + "</button>" : "") +
-      '<span class="w-ver">Wally ' + esc(s.version || "") + "</span>" +
     "</div>";
 }
 

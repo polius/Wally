@@ -25,7 +25,6 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:13.5px;line-height
 .w-me .w-so{margin-left:auto}
 .w-so{color:var(--w-ink3);font-size:12px;text-align:start;padding:2px 0;border-radius:6px}
 .w-so:hover{color:var(--w-ink)}
-.w-ver{color:var(--w-ink3);font-size:11px;opacity:.8}
 .w-scope-mini{display:none}
 .w-tabbar{display:none}
 .w-pchips{display:none}
@@ -35,7 +34,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:13.5px;line-height
 @media (max-width:1023px){
   .w-app{grid-template-columns:64px minmax(0,1fr)}
   .w-app > .w-side{padding:16px 8px;gap:14px;align-items:center}
-  .w-side .w-lbl,.w-side .w-brand-t,.w-side kbd,.w-side .w-scope,.w-side .w-ver{display:none}
+  .w-side .w-lbl,.w-side .w-brand-t,.w-side kbd,.w-side .w-scope{display:none}
   .w-side .w-brand{padding:4px}
   .w-side .w-addbtn{width:44px;height:44px;padding:0;border-radius:12px}
   .w-side .w-nav a{width:44px;height:44px;justify-content:center;padding:0}

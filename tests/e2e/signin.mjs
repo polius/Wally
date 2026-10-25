@@ -362,11 +362,19 @@ try {
     await page.waitForSelector("[data-tagfor]");
     ok((await gateText(page)).includes("Turn a tag into a person"), "upgrade: offers to turn a tag into a person");
     const ids = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.dataset.tagfor));
-    await page.selectOption(`[data-tagfor="${ids[1]}"]`, "ana");
-    await page.waitForFunction((id) => /\d+ transactions? becomes?/.test(document.getElementById("tagn-" + id).textContent), ids[1]);
-    const preview = await page.textContent("#tagn-" + ids[1]);
-    ok(preview.includes("become Ana’s") || preview.includes("becomes Ana’s"), "upgrade: preview counts the tag (" + preview + ")");
+    const picked = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value));
+    ok(picked.join() === "alex,ana", "upgrade: the tag with each person’s name is picked (" + picked + ")");
+    ok(await page.$eval(`[data-tagfor="${ids[0]}"] option[value="ana"]`, (o) => o.disabled), "upgrade: a tag picked for Ana is greyed out for Alex");
+    const counts = () => page.$$eval("[id^=tagn-]", (l) => l.map((e) => (e.hidden ? "" : e.textContent)).join(" / "));
+    await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
+    ok((await counts()) === "1 transaction becomes Alex’s / 3 transactions become Ana’s / 1 transaction has more than one of these tags and stays shared",
+      "upgrade: counted together, a transaction with both tags stays shared (" + (await counts()) + ")");
     await shot(page, "upgrade-tags");
+    await page.selectOption(`[data-tagfor="${ids[0]}"]`, "");
+    await page.waitForFunction(() => /4 transactions/.test(document.getElementById("gate").innerText));
+    ok((await counts()) === " / 4 transactions become Ana’s / ", "upgrade: without Alex’s tag, it becomes Ana’s (" + (await counts()) + ")");
+    await page.selectOption(`[data-tagfor="${ids[0]}"]`, "alex");
+    await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
     await page.click("#onb-next");
     await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Now sign in as yourself"));
     ok(true, "upgrade: then each person signs in as themselves");
@@ -382,7 +390,9 @@ try {
     await page.press("#pw-again", "Enter");
     ok(await appShown(page), "upgrade: then the app");
     const usage = await page.evaluate((ids) => Promise.all(ids.map((id) => fetch("/api/people/" + id + "/usage").then((r) => r.json()))), ids);
-    ok(usage[1].own === 3 && usage[0].own === 0, "upgrade: tagged transactions became Ana’s, the rest stay shared");
+    ok(usage[0].own === 1 && usage[1].own === 3, "upgrade: tagged transactions became theirs, the rest stay shared");
+    const dinner = await page.evaluate(() => fetch("/api/transactions").then((r) => r.json()).then((l) => l.find((x) => x.name === "Dinner")));
+    ok(dinner.person_id === null && dinner.tags.length === 0, "upgrade: tagged with both, it stays shared and loses the tags");
     noErrors(page, "upgrade");
     // Arabic, dark, on a phone: the sign-in screen mirrors
     await page.evaluate(() => fetch("/api/language/ar", { method: "PUT" }));

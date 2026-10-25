@@ -14,6 +14,10 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>लचीली</b> श्रेणियों को हर महीने एक राशि मिलती है। हर बार पर बना निशान बताता है कि आज तक कितना खर्च होना चाहिए।",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>साल में एक बार</b> होने वाले खर्च, जैसे यात्रा, को सालाना राशि मिलती है जो महीने-दर-महीने भरती है।",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>आगे ले जाएँ</b> से बची हुई राशि, या जितना ज़्यादा खर्च हुआ, अगले महीने में चला जाता है।",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "one": "{bills} के बिल और <b>{saved}</b> बचत के लिए रखने के बाद, अगले {n} दिन के लिए <b>{amount}</b> बचे हैं — आपकी सामान्य रफ़्तार से काफ़ी ज़्यादा।",
+  "other": "{bills} के बिल और <b>{saved}</b> बचत के लिए रखने के बाद, अगले {n} दिनों के लिए <b>{amount}</b> बचे हैं — आपकी सामान्य रफ़्तार से काफ़ी ज़्यादा।"
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "पहले डाउनलोड किया गया बैकअप। मौजूदा डेटा का पहले बैकअप लिया जाता है।",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। हर व्यक्ति को अपना अलग व्यू मिलता है।",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। आप पहला पासवर्ड सेट करें; पहली बार साइन इन करने पर वे अपना पासवर्ड चुनेंगे।",
@@ -95,7 +99,6 @@
  "After": "बाद में",
  "After the amount": "राशि के बाद",
  "After the same fix twice, Wally asks before creating anything": "एक ही सुधार दो बार करने पर, Wally कुछ भी बनाने से पहले पूछता है",
- "Again": "फिर से",
  "Against the {n} months before": "पिछले {n} महीनों की तुलना में",
  "Against usual": "आम तौर की तुलना में",
  "Against {month}": "{month} की तुलना में",
@@ -213,7 +216,6 @@
  "Change": "बदलें",
  "Change category": "श्रेणी बदलें",
  "Change password": "पासवर्ड बदलें",
- "Change the amount, {amount}": "राशि बदलें, {amount}",
  "Change the rule": "नियम बदलें",
  "Change who": "व्यक्ति बदलें",
  "Change your password": "अपना पासवर्ड बदलें",
@@ -393,6 +395,8 @@
  "Enter the 6-digit code it shows": "उसमें दिख रहा 6 अंकों का कोड डालें",
  "Enter the code first.": "पहले कोड डालें।",
  "Enter the household password": "घर का पासवर्ड डालें",
+ "Enter what it was for": "बताएँ कि यह किसलिए था",
+ "Enter where it is from": "बताएँ कि यह कहाँ से आया",
  "Enter your password": "अपना पासवर्ड डालें",
  "Enter your password first.": "पहले अपना पासवर्ड डालें।",
  "Entry deleted": "एंट्री हटाई गई",
@@ -1304,10 +1308,10 @@
  "What is this key for?": "यह कुंजी किसलिए है?",
  "What it already added stays. Nothing is added after this day.": "जो पहले से जुड़ चुका है, वह बना रहेगा। इस दिन के बाद कुछ नहीं जुड़ेगा।",
  "What to do with {name}": "{name} का क्या करें",
- "What was it for? Optional": "यह किसलिए था? वैकल्पिक",
+ "What was it for?": "यह किसलिए था?",
  "What {column} holds": "{column} में क्या है",
  "When someone pays the other back, Settle up records it here.": "जब कोई दूसरे को पैसे लौटाता है, तो «हिसाब चुकता करें» उसे यहाँ दर्ज करता है।",
- "Where is it from? Optional": "यह कहाँ से आया? वैकल्पिक",
+ "Where is it from?": "यह कहाँ से आया?",
  "Where it goes most": "सबसे ज़्यादा पैसा कहाँ जाता है",
  "Where it went": "पैसा कहाँ गया",
  "Where this range's income went": "इस अवधि की आय कहाँ गई",
@@ -1734,6 +1738,10 @@
  "{n} transaction has #{tag}. It becomes {name}’s.": {
   "one": "{n} लेन-देन पर #{tag} है। यह {name} का हो जाएगा।",
   "other": "{n} लेन-देन पर #{tag} है। ये {name} के हो जाएँगे।"
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "one": "{n} लेन-देन पर इनमें से एक से ज़्यादा टैग हैं, इसलिए यह साझा रहेगा",
+  "other": "{n} लेन-देन पर इनमें से एक से ज़्यादा टैग हैं, इसलिए ये साझा रहेंगे"
  },
  "{n} transaction of their own": {
   "one": "अपना {n} लेन-देन",

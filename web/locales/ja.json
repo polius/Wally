@@ -14,6 +14,9 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>変動</b>：カテゴリごとに月の金額を決めます。各バーの目盛りは、今日までに使っているはずの目安です。",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>年1回</b>：旅行などの費用は年の金額を決め、毎月少しずつ積み立てます。",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>繰り越し</b>：残った分や超えた分を翌月に回します。",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "other": "固定費{bills}と貯金<b>{saved}</b>を引いて、今後{n}日間で<b>{amount}</b>残っています。いつものペースを大きく上回る余裕です。"
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "以前ダウンロードしたバックアップです。現在のデータは先にバックアップされます。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "子ども、ルームメイトなど、費用を分け合う人です。メンバーごとに専用の画面があります。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "子ども、ルームメイトなど、費用を分け合う人です。初回のパスワードを設定すると、本人が最初のログイン時に自分のパスワードを決めます。",
@@ -93,7 +96,6 @@
  "After": "回数指定",
  "After the amount": "金額の後",
  "After the same fix twice, Wally asks before creating anything": "同じ修正を2回すると、作成する前にWallyが確認します",
- "Again": "いつもの",
  "Against the {n} months before": "直前{n}か月との比較",
  "Against usual": "いつもと比較",
  "Against {month}": "{month}と比較",
@@ -209,7 +211,6 @@
  "Change": "変更",
  "Change category": "カテゴリを変更",
  "Change password": "パスワードを変更",
- "Change the amount, {amount}": "金額を変更（{amount}）",
  "Change the rule": "ルールを変更",
  "Change who": "メンバーを変更",
  "Change your password": "パスワードを変更",
@@ -383,6 +384,8 @@
  "Enter the 6-digit code it shows": "表示される6桁のコードを入力してください",
  "Enter the code first.": "先にコードを入力してください。",
  "Enter the household password": "世帯のパスワードを入力してください",
+ "Enter what it was for": "何に使ったかを入力",
+ "Enter where it is from": "どこからの収入かを入力",
  "Enter your password": "パスワードを入力してください",
  "Enter your password first.": "先にパスワードを入力してください。",
  "Entry deleted": "記録を削除しました",
@@ -1261,10 +1264,10 @@
  "What is this key for?": "このキーの用途は？",
  "What it already added stays. Nothing is added after this day.": "すでに追加された分は残ります。この日以降は追加されません。",
  "What to do with {name}": "{name}の扱い",
- "What was it for? Optional": "何に使いましたか？（任意）",
+ "What was it for?": "何に使いましたか？",
  "What {column} holds": "{column}の内容",
  "When someone pays the other back, Settle up records it here.": "誰かが立て替え分を返すと、精算の記録がここに残ります。",
- "Where is it from? Optional": "どこからの収入ですか？（任意）",
+ "Where is it from?": "どこからの収入ですか？",
  "Where it goes most": "よく使う支払先",
  "Where it went": "お金の行き先",
  "Where this range's income went": "この期間の収入の行き先",
@@ -1646,6 +1649,9 @@
  },
  "{n} transaction has #{tag}. It becomes {name}’s.": {
   "other": "{n}件の取引に#{tag}が付いています。{name}のものになります。"
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "other": "{n}件の取引にはこれらのタグが複数付いているため、共有のままです"
  },
  "{n} transaction of their own": {
   "other": "本人の取引{n}件"

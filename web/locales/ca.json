@@ -14,6 +14,11 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "Les categories <b>flexibles</b> tenen un import mensual. La marca de cada barra indica on hauria de ser la despesa a dia d’avui.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "Les despeses <b>anuals</b>, com ara els viatges, tenen un import anual que s’omple mes a mes.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>Traspassa</b> passa al mes següent el que sobra, o el que t’has passat.",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "one": "Queden <b>{amount}</b> per al pròxim dia, després de {bills} en rebuts i <b>{saved}</b> reservats per a l’estalvi: molt per sobre del teu ritme habitual.",
+  "many": "Queden <b>{amount}</b> per als pròxims {n} dies, després de {bills} en rebuts i <b>{saved}</b> reservats per a l’estalvi: molt per sobre del teu ritme habitual.",
+  "other": "Queden <b>{amount}</b> per als pròxims {n} dies, després de {bills} en rebuts i <b>{saved}</b> reservats per a l’estalvi: molt per sobre del teu ritme habitual."
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "Una còpia que vas baixar abans. Primer es fa una còpia de les dades actuals.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "Un fill, un company de pis, qualsevol que comparteixi despeses. Cada persona té la seva pròpia vista.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Un fill, un company de pis, qualsevol que comparteixi despeses. Tu poses una contrasenya inicial i la persona tria la seva quan entra per primer cop.",
@@ -97,7 +102,6 @@
  "After": "Després de",
  "After the amount": "Darrere de l’import",
  "After the same fix twice, Wally asks before creating anything": "Després de la mateixa correcció dues vegades, Wally pregunta abans de crear res",
- "Again": "Una altra vegada",
  "Against the {n} months before": "Respecte als {n} mesos anteriors",
  "Against usual": "Respecte al que és habitual",
  "Against {month}": "Respecte a {month}",
@@ -217,7 +221,6 @@
  "Change": "Canvia",
  "Change category": "Canvia la categoria",
  "Change password": "Canvia la contrasenya",
- "Change the amount, {amount}": "Canvia l’import, {amount}",
  "Change the rule": "Canvia la regla",
  "Change who": "Canvia qui",
  "Change your password": "Canvia la teva contrasenya",
@@ -403,6 +406,8 @@
  "Enter the 6-digit code it shows": "Introdueix el codi de 6 xifres que mostra",
  "Enter the code first.": "Primer introdueix el codi.",
  "Enter the household password": "Introdueix la contrasenya de la llar",
+ "Enter what it was for": "Digues per a què era",
+ "Enter where it is from": "Digues d’on ve",
  "Enter your password": "Introdueix la teva contrasenya",
  "Enter your password first.": "Primer introdueix la teva contrasenya.",
  "Entry deleted": "Entrada eliminada",
@@ -1347,10 +1352,10 @@
  "What is this key for?": "Per a què és aquesta clau?",
  "What it already added stays. Nothing is added after this day.": "El que ja ha afegit es queda. No s’afegeix res després d’aquest dia.",
  "What to do with {name}": "Què fem amb {name}",
- "What was it for? Optional": "Per a què era? Opcional",
+ "What was it for?": "Per a què era?",
  "What {column} holds": "Què conté {column}",
  "When someone pays the other back, Settle up records it here.": "Quan algú torna els diners a un altre, Saldar comptes ho registra aquí.",
- "Where is it from? Optional": "D’on ve? Opcional",
+ "Where is it from?": "D’on ve?",
  "Where it goes most": "On se’n va més",
  "Where it went": "On ha anat",
  "Where this range's income went": "On han anat els ingressos d’aquest període",
@@ -1809,9 +1814,9 @@
   "other": "{n} transaccions"
  },
  "{n} transaction becomes {name}’s": {
-  "many": "{n} transaccions passen a ser de {name}",
-  "one": "{n} transacció passa a ser de {name}",
-  "other": "{n} transaccions passen a ser de {name}"
+  "one": "{n} transacció s’assigna a {name}",
+  "other": "{n} transaccions s’assignen a {name}",
+  "many": "{n} transaccions s’assignen a {name}"
  },
  "{n} transaction for {name}": {
   "many": "{n} transaccions per a {name}",
@@ -1819,9 +1824,14 @@
   "other": "{n} transaccions per a {name}"
  },
  "{n} transaction has #{tag}. It becomes {name}’s.": {
-  "many": "{n} transaccions tenen #{tag}. Passen a ser de {name}.",
-  "one": "{n} transacció té #{tag}. Passa a ser de {name}.",
-  "other": "{n} transaccions tenen #{tag}. Passen a ser de {name}."
+  "one": "{n} transacció té #{tag}. S’assigna a {name}.",
+  "other": "{n} transaccions tenen #{tag}. S’assignen a {name}.",
+  "many": "{n} transaccions tenen #{tag}. S’assignen a {name}."
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "one": "{n} transacció té més d’una d’aquestes etiquetes i continua compartida",
+  "other": "{n} transaccions tenen més d’una d’aquestes etiquetes i continuen compartides",
+  "many": "{n} transaccions tenen més d’una d’aquestes etiquetes i continuen compartides"
  },
  "{n} transaction of their own": {
   "many": "{n} transaccions pròpies",

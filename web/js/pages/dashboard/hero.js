@@ -263,15 +263,20 @@ export function renderStatus(r) {
       key = "watch";
       sent = t("No income recorded this month yet. Add it, or a repeating income, to see what is safe to spend.");
     } else {
-      key = s.per < 0 ? "over" : s.per < typ * 0.8 || bud ? "watch" : "ok";
+      // The pill is about the household's money as a whole; a budget running over is told, not flagged
+      key = s.per < 0 ? "over" : s.per < typ * 0.8 ? "watch" : "ok";
       if (key === "over") sent = t("Spending has run {amount} past what is left after bills and the {pct} savings target. The month will save less than planned.", { amount: "<b>" + f0(-s.free) + "</b>", pct: target });
       else if (!s.left) sent = t("The month ends today: <b>{amount}</b> is left after bills and <b>{saved}</b> kept for savings.", { amount: f0(s.free), saved: f0(s.target) });
+      // Far above the usual pace, a daily figure means nothing: say what is left
+      else if (typ > 0 && s.per > typ * 2)
+        sent = tn(s.left, "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.",
+          "<b>{amount}</b> is left for the next {n} days after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.", { amount: f0(s.free), bills: f0(s.bills), saved: f0(s.target) });
       else {
         sent = tn(s.left, "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills and <b>{saved}</b> kept for savings.",
           "You can spend <b>{amount} a day</b> for the next {n} days, after {bills} in bills and <b>{saved}</b> kept for savings.", { amount: f0(s.per), bills: f0(s.bills), saved: f0(s.target) });
         if (typ > 0) sent += " " + (s.per < typ * 0.8 ? t("That is less than your usual {amount} a day.", { amount: f0(typ) }) : t("Your usual is {amount} a day.", { amount: f0(typ) }));
       }
-      if (bud) sent = "<b>" + esc(bud.already ? t("{category} is already {amount} over budget.", { category: bud.c, amount: f0(bud.over) }) : t("{category} will run {amount} over at this pace.", { category: bud.c, amount: f0(bud.over) })) + "</b> " + sent;
+      if (bud) sent += " " + esc(bud.already ? t("{category} is already {amount} over budget.", { category: bud.c, amount: f0(bud.over) }) : t("{category} will run {amount} over at this pace.", { category: bud.c, amount: f0(bud.over) }));
     }
     const pill = { ok: t("On track"), watch: t("Watch"), over: t("Over") }[key];
     box.className = "w-status " + key;

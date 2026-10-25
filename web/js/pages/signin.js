@@ -461,7 +461,7 @@ async function openWally(choice) {
 }
 
 /* ---------- after the upgrade from 1.x: there is data, but no people yet ---------- */
-const up = { step: 0, names: [""], people: [], tags: [], picks: {}, remove: true };
+const up = { step: 0, names: [""], people: [], tags: [], picks: {}, preview: null, remove: true };
 
 function startPeople() { renderUpgrade(); }
 function upgradeSteps() {
@@ -481,7 +481,8 @@ function renderUpgrade() {
   } else if (kind === "tags") {
     body = '<h1 id="gate-h">' + t("Turn a tag into a person") + '</h1><p class="w-onbp">' + t("If you tagged transactions with someone’s name, they can become theirs. Everything else stays shared.") + "</p>" +
       '<div class="w-onbf">' + up.people.map((p) => '<label class="w-onbrow"><span class="w-onbwho">' + av(String(p.id)) + esc(p.name) + '</span><span class="w-onbtag"><select class="w-mini" data-tagfor="' + p.id + '"><option value="">' + t("No tag") + "</option>" +
-        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] && up.picks[p.id].tag === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + '</select><small class="w-hint" id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></label>").join("") +
+        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + '</select><small class="w-hint" id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></label>").join("") +
+      '<p class="w-hint" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
       '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label></div>";
     foot = '<button type="button" class="w-btn ghost" id="onb-skip2">' + t("Skip") + "</button>" + nextBtn(t("Continue"));
   } else {
@@ -491,7 +492,12 @@ function renderUpgrade() {
   }
   paint(onbFrame(steps, s, body, foot, false), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
   wireNames(up.names, () => renderUpgrade());
-  root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => previewTag(sel.dataset.tagfor, sel.value)));
+  root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
+    if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
+    markTaken();
+    previewTags();
+  }));
+  if (kind === "tags") { markTaken(); if (!up.preview) previewTags(); }
   const rm = root.querySelector("#up-rm");
   if (rm) rm.addEventListener("change", () => { up.remove = rm.checked; });
   const skip2 = root.querySelector("#onb-skip2");
@@ -507,12 +513,15 @@ function renderUpgrade() {
           if (!people) return busy(next, false);
           up.people = people;
           try { up.tags = await GET("/tags"); } catch (e) { up.tags = []; }
+          // A tag with someone's name is most likely theirs
+          for (const p of people) {
+            const tag = up.tags.find((g) => g.toLocaleLowerCase() === p.name.trim().toLocaleLowerCase());
+            if (tag) up.picks[p.id] = tag;
+          }
         }
       } else if (kind === "tags") {
-        for (const p of up.people) {
-          const pick = up.picks[p.id];
-          if (pick && pick.tag) await POST("/people/" + p.id + "/from-tag", { tag: pick.tag, remove_tag: up.remove });
-        }
+        const tags = pickedTags();
+        if (Object.keys(tags).length) await POST("/people/from-tags", { tags, remove_tag: up.remove });
         up.picks = {};
       } else {
         try { await POST("/logout"); } catch (e) { /* signed out anyway */ }
@@ -527,20 +536,40 @@ function upgradeNext() {
   if (up.step >= upgradeSteps().length) return finish();
   renderUpgrade();
 }
-function tagCountText(p) {
-  const pick = up.picks[p.id];
-  if (!pick || !pick.tag) return "";
-  if (pick.count === undefined) return t("Counting…");
-  return tn(pick.count, "{n} transaction becomes {name}’s", "{n} transactions become {name}’s", { name: esc(p.name) });
+function pickedTags() {
+  const tags = {};
+  for (const p of up.people) if (up.picks[p.id]) tags[up.picks[p.id]] = p.id;
+  return tags;
 }
-async function previewTag(id, tag) {
-  up.picks[id] = { tag };
-  const p = up.people.find((x) => String(x.id) === String(id)), out = root.querySelector("#tagn-" + id);
-  if (out) out.textContent = tagCountText(p);
-  if (!tag) return;
+// A tag goes to one person: it is greyed out for the others
+function markTaken() {
+  root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.querySelectorAll("option").forEach((o) => {
+    o.disabled = !!o.value && Object.entries(up.picks).some(([id, g]) => g === o.value && id !== sel.dataset.tagfor);
+  }));
+}
+function tagCountText(p) {
+  if (!up.picks[p.id]) return "";
+  if (!up.preview) return t("Counting…");
+  return tn(up.preview.counts[p.id] || 0, "{n} transaction becomes {name}’s", "{n} transactions become {name}’s", { name: esc(p.name) });
+}
+function sharedText() {
+  return up.preview && up.preview.shared ? tn(up.preview.shared, "{n} transaction has more than one of these tags and stays shared", "{n} transactions have more than one of these tags and stay shared") : "";
+}
+// Counted together, as they will be converted: a transaction with two people's tags stays shared
+let previewSeq = 0;
+async function previewTags() {
+  const seq = ++previewSeq, tags = pickedTags();
+  up.preview = null;
+  showCounts();
+  if (!Object.keys(tags).length) return;
   try {
-    const r = await GET("/people/from-tag/preview?tag=" + encodeURIComponent(tag));
-    if (up.picks[id] && up.picks[id].tag === tag) { up.picks[id].count = r.count; if (out) out.innerHTML = tagCountText(p); }
-  } catch (e) { if (out) out.textContent = e.message; }
+    const r = await POST("/people/from-tags/preview", { tags, remove_tag: up.remove });
+    if (seq === previewSeq) { up.preview = r; showCounts(); }
+  } catch (e) { if (seq === previewSeq) onbError(apiMessage(e)); }
+}
+function showCounts() {
+  for (const p of up.people) { const out = root.querySelector("#tagn-" + p.id); if (out) out.innerHTML = tagCountText(p); }
+  const shared = root.querySelector("#tagn-shared");
+  if (shared) { shared.textContent = sharedText(); shared.hidden = !shared.textContent; }
 }
 

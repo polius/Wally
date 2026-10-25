@@ -14,6 +14,9 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>弹性</b>分类每月设定一个金额。每条进度条上的刻度表示截至今天应花到的位置。",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>每年一次</b>的开销（如旅行）设定年度金额，按月逐步累积。",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>结转</b>会把剩余或超出的金额转入下个月。",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "other": "扣除 {bills} 账单并存下 <b>{saved}</b> 储蓄后，未来{n}天还剩 <b>{amount}</b>，远超你平时的花销节奏。"
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "之前下载的备份。当前数据会先备份。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "孩子、室友，任何分摊开销的人。每位成员都有自己的视图。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "孩子、室友，任何分摊开销的人。你设置初始密码，对方首次登录时再设置自己的密码。",
@@ -93,7 +96,6 @@
  "After": "重复",
  "After the amount": "金额之后",
  "After the same fix twice, Wally asks before creating anything": "同样的修改出现两次后，Wally 会先询问再创建规则",
- "Again": "再记一笔",
  "Against the {n} months before": "对比前{n}个月",
  "Against usual": "对比平常",
  "Against {month}": "对比{month}",
@@ -209,7 +211,6 @@
  "Change": "更改",
  "Change category": "更改分类",
  "Change password": "更改密码",
- "Change the amount, {amount}": "更改金额，{amount}",
  "Change the rule": "更改规则",
  "Change who": "更改成员",
  "Change your password": "更改你的密码",
@@ -383,6 +384,8 @@
  "Enter the 6-digit code it shows": "输入其显示的6位验证码",
  "Enter the code first.": "请先输入验证码。",
  "Enter the household password": "输入家庭密码",
+ "Enter what it was for": "填写用途",
+ "Enter where it is from": "填写来源",
  "Enter your password": "输入你的密码",
  "Enter your password first.": "请先输入你的密码。",
  "Entry deleted": "记录已删除",
@@ -1261,10 +1264,10 @@
  "What is this key for?": "此密钥的用途是什么？",
  "What it already added stays. Nothing is added after this day.": "已添加的会保留。此日之后不再添加。",
  "What to do with {name}": "如何处理{name}",
- "What was it for? Optional": "用途是什么？（可选）",
+ "What was it for?": "用途是什么？",
  "What {column} holds": "{column}包含的内容",
  "When someone pays the other back, Settle up records it here.": "有人还钱时，结算会在这里记录。",
- "Where is it from? Optional": "来源是什么？（可选）",
+ "Where is it from?": "来源是什么？",
  "Where it goes most": "钱花在哪最多",
  "Where it went": "钱花在了哪里",
  "Where this range's income went": "此范围内的收入去向",
@@ -1646,6 +1649,9 @@
  },
  "{n} transaction has #{tag}. It becomes {name}’s.": {
   "other": "{n}笔交易带有 #{tag}，将归{name}所有。"
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "other": "{n}笔交易带有其中多个标签，仍为共同支出"
  },
  "{n} transaction of their own": {
   "other": "{n}笔个人交易"

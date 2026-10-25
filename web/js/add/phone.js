@@ -1,7 +1,8 @@
-/* The add sheet on a phone: three steps. A keypad with + and − and one-tap "Again" payees, then the
-   details, then Repeat as its own sheet with checkmarks. The main button always shows the amount
-   and sits in thumb reach. The pieces shared with the desktop sheet keep the same ids. */
-import { t, esc, icon, f0, decSep, symbol, state, cc, cat, TODAY, addD } from "../core.js";
+/* The add sheet on a phone: everything on one page, and Repeat as its own sheet. The amount is typed on a
+   keypad with + and −, open only while the amount is typed; under it, what it was for, which suggests the
+   payees that amount most likely is; then the details. The main button always shows the amount and sits
+   in thumb reach. The pieces shared with the desktop sheet keep the same ids. */
+import { t, esc, icon, decSep, symbol, state, TODAY, span } from "../core.js";
 import { FQ_LABELS, UNITS } from "./repeat.js";
 
 export const isPhone = () => matchMedia("(max-width: 767px)").matches;
@@ -17,31 +18,23 @@ const CK = '<b class="ck" aria-hidden="true"><svg class="i"><use href="#i-check"
 const KEYS = () => ["1", "2", "3", "+", "4", "5", "6", "−", "7", "8", "9", "back", decSep(), "0", "00", "next"];
 function keyHtml(k) {
   if (k === "back") return '<button type="button" class="op" data-k="back" aria-label="' + esc(t("Delete last digit")) + '">' + icon("back") + "</button>";
-  if (k === "next") return '<button type="button" class="go" data-k="next">' + t("Next") + "</button>";
+  if (k === "next") return '<button type="button" class="go" data-k="next" id="add-knext">' + t("Next") + "</button>";
   const op = k === "+" || k === "−";
   return '<button type="button"' + (op ? ' class="op"' : "") + ' data-k="' + esc(k) + '"' + (op ? ' aria-label="' + esc(k === "+" ? t("Plus") : t("Minus")) + '"' : "") + ">" + esc(k) + "</button>";
 }
 
-/* The whole phone sheet; each step is a section, one shown at a time */
+/* The whole phone sheet: the page, and Repeat over it */
 export function phoneHtml() {
   return '<h2 class="vh" id="add-title"></h2>' +
-    /* step 1: the amount */
-    '<section class="w-pstep" data-pstep="amt">' +
+    '<section class="w-pstep" data-pstep="main">' +
       '<div class="w-grab" aria-hidden="true"></div>' +
       '<div class="w-mh"><button type="button" class="w-plink" data-close>' + t("Cancel") + "</button>" + typeSeg() + "</div>" +
       '<span class="w-pill w-peditp" id="add-editing" hidden></span>' +
       '<div class="w-pamt" id="add-amtrow">' + amountField() + '</div>' +
       '<p class="w-pcalc" id="add-calc" aria-live="polite"></p>' +
       '<p class="w-err w-pcenter" id="add-aerr" hidden role="alert"></p>' +
-      '<div class="w-plabel" id="add-againl">' + t("Again") + "</div>" +
-      '<div class="w-chips w-pscroll" id="add-again" role="group" aria-labelledby="add-againl"></div>' +
-      '<div class="w-keys k4 w-pkeys" id="add-keypad" role="group" aria-label="' + esc(t("Keypad")) + '">' + KEYS().map(keyHtml).join("") + "</div>" +
-    "</section>" +
-    /* step 2: the details */
-    '<section class="w-pstep" data-pstep="details">' +
-      '<div class="w-grab" aria-hidden="true"></div>' +
-      '<div class="w-mh"><button type="button" class="w-plink" data-step="amt" id="add-pback"></button><b class="w-ptitle" id="add-ptitle"></b><button type="button" class="w-x" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-      '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
+      '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
+      '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
       '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + '</div><div class="w-chips w-pscroll" id="add-cats" role="radiogroup" aria-labelledby="lbl-cat"></div></div>' +
       '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
       '<p class="w-budget" id="add-budget" hidden></p>' +
@@ -50,7 +43,8 @@ export function phoneHtml() {
       '<div class="w-cells" id="add-cells">' +
         '<label class="w-cell" id="add-bycell"><span>' + t("Paid by") + '</span><select id="add-bysel" class="w-cellsel"></select></label>' +
         '<div class="w-cell" id="add-eachcell"><span>' + t("Each pays") + '</span><b id="add-each"></b></div>' +
-        '<label class="w-cell w-pdate"><span id="lbl-date"></span><b id="add-datev"></b><input type="date" id="add-pick" aria-labelledby="lbl-date add-datev"></label>' +
+        '<button type="button" class="w-cell w-pdate" id="add-datecell" aria-expanded="false" aria-controls="add-cal"><span id="lbl-date"></span><b id="add-datev"></b></button>' +
+        '<div class="w-dcal w-pdcal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
         '<p class="w-err w-pcell" id="add-derr" hidden role="alert"></p>' +
         '<button type="button" class="w-cell" id="add-repcell" data-step="repeat"><span>' + t("Repeat") + '</span><b class="acc" id="add-repv"></b></button>' +
         '<div class="w-cell w-pnote" id="add-reprule" hidden><span id="add-rep-l"></span></div>' +
@@ -61,11 +55,13 @@ export function phoneHtml() {
       '<p class="w-err" id="add-serr" hidden role="alert"></p>' +
       '<div class="w-pfoot"><button class="w-btn primary w-submit" type="submit" id="add-go"></button>' +
         '<div class="w-cells" id="add-delcell" hidden><button type="button" class="w-cell w-pdel" id="add-del">' + t("Delete") + "</button></div></div>" +
+      // In the main button's place while the amount is typed
+      '<div class="w-keys k4 w-pkeys" id="add-keypad" role="group" aria-label="' + esc(t("Keypad")) + '">' + KEYS().map(keyHtml).join("") + "</div>" +
     "</section>" +
-    /* step 3: Repeat */
+    /* Repeat */
     '<section class="w-pstep" data-pstep="repeat">' +
       '<div class="w-grab" aria-hidden="true"></div>' +
-      '<div class="w-mh"><button type="button" class="w-plink" data-step="details">' + icon("left") + t("Back") + '</button><b class="w-ptitle">' + t("Repeat") + '</b><button type="button" class="w-plink w-pdone" data-step="details">' + t("Done") + "</button></div>" +
+      '<div class="w-mh"><button type="button" class="w-plink" data-step="main">' + icon("left") + t("Back") + '</button><b class="w-ptitle">' + t("Repeat") + '</b><button type="button" class="w-plink w-pdone" data-step="main">' + t("Done") + "</button></div>" +
       '<div class="w-cells" id="add-pfreq" role="radiogroup" aria-label="' + esc(t("How often")) + '"></div>' +
       '<div class="w-cells w-pcustom" id="add-custom" hidden><div class="w-cell"><span>' + t("Every") + '</span><span class="w-inline"><input id="add-every" type="number" min="1" max="99" inputmode="numeric" class="w-mini w-num" aria-label="' + esc(t("Interval")) + '"><select id="add-unit" class="w-mini" aria-label="' + esc(t("Unit")) + '">' + UNITS().map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select></span></div></div>" +
       '<div id="add-pends"><div class="w-plabel" id="lbl-ends">' + t("Ends") + '</div><div class="w-cells" id="add-end" role="radiogroup" aria-labelledby="lbl-ends">' +
@@ -112,20 +108,17 @@ export function press(value, key) {
   return v + key;
 }
 
-/* Payees added at least three times in the last two weeks, for one tap */
-export function againList(payees, type) {
-  const since = addD(TODAY, -14);
-  let list = payees.filter((x) => x.type === type && x.last >= since && x.k >= 3).sort((a, b) => b.k - a.k);
-  if (list.length < 3) {
-    const more = payees.filter((x) => x.type === type && x.last >= addD(TODAY, -90) && !list.includes(x)).sort((a, b) => b.k - a.k);
-    list = list.concat(more);
-  }
-  return list.slice(0, 3);
-}
-export function againHtml(list) {
-  return list.map((x, i) => '<button type="button" class="w-chip" data-again="' + i + '">' +
-    '<svg class="i" aria-hidden="true" style="color:' + cc(x.c) + '"><use href="#i-' + cat(x.c).i + '"/></svg>' + esc(x.n) +
-    ' <span class="w-again-a">' + esc(f0(x.avg)) + "</span></button>").join("");
+/* Payees to suggest before a name is typed. The amount just typed says the most (2,40 is the café, 64 the
+   supermarket), then how often and how lately the payee was used */
+export function pickList(payees, type, amount) {
+  // How often and how lately, times how likely this amount is there: a payee whose amounts vary
+  // a lot (a supermarket) makes any one amount less likely than one that always costs about that
+  const score = (x) => {
+    const z = (Math.log(amount) - x.lmed) / x.lspread;
+    return x.k90 / (1 + (span(x.last, TODAY) - 1) / 30) * (amount > 0 ? 1 / (x.lspread * (1 + z * z)) : 1);
+  };
+  return payees.filter((x) => x.type === type && x.k90 > 0)
+    .map((x) => [x, score(x)]).sort((a, b) => b[1] - a[1]).slice(0, 4).map((e) => e[0]);
 }
 /* Repeat as checkmark cells: Never, Daily … Custom › */
 export function freqCells(ad, canStop) {

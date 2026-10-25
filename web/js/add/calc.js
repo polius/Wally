@@ -1,6 +1,6 @@
 /* The add sheet's arithmetic and memory: shares in cents, income weights, payees seen before,
    category use and what a budget has left. Nothing here touches the page. */
-import { state, totals, TODAY, ds, ym, ymAdd, dim, evalAmt as coreEval, catIcon, isIncomeCat } from "../core.js";
+import { state, totals, TODAY, ds, ym, ymAdd, dim, addD, evalAmt as coreEval, catIcon, isIncomeCat } from "../core.js";
 
 /* What was typed in the amount field: {v, expr, ok}. v is in euros, rounded to cents.
    ok is false for anything that is not numbers, + and −. */
@@ -83,25 +83,32 @@ export function sameShares(a, b) {
 }
 
 /* ---------- memory of what was added before ---------- */
+function median(l) { const s = l.slice().sort((a, b) => a - b), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; }
 function top(o) { let best = null; for (const k in o) if (best === null || o[k] > o[best]) best = k; return best; }
 
 /* Every payee seen, with what it usually is: category, person ("shared" or a key), tags and amount */
 export function payeeIndex() {
-  const m = new Map();
+  const m = new Map(), since = addD(TODAY, -90);
   for (const t of state.tx) {
     if (!t.n || t.pending) continue;
     const key = t.type + "\u0000" + t.n.toLowerCase();
     let x = m.get(key);
-    if (!x) { x = { n: t.n, type: t.type, k: 0, tot: 0, cats: {}, ps: {}, tg: {}, last: t.d }; m.set(key, x); }
-    x.k++; x.tot += t.a;
-    x.cats[t.c] = (x.cats[t.c] || 0) + 1;
+    if (!x) { x = { n: t.n, type: t.type, k: 0, k90: 0, tot: 0, as: [], ps: {}, tg: {}, last: t.d, c: t.c, cd: t.d }; m.set(key, x); }
+    x.k++; x.tot += t.a; x.as.push(t.a);
+    if (t.d >= since && !t.rec) x.k90++; // typed in lately, not added by a repeat rule
+    if (t.d >= x.cd) { x.c = t.c; x.cd = t.d; } // the category it had last time, as in 1.x
     const pk = t.p === null ? "shared" : t.p;
     x.ps[pk] = (x.ps[pk] || 0) + 1;
     t.tags.forEach((g) => { x.tg[g] = (x.tg[g] || 0) + 1; });
     if (t.d > x.last) x.last = t.d;
   }
   return [...m.values()].map((x) => {
-    x.c = top(x.cats); x.p = top(x.ps); x.avg = Math.round((x.tot / x.k) * 100) / 100;
+    x.p = top(x.ps); x.avg = Math.round((x.tot / x.k) * 100) / 100;
+    // The usual amount and how far it strays, in ratios (2 to 3 € is as far as 20 to 30 €)
+    const ls = x.as.map((a) => Math.log(Math.max(a, 0.01)));
+    x.lmed = median(ls);
+    x.lspread = Math.max(median(ls.map((l) => Math.abs(l - x.lmed))) * 1.5, 0.1);
+    delete x.as;
     x.tags = Object.keys(x.tg).filter((g) => x.tg[g] * 2 >= x.k);
     return x;
   });

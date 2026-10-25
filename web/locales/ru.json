@@ -14,6 +14,12 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>Гибким</b> категориям задаётся сумма на месяц. Отметка на каждой полосе показывает, сколько должно быть потрачено к сегодняшнему дню.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "Расходам <b>раз в год</b>, например на путешествия, задаётся сумма на год, и она набирается месяц за месяцем.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>Перенос</b> переносит остаток или перерасход на следующий месяц.",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "one": "На ближайший {n} день остаётся <b>{amount}</b> — после {bills} на счета и <b>{saved}</b> в накопления. Это намного больше обычного.",
+  "few": "На ближайшие {n} дня остаётся <b>{amount}</b> — после {bills} на счета и <b>{saved}</b> в накопления. Это намного больше обычного.",
+  "many": "На ближайшие {n} дней остаётся <b>{amount}</b> — после {bills} на счета и <b>{saved}</b> в накопления. Это намного больше обычного.",
+  "other": "На ближайшие {n} дня остаётся <b>{amount}</b> — после {bills} на счета и <b>{saved}</b> в накопления. Это намного больше обычного."
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "Резервная копия, скачанная ранее. Сначала будет сохранена копия текущих данных.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "Ребёнок, сосед по квартире — любой, с кем вы делите расходы. У каждого свой вид.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Ребёнок, сосед по квартире — любой, с кем вы делите расходы. Вы задаёте первый пароль, а при первом входе человек выберет свой.",
@@ -99,7 +105,6 @@
  "After": "После",
  "After the amount": "После суммы",
  "After the same fix twice, Wally asks before creating anything": "После двух одинаковых исправлений Wally спросит, прежде чем что-то создать",
- "Again": "Снова",
  "Against the {n} months before": "По сравнению с {n} мес. до этого",
  "Against usual": "К обычному",
  "Against {month}": "Сравнение: {month}",
@@ -221,7 +226,6 @@
  "Change": "Изменить",
  "Change category": "Изменить категорию",
  "Change password": "Сменить пароль",
- "Change the amount, {amount}": "Изменить сумму, {amount}",
  "Change the rule": "Изменить правило",
  "Change who": "Сменить человека",
  "Change your password": "Смените пароль",
@@ -413,6 +417,8 @@
  "Enter the 6-digit code it shows": "Введите 6-значный код, который оно показывает",
  "Enter the code first.": "Сначала введите код.",
  "Enter the household password": "Введите пароль семьи",
+ "Enter what it was for": "Укажите, на что",
+ "Enter where it is from": "Укажите, откуда",
  "Enter your password": "Введите пароль",
  "Enter your password first.": "Сначала введите пароль.",
  "Entry deleted": "Запись удалена",
@@ -1390,10 +1396,10 @@
  "What is this key for?": "Для чего этот ключ?",
  "What it already added stays. Nothing is added after this day.": "Уже добавленное останется. После этого дня ничего не добавляется.",
  "What to do with {name}": "Что сделать с «{name}»",
- "What was it for? Optional": "На что? Необязательно",
+ "What was it for?": "На что?",
  "What {column} holds": "Что в столбце {column}",
  "When someone pays the other back, Settle up records it here.": "Когда кто-то возвращает деньги другому, «Рассчитаться» записывает это здесь.",
- "Where is it from? Optional": "Откуда? Необязательно",
+ "Where is it from?": "Откуда?",
  "Where it goes most": "На что уходит больше всего",
  "Where it went": "Куда ушли деньги",
  "Where this range's income went": "Куда ушёл доход за этот период",
@@ -1910,6 +1916,12 @@
   "many": "У {n} транзакций есть #{tag}. Они перейдут к участнику {name}.",
   "one": "У {n} транзакции есть #{tag}. Она перейдёт к участнику {name}.",
   "other": "У {n} транзакции есть #{tag}. Они перейдут к участнику {name}."
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "one": "У {n} транзакции несколько из этих тегов, она останется общей",
+  "few": "У {n} транзакций несколько из этих тегов, они останутся общими",
+  "many": "У {n} транзакций несколько из этих тегов, они останутся общими",
+  "other": "У {n} транзакции несколько из этих тегов, они останутся общими"
  },
  "{n} transaction of their own": {
   "few": "{n} собственные транзакции",

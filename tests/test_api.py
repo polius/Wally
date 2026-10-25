@@ -416,6 +416,31 @@ def test_tag_into_person(couple):
     t = client.get("/transactions").json()[0]
     assert t["person_id"] == ana and t["tags"] == ["weekly"]
 
+def test_tag_into_person_includes_recurring(couple):
+    client, alex, ana = couple
+    rule(client, tags=["ana"], startDate=TODAY)
+    client.post(f"/people/{ana}/from-tag", json={"tag": "ana"})
+    r = client.get("/recurring").json()[0]
+    assert r["person_id"] == ana and r["shares"] is None and r["tags"] == []
+
+def test_tags_into_people_together(couple):
+    client, alex, ana = couple
+    expense(client, tags=["ana"])
+    expense(client, tags=["Alex"])
+    both = expense(client, tags=["ana", "Alex", "weekly"])
+    rule(client, tags=["Alex"], startDate=TODAY)
+    body = {"tags": {"ana": ana, "#Alex": alex}}
+    preview = client.post("/people/from-tags/preview", json=body).json()
+    assert preview == {"counts": {str(ana): 1, str(alex): 2}, "shared": 1}
+    # The preview changes nothing
+    assert all(t["person_id"] is None for t in client.get("/transactions").json())
+    assert client.post("/people/from-tags", json=body).json()["counts"] == preview["counts"]
+    t = {x["id"]: x for x in client.get("/transactions").json()}
+    # With both people's tags it stays shared, without them
+    assert t[both["id"]]["person_id"] is None and t[both["id"]]["shares"] == both["shares"] and t[both["id"]]["tags"] == ["weekly"]
+    assert client.get("/recurring").json()[0]["person_id"] == alex
+    assert client.post("/people/from-tags", json={"tags": {"ana": 999}}).status_code == 404
+
 # ---------- settings, budgets, goals, backups ----------
 def test_config_validates(client):
     assert client.put("/config", json={"savings_target": 120}).status_code == 400
@@ -468,6 +493,14 @@ def test_upgrade_from_v1(make_client, tmp_path):
 
     # Old API keys keep working
     assert client.get("/api-keys").json()[0]["prefix"] == ""
+
+    # And so do the 1.x routes scripts may call
+    for route in ("past-3-months", "past-6-months", "past-12-months", "year-to-date", "to-date"):
+        assert client.get(f"/transactions/{route}").status_code == 200
+    recent = client.get("/transactions/past-3-months").json()
+    assert {t["name"] for t in recent} >= {"Coffee 0", "Salary", "Mercadona"}
+    assert [t["date"] for t in recent if t["name"] == "Netflix"] == ["2026-09-30", "2026-08-31"]
+    assert len(client.get("/transactions/to-date").json()) == len(client.get("/transactions").json())
 
 def test_failed_upgrade_restores_and_opens_read_only(make_client, tmp_path, monkeypatch):
     def broken(conn, today):

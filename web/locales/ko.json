@@ -14,6 +14,9 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>변동</b> 카테고리에는 월 금액을 정해요. 막대의 눈금은 오늘까지의 적정 지출 수준이에요.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "여행 같은 <b>연 1회</b> 비용은 연간 금액을 정하고 매달 조금씩 채워 가요.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>이월</b>은 남은 금액이나 초과한 금액을 다음 달로 넘겨요.",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "other": "고정 지출({bills})과 저축(<b>{saved}</b>)을 빼면, 앞으로 {n}일 동안 <b>{amount}</b>이 남아요. 평소 속도보다 훨씬 여유 있어요."
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "이전에 내려받은 백업 파일이에요. 현재 데이터는 먼저 백업해 둬요.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 구성원마다 자기 화면이 따로 있어요.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 초기 비밀번호를 정해 주면 첫 로그인 때 본인이 새로 정해요.",
@@ -93,7 +96,6 @@
  "After": "횟수",
  "After the amount": "금액 뒤",
  "After the same fix twice, Wally asks before creating anything": "같은 수정을 두 번 하면, Wally가 규칙을 만들기 전에 먼저 물어봐요",
- "Again": "다시 추가",
  "Against the {n} months before": "직전 {n}개월 대비",
  "Against usual": "평소 대비",
  "Against {month}": "{month} 대비",
@@ -209,7 +211,6 @@
  "Change": "변경",
  "Change category": "카테고리 변경",
  "Change password": "비밀번호 변경",
- "Change the amount, {amount}": "금액 변경, {amount}",
  "Change the rule": "규칙 변경",
  "Change who": "구성원 변경",
  "Change your password": "비밀번호를 변경하세요",
@@ -383,6 +384,8 @@
  "Enter the 6-digit code it shows": "표시된 6자리 코드를 입력하세요",
  "Enter the code first.": "먼저 코드를 입력하세요.",
  "Enter the household password": "가구 공용 비밀번호를 입력하세요",
+ "Enter what it was for": "어디에 썼는지 입력하세요",
+ "Enter where it is from": "어디서 받았는지 입력하세요",
  "Enter your password": "비밀번호를 입력하세요",
  "Enter your password first.": "먼저 비밀번호를 입력하세요.",
  "Entry deleted": "기록을 삭제했어요",
@@ -1261,10 +1264,10 @@
  "What is this key for?": "이 키는 어디에 쓰나요?",
  "What it already added stays. Nothing is added after this day.": "이미 추가된 거래는 남아요. 이날 이후로는 추가되지 않아요.",
  "What to do with {name}": "{name} 처리 방법",
- "What was it for? Optional": "어디에 썼나요? (선택)",
+ "What was it for?": "어디에 썼나요?",
  "What {column} holds": "{column} 열의 내용",
  "When someone pays the other back, Settle up records it here.": "누군가 돈을 갚으면 정산 기록이 여기에 남아요.",
- "Where is it from? Optional": "어디서 받았나요? (선택)",
+ "Where is it from?": "어디서 받았나요?",
  "Where it goes most": "가장 많이 쓰는 곳",
  "Where it went": "어디에 썼나",
  "Where this range's income went": "이 기간 수입의 사용처",
@@ -1646,6 +1649,9 @@
  },
  "{n} transaction has #{tag}. It becomes {name}’s.": {
   "other": "거래 {n}건에 #{tag} 태그가 있어요. {name} 님의 거래가 돼요."
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "other": "거래 {n}건에 이 태그가 여러 개 있어서 공동으로 남아요"
  },
  "{n} transaction of their own": {
   "other": "개인 거래 {n}건"

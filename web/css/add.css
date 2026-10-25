@@ -67,19 +67,37 @@ html.w-addopen{overflow:hidden}
 .w-add .w-splitrows .left.bad{color:var(--w-bad);border-color:var(--w-bad)}
 .w-parts .w-btn.ghost svg.i{width:13px;height:13px}
 
+/* The date's calendar: round days, today ringed, the day picked filled */
+.w-dcal{animation:w-dcalin 180ms var(--ease)}
+@keyframes w-dcalin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.w-add .w-sub.w-dcal{justify-self:start;gap:6px;padding:10px 12px 12px}
+.w-dcalh{display:flex;align-items:center;gap:2px}
+.w-dcalh b{flex:1;font-size:13.5px;font-weight:600;color:var(--w-ink);padding-inline-start:6px}
+.w-dcalh b::first-letter{text-transform:uppercase}
+.w-dcalh .w-x:disabled{opacity:.35;cursor:default}
+.w-dcalg{display:grid;grid-template-columns:repeat(7,34px);gap:2px}
+.w-dcalg .dow{font-size:11px;font-weight:500;color:var(--w-ink3);text-align:center;line-height:26px}
+.w-dcalg button{height:34px;border-radius:50%;font-size:13px;color:var(--w-ink);font-variant-numeric:tabular-nums;display:grid;place-items:center}
+.w-dcalg button:hover:not(:disabled){background:var(--w-fill)}
+.w-dcalg button[aria-current="date"]{color:var(--w-accent-ink);font-weight:600;box-shadow:inset 0 0 0 1.5px var(--w-accent-line)}
+.w-dcalg button[aria-pressed="true"],.w-dcalg button[aria-pressed="true"]:hover{background:var(--w-accent);color:var(--w-on-accent);font-weight:600;box-shadow:none}
+.w-dcalg button:disabled{color:var(--w-ink3);opacity:.5;cursor:default}
+.w-dcal .w-dcalg button:focus-visible{border-radius:50%;outline-offset:1px}
+
 /* ---------- the offline queue ---------- */
 .w-queue{position:fixed;inset-inline-start:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;align-items:center;gap:8px;padding:7px 8px;padding-inline-start:12px;border-radius:999px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:var(--w-shadow);font-size:12.5px;color:var(--w-ink2);font-family:var(--w-font)}
 .w-queue svg.i{width:14px;height:14px;color:var(--w-ink3)}
 .w-queue .w-link{padding:4px 8px;border-radius:999px;font-size:12.5px}
 .w-queue .w-link:hover{background:var(--w-accent-soft)}
 
-/* ---------- phone: three steps, from the bottom, full height ---------- */
+/* ---------- phone: one page from the bottom, full height, and Repeat over it ---------- */
 @media (max-width:767px){
   .w-addwrap{place-items:end stretch;padding:0}
   .w-add.w-addp{max-width:none;width:100%;height:calc(100dvh - max(10px, env(safe-area-inset-top,0px)));max-height:none;border-radius:22px 22px 0 0;
     padding:8px 16px 0;display:block;overflow-y:auto;overscroll-behavior:contain;background:var(--w-panel2);animation:w-up 260ms var(--ease)}
   .w-addp .w-pstep{display:flex;flex-direction:column;gap:10px;min-height:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
   .w-addp .w-pstep[hidden]{display:none}
+  .w-add.w-addp:focus{outline:0}
   .w-addp .w-grab{flex:none;margin-bottom:2px}
   .w-addp .w-mh{gap:8px;min-height:44px}
   .w-addp .w-plink{min-height:44px;display:inline-flex;align-items:center;gap:2px;font-size:15px;padding:0 2px}
@@ -89,26 +107,37 @@ html.w-addopen{overflow:hidden}
   .w-addp .w-mh .w-seg button{min-height:36px;padding:0 14px}
   .w-addp .w-peditp{align-self:center}
 
-  /* step 1: the amount and the keypad, in thumb reach */
-  .w-addp .w-pamt{padding:26px 0 4px;min-height:96px}
-  .w-addp .w-pamt input{font:inherit;letter-spacing:inherit;border:0;background:none;outline:0;padding:0;color:var(--w-ink);caret-color:var(--w-accent);text-align:center;min-width:1.2em;max-width:100%}
+  /* the amount, and what it was for */
+  .w-addp .w-pamt{padding:16px 0 0;min-height:88px}
+  .w-addp .w-pamt input{font:inherit;letter-spacing:inherit;border:0;background:none;outline:0;padding:0;color:var(--w-ink);caret-color:var(--w-accent);text-align:center;min-width:.6em;max-width:100%}
   .w-addp .w-pamt input::placeholder{color:var(--w-ink3)}
+  /* Keys always add at the end, so the caret shows only once there is an end: before that it would blink in the middle of the 0 */
+  .w-addp .w-pamt input:placeholder-shown{caret-color:transparent}
   .w-addp .w-pamt.err input{color:var(--w-bad)}
   .w-addp .w-pamt .cur{font-size:30px;color:var(--w-ink3);font-weight:500}
-  .w-addp .w-pcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:15px;min-height:22px;font-variant-numeric:tabular-nums}
+  .w-addp .w-pdcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:15px;min-height:22px;font-variant-numeric:tabular-nums}
   .w-addp .w-pcenter{text-align:center;margin:0}
   .w-addp .w-pscroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
   .w-addp .w-pscroll::-webkit-scrollbar{display:none}
   .w-addp .w-chips .w-chip{height:44px;padding:0 14px;font-size:13.5px;flex:none}
-  .w-addp .w-again-a{color:var(--w-ink3);font-weight:400}
-  .w-addp .w-pkeys{margin-top:auto;gap:7px}
+  /* Payees suggested in the name's list: roomy rows, and no Enter hint without a keyboard */
+  .w-addp .w-sugg button{min-height:52px}
+  .w-addp .w-sugg .w-kbd{display:none}
+  /* Each group with room around it, its label close to it */
+  .w-addp #add-catrow,.w-addp #add-whorow{display:grid;gap:8px;margin-top:12px}
+  .w-addp #add-catrow[hidden],.w-addp #add-whorow[hidden]{display:none}
+  .w-addp #add-cells{margin-top:12px}
+  /* The keypad, while the amount is typed: in thumb reach, in the main button's place */
+  .w-add.w-addp:not(.kp) .w-pkeys,.w-add.w-addp.kp .w-pfoot{display:none}
+  .w-addp .w-pkeys{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom,0px));z-index:4;margin:auto -16px 0;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));gap:7px;
+    background:var(--w-panel2);box-shadow:0 -1px 0 var(--w-line);animation:w-up 180ms var(--ease)}
   .w-addp .w-pkeys button{height:54px;border-radius:12px;background:var(--w-panel);display:grid;place-items:center;font-size:22px;font-weight:500;box-shadow:0 1px 0 var(--w-line);color:var(--w-ink);font-variant-numeric:tabular-nums}
   .w-addp .w-pkeys button:active{background:var(--w-fill2)}
   .w-addp .w-pkeys button.op{background:var(--w-fill2);box-shadow:none}
   .w-addp .w-pkeys button.go{background:var(--w-accent);color:var(--w-on-accent);font-size:16px;font-weight:600;box-shadow:none}
   .w-addp .w-pkeys svg.i{width:22px;height:22px}
 
-  /* step 2: the details */
+  /* the details */
   .w-addp .w-input input{height:48px;font-size:16px}
   .w-addp .w-sub,.w-addp .w-budget,.w-addp .w-indent{margin-inline-start:0}
   .w-addp .w-budget{margin-top:-2px}
@@ -121,13 +150,21 @@ html.w-addopen{overflow:hidden}
   .w-addp .w-cells .w-cell{width:100%;min-height:50px;font-size:15px;text-align:start;color:var(--w-ink)}
   .w-addp .w-cells .w-cell > span:first-child{color:var(--w-ink)}
   .w-addp .w-cellsel{border:0;background:none;text-align:end;font-weight:500;color:var(--w-ink);font-size:15px;padding:6px 0;max-width:60%;-webkit-appearance:none;appearance:none}
-  .w-addp .w-pdate{position:relative;cursor:pointer}
-  .w-addp .w-pdate input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .w-addp .w-pdate[aria-expanded="true"] b{color:var(--w-accent-ink)}
+  .w-addp .w-pdcal{border-top:1px solid var(--w-line2);padding:4px 8px 12px;display:grid;gap:4px;scroll-margin-bottom:96px}
+  .w-addp .w-pdcal[hidden]{display:none}
+  .w-addp .w-pdcal .w-dcalh b{font-size:15px;padding-inline-start:8px}
+  .w-addp .w-pdcal .w-x{width:44px;height:44px}
+  .w-addp .w-pdcal .w-x svg.i{width:18px;height:18px}
+  .w-addp .w-pdcal .w-dcalg{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px 0}
+  .w-addp .w-pdcal .w-dcalg button{width:42px;height:42px;justify-self:center;font-size:15px}
   .w-addp .w-cellin{border:0;background:none;outline:0;text-align:end;flex:1;min-width:0;font-weight:500;font-size:15px;color:var(--w-ink);height:44px}
   .w-addp .w-ptags{flex-wrap:wrap;align-items:center}
   .w-addp .w-ptags .w-chips{justify-content:flex-end;flex:1}
   .w-addp .w-ptags .w-chip{height:34px}
-  .w-addp .w-ptags .w-tagin{height:36px;width:120px;font-size:15px}
+  .w-addp .w-ptags #add-tag{border:0;background:none;box-shadow:none;outline:0;padding:0;height:44px;flex:0 1 auto;width:10.5em;min-width:0;text-align:end;font-size:15px;font-weight:500;color:var(--w-ink)}
+  .w-addp .w-ptags #add-tags:not(:empty) + #add-tag:not(:focus){width:3.2em}
+  .w-addp .w-ptags #add-tag::-webkit-calendar-picker-indicator{display:none !important}
   .w-addp .w-pnote{font-size:13.5px;color:var(--w-ink2);display:block;line-height:1.5;padding-block:12px}
   .w-addp .w-pcell{margin:0;padding:6px 14px 10px}
   .w-addp .w-pfoot{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom,0px));margin-top:auto;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--w-panel2) 14px);display:grid;gap:10px;z-index:4}
@@ -135,7 +172,7 @@ html.w-addopen{overflow:hidden}
   .w-addp .w-pdel{justify-content:center;color:var(--w-bad);font-weight:500}
   .w-addp .w-dup,.w-addp .w-err{margin:0}
 
-  /* step 3: Repeat with checkmarks */
+  /* Repeat, with checkmarks */
   .w-addp .w-cell .ck{display:inline-grid;place-items:center;color:var(--w-accent)}
   .w-addp .w-cell .ck svg.i{width:18px;height:18px}
   .w-addp .w-chev{color:var(--w-ink3)}
@@ -180,7 +217,7 @@ html.w-addopen{overflow:hidden}
   .w-addp input[type="number"]::-webkit-inner-spin-button,.w-addp input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 }
 /* Sums and totals read left to right in every language */
-.w-add .w-calc,.w-addp .w-pcalc,.w-add .w-next span{direction:ltr;unicode-bidi:isolate}
+.w-add .w-calc,.w-addp .w-pdcalc,.w-add .w-next span{direction:ltr;unicode-bidi:isolate}
 [dir="rtl"] .w-add .w-switch::after{left:auto;right:2px}
 [dir="rtl"] .w-add .w-switch[aria-checked="true"]::after{transform:translateX(-14px)}
 .w-addp .w-pkeys{direction:ltr}

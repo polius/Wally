@@ -27,6 +27,11 @@ class FromTag(BaseModel):
     tag: str
     remove_tag: bool = True
 
+class FromTags(BaseModel):
+    # Tag to person, all at once, as after the upgrade from 1.x
+    tags: dict[str, int]
+    remove_tag: bool = True
+
 @router.get("/people", response_model=list[PersonPublic])
 def read_people(
     db: Annotated[Session, Depends(get_session)],
@@ -163,6 +168,34 @@ def from_tag_preview(
     count = sum(1 for t in db.exec(select(Transaction.tags)).all() if t and tag in t)
     return {"tag": tag, "count": count}
 
+def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool) -> dict:
+    """Turn tags into people: what has one of the tags becomes that person's, recurring rules
+    included, so their next charges are theirs too. What has tags of two or more of them stays
+    shared. The caller commits, or rolls back for a preview."""
+    tags = {tag.lstrip("#"): person_id for tag, person_id in tags.items()}
+    for person_id in set(tags.values()):
+        if not db.get(Person, person_id):
+            raise HTTPException(status_code=404, detail="This person does not exist.")
+    counts = {person_id: 0 for person_id in tags.values()}
+    shared = 0
+    for row in [*db.exec(select(Transaction)).all(), *db.exec(select(RecurringTransaction)).all()]:
+        found = [tag for tag in (row.tags or []) if tag in tags]
+        if not found:
+            continue
+        owners = {tags[tag] for tag in found}
+        if len(owners) == 1:
+            row.person_id = owners.pop()
+            row.shares = None
+            row.paid_by = None
+            if isinstance(row, Transaction):
+                counts[row.person_id] += 1
+        elif isinstance(row, Transaction):
+            shared += 1
+        if remove_tag:
+            row.tags = [g for g in row.tags if g not in found]
+        db.add(row)
+    return {"counts": counts, "shared": shared}
+
 @router.post("/people/{person_id}/from-tag")
 def from_tag(
     person_id: int,
@@ -170,18 +203,24 @@ def from_tag(
     db: Annotated[Session, Depends(get_session)],
 ):
     """Turn a tag into a person: every transaction with the tag becomes theirs."""
-    if not db.get(Person, person_id):
-        raise HTTPException(status_code=404, detail="This person does not exist.")
-    tag = body.tag.lstrip("#")
-    count = 0
-    for t in db.exec(select(Transaction)).all():
-        if tag in (t.tags or []):
-            t.person_id = person_id
-            t.shares = None
-            t.paid_by = None
-            if body.remove_tag:
-                t.tags = [g for g in t.tags if g != tag]
-            db.add(t)
-            count += 1
+    result = convert_tags(db, {body.tag: person_id}, body.remove_tag)
     db.commit()
-    return {"ok": True, "count": count}
+    return {"ok": True, "count": result["counts"][person_id]}
+
+@router.post("/people/from-tags/preview")
+def from_tags_preview(
+    body: FromTags,
+    db: Annotated[Session, Depends(get_session)],
+):
+    result = convert_tags(db, body.tags, body.remove_tag)
+    db.rollback()
+    return result
+
+@router.post("/people/from-tags")
+def from_tags(
+    body: FromTags,
+    db: Annotated[Session, Depends(get_session)],
+):
+    result = convert_tags(db, body.tags, body.remove_tag)
+    db.commit()
+    return {"ok": True, **result}

@@ -14,6 +14,11 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "As categorias <b>flexíveis</b> têm um valor mensal. A marca em cada barra indica onde os gastos deviam estar hoje.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "As despesas <b>uma vez por ano</b>, como viagens, têm um valor anual que se vai enchendo mês a mês.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>Transitar</b> passa o que sobrou, ou o que excedeu, para o mês seguinte.",
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
+  "one": "Restam <b>{amount}</b> para o próximo {n} dia, depois de {bills} em contas e <b>{saved}</b> poupados: bem acima do teu ritmo habitual.",
+  "many": "Restam <b>{amount}</b> para os próximos {n} dias, depois de {bills} em contas e <b>{saved}</b> poupados: bem acima do teu ritmo habitual.",
+  "other": "Restam <b>{amount}</b> para os próximos {n} dias, depois de {bills} em contas e <b>{saved}</b> poupados: bem acima do teu ritmo habitual."
+ },
  "A backup you downloaded earlier. The data now is backed up first.": "Uma cópia de segurança que transferiste antes. Os dados atuais são guardados primeiro.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "Um filho, um colega de casa, qualquer pessoa que partilhe despesas. Cada pessoa tem a sua própria vista.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Um filho, um colega de casa, qualquer pessoa que partilhe despesas. Defines uma primeira palavra-passe; a pessoa escolhe a sua ao iniciar sessão pela primeira vez.",
@@ -97,7 +102,6 @@
  "After": "Após",
  "After the amount": "Depois do valor",
  "After the same fix twice, Wally asks before creating anything": "Após a mesma correção duas vezes, o Wally pergunta antes de criar algo",
- "Again": "Outra vez",
  "Against the {n} months before": "Face aos {n} meses anteriores",
  "Against usual": "Face ao habitual",
  "Against {month}": "Face a {month}",
@@ -217,7 +221,6 @@
  "Change": "Alterar",
  "Change category": "Alterar categoria",
  "Change password": "Alterar palavra-passe",
- "Change the amount, {amount}": "Alterar o valor, {amount}",
  "Change the rule": "Alterar a regra",
  "Change who": "Alterar quem",
  "Change your password": "Altera a tua palavra-passe",
@@ -403,6 +406,8 @@
  "Enter the 6-digit code it shows": "Introduz o código de 6 dígitos que mostra",
  "Enter the code first.": "Primeiro introduz o código.",
  "Enter the household password": "Introduz a palavra-passe da casa",
+ "Enter what it was for": "Indica para que foi",
+ "Enter where it is from": "Indica de onde vem",
  "Enter your password": "Introduz a tua palavra-passe",
  "Enter your password first.": "Primeiro introduz a tua palavra-passe.",
  "Entry deleted": "Registo eliminado",
@@ -1347,10 +1352,10 @@
  "What is this key for?": "Para que é esta chave?",
  "What it already added stays. Nothing is added after this day.": "O que já adicionou fica. Nada é adicionado depois deste dia.",
  "What to do with {name}": "O que fazer com {name}",
- "What was it for? Optional": "Para que foi? Opcional",
+ "What was it for?": "Para que foi?",
  "What {column} holds": "O que contém {column}",
  "When someone pays the other back, Settle up records it here.": "Quando alguém paga ao outro o que deve, o Acertar contas regista-o aqui.",
- "Where is it from? Optional": "De onde vem? Opcional",
+ "Where is it from?": "De onde vem?",
  "Where it goes most": "Para onde vai mais",
  "Where it went": "Para onde foi",
  "Where this range's income went": "Para onde foram as receitas deste período",
@@ -1822,6 +1827,11 @@
   "many": "{n} transações têm #{tag}. Passam a ser de {name}.",
   "one": "{n} transação tem #{tag}. Passa a ser de {name}.",
   "other": "{n} transações têm #{tag}. Passam a ser de {name}."
+ },
+ "{n} transaction has more than one of these tags and stays shared": {
+  "one": "{n} transação tem mais de uma destas etiquetas e continua partilhada",
+  "other": "{n} transações têm mais de uma destas etiquetas e continuam partilhadas",
+  "many": "{n} transações têm mais de uma destas etiquetas e continuam partilhadas"
  },
  "{n} transaction of their own": {
   "many": "{n} transações próprias",

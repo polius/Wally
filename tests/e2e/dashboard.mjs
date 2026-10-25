@@ -76,7 +76,7 @@ try {
   const budgets = await api("GET", "/budgets");
   ok(budgets.length > 0, "demo has budgets");
   const status = await text(page, "#h-status p");
-  ok(/over budget|over at this pace|You can spend|Spending has run/.test(status), "status sentence: " + status.slice(0, 80));
+  ok(/over budget|over at this pace|You can spend|is left for the next|Spending has run/.test(status), "status sentence: " + status.slice(0, 80));
 
   console.log("Ranges, keys and arrows");
   for (const [mode, key, expect] of [["3m", "2", "Last 3 months"], ["year", "3", String(CY)], ["12m", "4", "Last 12 months"]]) {

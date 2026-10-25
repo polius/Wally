@@ -175,7 +175,8 @@ h1,h2,h3,h4,h5,h6,p{margin:0}
 .w svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .w-desk{position:relative;display:grid;grid-template-columns:212px minmax(0,1fr);min-width:1120px;background:var(--w-canvas)}
 .w-side{display:flex;flex-direction:column;gap:22px;padding:20px 14px;border-right:1px solid var(--w-line);background:var(--w-panel2)}
-.w-brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px;letter-spacing:-.02em;padding:2px 8px}
+.w-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px;letter-spacing:-.02em;padding:2px 8px}
+.w-brand .w-mark{width:30px;height:30px}
 .w-mark{width:26px;height:26px;background:url(/icons/mark-64.png) center/contain no-repeat;flex:none;display:inline-block}
 .w-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13.5px}
 .w-btn.primary{background:var(--w-accent);color:var(--w-on-accent);box-shadow:0 1px 2px rgba(20,22,27,.12),inset 0 1px 0 rgba(255,255,255,.14)}

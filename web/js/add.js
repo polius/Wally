@@ -20,7 +20,8 @@ import { describe, nextOf } from "./sched.js";
 import * as C from "./add/calc.js";
 import * as Q from "./add/queue.js";
 import { FQ_LABELS, UNITS, fqOf, formRule, summaryHtml, nextHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
-import { isPhone, phoneHtml, typeSeg, splitInner, press, againList, againHtml, freqCells } from "./add/phone.js";
+import { isPhone, phoneHtml, typeSeg, splitInner, press, pickList, freqCells } from "./add/phone.js";
+import { calHtml, calKey, monthStep } from "./add/datepick.js";
 
 export { flushQueue } from "./add/queue.js";
 
@@ -36,10 +37,10 @@ function keys() { return C.peopleKeys(); }
 function blank(type) {
   return {
     mode: "tx", type: type || "expense", amt: "", name: "", cat: null, who: null, sm: "even", pct: 50, custCents: null, custFor: 0, cust: {},
-    by: null, date: "today", tags: [], tagDraft: "", note: "",
+    by: null, date: "today", cal: null, calF: "", tags: [], tagDraft: "", note: "",
     rep: false, fq: "monthly", every: "3", unit: "weekly", end: "never", until: "", count: "12", about: false,
     split: false, parts: [], showAll: false, sugg: [], hl: 0, touched: {}, edit: null, group: null, rule: null,
-    step: "amt", busy: false, serr: "", amtTried: false, snap: "", repeatOpen: false,
+    step: "main", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false,
   };
 }
 function reset(type) {
@@ -153,7 +154,9 @@ function problem() {
   }
   return null;
 }
-function ready() { return amount() > 0 && (ad.split || ad.cat) && ad.who && !problem(); }
+const named = () => !!ad.name.trim();
+const needName = () => (ad.type === "income" ? t("Enter where it is from") : t("Enter what it was for"));
+function ready() { return amount() > 0 && named() && (ad.split || ad.cat) && ad.who && !problem(); }
 
 /* ---------- markup: the desktop sheet ---------- */
 function amountRow() {
@@ -169,14 +172,16 @@ function deskHtml() {
       '<button type="button" class="w-x w-addx" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
     amountRow() +
     '<p class="w-err" id="add-aerr" hidden role="alert"></p>' +
-    '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
+    '<div class="w-input"><input id="add-name" autocomplete="off" aria-label="' + esc(t("Name")) + '" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
       '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
+    '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
     '<div class="w-frow" id="add-catrow"><span id="lbl-cat">' + t("Category") + '</span><div class="w-chips" id="add-cats" role="radiogroup" aria-labelledby="lbl-cat"></div></div>' +
     '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
     '<p class="w-budget" id="add-budget" hidden></p>' +
     '<div class="w-frow" id="add-whorow"><span id="lbl-who"></span><div class="w-chips" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
     '<div class="w-sub" id="add-split" hidden>' + splitInner(true) + "</div>" +
     '<div class="w-frow"><span id="lbl-date"></span><div class="w-chips" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>' +
+    '<div class="w-sub w-dcal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
     '<p class="w-err w-indent" id="add-derr" hidden role="alert"></p>' +
     '<div class="w-frow"><span id="lbl-tags">' + t("Tags") + '</span><div class="w-chips" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
       '<input id="add-tag" class="w-mini w-tagin" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></div></div>' +
@@ -223,9 +228,10 @@ function render() {
   if (!form()) return;
   const inc = ad.type === "income", rule = ad.mode === "rule", ed = ad.edit || (ad.group && ad.group[0]);
   const a = amount(), phone = layout === "phone";
+  // The page first, so the amount below is measured where it shows
+  if (phone) document.querySelectorAll("#add-form [data-pstep]").forEach((s) => { s.hidden = s.dataset.pstep !== ad.step; });
   const title = rule ? (inc ? t("Edit recurring income") : t("Edit recurring expense")) : ed ? (inc ? t("Edit income") : t("Edit expense")) : inc ? t("New income") : t("New expense");
   setText("add-title", title);
-  setText("add-ptitle", title);
   pressed("add-type", "data-at", ad.type);
   const pill = pending() ? t("Waiting to send") : ed ? t("Editing · {date}", { date: dlab(ed.d) }) : rule ? t("Since {date}", { date: dShort(ad.rule.start) }) : "";
   setText("add-editing", pill);
@@ -240,7 +246,7 @@ function render() {
   // name
   setVal("add-name", ad.name);
   const nm = $("add-name");
-  if (nm) nm.placeholder = inc ? t("Where is it from? Optional") : t("What was it for? Optional");
+  if (nm) nm.placeholder = inc ? t("Where is it from?") : t("What was it for?");
 
   // category, or the parts of a split receipt
   show("add-catrow", !inc && !ad.split);
@@ -281,6 +287,9 @@ function render() {
   if (row) row.classList.toggle("err", !!amtMsg);
   const ai = $("add-amt");
   if (ai) ai.setAttribute("aria-invalid", String(!!amtMsg));
+  const nameMsg = ad.nameTried && !named() ? needName() : "";
+  setText("add-nerr", nameMsg); show("add-nerr", !!nameMsg);
+  if (nm) nm.setAttribute("aria-invalid", String(!!nameMsg));
   for (const [id, fld] of [["add-derr", "date"], ["add-rerr", "rep"], ["add-cerr", "cust"]]) {
     const m = er && er.f === fld && er.m ? er.m : "";
     setText(id, m); show(id, !!m);
@@ -295,7 +304,7 @@ function render() {
   if (go) {
     go.setAttribute("aria-disabled", String(!ok || ad.busy));
     go.textContent = ok ? (isEdit() ? t("Save changes · {amount}", { amount: f(a) }) : inc ? t("Add income · {amount}", { amount: f(a) }) : t("Add expense · {amount}", { amount: f(a) }))
-      : !a ? t("Enter an amount") : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field");
+      : !a ? t("Enter an amount") : !named() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field");
   }
   show("add-more", !isEdit());
   const more = $("add-more");
@@ -309,16 +318,15 @@ function render() {
 }
 
 /* The amount field is as wide as what is typed, so the currency sign sits next to it */
-let measure = null;
 function sizeAmount() {
   const i = $("add-amt");
   if (!i) return;
-  const cs = getComputedStyle(i);
-  measure = measure || document.createElement("canvas").getContext("2d");
-  measure.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
-  const text = ad.amt || i.placeholder || "0";
-  const ls = parseFloat(cs.letterSpacing) || 0;
-  i.style.width = Math.ceil(measure.measureText(text).width + ls * text.length + 6) + "px";
+  // Measured by the field itself: a canvas has no tabular digits, so every 1 came out short
+  const empty = !i.value;
+  if (empty) i.value = i.placeholder || "0";
+  i.style.width = "0";
+  i.style.width = i.scrollWidth + 2 + "px";
+  if (empty) i.value = "";
 }
 function catsHtml() {
   const used = cache.cats, all = ad.showAll || layout === "phone";
@@ -453,19 +461,35 @@ function renderBudget() {
 }
 
 function renderDate() {
-  const d = dateOf(), other = ad.date.length === 10, rep = ad.rep || ad.mode === "rule";
+  const d = dateOf(), other = ad.date.length === 10, open = !!ad.cal;
   if (layout === "phone") {
     setText("add-datev", ad.date === "today" ? t("Today") : ad.date === "yesterday" ? t("Yesterday") : dShortW(d));
+    const c = $("add-datecell");
+    if (c) c.setAttribute("aria-expanded", String(open));
   } else {
     setHtml("add-date", [["today", t("Today")], ["yesterday", t("Yesterday")]].map(([k, l]) => '<button type="button" class="w-chip' + (ad.date === k ? " on" : "") + '" data-ad="' + k + '" aria-pressed="' + (ad.date === k) + '">' + l + "</button>").join("") +
-      '<button type="button" class="w-chip' + (other ? " on" : "") + '" id="add-pickb" aria-pressed="' + other + '">' + icon("cal") + (other ? esc(dShortW(d)) : t("Other date")) + "</button>" +
-      '<input type="date" id="add-pick" class="vh" tabindex="-1" aria-hidden="true">');
+      '<button type="button" class="w-chip' + (other ? " on" : "") + '" id="add-pickb" aria-pressed="' + other + '" aria-expanded="' + open + '" aria-controls="add-cal">' + icon("cal") + (other ? esc(dShortW(d)) : t("Other date")) + "</button>");
   }
-  const pick = $("add-pick");
-  if (pick) {
-    if (rep) pick.removeAttribute("max"); else pick.max = TODAY;
-    if (document.activeElement !== pick) pick.value = d;
-  }
+  show("add-cal", open);
+  if (!open) return;
+  // Without Repeat, only today or earlier
+  const max = ad.rep || ad.mode === "rule" ? null : TODAY;
+  if (max && ad.calF > max) ad.calF = max;
+  setHtml("add-cal", calHtml(ad.cal, d, ad.calF, max));
+}
+/* The calendar opens on the month of the date, and closes back to what opened it */
+function openCal(on) {
+  const d = dateOf();
+  ad.cal = on ? ym(d) : null;
+  ad.calF = d;
+  render();
+  // All of it in sight, above the phone's main button
+  if (on) { focusDay(); $("add-cal").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+}
+function focusDay() { const b = $("add-cal").querySelector('[data-cd="' + ad.calF + '"]'); if (b) b.focus({ preventScroll: true }); }
+function calClosed() {
+  const n = layout === "phone" ? $("add-datecell") : form().querySelector("#add-date .on");
+  if (n) n.focus();
 }
 
 function renderRepeat() {
@@ -516,18 +540,7 @@ function renderDup(a) {
 
 /* ---------- phone ---------- */
 function renderPhone(a) {
-  document.querySelectorAll("#add-form [data-pstep]").forEach((s) => { s.hidden = s.dataset.pstep !== ad.step; });
-  const back = $("add-pback");
-  if (back) {
-    back.innerHTML = icon("left") + "<span>" + esc(a ? f(a) : t("Amount")) + "</span>";
-    back.setAttribute("aria-label", a ? t("Change the amount, {amount}", { amount: f(a) }) : t("Enter an amount"));
-  }
-  const again = isEdit() ? [] : againList(cache.payees, ad.type);
-  setHtml("add-again", againHtml(again));
-  show("add-again", again.length > 0);
-  show("add-againl", again.length > 0);
-  const kNext = document.querySelector('[data-k="next"]');
-  if (kNext) kNext.textContent = isEdit() ? t("Done") : t("Next");
+  setText("add-knext", named() ? t("Done") : t("Next"));
   // Paid by, as a cell
   const by = $("add-bysel");
   if (by) {
@@ -556,15 +569,32 @@ function renderPhone(a) {
     show("add-custom", (ad.rep || rule) && ad.fq === "custom");
   }
 }
+// Repeat opens over the page and comes back to where it was
 function goStep(step) {
-  if (step === "details" && ad.step === "amt" && !amount()) { ad.amtTried = true; render(); const i = $("add-amt"); if (i) i.focus(); return; }
-  if (step === "details" && ad.step === "amt") normalizeAmount();
-  const from = ad.step;
+  const box = form();
+  keypad(false);
+  if (step === "repeat") ad.scroll = box.scrollTop;
   ad.step = step;
   render();
-  const target = step === "amt" ? $("add-amt") : step === "repeat" ? document.querySelector('#add-pfreq [aria-checked="true"]') : from === "repeat" ? $("add-repcell") : $("add-pback");
-  if (from !== "repeat") form().scrollTop = 0;
+  box.scrollTop = step === "repeat" ? 0 : ad.scroll;
+  const target = step === "repeat" ? document.querySelector('#add-pfreq [aria-checked="true"]') : $("add-repcell");
   if (target) target.focus({ preventScroll: true });
+}
+/* The keypad is open while the amount is typed, in the main button's place */
+function keypad(open) {
+  const box = form();
+  if (!box || layout !== "phone" || box.classList.contains("kp") === open) return;
+  box.classList.toggle("kp", open);
+  if (open) { closeSugg(); $("add-amtrow").scrollIntoView({ block: "nearest" }); return; }
+  const i = $("add-amt");
+  if (document.activeElement === i) i.blur();
+  normalizeAmount();
+}
+// Its last key: on to what it was for, or done
+function keypadDone() {
+  if (!amount()) { ad.amtTried = true; render(); return; }
+  keypad(false);
+  if (!named()) $("add-name").focus();
 }
 
 /* ---------- payee suggestions: a combobox and its listbox ---------- */
@@ -573,10 +603,13 @@ function closeSugg() { const b = $("add-sugg"), i = $("add-name"); if (b) b.hidd
 function renderSugg() {
   const q = ad.name.trim().toLowerCase(), box = $("add-sugg"), inp = $("add-name");
   if (!box || !inp) return;
-  ad.sugg = q.length < 2 || ad.rule ? [] : cache.payees
+  // On a phone, before anything is typed: the payees this amount most likely is, none picked yet,
+  // and few enough to stay clear of the phone's keyboard
+  const likely = !q && layout === "phone" && !isEdit() && !ad.rule;
+  ad.sugg = likely ? pickList(cache.payees, ad.type, amount()).slice(0, 3) : !q || ad.rule ? [] : cache.payees
     .filter((x) => x.type === ad.type && x.n.toLowerCase().includes(q) && x.n.toLowerCase() !== q)
     .sort((a, b) => a.n.toLowerCase().indexOf(q) - b.n.toLowerCase().indexOf(q) || b.k - a.k)
-    .slice(0, 4);
+    .slice(0, 6);
   if (!ad.sugg.length || document.activeElement !== inp) { closeSugg(); return; }
   ad.hl = Math.min(ad.hl, ad.sugg.length - 1);
   box.innerHTML = ad.sugg.map((x, i) => {
@@ -588,7 +621,7 @@ function renderSugg() {
   }).join("");
   box.hidden = false;
   inp.setAttribute("aria-expanded", "true");
-  inp.setAttribute("aria-activedescendant", "add-sg-" + ad.hl);
+  if (ad.hl < 0) inp.removeAttribute("aria-activedescendant"); else inp.setAttribute("aria-activedescendant", "add-sg-" + ad.hl);
 }
 function validWho(p) {
   if (p === "shared") return couple() ? "shared" : null;
@@ -604,12 +637,12 @@ function applyMemory() {
   if (!ad.touched.who && validWho(x.p)) ad.who = validWho(x.p);
   if (!ad.tags.length) ad.tags = x.tags.slice();
 }
-function pickPayee(x) {
+function pickPayee(x, keepAmount) {
   ad.name = x.n;
   if (ad.type === "expense" && !ad.split && x.c) ad.cat = x.c;
   if (validWho(x.p)) ad.who = validWho(x.p);
   ad.sm = "even";
-  if (!amount()) ad.amt = inAmount(x.avg);
+  if (!amount() && !keepAmount) ad.amt = inAmount(x.avg);
   ad.tags = x.tags.slice();
   ad.touched.cat = ad.touched.who = 1;
 }
@@ -621,6 +654,8 @@ function pickSugg(i) {
   if (field) field.value = ad.name; // the field has focus, so render() leaves it alone
   closeSugg();
   render();
+  // Picked on a phone, it is ready to add: the keyboard goes, to show the button
+  if (layout === "phone" && field) field.blur();
 }
 
 /* ---------- open and close ---------- */
@@ -650,7 +685,6 @@ function fillTx(tx) {
   ad.tags = tx.tags.slice();
   ad.note = tx.note || "";
   ad.touched = { cat: 1, who: 1 };
-  ad.step = "details";
 }
 function fillRule(r) {
   reset(r.type);
@@ -672,7 +706,6 @@ function fillRule(r) {
   ad.until = r.endDate || "";
   ad.about = !!r.varies;
   ad.touched = { cat: 1, who: 1 };
-  ad.step = "details";
 }
 function fill(o) {
   if (o.rule) return fillRule(o.rule);
@@ -694,12 +727,13 @@ function fill(o) {
 function build() {
   layout = isPhone() ? "phone" : "desk";
   built = { split: "", parts: "" };
-  $("add-modal").innerHTML = '<form class="w-sheet w-add' + (layout === "phone" ? " w-addp" : "") + '" id="add-form" role="dialog" aria-modal="true" aria-labelledby="add-title" autocomplete="off" novalidate>' +
+  $("add-modal").innerHTML = '<form class="w-sheet w-add' + (layout === "phone" ? " w-addp" : "") + '" id="add-form" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-title" autocomplete="off" novalidate>' +
     (layout === "phone" ? phoneHtml() : deskHtml()) + "</form>";
 }
 function focusStart() {
   const i = $("add-amt");
-  if (layout === "phone" && ad.step !== "amt") { const b = $("add-pback"); if (b) b.focus(); return; }
+  // Editing on a phone, everything shows, with no keypad over it
+  if (layout === "phone" && isEdit()) { form().focus({ preventScroll: true }); return; }
   if (i) { i.focus(); if (layout !== "phone") i.select(); }
 }
 export function openAdd(o) {
@@ -975,13 +1009,14 @@ function focusMissing() {
   const box = form();
   if (!box) return;
   let target = null;
-  if (!amount() || (er && er.f === "amt")) { if (layout === "phone" && ad.step !== "amt") { ad.step = "amt"; render(); } target = $("add-amt"); }
-  else if (layout === "phone" && ad.step === "repeat" && er && er.f !== "rep") { ad.step = "details"; render(); }
+  if (layout === "phone" && ad.step === "repeat" && !(er && er.f === "rep")) goStep("main");
+  if (!amount() || (er && er.f === "amt")) target = $("add-amt");
+  if (!target && !named()) { ad.nameTried = true; render(); target = $("add-name"); }
   if (!target && !ad.split && !ad.cat) target = box.querySelector('#add-cats [role="radio"]') || $("add-newcat");
   if (!target && er) {
     if (er.f === "parts") target = box.querySelector('#add-parts select[data-pc]:invalid, #add-parts [aria-invalid="true"]') || [...box.querySelectorAll("#add-parts [data-pc]")].find((s) => !s.value) || box.querySelector("#add-parts [data-pa]");
     else if (er.f === "cust") target = box.querySelector("[data-cust]");
-    else if (er.f === "date") target = $("add-pickb") || $("add-pick");
+    else if (er.f === "date") target = $("add-pickb") || $("add-datecell");
     else if (er.f === "rep") { if (layout === "phone") { ad.step = "repeat"; render(); } target = $("add-until"); }
   }
   if (target) target.focus();
@@ -1065,8 +1100,18 @@ function onClick(ev) {
   }
   if ((x = at("[data-sm]"))) { if (x.dataset.sm === "custom" && ad.sm !== "custom") seedCustom(); ad.sm = x.dataset.sm; render(); return; }
   if ((x = at("[data-by]"))) { ad.by = x.dataset.by; ad.custCents = null; render(); return; }
-  if ((x = at("[data-ad]"))) { ad.date = x.dataset.ad; render(); refocus("add-date", "data-ad", ad.date); return; }
-  if (at("#add-pickb")) { const p = $("add-pick"); try { p.showPicker(); } catch (e) { p.focus(); p.click(); } return; }
+  if ((x = at("[data-ad]"))) { ad.date = x.dataset.ad; ad.cal = null; render(); refocus("add-date", "data-ad", ad.date); return; }
+  if (at("#add-pickb") || at("#add-datecell")) return openCal(!ad.cal);
+  if ((x = at("[data-cd]"))) { ad.date = normDate(x.dataset.cd); ad.cal = null; render(); calClosed(); return; }
+  if ((x = at("[data-cm]"))) {
+    const k = +x.dataset.cm;
+    ad.cal = ymAdd(ad.cal[0], ad.cal[1], k);
+    ad.calF = monthStep(ad.calF, k);
+    render();
+    const b = $("add-cal").querySelector('[data-cm="' + k + '"]');
+    if (b && !b.disabled) b.focus(); else focusDay();
+    return;
+  }
   if ((x = at("[data-tg]"))) { ad.tags = ad.tags.filter((g) => g !== x.dataset.tg); render(); const i = $("add-tag"); if (i) i.focus(); return; }
   if (at("#add-rep")) { ad.rep = !ad.rep; render(); return; }
   if ((x = at("[data-fq]"))) { ad.fq = x.dataset.fq; render(); if (ad.fq === "custom") $("add-every").focus(); return; }
@@ -1092,23 +1137,19 @@ function onClick(ev) {
   if (at("[data-rule-edit]")) { const rr = state.rules.find((r) => r.id === ad.edit.rid); if (rr) switchTo({ rule: rr }); return; }
   if ((x = at("[data-k]"))) {
     const k = x.dataset.k;
-    if (k === "next") return goStep("details");
+    if (k === "next") return keypadDone();
     ad.amt = press(ad.amt, k);
     ad.amtTried = false;
+    $("add-amt").value = ad.amt; // the field keeps the focus, so render() leaves it alone
     render();
     return;
   }
   if ((x = at("[data-step]"))) return goStep(x.dataset.step);
-  if ((x = at("[data-again]"))) {
-    const list = againList(cache.payees, ad.type), p = list[+x.dataset.again];
-    if (p) { pickPayee(p); ad.step = "amt"; goStep("details"); }
-    return;
-  }
 }
 function onInput(ev) {
   const n = ev.target, id = n.id;
   if (id === "add-amt") { ad.amt = n.value; ad.amtTried = false; ad.custCents = null; render(); return; }
-  if (id === "add-name") { ad.name = n.value; ad.hl = 0; applyMemory(); renderSugg(); render(); return; }
+  if (id === "add-name") { ad.name = n.value; ad.hl = n.value.trim() ? 0 : -1; applyMemory(); renderSugg(); render(); return; }
   if (id === "add-note") { ad.note = n.value; return; }
   if (id === "add-tag") { ad.tagDraft = n.value; if (n.value.includes(",")) { ad.tagDraft = n.value.replace(/,/g, ""); addTag(); } return; }
   if (id === "add-newcat") { ad.cat = n.value.trim() || null; ad.touched.cat = 1; render(); return; }
@@ -1127,7 +1168,6 @@ function onInput(ev) {
 }
 function onChange(ev) {
   const n = ev.target, id = n.id;
-  if (id === "add-pick" && n.value) { ad.date = normDate(n.value); render(); if (layout !== "phone") { const b = $("add-pickb"); if (b) b.focus(); } return; }
   if (id === "add-unit") { ad.unit = n.value; render(); return; }
   if (id === "add-bysel") { ad.by = n.value; ad.custCents = null; render(); return; }
   if (id === "add-tag" && cache.tags.includes(cleanTag(n.value))) { ad.tagDraft = n.value; addTag(); return; }
@@ -1157,7 +1197,9 @@ function onKey(ev) {
   if (ev.key === "Escape") {
     ev.preventDefault();
     if (suggOpen()) { closeSugg(); return; }
-    if (layout === "phone" && ad.step === "repeat") { goStep("details"); return; }
+    if (ad.cal) { ad.cal = null; render(); calClosed(); return; }
+    if (layout === "phone" && form().classList.contains("kp")) { keypad(false); return; }
+    if (layout === "phone" && ad.step === "repeat") { goStep("main"); return; }
     requestClose();
     return;
   }
@@ -1169,9 +1211,27 @@ function onKey(ev) {
     if (ev.key === "ArrowUp") { ev.preventDefault(); ad.hl = Math.max(0, ad.hl - 1); renderSugg(); return; }
   }
   if (id === "add-tag" && ev.key === "Backspace" && !n.value && ad.tags.length) { ad.tags.pop(); render(); return; }
+  if (n.dataset && n.dataset.cd) {
+    const to = calKey(ev.key, n.dataset.cd, document.documentElement.dir === "rtl");
+    if (!to) return;
+    ev.preventDefault();
+    const max = ad.rep || ad.mode === "rule" ? null : TODAY;
+    ad.calF = max && to > max ? max : to;
+    ad.cal = ym(ad.calF);
+    render();
+    focusDay();
+    return;
+  }
   if (ev.key === "Enter" && !ev.shiftKey && !ev.altKey) {
-    if (id === "add-amt") { ev.preventDefault(); normalizeAmount(); if (layout === "phone") goStep("details"); else $("add-name").focus(); return; }
-    if (id === "add-name") { ev.preventDefault(); if (suggOpen()) pickSugg(ad.hl); else commit(false); return; }
+    if (id === "add-amt") { ev.preventDefault(); normalizeAmount(); if (layout === "phone") keypadDone(); else $("add-name").focus(); return; }
+    if (id === "add-name") {
+      ev.preventDefault();
+      if (suggOpen() && ad.hl >= 0) pickSugg(ad.hl);
+      else if (layout !== "phone") commit(false);
+      else if (named()) n.blur();
+      else { ad.nameTried = true; render(); }
+      return;
+    }
     if (id === "add-tag") { ev.preventDefault(); addTag(); return; }
     if (n.dataset && n.dataset.pa !== undefined) {
       ev.preventDefault();
@@ -1195,12 +1255,25 @@ function init() {
     if (ev.target === wrap) { ev.preventDefault(); requestClose(); return; }
     const s = ev.target.closest("[data-si]");
     if (s) { ev.preventDefault(); pickSugg(+s.dataset.si); }
+    // Keys leave the focus, and the caret, in the amount
+    if (ev.target.closest("#add-keypad")) ev.preventDefault();
+  });
+  // A tap on the amount opens the keypad, also when the field still has focus; a tap anywhere else closes it
+  wrap.addEventListener("pointerdown", (ev) => {
+    if (layout !== "phone" || !form()) return;
+    if (ev.target.closest("#add-amtrow")) keypad(true);
+    else if (!ev.target.closest("#add-keypad, #add-type")) keypad(false);
   });
   wrap.addEventListener("click", onClick);
   wrap.addEventListener("input", onInput);
   wrap.addEventListener("change", onChange);
   wrap.addEventListener("submit", (ev) => { ev.preventDefault(); commit(false); });
-  wrap.addEventListener("focusin", (ev) => { if (ev.target.id === "add-name") renderSugg(); });
+  wrap.addEventListener("focusin", (ev) => {
+    const id = ev.target.id;
+    if (id === "add-name") { if (!ad.name.trim()) ad.hl = -1; renderSugg(); }
+    if (id === "add-amt") keypad(true);
+    else if (/^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) keypad(false);
+  });
   wrap.addEventListener("focusout", (ev) => {
     if (ev.target.id === "add-name") setTimeout(() => { if (document.activeElement !== $("add-name")) closeSugg(); }, 150);
     if (ev.target.id === "add-amt" && layout !== "phone") normalizeAmount();
@@ -1211,7 +1284,6 @@ function init() {
   matchMedia("(max-width: 767px)").addEventListener("change", () => {
     if (wrap.hidden) return;
     const keepFocus = document.activeElement && document.activeElement.id;
-    if (ad.step === "amt" && isEdit()) ad.step = "details";
     build(); render();
     const n = keepFocus && $(keepFocus);
     if (n) n.focus(); else focusStart();
