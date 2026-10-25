@@ -17,8 +17,10 @@
 .rec-nonew{padding:28px 10px}
 .rec-tipw{font-size:inherit;color:var(--w-ink3)}
 /* The day picked in the calendar */
-.rec-day{margin-top:8px}
-.rec-day .w-dayh{position:static;align-items:center;padding-block:8px 6px}
+/* The right column: the picked day on top, what Wally noticed filling the rest */
+.rec-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rec-side > .w-panel:last-child{flex:1}
+.rec-day .w-ph{align-items:center}
 .rec-day .w-rrow.rec-drow{grid-template-columns:32px minmax(0,1fr) auto}
 
 #rec-page{display:grid;gap:16px}

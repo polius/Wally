@@ -186,9 +186,11 @@ function render() {
     '<div class="w-grid2 rec-top">' +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Next five weeks") + '</h4><p id="rec-cal-sub"></p></div>' +
         '<div class="w-legend"><span><s class="rec-lg-today"></s>' + t("Today") + '</span><span><s class="rec-lg-in"></s>' + t("Money in") + "</span></div></div>" +
-        '<div class="w-rcal rec-cal" id="rec-cal"></div><div class="rec-day" id="rec-day" hidden></div></section>' +
+        '<div class="w-rcal rec-cal" id="rec-cal"></div></section>' +
+      // Beside the calendar: the day picked in it, over what Wally noticed
+      '<div class="rec-side"><section class="w-panel rec-day" id="rec-day" hidden></section>' +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Wally noticed") + "</h4><p>" + t("Price changes, and payees that look like they repeat") + '</p></div></div><div class="w-list" id="rec-notice">' +
-        (noticed(rules) || '<div class="w-empty rec-nonew"><b>' + t("Nothing new") + "</b><p>" + t("No price changes or new patterns.") + "</p></div>") + "</div></section>" +
+        (noticed(rules) || '<div class="w-empty rec-nonew"><b>' + t("Nothing new") + "</b><p>" + t("No price changes or new patterns.") + "</p></div>") + "</div></section></div>" +
     "</div>" +
     '<div class="w-tx rec-body">' +
       '<section class="w-panel rec-list" id="rec-list" aria-label="' + esc(t("Rules")) + '">' + list(listed, shown) + "</section>" +
@@ -247,7 +249,7 @@ function calendar() {
   }
   const box = root.querySelector("#rec-cal");
   box.innerHTML = cells;
-  // The picked day lists its items under the calendar, so only the others get a tooltip
+  // The picked day lists its items beside the calendar, so only the others get a tooltip
   box.querySelectorAll("[data-rd]:not(.sel)").forEach((b) => {
     const items = byDay[b.dataset.rd];
     hover(b, () => "<b>" + esc(dlabL(b.dataset.rd)) + "</b>" + items.map((x) => row(esc(x.r.n) + (couple() ? '<small class="rec-tipw"> · ' + esc(pname(x.r.p)) + "</small>" : ""), m(ruleAmt(x.r), isIncome(x.r) ? "+" : ""), cc(x.r.c))).join(""));
@@ -259,13 +261,13 @@ function dayList(items) {
   const box = root.querySelector("#rec-day");
   box.hidden = !items;
   if (!items) { box.innerHTML = ""; return; }
-  box.innerHTML = '<div class="w-dayh">' + esc(dlabL(ui.day)) + '<button type="button" class="w-x" data-day-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    items.map(({ r }) => {
+  box.innerHTML = '<div class="w-ph"><div><h4>' + esc(dlabL(ui.day)) + '</h4></div><button type="button" class="w-x" data-day-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
+    '<div class="w-list">' + items.map(({ r }) => {
       const inc = isIncome(r), who = couple() ? '<span class="rec-who">' + av(r.p, "sm") + esc(pname(r.p)) + "</span> · " : "";
       return '<button type="button" class="w-rrow rec-drow' + (r.id === ui.sel ? " sel" : "") + '" data-sel="' + r.id + '">' + tile(r.c, 32) +
         '<div class="rec-rn"><h6>' + esc(r.n) + '</h6><p><span class="rec-meta">' + who + esc(shortDesc(r)) + "</span></p></div>" +
         '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + "</span></button>";
-    }).join("");
+    }).join("") + "</div>";
 }
 
 /* ---------- Wally noticed ---------- */

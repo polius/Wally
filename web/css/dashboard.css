@@ -203,9 +203,9 @@
 #main[data-page=dashboard] a.w-link{color:var(--w-accent-ink)}
 .w-settle .w-btn{white-space:nowrap;flex:none}
 .d-calleg{justify-content:flex-end;max-width:55%;row-gap:4px}
-/* By category and Category lines: the controls and the long legend get their own row */
-.w-hh.d-wide > .w-hright{flex-basis:100%;justify-items:start}
-.w-hh.d-wide .w-hctl{justify-content:flex-start}
+/* By category and Category lines: the long legend gets a row of its own; the controls stay where they are */
+.w-hh.d-wide > .w-hright{display:contents}
+.w-hh.d-wide #h-legend{flex-basis:100%;justify-content:flex-start}
 
 /* Right to left: amounts stay left to right ("2,831.28 €", never "€ 2,831.28") */
 [dir=rtl] #main[data-page=dashboard] :is(.w-big,.w-kpi > b,.w-trio b,.w-trend .row b,.d-pbig,.w-amt,.amt,.w-delta b,.w-pct,.w-dl,.w-date){direction:ltr;unicode-bidi:isolate}
