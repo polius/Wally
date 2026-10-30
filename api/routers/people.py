@@ -7,7 +7,6 @@ from ..database import get_session
 from ..models.people import Person, PersonCreate, PersonUpdate, PersonPublic, SessionToken, person_public
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
-from ..models.money import Settlement
 from ..models.api_keys import ApiKeys
 from ..services.ledger import people_ids
 from ..util import to_cents, even_shares
@@ -152,7 +151,6 @@ def delete_person(
         if (item.person_id, item.shares, item.paid_by) != before:
             db.add(item)
 
-    db.exec(delete(Settlement).where((Settlement.from_person == person_id) | (Settlement.to_person == person_id)))
     db.exec(delete(SessionToken).where(SessionToken.person_id == person_id))
     db.exec(delete(ApiKeys).where(ApiKeys.person_id == person_id))
     db.delete(person)

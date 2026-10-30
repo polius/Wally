@@ -157,7 +157,7 @@ def migrate_db():
             for step in range(version + 1, SCHEMA_VERSION + 1):
                 STEPS[step](conn, household_today())
             _set_schema_version(conn, SCHEMA_VERSION)
-        # New tables (people, sessions, settle up, budgets, goals, rules)
+        # New tables (people, sessions, rules)
         SQLModel.metadata.create_all(engine)
     except Exception as error:
         log.exception("Upgrade failed, restoring %s", backup)

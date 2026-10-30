@@ -15,11 +15,10 @@ from .models.app import AppConfig
 from .models.people import Person
 from .models.transactions import Transaction
 from .models.recurring_transactions import RecurringTransaction
-from .models.money import Settlement, ImportRule
+from .models.money import ImportRule
 from .models.tags import Tag
 from .services.engine import run_all
 from .services.ledger import resolve_owner
-from .routers.money import balances
 from .util import today as household_today
 
 def _money(value: float) -> Decimal:
@@ -146,17 +145,6 @@ def generate_demo():
 
         # The engine makes every rule's transactions up to today, as it does every night
         run_all(db, today)
-
-        # They settle up at the end of each month, except the current one
-        cursor = start
-        while cursor < today.replace(day=1):
-            month_end = (cursor + relativedelta(months=1)) - timedelta(days=1)
-            net = balances(db, month_end)
-            owed = net.get(A, 0)
-            if owed:
-                db.add(Settlement(date=month_end, from_person=N if owed > 0 else A, to_person=A if owed > 0 else N, amount=Decimal(abs(owed)) / 100, created_by=A))
-                db.commit()
-            cursor = (cursor + relativedelta(months=1)).replace(day=1)
 
         for name in ("coffee", "sport", "gift", "holiday"):
             if not db.get(Tag, name):

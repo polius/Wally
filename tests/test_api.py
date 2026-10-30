@@ -1,4 +1,4 @@
-"""API tests: money maths, the recurring engine, sign-in, settle up, import matching, the upgrade from 1.x.
+"""API tests: money maths, the recurring engine, sign-in, import matching, the upgrade from 1.x.
 
 Run with: pytest tests
 """
@@ -305,17 +305,11 @@ def test_turning_signin_on_needs_passwords(couple):
     r = client.put("/signin", json={"enabled": True, "passwords": {str(alex): "alex-pass-1"}})
     assert r.status_code == 400 and r.json()["detail"]["missing"] == ["Ana"]
 
-# ---------- settle up ----------
-def test_settle_up(couple):
+# ---------- settle up is gone ----------
+def test_settle_up_is_gone(couple):
     client, alex, ana = couple
-    expense(client, amount="100", paid_by=alex)
-    expense(client, amount="30", paid_by=ana)
-    expense(client, amount="50", person_id=ana)
-    s = client.get("/settlements").json()
-    assert s["net"] == {str(alex): "35.00", str(ana): "-35.00"}
-    assert s["transfers"] == [{"from": ana, "to": alex, "amount": "35.00"}]
-    client.post("/settlements", json={"date": TODAY, "from_person": ana, "to_person": alex, "amount": "35"})
-    assert client.get("/settlements").json()["transfers"] == []
+    assert client.get("/settlements").status_code == 404
+    assert "settlement" not in sqlmodel.SQLModel.metadata.tables
 
 # ---------- summary and search ----------
 def test_monthly_summary_counts_shares(couple):
