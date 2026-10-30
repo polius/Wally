@@ -1,6 +1,6 @@
 /* The add sheet's arithmetic and memory: shares in cents, income weights, payees seen before,
-   category use and what a budget has left. Nothing here touches the page. */
-import { state, totals, TODAY, ds, ym, ymAdd, dim, addD, evalAmt as coreEval, catIcon, isIncomeCat } from "../core.js";
+   category use. Nothing here touches the page. */
+import { state, totals, TODAY, ds, ym, ymAdd, addD, evalAmt as coreEval, catIcon, isIncomeCat } from "../core.js";
 
 /* What was typed in the amount field: {v, expr, ok}. v is in euros, rounded to cents.
    ok is false for anything that is not numbers, + and −. */
@@ -135,20 +135,3 @@ export function allTags() {
   return Object.keys(o).sort((a, b) => o[b] - o[a] || a.localeCompare(b));
 }
 
-/* ---------- budgets ---------- */
-/* What a category's budget has left in the period of a date (its month, or its year for yearly
-   budgets), for the whole household, leaving out the transactions being edited. */
-export function budgetLeft(category, date, skipIds) {
-  const b = (state.budgets || []).find((x) => x.category === category);
-  if (!b) return null;
-  const [y, m] = ym(date);
-  const yearly = b.kind === "yearly";
-  const from = yearly ? ds(y, 1, 1) : ds(y, m, 1), to = yearly ? ds(y, 12, 31) : ds(y, m, dim(y, m));
-  let spent = 0;
-  for (const t of state.tx) {
-    if (t.type !== "expense" || t.c !== category || t.d < from || t.d > to || (skipIds && skipIds.has(t.id))) continue;
-    spent += t.a;
-  }
-  const amount = Number(b.amount) || 0;
-  return { budget: b, amount, spent, left: Math.round((amount - spent) * 100) / 100, yearly, y, m };
-}

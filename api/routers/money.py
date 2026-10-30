@@ -1,14 +1,13 @@
-"""Settle up, monthly summaries, budgets (2.1) and savings goals (2.2)."""
+"""Settle up and monthly summaries."""
 from typing import Annotated
 from datetime import date
-from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select, desc, delete
+from sqlmodel import Session, select, desc
 
 from ..database import get_session
 from ..models.transactions import Transaction
-from ..models.money import Settlement, SettlementCreate, Budget, BudgetCreate, Goal, GoalCreate, GoalEntry, GoalEntryCreate
-from ..services.ledger import people_ids, parts, ensure_category
+from ..models.money import Settlement, SettlementCreate
+from ..services.ledger import people_ids, parts
 from ..util import to_cents, from_cents
 from .auth import Actor, check_login
 
@@ -144,119 +143,3 @@ def monthly_summary(
             for person, part in split.items():
                 c["people"][str(person)] = c["people"].get(str(person), 0) + part
     return {"first": first.isoformat() if first else None, "months": [months[k] for k in sorted(months)]}
-
-# ---------- budgets (2.1) ----------
-@router.get("/budgets", response_model=list[Budget])
-def read_budgets(
-    db: Annotated[Session, Depends(get_session)],
-):
-    return db.exec(select(Budget).order_by(Budget.category)).all()
-
-@router.put("/budgets", response_model=list[Budget])
-def replace_budgets(
-    budgets: list[BudgetCreate],
-    db: Annotated[Session, Depends(get_session)],
-):
-    """Save every budget at once, as the Edit budgets sheet does. Categories left out have none."""
-    seen = set()
-    for b in budgets:
-        if b.category in seen:
-            raise HTTPException(status_code=400, detail=f"{b.category} has two budgets.")
-        seen.add(b.category)
-    db.exec(delete(Budget))
-    for b in budgets:
-        ensure_category(db, b.category)
-        db.add(Budget(**b.model_dump()))
-    db.commit()
-    return read_budgets(db)
-
-@router.delete("/budgets/{budget_id}")
-def delete_budget(
-    budget_id: int,
-    db: Annotated[Session, Depends(get_session)],
-):
-    row = db.get(Budget, budget_id)
-    if row:
-        db.delete(row)
-        db.commit()
-    return {"ok": True}
-
-# ---------- savings goals (2.2) ----------
-def _goal_out(db: Session, goal: Goal) -> dict:
-    entries = db.exec(select(GoalEntry).where(GoalEntry.goal_id == goal.id).order_by(desc(GoalEntry.date), desc(GoalEntry.id))).all()
-    saved = sum((e.amount for e in entries), Decimal("0"))
-    return {**goal.model_dump(), "saved": str(saved), "entries": [e.model_dump() for e in entries]}
-
-@router.get("/goals")
-def read_goals(
-    db: Annotated[Session, Depends(get_session)],
-):
-    return [_goal_out(db, g) for g in db.exec(select(Goal).order_by(Goal.done, Goal.position, Goal.id)).all()]
-
-@router.post("/goals")
-def create_goal(
-    body: GoalCreate,
-    db: Annotated[Session, Depends(get_session)],
-):
-    goal = Goal(**body.model_dump())
-    db.add(goal)
-    db.commit()
-    db.refresh(goal)
-    return _goal_out(db, goal)
-
-@router.put("/goals/{goal_id}")
-def update_goal(
-    goal_id: int,
-    body: GoalCreate,
-    db: Annotated[Session, Depends(get_session)],
-    done: bool | None = None,
-):
-    goal = db.get(Goal, goal_id)
-    if not goal:
-        raise HTTPException(status_code=404, detail="This goal does not exist.")
-    goal.sqlmodel_update(body.model_dump())
-    if done is not None:
-        goal.done = done
-    db.add(goal)
-    db.commit()
-    db.refresh(goal)
-    return _goal_out(db, goal)
-
-@router.delete("/goals/{goal_id}")
-def delete_goal(
-    goal_id: int,
-    db: Annotated[Session, Depends(get_session)],
-):
-    goal = db.get(Goal, goal_id)
-    if not goal:
-        raise HTTPException(status_code=404, detail="This goal does not exist.")
-    db.exec(delete(GoalEntry).where(GoalEntry.goal_id == goal_id))
-    db.delete(goal)
-    db.commit()
-    return {"ok": True}
-
-@router.post("/goals/{goal_id}/entries")
-def add_goal_entry(
-    goal_id: int,
-    body: GoalEntryCreate,
-    db: Annotated[Session, Depends(get_session)],
-):
-    goal = db.get(Goal, goal_id)
-    if not goal:
-        raise HTTPException(status_code=404, detail="This goal does not exist.")
-    db.add(GoalEntry(goal_id=goal_id, **body.model_dump()))
-    db.commit()
-    return _goal_out(db, goal)
-
-@router.delete("/goals/{goal_id}/entries/{entry_id}")
-def delete_goal_entry(
-    goal_id: int,
-    entry_id: int,
-    db: Annotated[Session, Depends(get_session)],
-):
-    entry = db.get(GoalEntry, entry_id)
-    if not entry or entry.goal_id != goal_id:
-        raise HTTPException(status_code=404, detail="This entry does not exist.")
-    db.delete(entry)
-    db.commit()
-    return _goal_out(db, db.get(Goal, goal_id))

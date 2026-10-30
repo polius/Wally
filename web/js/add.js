@@ -10,7 +10,7 @@
    openAdd({date, person, name, amount, category, type})   prefilled
    flushQueue()                     send what was saved while Wally couldn't be reached */
 import {
-  $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName, monthIn,
+  $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName,
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
   rerank, MOD,
 } from "./core.js";
@@ -178,7 +178,6 @@ function deskHtml() {
     '<p class="w-err w-indent" id="add-nerr" hidden role="alert"></p>' +
     '<div class="w-frow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
     '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
-    '<p class="w-budget" id="add-budget" hidden></p>' +
     '<div class="w-frow" id="add-whorow"><span id="lbl-who"></span><div class="w-chips" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
     '<div class="w-sub" id="add-split" hidden>' + splitInner(true) + "</div>" +
     '<div class="w-frow"><span id="lbl-date"></span><div class="w-chips" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>' +
@@ -253,7 +252,6 @@ function render() {
   if (!inc && !ad.split) renderCat();
   show("add-parts", ad.split);
   if (ad.split) renderParts();
-  renderBudget();
 
   // who and how it is shared
   show("add-whorow", couple());
@@ -424,27 +422,6 @@ function renderParts() {
   const er = problem();
   const m = er && er.f === "parts" && er.m ? er.m : "";
   setText("add-perr", m); show("add-perr", !!m);
-}
-
-function renderBudget() {
-  const box = $("add-budget");
-  if (!box) return;
-  const on = ad.type === "expense" && !ad.split && ad.cat;
-  const skip = new Set((ad.group || (ad.edit ? [ad.edit] : [])).map((x) => x.id));
-  const b = on ? C.budgetLeft(ad.cat, dateOf(), skip) : null;
-  if (!b || ad.mode === "rule") { box.hidden = true; return; }
-  const [y, m] = ym(TODAY), same = b.yearly ? b.y === y : b.y === y && b.m === m;
-  const when = b.yearly ? (same ? t("this year") : String(b.y)) : same ? t("this month") : monthIn(b.m) + (b.y !== y ? " " + b.y : "");
-  const a = amount(), after = Math.round((b.left - a) * 100) / 100;
-  let text = b.left >= 0
-    ? t("{category}: {amount} left {when}", { category: ad.cat, amount: f(b.left), when })
-    : t("{category}: {amount} over {when}", { category: ad.cat, amount: f(-b.left), when });
-  let extra = "";
-  if (a > 0 && b.left >= 0) extra = after >= 0 ? t("{amount} after this", { amount: f(after) }) : t("this goes {amount} over", { amount: f(-after) });
-  const used = b.amount > 0 ? Math.min(1, Math.max(0, (b.spent + (a > 0 ? a : 0)) / b.amount)) : 1;
-  box.className = "w-budget" + (b.left < 0 || after < 0 ? " over" : "");
-  box.innerHTML = '<span class="w-bmeter" aria-hidden="true"><i style="width:' + Math.round(used * 100) + '%"></i></span><span>' + esc(text) + (extra ? ' <small>' + esc(extra) + "</small>" : "") + "</span>";
-  box.hidden = false;
 }
 
 function renderDate() {

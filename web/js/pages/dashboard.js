@@ -1,7 +1,7 @@
 /* Dashboard: are we on track, where did it go, and what's coming.
    The lead panel (main chart and key figures), then Categories and Recent, then Kept each
    month and Coming up. Under 768 px it switches to the compact phone layout. */
-import { state, t, esc, icon, rerank, on } from "../core.js";
+import { state, t, esc, icon, rerank } from "../core.js";
 import { navigate, scopeSwitch } from "../shell.js";
 import { hideTip, empty } from "../ui.js";
 import { view, loadRange, setMode, setMonth, stepMonth, canStep, rangeOf, goTx, openRange, openRangeSheet, MODES } from "./dashboard/range.js";
@@ -14,7 +14,7 @@ const ROWS = [["hero"], ["cats", "recent"], ["kept", "upcoming"]];
 const WIDGET_KEYS = ["cats", "recent", "kept", "upcoming"];
 const phoneMQ = matchMedia("(max-width: 767px)");
 
-let root = null, layoutKey = "", mounted = false;
+let root = null, layoutKey = "";
 
 /* ---------- layout ---------- */
 function header() {
@@ -101,7 +101,6 @@ function onMedia() { if (root) layout(); }
 /* ---------- the page contract ---------- */
 export function mount(el, route) {
   root = el;
-  mounted = true;
   loadRange();
   // Links such as Month in review's "Open on the Dashboard" name a month: /?ym=2026-09
   const ym = route && route.query.get("ym");
@@ -116,7 +115,6 @@ export function update() {
   if (key !== layoutKey) layout(); else render();
 }
 export function unmount() {
-  mounted = false;
   if (root) { root.removeEventListener("click", onClick); root.classList.remove("d-phone"); }
   phoneMQ.removeEventListener("change", onMedia);
   root = null;
@@ -135,5 +133,3 @@ export function key(ev) {
   }
 }
 
-/* Budgets arrive after the first page is drawn: the phone's Budgets card is about them */
-on("change", (d) => { if (mounted && root && d && d.extras && state.tx.length) render(); });

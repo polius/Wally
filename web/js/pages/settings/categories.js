@@ -73,11 +73,10 @@ async function addCategory() {
   } catch (e) { errorToast(e); }
 }
 
-/* Every transaction, rule, budget and import rule that used a category now uses another name */
+/* Every transaction, recurring rule and import rule that used a category now uses another name */
 function renameLocally(from, to) {
   state.tx.forEach((tx) => { if (tx.c === from) tx.c = to; });
   state.rules.forEach((r) => { if (r.c === from) r.c = to; });
-  (state.budgets || []).forEach((b) => { if (b.category === from) b.category = to; });
   (state.irules || []).forEach((r) => { if (r.category === from) r.category = to; });
 }
 
@@ -125,8 +124,7 @@ async function remove(name) {
   openDialog({
     title: t("Delete {name}?", { name: esc(name) }),
     body: "<p>" + t("{list} use {name}. Move them to:", { list: new Intl.ListFormat(LANG, { type: "conjunction" }).format(used), name: esc(name) }) + "</p>" +
-      '<select class="w-mini w-sselect" id="cd-to" aria-label="' + esc(t("Move to")) + '">' + others.map((c) => '<option value="' + esc(c) + '"' + (c === pick ? " selected" : "") + ">" + esc(c) + "</option>").join("") + "</select>" +
-      "<p>" + t("Budgets and import rules for {name} move too.", { name: esc(name) }) + "</p>",
+      '<select class="w-mini w-sselect" id="cd-to" aria-label="' + esc(t("Move to")) + '">' + others.map((c) => '<option value="' + esc(c) + '"' + (c === pick ? " selected" : "") + ">" + esc(c) + "</option>").join("") + "</select>",
     ok: t("Delete and move"),
     danger: true,
     onOk: async (root) => {

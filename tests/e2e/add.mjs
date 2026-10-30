@@ -225,14 +225,11 @@ saved = await saveWith(page, "Enter");
 check(saved.name === "Errand" && saved.category === "Food", "Enter on the name adds", saved.name);
 await toastText(page, /Added/);
 
-section("Budget hint and duplicate warning");
+section("Duplicate warning");
 await open(page);
 await page.keyboard.type("7");
 await pickCat(page, "Food");
-const bud = await text(page, "#add-budget");
-check(/^Food: .* (left|over) this month/.test(bud || ""), "budget hint after choosing a category", bud);
-check(/after this|goes .* over/.test(bud || "") || /over this month/.test(bud || ""), "hint counts this amount", bud);
-await pickCat(page, "Food");
+check(await page.locator("#add-budget").count() === 0, "no budget hint under the category");
 await page.fill("#add-name", "Dup check");
 await page.keyboard.press("Escape"); // closes suggestions if any
 if (await visible(page, "#dlg .w-dialog")) await page.click("#dlg [data-dlg-x]");

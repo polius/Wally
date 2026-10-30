@@ -22,7 +22,7 @@ run() { # run <suite> [env...]
   if env "$@" node "$HERE/$name.mjs"; then echo "--- $name passed"; else echo "--- $name FAILED"; FAILED="$FAILED $name"; fi
 }
 
-SUITES=${*:-"dashboard transactions add recurring budgets settings signin review flows"}
+SUITES=${*:-"dashboard transactions add recurring settings signin review flows"}
 for s in $SUITES; do
   case $s in
     dashboard|add|flows)
@@ -32,7 +32,7 @@ for s in $SUITES; do
       serve 8892 "$TMP/$s-perf" && run "$s" BASE=http://localhost:8892 SUITE=perf; stop 8892 ;;
     settings)
       serve 8891 "$TMP/$s" true && serve 8892 "$TMP/$s-empty" && run "$s" BASE=http://localhost:8891 EMPTY=http://localhost:8892; stop 8891; stop 8892 ;;
-    recurring|budgets|signin|review)
+    recurring|signin|review)
       run "$s" REPO="$REPO" PYTHON="$PYTHON" PORT=8893 ;;
   esac
 done

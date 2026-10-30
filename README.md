@@ -10,7 +10,7 @@
 <br>
 
 <p align="center">
-<b>Wally</b> is a lightweight, self-hosted money log for a household: what came in, where it went, what's coming, and who owes whom.
+<b>Wally</b> is a lightweight, self-hosted money log for a household: what came in, where it went, and what's coming.
 </p>
 
 <br>
@@ -83,14 +83,14 @@ Access Wally at: [http://localhost](http://localhost)
 
 ## What's in Wally
 
-- **Dashboard**: are we on track this month, where the money went, and what's coming. Safe to spend keeps your savings target aside first and counts the bills still due. Every number opens the transactions behind it.
+- **Dashboard**: what this month has spent against last month, where the money went, how much you kept each month, and what's coming. Every number opens the transactions behind it.
 - **Transactions**: any range, search across every month (`mercadona`, `#holiday`, `@ana`, `>50`, `march`), a calendar, bulk changes, and Undo.
 - **Recurring**: bills, subscriptions and salaries, added on their day by the server. Wally notices price rises and payees that look like they repeat.
-- **People**: each person's money, shared costs split evenly, by income or by hand, and settle up.
-- **Budgets and savings goals**, **Month in review** on the 1st, and a command bar (⌘K).
+- **People**: each person's money, and shared costs split evenly, by income or by hand.
+- **Month in review** on the 1st, and a command bar (⌘K).
 - **Your own password for each person**, with optional two-step sign-in. Optional for the whole household, as before.
 - **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
-- **Backups** every night, with restore.
+- **Backups** every night, in the data folder.
 - **Installs on your phone's home screen** and opens full screen. Light and dark, 13 languages.
 
 Wally never connects to a bank. You type what you spend, or import a file.

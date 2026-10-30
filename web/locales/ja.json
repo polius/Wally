@@ -1034,7 +1034,7 @@
  "Show {n} more": "さらに{n}件を表示",
  "Showing": "表示中",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "{name}を表示中：各予算は均等割りで、共有の支出は負担割合で計算します。",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "毎月、各メンバーが最初にWallyを開いたときに一度表示されます。過去の月はダッシュボードのメニューから開けます。",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "毎月、各メンバーが最初にWallyを開いたときに一度表示されます。過去の月はダッシュボードから開けます。",
  "Sign in": "ログイン",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "これでログインしてから、新しいパスワードを決めてください。使えるのは一度だけで、使用後はファイルから削除されます。{name}の2段階認証もオフになりますが、設定から再びオンにできます。サーバーにアクセスできない場合は、管理している人に頼んでください。",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "これでログインしてください。古い世帯のパスワードの代わりになります。このあと追加する人は、初回はこのパスワードでログインし、その後自分のパスワードを決めます。サーバーにアクセスできない場合は、管理している人に頼んでください。",

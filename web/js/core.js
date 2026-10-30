@@ -224,8 +224,6 @@ export const state = {
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
   tags: [],
-  budgets: [],
-  goals: [],
   irules: [],
   prefs: {},
   scope: "all",          // "all" or a person key
@@ -318,11 +316,10 @@ export async function loadAll() {
   loadExtras();
   return state;
 }
-/* Budgets, goals and import rules are not needed to draw the first page */
+/* Import rules are not needed to draw the first page */
 export async function loadExtras() {
   try {
-    const [budgets, goals, irules] = await Promise.all([GET("/budgets"), GET("/goals"), GET("/rules")]);
-    state.budgets = budgets; state.goals = goals; state.irules = irules;
+    state.irules = await GET("/rules");
     emit("change", { extras: true });
   } catch (e) { /* shown when opened */ }
 }

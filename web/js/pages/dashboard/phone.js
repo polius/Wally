@@ -1,13 +1,12 @@
 /* The Dashboard under 768 px: compact forms, not a scaled-down desktop. Spent so far against
-   last month, a small pace chart, top categories, a Budgets card (Budgets has no tab on phones),
-   recent, kept each month and bills in the next 7 days. */
-import { t, tn, esc, TODAY, ym, addD, f, f0, fk, pct, num, dlab, dlabW, cc, tile, icon, byCat, totals, F } from "../../core.js";
+   last month, a small pace chart, top categories, recent, kept each month and bills in the
+   next 7 days. */
+import { t, tn, esc, TODAY, addD, f, f0, fk, pct, num, dlab, dlabW, cc, tile, icon, byCat, totals, F } from "../../core.js";
 import { chart, el, txt, niceMax, hover, row } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, inDays } from "../../sched.js";
 import { scopeSwitch } from "../../shell.js";
 import { view, canStep } from "./range.js";
 import { paceData, countTo } from "./hero.js";
-import { compute as computeBudgets } from "../budgets.js";
 import { WIDGETS, renderRecent } from "./widgets.js";
 
 const $ = (id) => document.getElementById(id);
@@ -25,7 +24,6 @@ export function phoneHtml() {
   return '<section class="d-phero" data-w="hero"><span class="w-eyebrow" id="ph-eye"></span><span class="w-big" id="ph-big"></span><span class="d-pline" id="ph-line"></span></section>' +
     '<section class="w-panel d-ppace" data-w="hero"><div class="cv" id="ph-pace"></div></section>' +
     '<section class="w-panel" data-w="cats"><div class="w-ph"><h4>' + t("Top categories") + '</h4></div><div id="ph-cats"></div></section>' +
-    '<a class="w-panel d-pbud" href="/budgets" data-link id="ph-bud"></a>' +
     '<section class="w-panel" data-w="recent"><div class="w-ph"><h4>' + t("Recent") + '</h4><a class="w-link d-hlink" href="/transactions" data-link>' + t("All") + '</a></div><div id="recent"></div></section>' +
     WIDGETS.kept.html() +
     '<section class="w-panel" data-w="upcoming"><div class="w-ph"><h4>' + t("Coming up · next 7 days") + '</h4></div><div id="ph-up"></div></section>' +
@@ -79,22 +77,6 @@ function renderCats(r) {
     '<p class="w-hint">' + t("No spending yet in this range.") + "</p>";
 }
 
-/* Budgets has no tab on phones: this card opens it, with Budgets' own figures for this month */
-function renderBudgets() {
-  const box = $("ph-bud"), B = computeBudgets(...ym(TODAY));
-  if (!B.flex.length) {
-    box.innerHTML = '<span class="w-ico">' + icon("coin") + '</span><span class="d-min"><b>' + t("Budgets") + "</b><small>" + t("Set a monthly amount for the categories that vary") + "</small></span>" + icon("right", "d-chev");
-    box.setAttribute("aria-label", t("Budgets"));
-    return;
-  }
-  const left = B.left, days = B.mi.daysLeft;
-  const note = left <= 0 ? esc(t("Budgets")) : days <= 1 ? t("<b>{amount}</b> left in your budgets for today.", { amount: esc(f0(left)) }) : esc(tn(days, "{amount} a day for {n} day", "{amount} a day for {n} days", { amount: f0(B.perDay) }));
-  box.innerHTML = '<span class="d-min"><span class="w-eyebrow">' + (left >= 0 ? t("Flexible left") : t("Flexible over")) + '</span><b class="d-pbig amt">' + f0(Math.abs(left)) + "</b>" +
-    '<span class="w-budbar sm"><span style="width:' + Math.min(B.fb > 0 ? B.fs / B.fb : 1, 1) * 100 + "%" + (left < 0 ? ";background:var(--w-bad)" : "") + '"></span><i style="inset-inline-start:' + B.mi.pace * 100 + '%"></i></span>' +
-    '<small class="w-hint">' + note + "</small></span>" + icon("right", "d-chev");
-  box.setAttribute("aria-label", t("Budgets") + ": " + (left >= 0 ? t("Flexible left") : t("Flexible over")) + " " + f0(Math.abs(left)));
-}
-
 function renderUpcoming() {
   const occ = occurrences(addD(TODAY, 1), addD(TODAY, 7)).filter((x) => !isIncome(x.r) && ruleAmt(x.r) > 0);
   $("ph-up").innerHTML = occ.slice(0, 4).map((x) => '<button type="button" class="w-mrow d-mrow" data-go-rule="' + esc(x.r.id) + '">' + tile(x.r.c) + '<div class="d-min"><b>' + esc(x.r.n || x.r.c) +
@@ -106,7 +88,6 @@ function renderUpcoming() {
 export function renderPhone(r) {
   renderHero(r);
   renderCats(r);
-  renderBudgets();
   WIDGETS.kept.render(r);
   renderUpcoming();
   renderRecent(r, 5);

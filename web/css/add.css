@@ -71,15 +71,6 @@ html.w-addopen{overflow:hidden}
 .w-splitleft{font-size:12px;color:var(--w-ink3);text-align:end}
 .w-add .w-splitv input{margin-inline-start:2px}
 
-/* Budget hint under the category */
-.w-budget{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--w-ink2);margin:-6px 0 0;margin-inline-start:calc(var(--w-lblw) + 10px)}
-.w-budget small{color:var(--w-ink3);font-size:12px}
-.w-bmeter{width:44px;height:5px;border-radius:3px;background:var(--w-fill2);overflow:hidden;flex:none}
-.w-bmeter i{display:block;height:100%;border-radius:3px;background:var(--w-accent)}
-.w-budget.over{color:var(--w-bad)}
-.w-budget.over small{color:var(--w-bad)}
-.w-budget.over .w-bmeter i{background:var(--w-bad)}
-
 /* Split a receipt */
 .w-parts .w-parth{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
 .w-parts .w-parth b{font-weight:600}
@@ -172,8 +163,7 @@ html.w-addopen{overflow:hidden}
 
   /* the details */
   .w-addp .w-input input{height:48px;font-size:16px}
-  .w-addp .w-sub,.w-addp .w-budget,.w-addp .w-indent{margin-inline-start:0}
-  .w-addp .w-budget{margin-top:-2px}
+  .w-addp .w-sub,.w-addp .w-indent{margin-inline-start:0}
   .w-addp .w-psplit{display:grid;gap:10px}
   .w-addp .w-psplit[hidden]{display:none}
   .w-addp .w-psplit .w-seg{display:flex}

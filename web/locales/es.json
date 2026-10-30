@@ -1110,7 +1110,7 @@
  "Show {n} more": "Mostrar {n} más",
  "Showing": "Mostrando",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "Mostrando a {name}: cada presupuesto cuenta una parte igual, y los gastos compartidos cuentan según su parte.",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "Se muestra una vez al mes a cada persona, la primera vez que abre Wally. Cualquier mes se puede volver a abrir desde el menú del Panel.",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "Se muestra una vez al mes a cada persona, la primera vez que abre Wally. Cualquier mes se puede volver a abrir desde el Panel.",
  "Sign in": "Iniciar sesión",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "Inicia sesión con ella y luego elige una contraseña nueva. Funciona una sola vez y después se borra del archivo. También desactiva la verificación en dos pasos de {name}, que podrá volver a activarla en Ajustes. Si no tienes acceso al servidor, pídeselo a quien lo gestione.",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "Inicia sesión con ella. Sustituye a la antigua contraseña del hogar: cada persona que añadas entrará con ella la primera vez y luego elegirá la suya. Si no tienes acceso al servidor, pídeselo a quien lo gestione.",

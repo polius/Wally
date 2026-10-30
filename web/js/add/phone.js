@@ -38,7 +38,6 @@ export function phoneHtml() {
       '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
       '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + "</div>" + catBox() + "</div>" +
       '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
-      '<p class="w-budget" id="add-budget" hidden></p>' +
       '<div id="add-whorow"><div class="w-plabel" id="lbl-who"></div><div class="w-chips w-pscroll" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
       '<div class="w-psplit" id="add-split" hidden>' + splitInner(false) + "</div>" +
       '<div class="w-cells" id="add-cells">' +

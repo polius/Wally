@@ -28,7 +28,6 @@
 .w-mrcal a.c:hover{outline:2px solid var(--w-accent-line);outline-offset:-1px}
 .w-mrnext{margin-top:4px}
 .w-mrnext > svg.i{color:var(--w-ink3);flex:none}
-.w-mrover{color:var(--w-bad);font-weight:500}
 .w-mrf .w-btn{text-decoration:none}
 .w-mrcap{text-wrap:pretty}
 #mr-c12 .chart rect[role="button"]:focus{outline:none}
@@ -44,7 +43,6 @@
   .w-mrhero{grid-template-columns:minmax(0,1fr)}
   .w-mrk{grid-template-columns:repeat(2,minmax(0,1fr))}
   .w-mrcr{grid-template-columns:26px minmax(0,1fr) 60px 72px 84px}
-  .w-mrbud{grid-template-columns:minmax(0,1fr)}
   .w-mrf{flex-direction:column;align-items:stretch}
   .w-mrf > div{justify-content:flex-end;flex-wrap:wrap}
 }

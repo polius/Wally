@@ -6,7 +6,6 @@ const PAGES = {
   dashboard: () => import("./pages/dashboard.js"),
   transactions: () => import("./pages/transactions.js"),
   recurring: () => import("./pages/recurring.js"),
-  budgets: () => import("./pages/budgets.js"),
   settings: () => import("./pages/settings.js"),
   review: () => import("./pages/review.js"),
 };
@@ -14,7 +13,6 @@ const NAV = [
   ["dashboard", "/", "overview", () => t("Dashboard")],
   ["transactions", "/transactions", "list", () => t("Transactions")],
   ["recurring", "/recurring", "repeat", () => t("Recurring")],
-  ["budgets", "/budgets", "coin", () => t("Budgets")],
   ["settings", "/settings", "settings", () => t("Settings")],
 ];
 

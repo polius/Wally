@@ -53,7 +53,7 @@ async function open(base, path, { width = 1440, height = 900, theme = "light", p
 }
 const shot = async (page, name, full) => { if (SHOTS) await page.waitForTimeout(350), await page.screenshot({ path: join(SHOTS, name + ".png"), fullPage: !!full }); };
 /* Errors raised inside other pages' modules (reached through links and the command bar) are reported, not counted */
-const OTHERS = /\/js\/pages\/(dashboard|transactions|recurring|budgets|settings)/;
+const OTHERS = /\/js\/pages\/(dashboard|transactions|recurring|settings)/;
 const noErrors = (page, what) => {
   const mine = page.errors.filter((e) => !OTHERS.test(e)), theirs = page.errors.filter((e) => OTHERS.test(e));
   if (theirs.length) console.log("  note " + what + ": errors in other pages: " + [...new Set(theirs)].join(" | "));

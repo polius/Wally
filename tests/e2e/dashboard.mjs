@@ -215,7 +215,7 @@ try {
     if (w === 390) {
       ok(await p.locator("#d-prange").isVisible() && await p.locator(".d-mh .w-pswitch").isVisible() && await p.locator(".w-pchips").count() === 0, "phone: range title, person switch top right, no chips row");
       ok(/less|more/.test(await text(p, "#ph-line")) && !(await text(p, "#main")).includes("Safe to spend"), "phone: compared with last month, no Safe to spend");
-      ok((await p.getAttribute("#ph-bud", "href")) === "/budgets" && (await text(p, "#ph-bud")).includes("Flexible"), "phone: Budgets card with what is left");
+      ok(await p.locator("#ph-bud").count() === 0, "phone: no Budgets card");
       ok(await p.locator("#ph-shared,#d-cust,[data-w=unusual]").count() === 0, "phone: no shared costs card, Customize or Unusual");
       ok(await p.locator("#c-kept svg").count() === 1, "phone: Kept each month drawn");
       await p.click("#d-prange");
@@ -229,9 +229,6 @@ try {
       ok((await p.getAttribute('.w-pswitch-m [data-scope="1"]', "aria-pressed")) === "true" && await p.locator(".w-pswitch-m").isHidden(), "phone: picking a person shows them and closes the menu");
       await p.click(".w-pswitch-b");
       await p.click('.w-pswitch-m [data-scope="all"]');
-      await p.locator("#ph-bud").click();
-      await p.waitForTimeout(250);
-      ok(await path(p) === "/budgets", "phone: Budgets card navigates");
     }
     await p.close();
   }

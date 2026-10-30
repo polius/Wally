@@ -4,7 +4,7 @@
    On a phone it is four pages you tap or swipe through. Route: /review?m=YYYY-MM */
 import {
   t, tn, esc, state, f, f0, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
-  tile, cat, av, pname, couple, isIncomeCat, dows, wkOff, dlab, dlabL, dlabW, monthYear, F, savePrefs, on, icon,
+  tile, cat, av, pname, couple, isIncomeCat, dows, wkOff, dlab, dlabL, dlabW, monthYear, F, savePrefs, icon,
 } from "../core.js";
 import { hover, row, chart, el, txt, hideTip } from "../ui.js";
 import { navigate, setScope, scopeChips } from "../shell.js";
@@ -194,8 +194,6 @@ export function key(ev) {
     if (btn && !btn.disabled) { ev.preventDefault(); btn.click(); }
   }
 }
-// Budgets arrive after the first page is drawn
-on("change", (r) => { if (r && r.extras && root) render(); });
 
 function render() {
   if (!root) return;
@@ -261,8 +259,7 @@ function desktop(m) {
   html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-days"><h2 id="mr-days">' + t("Day by day") + "<small>" + (m.sc === "all" ? t("Household, without bills") : t("{name}, without bills", { name: esc(pname(m.sc)) })) + "</small></h2>" + dayGrid(m, "mrd") + dayFacts(m) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-bills"><h2 id="mr-bills">' + t("Bills") + "<small>" + tn(m.billsN, "{n} payment, {amount}", "{n} payments, {amount}", { amount: f0(s.bills) }) + "</small></h2>" + bills(m) + "</section></div>";
   html += '<section class="w-mrs" aria-labelledby="mr-know"><h2 id="mr-know">' + t("Worth knowing") + '</h2><div class="w-mrhl">' + highlights(m).map((x) => "<div><span>" + x[0] + "</span><b>" + x[1] + "</b><p>" + x[2] + "</p></div>").join("") + "</div></section>";
-  html += budgets(m);
-  html += '<footer class="w-mrf"><span class="w-hint">' + t("Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.") + '</span><div><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open on the Dashboard") + "</a></div></footer>";
+  html += '<footer class="w-mrf"><span class="w-hint">' + t("Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.") + '</span><div><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open on the Dashboard") + "</a></div></footer>";
   return html;
 }
 
@@ -392,25 +389,6 @@ function highlights(m) {
       extra.length ? t("{names}, on top of regular income.", { names: extra.slice(0, 3).map((x) => esc(x.n || cat(x.c).n)).join(", ") }) : t("Nothing beyond the regular income.")],
   ];
 }
-/* Budgets against what the household spent: monthly ones for the month, yearly ones for the year so far */
-function budgetRows(m) {
-  const list = (state.budgets || []).filter((x) => Number(x.amount) > 0);
-  if (!list.length) return null;
-  const hc = byCat(m.a, m.b, "all"), yc = byCat(m.q[0] + "-01-01", m.b, "all");
-  const rows = list.map((x) => {
-    const yearly = x.kind === "yearly", spent = (yearly ? yc : hc)[x.category] || 0, B = Number(x.amount), over = spent > B + 0.5;
-    return { name: yearly ? t("{category}, for the year", { category: catName(x.category) }) : catName(x.category), spent, B, over, yearly };
-  });
-  return { rows, ok: rows.filter((r) => !r.yearly && !r.over).length, n: rows.filter((r) => !r.yearly).length };
-}
-function budgets(m) {
-  const b = budgetRows(m);
-  if (!b) return "";
-  return '<section class="w-mrs" aria-labelledby="mr-bud"><h2 id="mr-bud">' + t("Budgets") + "<small>" + t("{ok} of {n} on budget, for the household", { ok: b.ok, n: b.n }) + '</small></h2><div class="w-mrbud">' +
-    b.rows.map((r) => '<div class="w-mrbr"><div class="h"><b>' + r.name + '</b><span class="amt">' + t("{spent} of {budget}", { spent: f0(r.spent), budget: f0(r.B) }) +
-      (r.over ? ' <b class="w-mrover">' + t("{amount} over", { amount: f0(r.spent - r.B) }) + "</b>" : "") + '</span></div><div class="bar" role="img" aria-label="' + esc(pct(Math.min(r.spent / r.B, 9.99))) + '"><span style="width:' + Math.min(r.spent / r.B, 1) * 100 + "%;background:" + (r.over ? "var(--w-bad)" : "var(--w-p2)") + '"></span></div></div>').join("") + "</div></section>";
-}
-
 function wireDesktop(m) {
   const PM = monthOnly(m.pq), M = monthOnly(m.q);
   root.querySelectorAll(".w-mrev [data-cat]").forEach((x) => {
@@ -475,9 +453,7 @@ function phoneStory(m) {
   const p3 = '<h2 class="w-mrsh">' + t("Day by day") + "</h2>" + dayGrid(m, "ph") + dayFacts(m) +
     '<h3 class="w-mrsh sm">' + t("Bills") + "</h3>" + mrow('<span class="w-ico">' + icon("repeat") + "</span>", tn(m.billsN, "{n} payment", "{n} payments"), m.changes.length ? tn(m.changes.length, "{n} change", "{n} changes") : t("No changes"), f0(s.bills)) +
     mrow('<span class="w-ico">' + icon("cal") + "</span>", esc(monthOnly(m.nq)), m.next.first ? t("First: {name} on {date}.", { name: esc(m.next.first.n), date: esc(dlab(m.next.first.d)) }) : t("No bills."), f0(m.next.sum));
-  const b = budgetRows(m);
   const p4 = '<h2 class="w-mrsh">' + t("Worth knowing") + "</h2>" + highlights(m).map((x) => '<div class="w-mrow w-mrkn"><div><small>' + x[0] + "</small><b>" + x[1] + "</b>" + (x[2] ? "<small>" + x[2] + "</small>" : "") + "</div></div>").join("") +
-    (b ? '<h3 class="w-mrsh sm">' + t("Budgets") + "</h3>" + mrow('<span class="w-ico">' + icon("target") + "</span>", t("{ok} of {n} on budget", { ok: b.ok, n: b.n }), t("For the household"), "") : "") +
     '<div class="w-mrsfoot"><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open on the Dashboard") + "</a></div>";
   const bars = '<div class="w-story" aria-hidden="true">' + [0, 1, 2, 3].map((i) => '<i class="' + (i <= story ? "on" : "") + '"></i>').join("") + "</div>";
   return '<div class="w-mrstory" aria-roledescription="' + esc(t("story")) + '">' + bars +

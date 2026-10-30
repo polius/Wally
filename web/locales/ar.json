@@ -1224,7 +1224,7 @@
  "Show {n} more": "عرض {n} أخرى",
  "Showing": "المعروض",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "عرض {name}: تُحتسب حصة متساوية من كل ميزانية، وتُحتسب المصروفات المشتركة حسب الحصة.",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "يظهر مرة واحدة كل شهر لكل شخص، عند أول فتح لـ Wally. ويمكن فتح أي شهر مجددًا من قائمة الرئيسية.",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "يظهر مرة واحدة كل شهر لكل شخص، عند أول فتح لـ Wally. ويمكن فتح أي شهر مجددًا من الرئيسية.",
  "Sign in": "تسجيل الدخول",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "سجّل الدخول بها، ثم اختر كلمة مرور جديدة. تعمل مرة واحدة فقط، ثم تُحذف من الملف. كما أنها توقف تسجيل الدخول بخطوتين لـ {name}، ويمكنه إعادة تشغيله من الإعدادات. إذا لم تتمكن من الوصول إلى الخادم، فاسأل من يديره.",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "سجّل الدخول بها. ستحل محل كلمة مرور الأسرة القديمة: كل من تضيفه بعد ذلك يسجّل الدخول بها في المرة الأولى، ثم يختار كلمته الخاصة. إذا لم تتمكن من الوصول إلى الخادم، فاسأل من يديره.",

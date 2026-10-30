@@ -1072,7 +1072,7 @@
  "Show {n} more": "{n} और दिखाएँ",
  "Showing": "दिखाया जा रहा है",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "{name} का दिखाया जा रहा है: हर बजट का बराबर हिस्सा गिना जाता है, और साझा खर्च हिस्से के हिसाब से।",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "हर महीने एक बार, हर व्यक्ति को, जब वह पहली बार Wally खोलता है, दिखाया जाता है। कोई भी महीना डैशबोर्ड मेन्यू से फिर से खोला जा सकता है।",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "हर महीने एक बार, हर व्यक्ति को, जब वह पहली बार Wally खोलता है, दिखाया जाता है। कोई भी महीना डैशबोर्ड से फिर से खोला जा सकता है।",
  "Sign in": "साइन इन करें",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "इससे साइन इन करें, फिर नया पासवर्ड चुनें। यह सिर्फ़ एक बार काम करता है, फिर फ़ाइल से हटा दिया जाता है। इससे {name} का दो-चरणीय साइन-इन भी बंद हो जाता है, जिसे वे सेटिंग्स में फिर से चालू कर सकते हैं। अगर आप सर्वर तक नहीं पहुँच पा रहे, तो उसे चलाने वाले से पूछें।",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "इससे साइन इन करें। यह घर के पुराने पासवर्ड की जगह लेता है: आप आगे जिसे भी जोड़ेंगे, वह पहली बार इसी से साइन इन करेगा, फिर अपना पासवर्ड चुनेगा। अगर आप सर्वर तक नहीं पहुँच पा रहे, तो उसे चलाने वाले से पूछें।",

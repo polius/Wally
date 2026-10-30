@@ -1148,7 +1148,7 @@
  "Show {n} more": "Показать ещё {n}",
  "Showing": "Показано",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "Показаны данные участника {name}: каждый бюджет учитывается равной долей, а общие расходы — по долям.",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "Показываются раз в месяц каждому участнику при первом входе в Wally. Любой месяц можно открыть снова из меню на главной.",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "Показываются раз в месяц каждому участнику при первом входе в Wally. Любой месяц можно открыть снова с главной.",
  "Sign in": "Войти",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "Войдите с ним, затем задайте новый пароль. Он срабатывает один раз и после этого удаляется из файла. Кроме того, он отключает двухэтапный вход для участника {name} — его можно снова включить в настройках. Если у вас нет доступа к серверу, обратитесь к тому, кто его администрирует.",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "Войдите с ним. Он заменяет старый пароль семьи: каждый, кого вы добавите дальше, в первый раз входит с ним, а затем выбирает свой. Если у вас нет доступа к серверу, обратитесь к тому, кто его администрирует.",

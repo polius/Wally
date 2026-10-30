@@ -24,7 +24,7 @@ async function open(width, height) {
   await page.goto(BASE + "/", { waitUntil: "networkidle" });
 
   // Every page, then keys on each: nothing a page leaves behind may break another
-  for (const path of ["/transactions", "/recurring", "/budgets", "/settings/people", "/review", "/"]) {
+  for (const path of ["/transactions", "/recurring", "/settings/people", "/review", "/"]) {
     await page.click(`#side a[href="${path === "/review" ? "/" : path.replace(/\/people$/, "")}"]`).catch(() => page.goto(BASE + path));
     if (path === "/review") await page.goto(BASE + path, { waitUntil: "networkidle" });
     await page.waitForTimeout(300);
@@ -44,14 +44,9 @@ async function open(width, height) {
     ok(cats.length > 0 && cats.every((c) => c.includes(name)), "every row shown is " + name);
   } else ok(false, "Dashboard has category links");
 
-  // Budgets → Transactions for that category this month
+  // Budgets are gone: the old address falls back to the Dashboard
   await page.goto(BASE + "/budgets", { waitUntil: "networkidle" });
-  const brow = page.locator('.w-brow[href*="cat=Groceries"]');
-  await brow.click();
-  await page.waitForURL(/\/transactions\?/);
-  await page.waitForTimeout(300);
-  const rows = await page.locator("#main .w-row .tx-rm p").allTextContents();
-  ok(rows.length > 0 && rows.every((c) => c.includes("Groceries")), "a budget row opens this month's Groceries (" + rows.length + " rows)");
+  ok(await page.locator("#main").getAttribute("data-page") === "dashboard" && await page.locator('#side a[href="/budgets"]').count() === 0, "/budgets opens the Dashboard, and nothing links to it");
 
   // Adding from the Dashboard changes its figures at once
   await page.goto(BASE + "/", { waitUntil: "networkidle" });

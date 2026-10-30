@@ -507,13 +507,6 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-mrhl span{font-size:12px;color:var(--w-ink3);font-weight:500}
 .w-mrhl b{font-size:15px;font-weight:600;letter-spacing:-.01em}
 .w-mrhl p{font-size:12.5px;color:var(--w-ink2)}
-.w-mrbud{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px}
-.w-mrbr{display:grid;gap:5px;font-size:12.5px}
-.w-mrbr .h{display:flex;justify-content:space-between;gap:8px}
-.w-mrbr .h b{font-weight:500}
-.w-mrbr .h span{color:var(--w-ink2);font-variant-numeric:tabular-nums}
-.w-mrbr .bar{height:6px;border-radius:3px;background:var(--w-fill);overflow:hidden;display:flex}
-.w-mrbr .bar span{height:100%}
 .w-mrf{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 22px;border-top:1px solid var(--w-line2);background:var(--w-panel2)}
 .w-mrf > div{display:flex;gap:8px;flex:none}
 .w-mrf .w-btn{white-space:nowrap}

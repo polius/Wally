@@ -337,7 +337,7 @@ def update_config(
             value = f"{value:g}"
         elif key == "WEEK_START" and value not in ("mon", "sun", "sat"):
             raise HTTPException(status_code=400, detail="Weeks start on mon, sun or sat.")
-        elif key == "OPEN_ON" and value not in ("dashboard", "transactions", "recurring", "budgets"):
+        elif key == "OPEN_ON" and value not in ("dashboard", "transactions", "recurring"):
             raise HTTPException(status_code=400, detail="Not a page Wally can open on.")
         elif key == "TIMEZONE" and value:
             from zoneinfo import ZoneInfo, ZoneInfoNotFoundError

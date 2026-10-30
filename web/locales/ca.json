@@ -1110,7 +1110,7 @@
  "Show {n} more": "Mostra’n {n} més",
  "Showing": "Es mostra",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "Es mostra {name}: cada pressupost compta una part igual, i les despeses compartides compten segons la seva part.",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "Es mostra un cop al mes a cada persona, el primer cop que obre Wally. Qualsevol mes es pot tornar a obrir des del menú del Tauler.",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "Es mostra un cop al mes a cada persona, el primer cop que obre Wally. Qualsevol mes es pot tornar a obrir des del Tauler.",
  "Sign in": "Inicia la sessió",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "Inicia la sessió amb aquesta contrasenya i després tria’n una de nova. Funciona un sol cop i després s’esborra del fitxer. També desactiva la verificació en dos passos de {name}, que la podrà tornar a activar a Configuració. Si no tens accés al servidor, demana-ho a qui el gestioni.",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "Inicia la sessió amb aquesta contrasenya. Substitueix l’antiga contrasenya de la llar: cada persona que afegeixis entrarà amb ella el primer cop i després triarà la seva. Si no tens accés al servidor, demana-ho a qui el gestioni.",

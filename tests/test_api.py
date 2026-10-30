@@ -4,6 +4,7 @@ Run with: pytest tests
 """
 import shutil
 import sqlite3
+import sqlmodel
 import time
 from datetime import date
 from pathlib import Path
@@ -451,19 +452,16 @@ def test_tags_into_people_together(couple):
     assert client.get("/recurring").json()[0]["person_id"] == alex
     assert client.post("/people/from-tags", json={"tags": {"ana": 999}}).status_code == 404
 
-# ---------- settings, budgets, goals, backups ----------
+# ---------- settings and backups ----------
 def test_config_validates(client):
     assert client.put("/config", json={"savings_target": 120}).status_code == 400
     assert client.put("/config", json={"week_start": "tue"}).status_code == 400
     c = client.put("/config", json={"savings_target": 20, "saved_views": [{"name": "Holidays", "query": "#holiday"}]}).json()
     assert c["savings_target"] == 20 and c["saved_views"] == [{"name": "Holidays", "query": "#holiday"}]
 
-def test_budgets_and_goals(client):
-    b = client.put("/budgets", json=[{"category": "Groceries", "amount": "500", "kind": "flexible"}]).json()
-    assert b[0]["category"] == "Groceries"
-    g = client.post("/goals", json={"name": "Japan", "target": "4000", "due": "2027-06-01"}).json()
-    g = client.post(f"/goals/{g['id']}/entries", json={"date": TODAY, "amount": "300"}).json()
-    assert g["saved"] == "300.00"
+def test_budgets_and_goals_are_gone(client):
+    assert client.get("/budgets").status_code == 404 and client.get("/goals").status_code == 404
+    assert not {"budget", "goal", "goalentry"} & set(sqlmodel.SQLModel.metadata.tables)
 
 def test_backup_and_restore(couple):
     client, *_ = couple
@@ -569,11 +567,9 @@ def test_restore_keeps_id_and_created_date(couple):
     back = client.post("/transactions/restore", json=[{**t}]).json()[0]
     assert back["id"] == t["id"] and back["created_date"] == t["created_date"] and back["note"] == "kept"
 
-def test_rename_category_carries_budget_and_rules(client):
-    client.put("/budgets", json=[{"category": "Food", "amount": "200"}])
+def test_rename_category_carries_rules(client):
     client.post("/rules", json={"match": "glovo", "category": "Food"})
     client.put("/categories/Food", json={"name": "Eating out"})
-    assert client.get("/budgets").json()[0]["category"] == "Eating out"
     assert client.get("/rules").json()[0]["category"] == "Eating out"
 
 def test_reimporting_own_export_skips_matched_rows(couple):

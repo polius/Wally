@@ -8,7 +8,7 @@ from ..database import get_session
 from ..models.categories import Category, CategoryCreate, CategoryPublic, CategoryUpdate
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
-from ..models.money import Budget, ImportRule
+from ..models.money import ImportRule
 from .auth import check_login
 
 router = APIRouter(tags=["Categories"], dependencies=[Depends(check_login)])
@@ -71,8 +71,7 @@ def update_category(
         recurring_transaction.category = new_category_name
         db.add(recurring_transaction)
     
-    # Budgets and import rules follow the category
-    db.exec(update(Budget).where(Budget.category == category_name).values(category=new_category_name))
+    # Import rules follow the category
     db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=new_category_name))
 
     # Update the category with new data
@@ -119,7 +118,6 @@ def delete_category(
             )
         db.exec(update(Transaction).where(Transaction.category == category_name).values(category=move_to))
         db.exec(update(RecurringTransaction).where(RecurringTransaction.category == category_name).values(category=move_to))
-        db.exec(update(Budget).where(Budget.category == category_name).values(category=move_to))
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=move_to))
 
     db.delete(category)

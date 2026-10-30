@@ -1034,7 +1034,7 @@
  "Show {n} more": "{n}개 더 보기",
  "Showing": "보기 대상",
  "Showing {name}: each budget counts an even share, and shared costs count by share.": "{name} 보기: 예산은 균등하게 나눈 몫으로, 공동 지출은 분담 비율대로 계산해요.",
- "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard menu.": "매달 구성원별로 Wally를 처음 열 때 한 번 표시돼요. 지난 달은 대시보드 메뉴에서 다시 볼 수 있어요.",
+ "Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.": "매달 구성원별로 Wally를 처음 열 때 한 번 표시돼요. 지난 달은 대시보드에서 다시 볼 수 있어요.",
  "Sign in": "로그인",
  "Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.": "이 비밀번호로 로그인한 뒤 새 비밀번호를 정하세요. 한 번만 쓸 수 있고, 사용하면 파일에서 지워져요. {name} 님의 2단계 인증도 꺼지며, 설정에서 다시 켤 수 있어요. 서버에 접근할 수 없다면 서버 관리자에게 문의하세요.",
  "Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.": "이 비밀번호로 로그인하세요. 기존 가구 공용 비밀번호를 대신해요. 이제 추가하는 사람은 처음에 이 비밀번호로 로그인하고, 그다음 각자 비밀번호를 정해요. 서버에 접근할 수 없다면 서버 관리자에게 문의하세요.",

@@ -15,7 +15,7 @@ from .models.app import AppConfig
 from .models.people import Person
 from .models.transactions import Transaction
 from .models.recurring_transactions import RecurringTransaction
-from .models.money import Settlement, Budget, Goal, GoalEntry, ImportRule
+from .models.money import Settlement, ImportRule
 from .models.tags import Tag
 from .services.engine import run_all
 from .services.ledger import resolve_owner
@@ -162,19 +162,10 @@ def generate_demo():
             if not db.get(Tag, name):
                 db.add(Tag(name=name))
 
-        # 2.1 and 2.2: budgets, import rules and a savings goal to look at
-        for category, amount, kind in [("Groceries", 520, "flexible"), ("Food", 260, "flexible"), ("Shopping", 180, "flexible"),
-                                       ("Entertainment", 70, "flexible"), ("Travel", 2400, "yearly")]:
-            db.add(Budget(category=category, amount=Decimal(amount), kind=kind, rollover=category == "Food"))
+        # Import rules to look at
         for position, (match, category, person, learned) in enumerate([("MERCADONA", "Groceries", N, True), ("NETFLIX", "Entertainment", None, False),
                                                                         ("HOLALUZ", "Utilities", A, True), ("DECATHLON", "Shopping", A, False), ("GLOVO", "Food", None, True)]):
             db.add(ImportRule(match=match, category=category, person_id=person, learned=learned, position=position, uses=rng.randint(8, 80)))
-        goal = Goal(name="Japan trip", target=Decimal(4000), due=(today + relativedelta(months=9)).replace(day=1))
-        db.add(goal)
-        db.commit()
-        db.refresh(goal)
-        for k in range(6, 0, -1):
-            db.add(GoalEntry(goal_id=goal.id, date=(today - relativedelta(months=k)).replace(day=26), amount=Decimal(rng.choice([250, 300, 300, 350])), person_id=rng.choice(ids)))
         db.commit()
 
     print(f"✅ Demo database created in {db_path.resolve()}.")
