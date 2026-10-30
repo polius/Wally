@@ -10,27 +10,27 @@
 <br>
 
 <p align="center">
-<b>Wally</b> is a lightweight, self-hosted expense tracker that makes it easy to manage your finances.
+<b>Wally</b> is a lightweight, self-hosted money log for a household: what came in, where it went, and what's coming.
 </p>
 
 <br>
 
 | | Desktop View | Mobile View |
 | --- | --- | --- |
-| Light | <img src="assets/dashboards-light.png?version=1.14" alt="Dashboards Light" /> | <img src="assets/dashboards-light-mobile.png?version=1.14" alt="Dashboards Light Mobile" /> |
-| Dark | <img src="assets/dashboards-dark.png?version=1.14" alt="Dashboards Dark" /> | <img src="assets/dashboards-dark-mobile.png?version=1.14" alt="Dashboards Dark Mobile" /> |
+| Light | <img src="assets/dashboards-light.png?version=2.0" alt="Dashboards Light" /> | <img src="assets/dashboards-light-mobile.png?version=2.0" alt="Dashboards Light Mobile" /> |
+| Dark | <img src="assets/dashboards-dark.png?version=2.0" alt="Dashboards Dark" /> | <img src="assets/dashboards-dark-mobile.png?version=2.0" alt="Dashboards Dark Mobile" /> |
 
 <details>
 <summary>Expand this to see screenshots of other pages</summary>
 
 | | Desktop View | Mobile View |
 | --- | --- | --- |
-| Transactions Light | <img src="assets/transactions-light.png?version=1.14" alt="Transactions Light" /> | <img src="assets/transactions-light-mobile.png?version=1.14" alt="Transactions Light Mobile " /> |
-| Transactions Dark | <img src="assets/transactions-dark.png?version=1.14" alt="Transactions Dark" /> | <img src="assets/transactions-dark-mobile.png?version=1.14" alt="Transactions Dark Mobile" /> |
-| Settings Light | <img src="assets/settings-light.png?version=1.14" alt="Settings Light" /> | <img src="assets/settings-light-mobile.png?version=1.14" alt="Settings Light Mobile" /> |
-| Settings Dark | <img src="assets/settings-dark.png?version=1.14" alt="Settings Dark" /> | <img src="assets/settings-dark-mobile.png?version=1.14" alt="Settings Dark Mobile" /> |
-| Login Light | <img src="assets/login-light.png?version=1.14" alt="Login Light" /> | <img src="assets/login-light-mobile.png?version=1.14" alt="Login Light Mobile" /> |
-| Login Dark | <img src="assets/login-dark.png?version=1.14" alt="Login Dark" /> | <img src="assets/login-dark-mobile.png?version=1.14" alt="Login Dark Mobile" /> |
+| Transactions Light | <img src="assets/transactions-light.png?version=2.0" alt="Transactions Light" /> | <img src="assets/transactions-light-mobile.png?version=2.0" alt="Transactions Light Mobile " /> |
+| Transactions Dark | <img src="assets/transactions-dark.png?version=2.0" alt="Transactions Dark" /> | <img src="assets/transactions-dark-mobile.png?version=2.0" alt="Transactions Dark Mobile" /> |
+| Settings Light | <img src="assets/settings-light.png?version=2.0" alt="Settings Light" /> | <img src="assets/settings-light-mobile.png?version=2.0" alt="Settings Light Mobile" /> |
+| Settings Dark | <img src="assets/settings-dark.png?version=2.0" alt="Settings Dark" /> | <img src="assets/settings-dark-mobile.png?version=2.0" alt="Settings Dark Mobile" /> |
+| Login Light | <img src="assets/login-light.png?version=2.0" alt="Login Light" /> | <img src="assets/login-light-mobile.png?version=2.0" alt="Login Light Mobile" /> |
+| Login Dark | <img src="assets/login-dark.png?version=2.0" alt="Login Dark" /> | <img src="assets/login-dark-mobile.png?version=2.0" alt="Login Dark Mobile" /> |
 
 </details>
 
@@ -81,23 +81,46 @@ services:
 
 Access Wally at: [http://localhost](http://localhost)
 
+## What's in Wally
+
+- **Dashboard**: what this month has spent against last month, where the money went, how much you kept each month, and what's coming. Every number opens the transactions behind it.
+- **Transactions**: any range, search across every month (`mercadona`, `#holiday`, `@ana`, `>50`, `march`), a calendar, bulk changes, and Undo.
+- **Recurring**: bills, subscriptions and salaries, added on their day by the server. Wally notices price rises and payees that look like they repeat.
+- **People**: each person's money, and shared costs split evenly, by income or by hand.
+- **Month in review** on the 1st, and a command bar (⌘K).
+- **Your own password for each person**, with optional two-step sign-in. Optional for the whole household, as before.
+- **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
+- **Backups** every night, in the data folder.
+- **Installs on your phone's home screen** and opens full screen. Light and dark, 13 languages.
+
+Wally never connects to a bank. You type what you spend, or import a file.
+
+## Upgrading from 1.x
+
+Nothing to do: start the new image with the same data folder. Before changing anything, Wally copies your database to `backups/pre-2.0-<date>.db` in the data folder. If the upgrade fails, Wally puts your data back as it was and says why; the 1.x image opens the copy.
+
+- The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person in **Settings › People**.
+- If you had a password, it becomes everyone's first password. Each person chooses their own at their next sign-in.
+- Recurring transactions are no longer created in advance: each one is added on its day.
+
 ## Environment variables
 
 Wally supports the following environment variables:
 
 | Variable | Sample Value | Details |
 | --- | --- | --- |
-| DEMO | true | Pre-loads the app with random demo data |
+| DEMO | true | Pre-loads the app with sample data for a household of two. Nothing is kept. |
+| TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Appearance**. |
+
+## Forgot your password
+
+On the sign-in screen, pick your name and choose **Forgot password**. Wally writes a one-time password for you to `password.txt` in the container's working folder (`docker exec wally cat /wally/password.txt`). Signing in with it turns your two-step sign-in off, so a lost phone never locks anyone out, and asks you to choose a new password.
 
 ## Data Import / Export
 
-Wally supports CSV import/export. The file must contain the following columns:
+Wally imports CSV files from **Settings › Import and export**: its own exports, Wally 1.x exports, and bank exports (you choose which column is which). The preview shows what is new, what matches something you already typed, and what was imported before, before anything is saved.
 
-```
-name,category,type,amount,date,tags
-```
-
-**Example**
+The Wally 1.x format is still accepted:
 
 ```
 name,category,type,amount,date,tags
@@ -105,31 +128,21 @@ An expense,Rent,expense,1000.0,2025-08-01,
 An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
 ```
 
-- `type` can be `income` or `expense`.
-- `tags` are optional and can be multiple, separated by commas.
+Wally 2.0 exports add `person`, `paid_by`, `shares` and `note`.
 
-This can be done directly from the **Settings** page.
+## API
+
+Wally's API is documented at http://localhost/api/docs. Create a key in **Settings › API keys** and send it as the `X-API-Key` header. What you add with a key is added by the person who made it. Settings also shows how to add expenses from your phone's lock screen with a shortcut.
+
+## Development
+
+```bash
+pip install -r api/requirements.txt pytest httpx
+python -m pytest tests                                     # API tests
+WALLY_DATA=/tmp/wally DEMO=true python -m uvicorn utils.dev_server:app --port 8080
+python utils/i18n.py --check                               # every language has every string
+```
 
 ## Acknowledgement
 
 Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
-
-### Key Differences
-
-- **Login page**: An optional login page was added. This enhancement provides an additional layer of security for those who prefer to protect Wally with authentication.
-
-- **Dashboards page**: A "Change" button was introduced to switch between different graphs. Users can now view expense trends not only on a monthly basis but also across an entire year. This replaces the doughnut chart with a line graph, allowing tracking of a specific category (like Restaurants) over time.
-
-- **Transactions page**: The table was replaced with one built using AG Grid, adding search, column sorting, and per-column filtering. A footer was also added to display the total number of rows, total income, and total expenses for the current view.
-
-- **Recurring transactions**: Editing and deletion were enhanced, allowing users to specify whether changes apply to all existing transactions or only future ones.
-
-- **Backend rewrite**: The backend was rewritten from Go to Python using FastAPI. This change provides a built-in API with interactive documentation at http://localhost/api/docs, making it easier to integrate external tools or automate tasks.
-
-- **Dark theme improvements**: The dark mode color palette was refined for improved visual consistency and better contrast, resulting in a more balanced and neutral appearance.
-
-- **Storage changes**: Wally uses SQLite as its data storage solution, while ExpenseOwl offers either JSON files or PostgreSQL. For the type and scale of data this application handles, SQLite was selected as a more suitable and efficient choice.
-
-- **API Keys management**: When login is enabled, users can create and manage API keys directly from the Settings page. This allows secure, token-based access to Wally's API for external integrations and automation.
-
-- **Internationalization**: Wally supports translation into over 10 languages, making it accessible to users worldwide. 

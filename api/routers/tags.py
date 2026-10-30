@@ -19,6 +19,18 @@ def read_tags(
     tags = db.exec(statement).all()
     return sorted([t.name for t in tags], key=str.lower)
 
+@router.get("/tags/stats")
+def tag_stats(
+    db: Annotated[Session, Depends(get_session)]
+):
+    """Every tag with how many transactions use it."""
+    counts: dict[str, int] = {}
+    for tags in db.exec(select(Transaction.tags)).all():
+        for tag in tags or []:
+            counts[tag] = counts.get(tag, 0) + 1
+    names = sorted({t.name for t in db.exec(select(Tag)).all()} | set(counts), key=str.lower)
+    return [{"name": n, "count": counts.get(n, 0)} for n in names]
+
 @router.post("/tags", response_model=TagPublic)
 def create_tag(
     tag: TagCreate,
@@ -44,7 +56,8 @@ def update_tag(
     if not tag:
         raise HTTPException(status_code=404, detail="This tag does not exist.")
     
-    new_tag_name = tag_update.name
+    new_tag_name = tag_update.name.strip().lstrip("#")
+    merge = new_tag_name != tag_name and db.get(Tag, new_tag_name) is not None
     
     # Update all transactions that use this tag
     statement = select(Transaction)
@@ -52,7 +65,7 @@ def update_tag(
     for transaction in transactions:
         if tag_name in transaction.tags:
             # Replace the old tag name with the new one
-            transaction.tags = [new_tag_name if t == tag_name else t for t in transaction.tags]
+            transaction.tags = list(dict.fromkeys(new_tag_name if t == tag_name else t for t in transaction.tags))
             db.add(transaction)
     
     # Update all recurring transactions that use this tag
@@ -61,12 +74,17 @@ def update_tag(
     for recurring_transaction in recurring_transactions:
         if tag_name in recurring_transaction.tags:
             # Replace the old tag name with the new one
-            recurring_transaction.tags = [new_tag_name if t == tag_name else t for t in recurring_transaction.tags]
+            recurring_transaction.tags = list(dict.fromkeys(new_tag_name if t == tag_name else t for t in recurring_transaction.tags))
             db.add(recurring_transaction)
     
+    # Renaming into a tag that exists merges the two
+    if merge:
+        db.delete(tag)
+        db.commit()
+        return db.get(Tag, new_tag_name)
+    
     # Update the tag with new data
-    tag_data = tag_update.model_dump(exclude_unset=True)
-    tag.sqlmodel_update(tag_data)
+    tag.name = new_tag_name
     
     try:
         db.add(tag)

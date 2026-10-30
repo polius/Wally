@@ -1,0 +1,114 @@
+/* Month in review (2.1), and the command bar (2.1). The prototype's pieces (.w-mr*, .w-cmd*) are in
+   wally.css; this file fits them to a page: headings, any width, right to left, and the phone story. */
+
+/* ---------- Month in review ---------- */
+.w-mrpage{display:grid;justify-items:center}
+.w-mrpage .w-mrev{width:100%;max-width:1000px}
+.w-mrh{flex-wrap:wrap}
+.w-mrh .t{min-width:0}
+.w-mrh .t h1{font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.w-mrh .w-seg{margin-left:0;margin-inline-start:auto}
+.w-mrh .w-mrstep button{width:36px;height:36px}
+.w-mrh .w-x{width:36px;height:36px}
+.w-mrempty .w-mrh .w-x{margin-inline-start:auto}
+.w-mrs > h2,.w-mrcol > h2,.w-mrh2{font-size:15px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.w-mrs h2 small,.w-mrcol h2 small,.w-mrh2 small{font-size:12px;font-weight:400;color:var(--w-ink3)}
+.w-mrh2{margin-top:6px}
+.w-mrs:first-of-type{border-top:1px solid var(--w-line2)}
+.w-mrev > .w-mrs:nth-child(2){border-top:0}
+.w-mrhero .big{unicode-bidi:isolate}
+.w-mrmv h3{font-size:12px;color:var(--w-ink3);font-weight:500}
+.w-mrwr{outline-offset:2px}
+.w-mrwr:focus-visible{background:var(--w-fill)}
+.w-mrcr{text-align:start;color:inherit;text-decoration:none}
+.w-mrcr .w-mrd,.w-mrcr > b,.w-mrcr.hd span:nth-child(4),.w-mrcr.hd span:nth-child(5){text-align:end}
+.w-mrfacts li b,.w-mrwr > b{text-align:end}
+.w-mr2 > .w-mrcol + .w-mrcol{border-left:0;border-inline-start:1px solid var(--w-line2)}
+.w-mrcal a.c{text-decoration:none}
+.w-mrcal a.c:hover{outline:2px solid var(--w-accent-line);outline-offset:-1px}
+.w-mrnext{margin-top:4px}
+.w-mrnext > svg.i{color:var(--w-ink3);flex:none}
+.w-mrf .w-btn{text-decoration:none}
+.w-mrcap{text-wrap:pretty}
+#mr-c12 .chart rect[role="button"]:focus{outline:none}
+#mr-c12 .chart rect[role="button"]:focus-visible{stroke:var(--w-accent);stroke-width:2}
+.w-mrhero .cv{min-height:150px}
+
+@media (max-width:1180px){
+  .w-mr2{grid-template-columns:minmax(0,1fr)}
+  .w-mr2 > .w-mrcol + .w-mrcol{border-inline-start:0;border-top:1px solid var(--w-line2)}
+  .w-mrhl{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1023px){
+  .w-mrhero{grid-template-columns:minmax(0,1fr)}
+  .w-mrk{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .w-mrcr{grid-template-columns:26px minmax(0,1fr) 60px 72px 84px}
+  .w-mrf{flex-direction:column;align-items:stretch}
+  .w-mrf > div{justify-content:flex-end;flex-wrap:wrap}
+}
+
+/* The phone: four pages, one at a time, full screen */
+.w-mrstory{display:none}
+@media (max-width:767px){
+  .w-mrpage .w-mrev{display:none}
+  body:has(#main[data-page="review"]) .w-tabbar{display:none}
+  .w-app > .w-main[data-page="review"]{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  .w-mrpage{display:block}
+  .w-mrstory{display:grid;gap:8px;min-height:calc(100dvh - 90px);grid-template-rows:auto auto auto 1fr auto}
+  .w-mrstop{display:flex;align-items:center;gap:2px}
+  .w-mrstop .w-hint{font-size:13px;margin-inline-end:auto;padding-inline-start:4px}
+  .w-mrstop .w-mrsnav:first-child{order:2}
+  .w-mrstop .w-hint{order:1}
+  .w-mrstop [data-mr-next]{order:3}
+  .w-mrstop .w-x{order:4}
+  .w-mrsnav,.w-mrstop .w-x{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--w-ink2)}
+  .w-mrsnav[disabled]{opacity:.35}
+  .w-mrschips{margin-bottom:2px}
+  .w-mrspages{display:grid;align-content:start;min-height:0;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .w-mrsp{display:grid;gap:2px;align-content:start;animation:w-fade 220ms var(--ease)}
+  .w-mrsp[hidden]{display:none}
+  .w-mrsp .w-pmr{margin-bottom:8px}
+  .w-mrsp .w-pmr p{text-wrap:pretty}
+  .w-mrsh{font-size:22px;font-weight:600;letter-spacing:-.03em;margin:2px 0 6px}
+  .w-mrsh.sm{font-size:17px;margin-top:16px}
+  .w-mrsp .w-mrow{min-height:52px}
+  .w-mrsp .w-mrow > span:last-child{text-align:end}
+  .w-mrsp .w-mrow .w-ico{display:grid;place-items:center;border-radius:10px;background:var(--w-fill);color:var(--w-ink2)}
+  .w-mrsp .w-mrkn{grid-template-columns:minmax(0,1fr)}
+  .w-mrsp .w-mrkn b{font-size:15px;margin:1px 0}
+  .w-mrsp .w-mrcal{margin-bottom:10px}
+  .w-mrsp .w-mrcal .c{aspect-ratio:1.25;font-size:12px}
+  .w-mrsp .w-mrfacts{font-size:13.5px;gap:9px}
+  .w-mrsfoot{display:grid;gap:8px;margin-top:18px}
+  .w-mrsfoot .w-btn{height:44px;text-decoration:none;justify-content:center}
+  .w-mrsctl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 calc(4px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;background:var(--w-canvas);margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px))}
+  .w-mrsctl .w-btn{min-height:44px;min-width:96px;justify-content:center}
+  .w-mrsctl .w-btn[hidden]{display:inline-flex;visibility:hidden}
+  .w-mrempty{display:block!important}
+}
+
+/* ---------- Command bar ---------- */
+.w-cmdin svg.i{flex:none}
+.w-cmdin input{min-width:0}
+.w-cmdi{color:var(--w-ink);text-align:start;cursor:pointer}
+.w-cmdi .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cmdi small{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cmdi kbd{margin-left:0;margin-inline-start:auto;font:500 11px var(--w-font);border:1px solid var(--w-line);border-radius:5px;padding:0 5px;color:var(--w-ink3)}
+.w-cmdi .w-av{flex:none}
+.w-cmdi > svg.i{flex:none;color:var(--w-ink3);width:16px;height:16px}
+.w-cmdi .w-ico{width:22px;height:22px;border-radius:7px;flex:none}
+.w-cmdi .w-ico svg.i{width:13px;height:13px}
+.w-cmdx{flex:none;border-radius:6px;padding:2px;display:grid;place-items:center}
+.w-cmdx:hover kbd{color:var(--w-ink);border-color:var(--w-ink3)}
+.w-cmdres .w-empty{padding:22px 12px}
+.w-cmdhint{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--w-line2);font-size:11.5px;color:var(--w-ink3)}
+.w-cmdhint kbd{font:500 11px var(--w-font);border:1px solid var(--w-line);border-radius:5px;padding:0 4px;margin-inline-end:4px}
+@media (max-width:767px){
+  .w-cmdwrap{place-items:start stretch;padding:calc(10px + env(safe-area-inset-top,0px)) 10px 10px}
+  .w-cmd{max-width:none;animation:w-fade 180ms var(--ease)}
+  .w-cmdin input{font-size:16px}
+  .w-cmdres{max-height:calc(100dvh - 150px)}
+  .w-cmdi{min-height:44px}
+  .w-cmdx{min-width:44px;min-height:44px}
+  .w-cmdhint{display:none}
+}

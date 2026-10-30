@@ -1,397 +1,141 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally | Dashboards</title>
-  <link rel="icon" type="image/png" href="assets/wally.png">
-  <meta name="robots" content="index,follow" />
-  <meta name="description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="author" content="Pol Alzina" />
-  <meta property="og:title" content="Wally" />
-  <meta property="og:description" content="A lightweight, self-hosted expense tracker that makes it easy to manage your finances." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="assets/wally.png" />
-  <!-- CSS -->
-  <link href="css/vendors/bootstrap.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.min.css" rel="stylesheet">
-  <link href="css/vendors/tom-select.bootstrap5.min.css" rel="stylesheet">
-  <link href="css/index.css" rel="stylesheet">
-  <!-- JS -->
-  <script src="js/vendors/bootstrap.bundle.min.js" defer></script>
-  <script src="js/vendors/bootstrap-show-toast.js" defer></script>
-  <script src="js/vendors/ag-grid-community.min.noStyle.js" defer></script>
-  <script src="js/vendors/tom-select.complete.min.js"></script>
-  <script src="js/vendors/chart.umd.min.js" defer></script>
-  <script src="js/vendors/decimal.min.js" defer></script>
-  <script src="js/vendors/lucide.min.js" defer></script>
-  <script src="js/icons.js" defer></script>
-  <script src="js/i18n.js"></script>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Wally</title>
+  <meta name="description" content="Household money, self-hosted.">
+  <meta name="theme-color" content="#F4F5F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Wally">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/wally.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/transactions.css">
+  <link rel="stylesheet" href="/css/recurring.css">
+  <link rel="stylesheet" href="/css/add.css">
+  <link rel="stylesheet" href="/css/settings.css">
+  <link rel="stylesheet" href="/css/signin.css">
+  <link rel="stylesheet" href="/css/review.css">
   <script>
-    (function() {
-      const theme = localStorage.getItem('theme') || 'system';
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const resolved = (theme === 'light' || (theme === 'system' && !systemPrefersDark)) ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', resolved);
-      document.documentElement.style.colorScheme = resolved;
-    })();
+    /* Theme before first paint: Auto follows the device */
+    (function () { try { var t = localStorage.getItem("wally.theme"); if (t === "light" || t === "dark") { document.documentElement.setAttribute("data-theme", t); document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = t === "dark" ? "#0E0F12" : "#F4F5F8"; }); } } catch (e) {} })();
   </script>
-
 </head>
-<body data-i18n-document-title="dashboard.title">
-  <!-- Header -->
-  <header>
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-light">
-        <a class="navbar-brand d-flex align-items-center gap-2 ms-1 me-4" href="/">
-          <img src="assets/wally.png" alt="Wally" width="42" height="42">
-          <span style="font-size: 1.6rem; font-weight: 700;">Wally</span>
-        </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav gap-1">
-            <li class="nav-item ms-2"><a class="nav-link active" href="/" data-i18n="nav.dashboards">Dashboards</a></li>
-            <li class="nav-item ms-2"><a class="nav-link" href="transactions" data-i18n="nav.transactions">Transactions</a></li>
-            <li class="nav-item ms-2"><a class="nav-link" href="settings" data-i18n="nav.settings">Settings</a></li>
-          </ul>
-          <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
-            <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
-              <i data-lucide="log-out" width="22" height="22" style="color: var(--pill-color);"></i>
-            </li>
-          </ul>
-        </div>
-      </nav>
-    </div>
-  </header>
+<body class="w">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-rent" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-groceries" viewBox="0 0 24 24"><path d="M3.5 9h17l-1.6 9.6a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7zM8 9l3-5.5M16 9l-3-5.5M9.5 13v3.5M14.5 13v3.5"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M6 3v7a2 2 0 0 0 4 0V3M8 12v9M17.5 3C15.5 4 14.5 6.5 14.5 9.5V14h3v7"/></symbol>
+  <symbol id="i-utilities" viewBox="0 0 24 24"><path d="M13 2.5 4.5 14H11l-1 7.5L19.5 10H13z"/></symbol>
+  <symbol id="i-shopping" viewBox="0 0 24 24"><path d="M5 7.5h14l-1 12.5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zM9 7.5V6a3 3 0 0 1 6 0v1.5"/></symbol>
+  <symbol id="i-travel" viewBox="0 0 24 24"><path d="M10.5 13.5 3 11l1.5-1.5 9 .5 4-4c1.2-1.2 3-1.6 3.5-1s.2 2.3-1 3.5l-4 4 .5 9-1.5 1.5-2.5-7.5-3.5 3.5V21L7.5 19 5 16.5H3z"/></symbol>
+  <symbol id="i-entertainment" viewBox="0 0 24 24"><path d="M3 7.5V5h18v2.5a2.5 2.5 0 0 0 0 5V19H3v-6.5a2.5 2.5 0 0 0 0-5zM14.5 5v14"/></symbol>
+  <symbol id="i-healthcare" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.5-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.8-7.5 10.3-7.5 10.3z"/></symbol>
+  <symbol id="i-misc" viewBox="0 0 24 24"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" stroke-width="3"/></symbol>
+  <symbol id="i-income" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5M4 19.5h16"/></symbol>
+  <symbol id="i-overview" viewBox="0 0 24 24"><path d="M3.5 20.5h17M6 17v-5M10.5 17V7M15 17v-7.5M19.5 17V4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 3l3.5 3.5L17 10M3.5 11.5V10a3.5 3.5 0 0 1 3.5-3.5h13.5M7 21l-3.5-3.5L7 14M20.5 12.5V14a3.5 3.5 0 0 1-3.5 3.5H3.5"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.3 6.3a1.5 1.5 0 0 1-2.1 0z"/><path d="M8 8h.01" stroke-width="2.6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.5a6.5 6.5 0 0 1 3 5.5"/></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><path d="M12 3.5v6M12 9.5 5.5 16v4.5M12 9.5l6.5 6.5v4.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16M9.5 6.5V4h5v2.5M6 6.5l1 13.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13.5"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15 9a3.5 3.5 0 1 0 0 6M8 11h5M8 13.5h5"/></symbol>
+  <symbol id="i-io" viewBox="0 0 24 24"><path d="M12 3.5v10M8 9.5l4 4 4-4M4 15v4.5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V15"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.6"/></symbol>
+  <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5"/><rect x="13.5" y="10.5" width="7" height="10" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3.5H7a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3.5V8h4.5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"/><rect x="3" y="7" width="18" height="4" rx="1"/></symbol>
+  <symbol id="i-education" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></symbol>
+  <symbol id="i-pet" viewBox="0 0 24 24"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></symbol>
+  <symbol id="i-kids" viewBox="0 0 24 24"><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M15 12h.01"/><path d="M19.38 6.813A9 9 0 0 1 20.8 10.2a2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/><path d="M9 12h.01"/></symbol>
+  <symbol id="i-savings" viewBox="0 0 24 24"><path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/></symbol>
+  <symbol id="i-tax" viewBox="0 0 24 24"><path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-arrowup" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-arrowdown" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-plus2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-userplus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></symbol>
+  <symbol id="i-calcheck" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
+</svg>
 
-  <!-- Main Content -->
-  <main class="container" style="margin-top: 0; margin-bottom: 0;">
+<div class="w-boot" id="boot" aria-busy="true"><span class="w-mark lg"></span></div>
+<div class="w-banner" id="banner" role="status" hidden></div>
+<div class="w-gate" id="gate" hidden></div>
+<div class="w-app" id="app" hidden>
+  <aside class="w-side" id="side" aria-label="Wally"></aside>
+  <main class="w-main" id="main" tabindex="-1"></main>
+  <nav class="w-tabbar" id="tabbar" aria-label="Pages"></nav>
+</div>
 
-    <!-- Month Header -->
-    <div id="monthHeader" class="month-navigation">
-      <div id="prevMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-left" width="22" height="22"></i>
-      </div>
-      <div id="currentMonth" class="current-month"></div>
-      <div id="nextMonth" style="cursor: pointer;">
-        <i data-lucide="arrow-right" width="22" height="22"></i>
-      </div>
-    </div>
-    <div id="monthHeaderAll" class="month-navigation current-month" style="display: none; height: 40px"></div>
-
-    <!-- Action buttons -->
-    <div class="d-flex justify-content-center align-items-center gap-2 my-3">
-      <button type="button" class="btn btn-success d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.9rem; min-width: 150px; height: 42px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#transactionModal" onclick="addTransaction()">
-        <i data-lucide="plus" width="15" height="15"></i>
-        <span data-i18n="dashboard.add">Add</span>
-      </button>
-      <button type="button" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.9rem; min-width: 150px; height: 42px; border-radius: 100px" data-bs-toggle="modal" data-bs-target="#dashboardModal">
-        <i data-lucide="chart-line" width="15" height="15"></i>
-        <span data-i18n="dashboard.filter">Filter</span>
-      </button>
-    </div>
-
-    <!-- Group By Toggle -->
-    <div class="d-flex justify-content-center mb-2">
-      <div class="group-by-toggle" role="group" aria-label="Group by">
-        <button type="button" class="group-by-btn active" data-group="category" data-i18n="dashboard.group_by.categories">Categories</button>
-        <button type="button" class="group-by-btn" data-group="tags" data-i18n="dashboard.group_by.tags">Tags</button>
-      </div>
-    </div>
-
-    <!-- Chart & Legend Box -->
-    <div class="chart-cashflow-wrapper">
-      <div class="row chart-container">
-        <div id="noDataMessage" class="no-data" style="display: none; width: 100%;" data-i18n="dashboard.no_expenses">There are no expenses.</div>
-        <div class="col-lg-6 chart-box">
-          <canvas id="chartCanvas"></canvas>
-        </div>
-        <div id="customLegend" class="col-lg-6 legend-box"></div>
-      </div>
-
-    <!-- Cashflow Section -->
-    <div id="cashflow-section" class="cashflow-container" style="display: none">
-      <div class="cashflow-item income">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="trending-up"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.income">Income</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-income"></div>
-      </div>
-      <div class="cashflow-item expenses">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="trending-down"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.expenses">Expenses</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-expenses"></div>
-      </div>
-      <div class="cashflow-item balance">
-        <div class="cashflow-header">
-          <div class="cashflow-icon">
-            <i data-lucide="scale"></i>
-          </div>
-          <div class="cashflow-label" data-i18n="dashboard.cashflow.balance">Balance</div>
-        </div>
-        <div class="cashflow-value" id="cashflow-balance"></div>
-      </div>
-    </div>
-    </div>
-  </main>
-
-  <main class="container">
-    <!-- Dashboard Modal -->
-    <div class="modal fade" id="dashboardModal" tabindex="-1" aria-labelledby="dashboardModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <form id="dashboardForm" class="modal-content" onsubmit="submitDashboard(event)">
-          <div class="modal-header">
-            <h5 class="modal-title" id="dashboardModalLabel" data-i18n="dashboard.modal.title">Change Dashboard</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p data-i18n="dashboard.modal.select_prompt">Select a dashboard to view:</p>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="currentMonth" id="currentMonthRadio" checked>
-              <label class="form-check-label" for="currentMonthRadio" data-i18n="dashboard.modal.current_month">
-                Current Month
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastThreeMonths" id="lastThreeMonthsRadio">
-              <label class="form-check-label" for="lastThreeMonthsRadio" data-i18n="dashboard.modal.past_3_months">
-                Last 3 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastSixMonths" id="lastSixMonthsRadio">
-              <label class="form-check-label" for="lastSixMonthsRadio" data-i18n="dashboard.modal.past_6_months">
-                Last 6 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="lastYear" id="lastYearRadio">
-              <label class="form-check-label" for="lastYearRadio" data-i18n="dashboard.modal.past_12_months">
-                Last 12 Months
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="yearToDate" id="yearToDateRadio">
-              <label class="form-check-label" for="yearToDateRadio" data-i18n="dashboard.modal.year_to_date">
-                Year to Date
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="range" value="allData" id="allDataRadio">
-              <label class="form-check-label" for="allDataRadio" data-i18n="dashboard.modal.to_date">
-                All Data
-              </label>
-            </div>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="range" value="customRange" id="customRangeRadio">
-              <label class="form-check-label" for="customRangeRadio" data-i18n="dashboard.modal.custom_range">
-                Custom Range
-              </label>
-            </div>
-            <div id="customRangeInputs" class="custom-range-inputs">
-              <div class="mb-3">
-                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.from">From</label>
-                <div class="row g-2">
-                  <div class="col-7">
-                    <select class="form-select" id="fromMonthSelect" required>
-                      <option value="" data-i18n="common.months.select_month">Select month</option>
-                      <option value="01" data-i18n="common.months.january">January</option>
-                      <option value="02" data-i18n="common.months.february">February</option>
-                      <option value="03" data-i18n="common.months.march">March</option>
-                      <option value="04" data-i18n="common.months.april">April</option>
-                      <option value="05" data-i18n="common.months.may">May</option>
-                      <option value="06" data-i18n="common.months.june">June</option>
-                      <option value="07" data-i18n="common.months.july">July</option>
-                      <option value="08" data-i18n="common.months.august">August</option>
-                      <option value="09" data-i18n="common.months.september">September</option>
-                      <option value="10" data-i18n="common.months.october">October</option>
-                      <option value="11" data-i18n="common.months.november">November</option>
-                      <option value="12" data-i18n="common.months.december">December</option>
-                    </select>
-                  </div>
-                  <div class="col-5">
-                    <input type="number" class="form-control" id="fromYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
-                  </div>
-                </div>
-              </div>
-              <div class="mb-2">
-                <label class="form-label d-block mb-2" data-i18n="dashboard.modal.to">To</label>
-                <div class="row g-2">
-                  <div class="col-7">
-                    <select class="form-select" id="toMonthSelect" required>
-                      <option value="" data-i18n="common.months.select_month">Select month</option>
-                      <option value="01" data-i18n="common.months.january">January</option>
-                      <option value="02" data-i18n="common.months.february">February</option>
-                      <option value="03" data-i18n="common.months.march">March</option>
-                      <option value="04" data-i18n="common.months.april">April</option>
-                      <option value="05" data-i18n="common.months.may">May</option>
-                      <option value="06" data-i18n="common.months.june">June</option>
-                      <option value="07" data-i18n="common.months.july">July</option>
-                      <option value="08" data-i18n="common.months.august">August</option>
-                      <option value="09" data-i18n="common.months.september">September</option>
-                      <option value="10" data-i18n="common.months.october">October</option>
-                      <option value="11" data-i18n="common.months.november">November</option>
-                      <option value="12" data-i18n="common.months.december">December</option>
-                    </select>
-                  </div>
-                  <div class="col-5">
-                    <input type="number" class="form-control" id="toYearSelect" placeholder="Year" data-i18n-placeholder="common.year_placeholder" min="2000" max="2100" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" required>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Chart Type -->
-            <hr class="my-3">
-            <p class="mb-2 fw-medium" data-i18n="dashboard.modal.chart_type_label">Chart type:</p>
-            <div class="form-check mb-1">
-              <input class="form-check-input" type="radio" name="chartType" value="line" id="chartTypeLine" checked>
-              <label class="form-check-label" for="chartTypeLine" data-i18n="dashboard.chart_type.line">
-                Line
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="chartType" value="stacked" id="chartTypeStacked">
-              <label class="form-check-label" for="chartTypeStacked" data-i18n="dashboard.chart_type.stacked">
-                Stacked
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="dashboardModalSubmitButton" style="min-width: 120px" data-i18n="dashboard.modal.apply">Change</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </main>
-
-  <!-- Transaction Modal (Add and Edit) -->
-  <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form id="transactionForm" class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalLabel" data-i18n="transactions.modal_add_title">Add Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <!-- Name -->
-          <div class="mb-3">
-            <label for="nameInput" class="form-label" data-i18n="transactions.name_label">Name</label>
-            <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter transaction name" data-i18n-placeholder="transactions.name_placeholder" autocomplete="off" />
-          </div>
-
-          <!-- Category -->
-          <div class="mb-3">
-            <label for="categorySelect" class="form-label" data-i18n="transactions.category_label">Category</label>
-            <select class="form-select" id="categorySelect" name="category" required></select>
-          </div>
-
-          <!-- Tags -->
-          <div class="mb-3">
-            <label class="form-label" data-i18n="transactions.tags_label">Tags</label>
-            <input id="tagsInput" name="tags" type="text" class="form-control" value="" placeholder="Add a tag and press Enter" data-i18n-placeholder="transactions.tags_placeholder" autocomplete="off">
-          </div>
-
-          <!-- Amount -->
-          <div class="mb-3">
-            <label for="amountInput" class="form-label" data-i18n="transactions.amount_label">Amount</label>
-            <input type="text" inputmode="decimal" class="form-control" id="amountInput" name="amount" min="0.01" step="0.01" placeholder="0.00" data-i18n-placeholder="transactions.amount_placeholder" required />
-          </div>
-
-          <!-- Type -->
-          <div class="mb-3">
-            <label for="typeSelect" class="form-label" data-i18n="transactions.type_label">Type</label>
-            <select class="form-select" id="typeSelect" name="type" required>
-              <option value="expense" data-i18n="transactions.type_expense">Expense</option>
-              <option value="income" data-i18n="transactions.type_income">Income</option>
-            </select>
-          </div>
-
-          <!-- Date -->
-          <div>
-            <label for="dateInput" class="form-label" data-i18n="transactions.date_label">Date</label>
-            <input type="date" class="form-control" id="dateInput" name="date" required />
-          </div>
-
-          <!-- Recurring -->
-          <div id="recurringElement" class="form-check mt-3">
-            <input class="form-check-input" type="checkbox" value="" id="recurringCheck" name="recurringCheck" onchange="toggleRecurring(event.target.checked)" />
-            <label class="form-check-label" for="recurringCheck" data-i18n="transactions.recurring_label">
-              Recurring
-            </label>
-          </div>
-
-          <div id="recurringDiv" class="card mt-3" style="display: none;">
-            <div class="card-body">
-              <div class="row">
-                <!-- Start Date -->
-                <div class="col-6 mb-3">
-                  <label for="startDateInput" class="form-label" data-i18n="transactions.start_date_label">Start Date</label>
-                  <input type="date" class="form-control" id="startDateInput" name="startDate" />
-                </div>
-                <!-- End Date -->
-                <div class="col-6 mb-3">
-                  <label for="endDateInput" class="form-label" data-i18n="transactions.end_date_label">End Date</label>
-                  <input type="date" class="form-control" id="endDateInput" name="endDate" />
-                </div>
-              </div>
-
-              <!-- Frequency -->
-              <div>
-                <label for="frequencySelect" class="form-label" data-i18n="transactions.frequency_label">Frequency</label>
-                <select class="form-select" id="frequencySelect" name="frequency">
-                  <option value="" disabled selected data-i18n="transactions.frequency_placeholder">Select frequency</option>
-                  <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
-                  <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
-                  <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
-                  <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-success" id="modalSubmitButton" style="min-width: 120px" data-i18n="transactions.add">Add</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Transaction Modal Delete -->
-  <div class="modal fade" id="transactionModalDelete" tabindex="-1" aria-labelledby="transactionModalDeleteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" onsubmit="submitTransaction(event)">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionModalDeleteLabel" data-i18n="transactions.modal_delete_title">Delete Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center py-4">
-          <div class="dialog-warning-icon mb-3">
-            <i data-lucide="triangle-alert" width="32" height="32"></i>
-          </div>
-          <p class="mb-0 fs-6" data-i18n="transactions.delete_confirm">Are you sure you want to delete this transaction?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 120px" data-i18n="common.cancel">Cancel</button>
-          <button type="submit" class="btn btn-danger" style="min-width: 120px" data-i18n="common.delete">Delete</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  <script src="js/index.js"></script>
+<div class="w-tip" id="tip" role="status" aria-live="polite"></div>
+<div class="w-dlgwrap" id="dlg" hidden></div>
+<div class="w-dlgwrap w-addwrap" id="add-modal" hidden></div>
+<div class="w-dlgwrap w-cmdwrap" id="cmd" hidden></div>
+<div class="w-toast" id="toast" role="status" aria-live="polite"><span id="toast-t"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
+<noscript><p style="padding:24px;font-family:system-ui">Wally needs JavaScript.</p></noscript>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

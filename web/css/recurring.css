@@ -1,0 +1,129 @@
+/* Recurring: KPIs, the five-week calendar, Wally noticed, the rule list and its side panel.
+   1280 px and wider: the panel stays open beside the list. Narrower: it slides over the list.
+   Phones: it is a full-screen sheet. */
+[data-page="recurring"] .w-rrow{text-align:start}
+[data-page="recurring"] .w-rrow .amt{text-align:end}
+.rec-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rec-kpis-p{padding:0}
+.rec-kpis .w-kpi{border-left:0;border-inline-start:1px solid var(--w-line)}
+.rec-kpis .w-kpi:first-child{border-inline-start:0}
+.rec-kpis .w-kpi.safe{border-radius:0 15px 15px 0}
+[dir="rtl"] .rec-kpis .w-kpi.safe{border-radius:15px 0 0 15px}
+.rec-lg-today{background:var(--w-accent-soft);box-shadow:inset 0 0 0 1px var(--w-accent-line)}
+.rec-lg-in{background:var(--w-good-soft)}
+.rec-cal .w-rday{text-align:start;color:inherit}
+.rec-cal .w-rday.rec-none:hover{border-color:var(--w-line2)!important}
+.rec-cal .w-rday .v{line-height:1.25}
+.rec-nonew{padding:28px 10px}
+.rec-tipw{font-size:inherit;color:var(--w-ink3)}
+/* The day picked in the calendar */
+/* The right column: the picked day on top, what Wally noticed filling the rest */
+.rec-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rec-side > .w-panel:last-child{flex:1}
+.rec-day .w-ph{align-items:center}
+.rec-day .w-rrow.rec-drow{grid-template-columns:32px minmax(0,1fr) auto}
+
+#rec-page{display:grid;gap:16px}
+/* Wally noticed: the buttons go under the text when the panel is narrow */
+#rec-notice{container-type:inline-size}
+#rec-notice .w-li p{display:block}
+@container (max-width:440px){
+  #rec-notice .w-li{grid-template-columns:auto minmax(0,1fr)}
+  #rec-notice .w-noticeb{grid-column:2}
+}
+.rec-empty{padding:36px 16px}
+
+/* The list */
+.rec-list{padding:6px 18px 12px}
+.rec-rn{min-width:0}
+.rec-rn h6{min-width:0}
+.rec-who{display:inline-flex;align-items:center;gap:5px}
+.rec-meta{display:inline-flex;align-items:center;gap:4px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rec-nxm{display:none}
+.rec-spark{display:block}
+.rec-endh{width:100%;color:var(--w-ink2);cursor:pointer;text-align:start}
+.rec-endh span{display:inline-flex;align-items:center;gap:6px}
+.rec-endh svg.i{width:14px;height:14px;transition:transform 180ms var(--ease)}
+.rec-endh[aria-expanded="true"] svg.i{transform:rotate(180deg)}
+.rec-endh:hover{color:var(--w-ink)}
+
+/* The panel */
+.rec-insp{outline:0}
+.w .rec-insp:focus-visible{outline:0}
+.rec-ih{display:flex;align-items:center;gap:8px}
+.rec-ih .w-badge{margin-inline-start:auto}
+.rec-close{display:none;margin-inline-start:auto}
+.rec-ih .w-badge + .rec-close{margin-inline-start:0}
+.rec-iamt{display:grid;gap:4px}
+.rec-about{font-size:18px;color:var(--w-ink3);font-weight:500;letter-spacing:0}
+.rec-iname{font-size:16px;font-weight:600}
+.rec-idesc,.rec-story{font-size:12.5px;color:var(--w-ink2)}
+.rec-story b{color:var(--w-ink);font-weight:600}
+.rec-sec{display:grid;gap:8px}
+.rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
+.rec-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rec-acts .w-btn{width:100%}
+.rec-miss{display:grid;gap:8px;padding:12px 14px;font-size:12.5px;color:var(--w-ink2);background:var(--w-panel2)}
+.rec-miss b{color:var(--w-ink);font-weight:600}
+.rec-fld{display:grid;gap:6px;font-size:12.5px;color:var(--w-ink3)}
+.rec-scrim{position:fixed;inset:0;z-index:49;background:var(--w-scrim)}
+.rec-scrim[hidden]{display:none}
+
+/* Phone sheet pieces */
+.rec-mh{position:sticky;top:0;z-index:1;background:var(--w-canvas);margin:0 -16px;padding:4px 16px 8px}
+.rec-mh .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px}
+.rec-mh .w-plink svg.i{width:18px;height:18px}
+.rec-mhero{display:grid;justify-items:center;gap:4px;text-align:center;padding:4px 0 6px}
+.rec-mhero .w-ico{border-radius:14px;margin-bottom:4px}
+.rec-mhero b{font-size:17px;font-weight:600}
+.rec-mamt{font-size:32px;font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.rec-mamt small{font-size:16px;color:var(--w-ink3);font-weight:500;letter-spacing:0}
+.rec-pc{font-size:12.5px;padding:12px 14px}
+.rec-pc b{font-weight:600}
+.rec-mact .w-cell{width:100%;justify-content:center;color:var(--w-accent-ink);font-weight:500;min-height:46px}
+.rec-mact .w-cell.danger{color:var(--w-bad)}
+
+/* ---------- under 1280 px: the panel slides over the list ---------- */
+@media (max-width:1279px){
+  .rec-body{grid-template-columns:minmax(0,1fr)}
+  .rec-insp{display:none}
+  .rec-insp.open{display:grid;align-content:start;position:fixed;top:0;bottom:0;inset-inline-end:0;width:min(380px,100vw);z-index:50;border-radius:0;border-width:0;border-inline-start:1px solid var(--w-line);overflow-y:auto;overscroll-behavior:contain;box-shadow:var(--w-shadow);animation:rec-in 260ms var(--ease)}
+  .rec-close{display:grid}
+}
+@keyframes rec-in{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+[dir="rtl"] .rec-insp.open{animation-name:rec-in-rtl}
+@keyframes rec-in-rtl{from{transform:translateX(-24px);opacity:.4}to{transform:none;opacity:1}}
+
+/* ---------- under 1024 px: one column ---------- */
+@media (max-width:1023px){
+  .rec-top{grid-template-columns:minmax(0,1fr)}
+  .rec-kpis .w-kpi{padding:12px 14px 14px}
+  .rec-kpis .w-kpi > b{font-size:18px}
+}
+
+/* ---------- phones ---------- */
+@media (max-width:767px){
+  .rec-lock body{overflow:hidden}
+  .rec-body{order:1}
+  .rec-top{order:2}
+  .rec-head .w-seg{order:3;width:100%}
+  .rec-head .w-seg button{flex:1;min-height:36px}
+  .rec-head .w-head-r .w-btn{min-height:40px}
+  .rec-kpis.solo{--n:2}
+  .rec-kpis .w-kpi:nth-child(3){border-inline-start:0}
+  .rec-kpis .w-kpi:nth-child(n+3){border-top:1px solid var(--w-line)}
+  .rec-kpis .w-kpi.safe{border-radius:0 0 15px 0}
+  [dir="rtl"] .rec-kpis .w-kpi.safe{border-radius:0 0 0 15px}
+  .rec-cal{gap:3px}
+  .rec-cal .w-rday{min-height:54px;padding:4px 4px!important;gap:2px;border-radius:8px}
+  .rec-cal .w-rday .ics .w-ico{width:14px!important;height:14px!important}
+  .rec-cal .w-rday .ics .w-ico svg.i{width:9px;height:9px}
+  .rec-cal .w-rday .v{font-size:10px}
+  .rec-list{padding:4px 12px 10px}
+  .rec-list .w-rrow{grid-template-columns:32px minmax(0,1fr) auto;min-height:56px;gap:10px;padding:9px 6px}
+  .rec-list .w-rrow .nx,.rec-list .rec-spark{display:none}
+  .rec-list .rec-meta{display:none}
+  .rec-list .rec-nxm{display:inline}
+  .rec-insp.open{width:100%;inset:0;border:0;background:var(--w-canvas);box-shadow:none;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px));gap:12px;animation-name:w-up}
+  .rec-insp .w-panel{border-radius:14px}
+}

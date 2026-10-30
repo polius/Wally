@@ -1,0 +1,247 @@
+/* The add and edit sheet. Its base (w-sheet, w-amount, w-frow, w-chips, w-sub, w-rsum…) comes from
+   the prototype's CSS in wally.css; this file adds what the live sheet needs, the phone steps and
+   the offline queue note. Logical properties throughout, for right-to-left. */
+
+/* Under confirmation dialogs (65) and toasts (70), over the page and its tooltips */
+.w-addwrap{z-index:58}
+html.w-addopen{overflow:hidden}
+.w-add{animation:w-addin 260ms var(--ease)}
+@keyframes w-addin{from{transform:translateY(10px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+.w-add .vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.w-add .w-contents{display:contents}
+.w-add .w-sheet-h{gap:10px;justify-content:flex-start}
+.w-add .w-addx{margin-inline-start:auto}
+.w-add .w-calc{margin-left:0;margin-inline-start:auto}
+/* The labels' column, wide enough for the longest translation (French Commerçant); rows under a field line up with it */
+.w-add{--w-lblw:84px}
+.w-add .w-frow{grid-template-columns:var(--w-lblw) minmax(0,1fr)}
+.w-add .w-sub{margin-left:0;margin-inline-start:calc(var(--w-lblw) + 10px)}
+.w-add .w-frow > label{font-size:12.5px;color:var(--w-ink3)}
+.w-add .w-indent{margin-inline-start:calc(var(--w-lblw) + 10px)}
+.w-add .w-sugg button{text-align:start}
+.w-add .w-sugg button > span:nth-child(2){min-width:0}
+.w-add .w-sugg small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-add .w-chip .x{margin-left:0;margin-inline-start:2px}
+.w-add .w-note{width:100%;height:32px}
+/* The description is one of the labelled rows, as tall as the fields under it */
+.w-add .w-frow > .w-input input{height:32px;border-radius:8px;font-size:13.5px;padding:0 10px}
+.w-add .w-tagin{width:150px;min-width:0}
+.w-add .w-num{width:90px;text-align:end;font-variant-numeric:tabular-nums}
+.w-add input[type="number"].w-num{width:64px}
+.w-add .w-wrapseg{flex-wrap:wrap}
+.w-add .w-countw{gap:6px}
+.w-add .w-inline .lbl{width:auto;min-width:40px}
+.w-add .w-bylbl{min-width:0}
+.w-add .w-switch[hidden]{display:none}
+.w-add #add-rep-l .w-link{margin-inline-start:4px;font-size:12.5px}
+.w-add .w-dup{margin:-6px 0 0}
+
+/* The main button names what is missing; it stays clickable to take you there */
+.w-add .w-btn.primary[aria-disabled="true"]{background:var(--w-fill2);color:var(--w-ink2);box-shadow:none;filter:none;cursor:pointer}
+.w-add .w-btn.ghost[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.w-add .w-sheet-f .w-submit{flex:1;min-width:0}
+
+/* Fewer outlines: who and when are segmented controls, categories soft chips; only a choice is drawn */
+.w-add .w-frow > :is(#add-who,#add-date){justify-self:start;gap:2px;padding:3px;border-radius:11px;background:var(--w-fill)}
+.w-add .w-frow > :is(#add-who,#add-date) .w-chip{border-color:transparent;background:none;border-radius:8px}
+.w-add .w-frow > :is(#add-who,#add-date) .w-chip.on{background:var(--w-knob);color:var(--w-ink);box-shadow:var(--w-knob-shadow)}
+
+/* Category: one field to pick from or type in; Split is the last choice in its list */
+.w-catbox{position:relative;width:100%;max-width:300px}
+.w-add .w-catbox input{width:100%;height:32px;padding-inline:34px 30px;font-weight:500;cursor:pointer}
+.w-add .w-catbox input:focus{cursor:text}
+.w-caticon{position:absolute;inset-inline-start:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none;color:var(--w-ink3)}
+.w-caticon svg.i{width:14px;height:14px}
+.w-catchev{position:absolute;inset-inline-end:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--w-ink3);pointer-events:none}
+.w-catlist{max-height:268px;overflow-y:auto;overscroll-behavior:contain}
+.w-catlist button{grid-template-columns:26px minmax(0,1fr) auto;padding:5px 8px}
+.w-catlist .w-ico{width:26px;height:26px;border-radius:7px}
+.w-catlist .w-ico svg.i{width:14px;height:14px}
+.w-catlist .w-conew{background:var(--w-fill);color:var(--w-ink2)}
+.w-coon{width:14px;height:14px;color:var(--w-accent-ink)}
+.w-catlist .w-cosplit{border-top:1px solid var(--w-line2);border-radius:0 0 8px 8px;margin-top:3px;padding-top:8px}
+.w-cosplit b{color:var(--w-ink2)}
+
+/* Shares between three or more people */
+.w-splitn{display:grid;gap:6px}
+.w-splitp{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--w-ink2);font-variant-numeric:tabular-nums}
+.w-splitp > span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-splitp b{color:var(--w-ink);font-weight:600}
+.w-splitp small{color:var(--w-ink3);font-size:12px;min-width:36px;text-align:end}
+.w-splitleft{font-size:12px;color:var(--w-ink3);text-align:end}
+.w-add .w-splitv input{margin-inline-start:2px}
+
+/* Split a receipt */
+.w-parts .w-parth{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+.w-parts .w-parth b{font-weight:600}
+.w-add .w-splitrows .w-partrow{padding:4px 6px;padding-inline-start:10px;background:var(--w-panel)}
+.w-add .w-splitrows b{margin-left:0;margin-inline-start:auto}
+.w-partrow .w-partcat{flex:1;min-width:0}
+.w-partrow .w-x{flex:none}
+.w-partrow input[aria-invalid="true"]{border-color:var(--w-bad);box-shadow:0 0 0 3px var(--w-bad-soft)}
+.w-add .w-splitrows .left.bad{color:var(--w-bad);border-color:var(--w-bad)}
+.w-parts .w-btn.ghost svg.i{width:13px;height:13px}
+
+/* The date's calendar: round days, today ringed, the day picked filled */
+.w-dcal{animation:w-dcalin 180ms var(--ease)}
+@keyframes w-dcalin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.w-add .w-sub.w-dcal{justify-self:start;gap:6px;padding:10px 12px 12px}
+.w-dcalh{display:flex;align-items:center;gap:2px}
+.w-dcalh b{flex:1;font-size:13.5px;font-weight:600;color:var(--w-ink);padding-inline-start:6px}
+.w-dcalh b::first-letter{text-transform:uppercase}
+.w-dcalh .w-x:disabled{opacity:.35;cursor:default}
+.w-dcalg{display:grid;grid-template-columns:repeat(7,34px);gap:2px}
+.w-dcalg .dow{font-size:11px;font-weight:500;color:var(--w-ink3);text-align:center;line-height:26px}
+.w-dcalg button{height:34px;border-radius:50%;font-size:13px;color:var(--w-ink);font-variant-numeric:tabular-nums;display:grid;place-items:center}
+.w-dcalg button:hover:not(:disabled){background:var(--w-fill)}
+.w-dcalg button[aria-current="date"]{color:var(--w-accent-ink);font-weight:600;box-shadow:inset 0 0 0 1.5px var(--w-accent-line)}
+.w-dcalg button[aria-pressed="true"],.w-dcalg button[aria-pressed="true"]:hover{background:var(--w-accent);color:var(--w-on-accent);font-weight:600;box-shadow:none}
+.w-dcalg button:disabled{color:var(--w-ink3);opacity:.5;cursor:default}
+.w-dcal .w-dcalg button:focus-visible{border-radius:50%;outline-offset:1px}
+
+/* ---------- the offline queue ---------- */
+.w-queue{position:fixed;inset-inline-start:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;align-items:center;gap:8px;padding:7px 8px;padding-inline-start:12px;border-radius:999px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:var(--w-shadow);font-size:12.5px;color:var(--w-ink2);font-family:var(--w-font)}
+.w-queue svg.i{width:14px;height:14px;color:var(--w-ink3)}
+.w-queue .w-link{padding:4px 8px;border-radius:999px;font-size:12.5px}
+.w-queue .w-link:hover{background:var(--w-accent-soft)}
+
+/* ---------- phone: one page from the bottom, full height, and Repeat over it ---------- */
+@media (max-width:767px){
+  .w-addwrap{place-items:end stretch;padding:0}
+  .w-add.w-addp{max-width:none;width:100%;height:calc(100dvh - max(10px, env(safe-area-inset-top,0px)));max-height:none;border-radius:22px 22px 0 0;
+    padding:8px 16px 0;display:block;overflow-y:auto;overscroll-behavior:contain;background:var(--w-panel2);animation:w-up 260ms var(--ease)}
+  .w-addp .w-pstep{display:flex;flex-direction:column;gap:10px;min-height:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .w-addp .w-pstep[hidden]{display:none}
+  .w-add.w-addp:focus{outline:0}
+  .w-addp .w-grab{flex:none;margin-bottom:2px}
+  .w-addp .w-mh{gap:8px;min-height:44px}
+  .w-addp .w-plink{min-height:44px;display:inline-flex;align-items:center;gap:2px;font-size:15px;padding:0 2px}
+  .w-addp .w-plink svg.i{width:18px;height:18px}
+  .w-addp .w-mh .w-x{width:44px;height:44px;margin-inline-end:-10px}
+  .w-addp .w-ptitle{font-size:15px;font-weight:600;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .w-addp .w-mh .w-seg button{min-height:36px;padding:0 14px}
+  .w-addp .w-peditp{align-self:center}
+
+  /* the amount, and what it was for */
+  .w-addp .w-pamt{padding:16px 0 0;min-height:88px}
+  .w-addp .w-pamt input{font:inherit;letter-spacing:inherit;border:0;background:none;outline:0;padding:0;color:var(--w-ink);caret-color:var(--w-accent);text-align:center;min-width:.6em;max-width:100%}
+  .w-addp .w-pamt input::placeholder{color:var(--w-ink3)}
+  /* Keys always add at the end, so the caret shows only once there is an end: before that it would blink in the middle of the 0 */
+  .w-addp .w-pamt input:placeholder-shown{caret-color:transparent}
+  .w-addp .w-pamt.err input{color:var(--w-bad)}
+  .w-addp .w-pamt .cur{font-size:30px;color:var(--w-ink3);font-weight:500}
+  .w-addp .w-pdcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:15px;min-height:22px;font-variant-numeric:tabular-nums}
+  .w-addp .w-pcenter{text-align:center;margin:0}
+  .w-addp .w-pscroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
+  .w-addp .w-pscroll::-webkit-scrollbar{display:none}
+  .w-addp .w-chips .w-chip{height:44px;padding:0 14px;font-size:13.5px;flex:none}
+  /* Payees suggested in the name's list: roomy rows, and no Enter hint without a keyboard */
+  .w-addp .w-sugg button{min-height:52px}
+  .w-addp .w-sugg .w-kbd{display:none}
+  /* Each group with room around it, its label close to it */
+  .w-addp #add-namerow,.w-addp #add-catrow,.w-addp #add-whorow{display:grid;gap:8px;margin-top:12px}
+  .w-addp #add-catrow[hidden],.w-addp #add-whorow[hidden]{display:none}
+  /* the category field at touch size; 16px text keeps iOS from zooming in */
+  .w-addp .w-catbox{max-width:none}
+  .w-add.w-addp .w-catbox input{height:46px;font-size:16px;border-radius:12px;padding-inline:42px 36px}
+  .w-addp .w-caticon{inset-inline-start:14px}
+  .w-addp .w-caticon svg.i{width:18px;height:18px}
+  .w-addp .w-catchev{inset-inline-end:13px;width:16px;height:16px}
+  .w-addp .w-catlist{max-height:min(300px,40dvh)}
+  .w-addp .w-catlist button{min-height:46px}
+  .w-addp .w-catlist b{font-size:15px}
+  .w-addp #add-cells{margin-top:12px}
+  /* The keypad, while the amount is typed: in thumb reach, in the main button's place */
+  .w-add.w-addp:not(.kp) .w-pkeys,.w-add.w-addp.kp .w-pfoot{display:none}
+  .w-addp .w-pkeys{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom,0px));z-index:4;margin:auto -16px 0;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));gap:7px;
+    background:var(--w-panel2);box-shadow:0 -1px 0 var(--w-line);animation:w-up 180ms var(--ease)}
+  .w-addp .w-pkeys button{height:54px;border-radius:12px;background:var(--w-panel);display:grid;place-items:center;font-size:22px;font-weight:500;box-shadow:0 1px 0 var(--w-line);color:var(--w-ink);font-variant-numeric:tabular-nums}
+  .w-addp .w-pkeys button:active{background:var(--w-fill2)}
+  .w-addp .w-pkeys button.op{background:var(--w-fill2);box-shadow:none}
+  .w-addp .w-pkeys button.go{background:var(--w-accent);color:var(--w-on-accent);font-size:16px;font-weight:600;box-shadow:none}
+  .w-addp .w-pkeys svg.i{width:22px;height:22px}
+
+  /* the details */
+  .w-addp .w-input input{height:48px;font-size:16px}
+  .w-addp .w-sub,.w-addp .w-indent{margin-inline-start:0}
+  .w-addp .w-psplit{display:grid;gap:10px}
+  .w-addp .w-psplit[hidden]{display:none}
+  .w-addp .w-psplit .w-seg{display:flex}
+  .w-addp .w-psplit .w-seg button{flex:1;min-height:38px}
+  .w-addp .w-psplit .w-subh{display:grid;gap:6px}
+  .w-addp .w-range{height:32px}
+  .w-addp .w-cells .w-cell{width:100%;min-height:50px;font-size:15px;text-align:start;color:var(--w-ink)}
+  .w-addp .w-cells .w-cell > span:first-child{color:var(--w-ink)}
+  .w-addp .w-cellsel{border:0;background:none;text-align:end;font-weight:500;color:var(--w-ink);font-size:15px;padding:6px 0;max-width:60%;-webkit-appearance:none;appearance:none}
+  .w-addp .w-pdate[aria-expanded="true"] b{color:var(--w-accent-ink)}
+  .w-addp .w-pdcal{border-top:1px solid var(--w-line2);padding:4px 8px 12px;display:grid;gap:4px;scroll-margin-bottom:96px}
+  .w-addp .w-pdcal[hidden]{display:none}
+  .w-addp .w-pdcal .w-dcalh b{font-size:15px;padding-inline-start:8px}
+  .w-addp .w-pdcal .w-x{width:44px;height:44px}
+  .w-addp .w-pdcal .w-x svg.i{width:18px;height:18px}
+  .w-addp .w-pdcal .w-dcalg{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px 0}
+  .w-addp .w-pdcal .w-dcalg button{width:42px;height:42px;justify-self:center;font-size:15px}
+  .w-addp .w-cellin{border:0;background:none;outline:0;text-align:end;flex:1;min-width:0;font-weight:500;font-size:15px;color:var(--w-ink);height:44px}
+  .w-addp .w-ptags{flex-wrap:wrap;align-items:center}
+  .w-addp .w-ptags .w-chips{justify-content:flex-end;flex:1}
+  .w-addp .w-ptags .w-chip{height:34px}
+  .w-addp .w-ptags #add-tag{border:0;background:none;box-shadow:none;outline:0;padding:0;height:44px;flex:0 1 auto;width:10.5em;min-width:0;text-align:end;font-size:15px;font-weight:500;color:var(--w-ink)}
+  .w-addp .w-ptags #add-tags:not(:empty) + #add-tag:not(:focus){width:3.2em}
+  .w-addp .w-ptags #add-tag::-webkit-calendar-picker-indicator{display:none !important}
+  .w-addp .w-pnote{font-size:13.5px;color:var(--w-ink2);display:block;line-height:1.5;padding-block:12px}
+  .w-addp .w-pcell{margin:0;padding:6px 14px 10px}
+  .w-addp .w-pfoot{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom,0px));margin-top:auto;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--w-panel2) 14px);display:grid;gap:10px;z-index:4}
+  .w-addp .w-pfoot .w-submit{width:100%;height:52px;font-size:15.5px;border-radius:14px}
+  .w-addp .w-pdel{justify-content:center;color:var(--w-bad);font-weight:500}
+  .w-addp .w-dup,.w-addp .w-err{margin:0}
+
+  /* Repeat, with checkmarks */
+  .w-addp .w-cell .ck{display:inline-grid;place-items:center;color:var(--w-accent)}
+  .w-addp .w-cell .ck svg.i{width:18px;height:18px}
+  .w-addp .w-chev{color:var(--w-ink3)}
+  .w-addp .w-chev svg.i{width:16px;height:16px}
+  .w-addp .w-pend{padding-block:0;gap:8px}
+  .w-addp .w-pend > button{flex:1;text-align:start;min-height:50px;font-size:15px}
+  .w-addp .w-pend:not(.on) .ck{display:none}
+  .w-addp .w-pend .w-mini{height:36px;font-size:15px}
+  .w-addp .w-pdone{font-weight:600}
+  .w-addp .w-pcustom .w-mini{height:36px;font-size:15px}
+  .w-addp .w-rsum{border-top:0;padding:0 4px}
+  .w-addp .w-rsum p{font-size:13px;color:var(--w-ink2);font-weight:400}
+
+  .w-queue{bottom:calc(var(--tabbar) + 12px + env(safe-area-inset-bottom,0px))}
+}
+[dir="rtl"] .w-add .w-amount input,[dir="rtl"] .w-addp .w-pamt input,.w-add .w-num{direction:ltr}
+[dir="rtl"] .w-add .w-num{text-align:start}
+
+/* Type sizes from the prototype, kept even where a page-wide `font:inherit` would flatten them */
+.w-add .w-amount input{font-size:52px;font-weight:600;letter-spacing:-.045em;min-width:.6em;max-width:100%;flex:0 1 auto}
+.w-add .w-input input{font-size:14px;font-weight:500}
+.w-add .w-mini{font-size:13px}
+.w-add .w-chip{font-size:12.5px;font-weight:500}
+.w-add .w-seg button{font-size:12.5px;font-weight:500}
+.w-add .w-seg.sm button{font-size:12px}
+.w-add .w-btn{font-size:13.5px;font-weight:600}
+.w-add .w-btn.ghost{font-size:12.5px;font-weight:500}
+.w-add .w-link{font-weight:500}
+@media (max-width:767px){
+  .w-addp .w-pamt input{font-size:58px;font-weight:600;letter-spacing:-.045em}
+  .w-addp .w-input input{font-size:16px}
+  .w-addp .w-chips .w-chip{font-size:13.5px}
+  .w-addp .w-mh .w-seg button{font-size:13px}
+  .w-addp .w-pkeys button{font-size:22px}
+  .w-addp .w-pkeys button.go{font-size:16px;font-weight:600}
+  .w-addp .w-mini,.w-addp .w-cellsel,.w-addp .w-cellin,.w-addp .w-cells .w-cell{font-size:15px}
+  .w-addp .w-pfoot .w-submit{font-size:15.5px}
+  .w-addp .w-plink{font-size:15px}
+}
+@media (max-width:767px){
+  .w-addp input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+  .w-addp input[type="number"]::-webkit-inner-spin-button,.w-addp input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+}
+/* Sums and totals read left to right in every language */
+.w-add .w-calc,.w-addp .w-pdcalc,.w-add .w-next span{direction:ltr;unicode-bidi:isolate}
+[dir="rtl"] .w-add .w-switch::after{left:auto;right:2px}
+[dir="rtl"] .w-add .w-switch[aria-checked="true"]::after{transform:translateX(-14px)}
+.w-addp .w-pkeys{direction:ltr}
+[dir="rtl"] .w-addp .w-pkeys svg.i use{transform:none}

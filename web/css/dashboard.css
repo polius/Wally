@@ -1,0 +1,150 @@
+/* Dashboard. The components come from wally.css (the prototype); this file adds what the app
+   needs around them: the header's popovers, right-to-left fixes, the range picker,
+   the tablet layout and the compact phone dashboard. */
+
+/* ---------- header ---------- */
+.d-head{position:relative}
+
+/* ---------- lead panel ---------- */
+.d-hero #h-chartwrap{margin-top:10px}
+.d-num{text-align:end!important}
+.w-table th[scope=row]{font-weight:400;color:var(--w-ink);text-align:start}
+.d-unit{font-size:13px;font-weight:500;letter-spacing:0}
+.w-kpi.safe{cursor:help}
+/* The key figures' dividers and the Safe to spend corner follow the reading direction */
+#main[data-page=dashboard] .w-kpi{border-left:0;border-inline-start:1px solid var(--w-line)}
+#main[data-page=dashboard] .w-kpi:first-child{border-inline-start:0}
+#main[data-page=dashboard] .w-kpi.safe{border-radius:0;border-end-end-radius:15px}
+.w-kpi.safe:focus-visible{outline-offset:-2px}
+.d-sum{border-top:1px solid var(--w-line);margin-top:4px;padding-top:4px}
+.d-emptyb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.d-emptyb .w-btn{margin:0;text-decoration:none}
+.d-welcome{padding:40px 20px}
+
+/* ---------- widgets ---------- */
+.d-min{min-width:0}
+.d-lib{width:100%;text-align:start;color:inherit}
+.d-lib:hover h6{color:var(--w-accent-ink)}
+.d-who{display:inline-flex;align-items:center;gap:5px}
+.d-rec{width:12px!important;height:12px!important;color:var(--w-ink3)}
+.d-hlink{font-size:12.5px;text-decoration:none;white-space:nowrap}
+.d-chev{color:var(--w-ink3)}
+.d-kept{color:var(--w-accent-ink)}
+.d-tipsub{color:var(--w-ink3)}
+.d-span{grid-column:1/-1}
+.d-paid{border-top:1px solid var(--w-line2);padding-top:12px}
+.d-paidh{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--w-ink2)}
+.d-paidh b{color:var(--w-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.d-calleg{font-size:11.5px;gap:10px}
+.d-flowleg{justify-content:flex-end}
+#main[data-page=dashboard] .w-row{text-align:start}
+#main[data-page=dashboard] .w-row .amt{text-align:end}
+#main[data-page=dashboard] .w-row h6{max-width:100%}
+.w-li .w-amt small{text-align:end}
+
+/* Right to left: bars grow from the start edge, text aligns to the start */
+#main[data-page=dashboard] .w-cat{text-align:start}
+#main[data-page=dashboard] :is(.w-amt,.w-pct,.w-dl){text-align:end}
+#main[data-page=dashboard] .w-bar > span{left:auto;inset-inline-start:0}
+#main[data-page=dashboard] .w-rcal .w-rday{text-align:start}
+
+/* ---------- Custom range picker (a dialog) ---------- */
+.w-dialog.d-rngdlg{max-width:720px}
+.d-rng{display:grid;grid-template-columns:170px minmax(0,1fr);border:1px solid var(--w-line);border-radius:14px;overflow:hidden}
+.d-rng .w-presets{border-right:0;border-inline-end:1px solid var(--w-line)}
+.d-rng .w-presets button{text-align:start}
+.d-rng .w-presets button[disabled]{opacity:.4}
+.d-rngsum{font-size:12.5px;color:var(--w-ink2);min-height:18px}
+.d-rngsum b{color:var(--w-ink);font-weight:600}
+.d-rngstep{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--w-ink2)}
+.d-rngstep:hover{background:var(--w-fill)}
+.d-rngstep[disabled]{opacity:.3;cursor:default;background:none}
+[dir=rtl] .w-mgrid button.s{background:linear-gradient(270deg,transparent 50%,var(--w-accent-soft) 50%)}
+[dir=rtl] .w-mgrid button.e{background:linear-gradient(270deg,var(--w-accent-soft) 50%,transparent 50%)}
+[dir=rtl] .w-mgrid button.s.e{background:none}
+
+/* The range as a sheet, on phones */
+.d-sheetlist .w-cell{width:100%;text-align:start;color:var(--w-ink);min-height:46px}
+.d-sheetlist .w-cell[aria-pressed=true]{color:var(--w-accent-ink);font-weight:500}
+.d-sheetlist .w-cell:first-child{border-top:0}
+.d-date{border:0;background:none;color:var(--w-accent-ink);font:inherit;font-weight:500;text-align:end;min-height:32px;padding:0}
+
+
+/* ---------- tablet: one column, the range control scrolls sideways ---------- */
+@media (max-width:1180px){
+    }
+@media (max-width:1023px){
+  #main[data-page=dashboard] .w-grid2{grid-template-columns:minmax(0,1fr)}
+  .d-rangewrap{order:5;flex:1 1 100%;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px}
+  .d-rangewrap::-webkit-scrollbar{display:none}
+}
+@media (max-width:900px){
+  /* Five figures as 3 + 2, four as 2 + 2 */
+  #main[data-page=dashboard] .w-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #main[data-page=dashboard] .w-kpi{grid-column:span 2;border-inline-start:1px solid var(--w-line)}
+  #main[data-page=dashboard] .w-kpis:has(> :nth-child(5)) .w-kpi:nth-child(n+4){grid-column:span 3;border-top:1px solid var(--w-line)}
+  #main[data-page=dashboard] .w-kpis:has(> :nth-child(5)) .w-kpi:is(:nth-child(1),:nth-child(4)){border-inline-start:0}
+  #main[data-page=dashboard] .w-kpis:not(:has(> :nth-child(5))) .w-kpi{grid-column:span 3}
+  #main[data-page=dashboard] .w-kpis:not(:has(> :nth-child(5))) .w-kpi:nth-child(n+3){border-top:1px solid var(--w-line)}
+  #main[data-page=dashboard] .w-kpis:not(:has(> :nth-child(5))) .w-kpi:nth-child(odd){border-inline-start:0}
+}
+@media (min-width:1024px) and (max-width:1279px){
+  /* Pairs stay side by side: the share column gives the bars room (the share is in the tooltip) */
+  #main[data-page=dashboard] .w-cat{grid-template-columns:30px minmax(0,104px) minmax(0,1fr) 80px 52px}
+}
+
+/* ---------- phone ---------- */
+@media (max-width:767px){
+  .d-phone{gap:12px!important}
+  .d-mh{gap:4px;min-height:44px}
+  .d-ptitle{display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:24px;font-weight:600;letter-spacing:-.03em;color:var(--w-ink);min-width:0}
+  .d-ptitle .d-pt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .d-ptitle svg.i{color:var(--w-ink3);width:18px;height:18px}
+  .d-pstep button{width:40px;height:44px}
+  .d-phero{display:grid;gap:4px;padding:2px 0}
+  .d-phero .w-big{font-size:38px}
+  .d-pline{font-size:13px;color:var(--w-ink2)}
+  .d-pline b{font-weight:600}
+  .d-pline b.acc{color:var(--w-accent-ink)}
+  .d-phone .w-panel{padding:12px 14px;border-radius:14px}
+  .d-phone .w-ph{margin-bottom:6px;align-items:center}
+  .d-phone .w-ph h4{font-size:14px}
+  .d-ppace{padding:10px 12px!important}
+  .d-mcat{width:100%;text-align:start;min-height:44px;color:inherit}
+  .d-mcat .w-bar{display:block}
+  .d-mrow{width:100%;text-align:start;min-height:48px;color:inherit}
+  .d-mrow:first-child{border-top:0}
+  .d-mrow .amt{font-weight:500}
+  .d-phone .w-row{min-height:48px;padding:7px 4px}
+  .d-phone .w-li{min-height:48px}
+  .d-pfoot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px 0}
+  .d-pfoot .w-btn{min-height:44px}
+  .d-phone .w-trends{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .d-phone .w-rcal{gap:3px}
+  .d-phone .w-rday{min-height:46px;padding:4px!important;border-radius:8px}
+  .d-phone .w-rday .ics{display:none}
+  .d-phone .w-rday .v{font-size:10px}
+  .d-phone #cal-leg{display:none}
+  .d-phone .w-ph{flex-wrap:wrap}
+  .d-phone .w-big.sm{font-size:22px}
+  .d-rng{grid-template-columns:minmax(0,1fr)}
+  .d-rng .w-presets{border-inline-end:0;border-bottom:1px solid var(--w-line);display:flex;flex-wrap:wrap}
+  .d-rng .w-months{grid-template-columns:minmax(0,1fr)}
+  .d-welcome{padding:24px 12px}
+}
+
+/* app.css's ".w a{color:inherit}" outranks .w-link; links on this page keep the accent */
+#main[data-page=dashboard] a.w-link{color:var(--w-accent-ink)}
+.d-calleg{justify-content:flex-end;max-width:55%;row-gap:4px}
+/* By category and Category lines: the long legend gets a row of its own; the controls stay where they are */
+.w-hh.d-wide > .w-hright{display:contents}
+.w-hh.d-wide #h-legend{flex-basis:100%;justify-content:flex-start}
+
+/* Right to left: amounts stay left to right ("2,831.28 €", never "€ 2,831.28") */
+[dir=rtl] #main[data-page=dashboard] :is(.w-big,.w-kpi > b,.w-trio b,.w-trend .row b,.d-pbig,.w-amt,.amt,.w-delta b,.w-pct,.w-dl,.w-date){direction:ltr;unicode-bidi:isolate}
+[dir=rtl] #main[data-page=dashboard] :is(.w-kpi > b,.w-trio b){justify-self:start}
+[dir=rtl] #main[data-page=dashboard] :is(.w-amt,.amt,.w-pct,.w-dl){text-align:left}
+
+/* Hide amounts (H) also blurs this page's own figures */
+.w-hide #main[data-page=dashboard] :is(.d-pbig,.d-pline b,.w-delta b,.w-foot b,.d-paidh b){filter:blur(6px)}
+#d-phead{display:grid;gap:10px}
