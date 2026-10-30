@@ -8,19 +8,15 @@ const PANES = {
   categories: { icon: "overview", label: () => t("Categories"), value: () => num(state.categories.length), load: () => import("./settings/categories.js") },
   tags: { icon: "tag", label: () => t("Tags"), value: () => num(state.tags.length), load: () => import("./settings/tags.js") },
   currency: { icon: "coin", label: () => t("Currency"), value: () => esc(state.currency.selected || ""), load: () => import("./settings/currency.js") },
-  savings: { icon: "overview", label: () => t("Savings target"), value: () => num(Number(state.config.savings_target ?? 15)) + "%", load: () => import("./settings/savings.js") },
   import: { icon: "io", label: () => t("Import and export"), value: () => "", load: () => import("./settings/import.js") },
-  rules: { icon: "split", label: () => t("Rules"), value: () => num((state.irules || []).length), load: () => import("./settings/rules.js") },
-  backups: { icon: "file", label: () => t("Backups"), value: () => (state.config.nightly_backup ? t("Daily") : t("Off")), load: () => import("./settings/backups.js") },
   keys: { icon: "key", label: () => t("API keys"), value: () => (counts.keys === null ? "" : num(counts.keys)), load: () => import("./settings/keys.js") },
   signin: { icon: "lock", label: () => t("Sign-in"), value: () => (state.status && state.status.signin ? t("On") : t("Off")), load: () => import("./settings/signin.js") },
   language: { icon: "globe", label: () => t("Language"), value: () => esc((LANGUAGES.find((l) => l[0] === LANG) || ["", "English"])[1]), load: () => import("./settings/language.js") },
   appearance: { icon: "layout", label: () => t("Appearance"), value: () => "", load: () => import("./settings/appearance.js") },
 };
 const GROUPS = [
-  [() => t("Household"), ["people", "categories", "tags"]],
-  [() => t("Money"), ["currency", "savings"]],
-  [() => t("Data"), ["import", "rules", "backups", "keys"]],
+  [() => t("Household"), ["people", "categories", "tags", "currency"]],
+  [() => t("Data"), ["import", "keys"]],
   [() => t("App"), ["signin", "language", "appearance"]],
 ];
 const FIRST = "people";

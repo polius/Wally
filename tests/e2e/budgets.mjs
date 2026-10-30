@@ -1,6 +1,6 @@
 /* Budgets (2.1) and savings goals (2.2), on a real demo server.
    Every figure is checked against a hand calculation from the API's ledger: flexible pace and
-   per-day amounts, roll over, fixed bills, once a year, suggestions, the person switch, goals.
+   per-day amounts, roll over, once a year, suggestions, the person switch, goals.
      REPO=/path/to/Wally PYTHON=/path/to/python PORT=8804 node budgets.mjs
    Screenshots go to SHOTS (a folder) when it is set. */
 import { chromium } from "playwright";
@@ -93,7 +93,8 @@ try {
   let E = expect("all");
   let sum = await text(page, ".bud-sum");
   ok(sum.includes(f2(Math.max(E.left, 0))), "flexible left is " + f2(E.left) + " (" + sum.split("\n").slice(0, 3).join(" ") + ")");
-  ok(sum.includes("of " + f0(E.fb) + ", " + f0(E.perDay) + " a day for " + daysLeft + " days"), "of " + f0(E.fb) + ", " + f0(E.perDay) + " a day for " + daysLeft + " days");
+  const forDays = daysLeft + (daysLeft === 1 ? " day" : " days");
+  ok(sum.includes("of " + f0(E.fb) + ", " + f0(E.perDay) + " a day for " + forDays), "of " + f0(E.fb) + ", " + f0(E.perDay) + " a day for " + forDays);
   const tick = await page.locator(".bud-sum .w-budbar > i").evaluate((n) => n.style.insetInlineStart);
   ok(Math.abs(parseFloat(tick) - day / D * 100) < 0.1, "the pace tick is at day " + day + " of " + D);
   for (const x of E.flex) {
@@ -102,10 +103,7 @@ try {
     ok(r.includes(label) && r.includes(f0(x.v) + " of " + f0(x.budget)), x.c + ": " + label + ", " + f0(x.v) + " of " + f0(x.budget));
     if (x.carry) ok(r.includes((x.carry > 0 ? "+" : "−") + f0(Math.abs(x.carry)) + " rolled over"), x.c + " rolls over " + f0(x.carry) + " from last month");
   }
-  const rent = sp(await page.locator(".w-brow", { hasText: "Rent" }).innerText());
-  ok(rent.includes("Paid"), "Rent, a fixed bill, is paid");
-  const util = sp(await page.locator(".w-brow", { hasText: "Utilities" }).innerText()), uv = spent("Utilities", a, TODAY);
-  ok(util.includes(uv >= 210 * 0.95 ? "Paid" : f0(210 - uv) + " still due"), "Utilities: " + f0(210 - uv) + " still due");
+  ok(!/Fixed|How it works/.test(await text(page, "main")), "no Fixed budgets and no How it works card");
   const tv = spent("Travel", ds(CY, 1, 1), TODAY);
   const travel = sp(await page.locator(".w-brow", { hasText: "Travel" }).innerText());
   ok(travel.includes((tv > 2400 ? f0(tv - 2400) + " over for " : f0(2400 - tv) + " left for ") + CY) && travel.includes("Set aside 200 € a month"), "Travel, once a year: " + f0(tv) + " of 2,400 € this year");
@@ -121,7 +119,6 @@ try {
     "Ana: " + (E.left > 0 ? f2(E.left) + " left" : f0(-E.left) + " over") + " of " + f0(E.fb));
   const food = E.flex.find((x) => x.c === "Food");
   ok(sp(await page.locator(".w-brow", { hasText: "Food" }).innerText()).includes(f0(food.v) + " of " + f0(food.budget)), "Ana: Food " + f0(food.v) + " of " + f0(food.budget) + " (her half plus her roll over)");
-  ok(sp(await page.locator(".w-brow", { hasText: "Rent" }).innerText()).includes(f0(625) + " of " + f0(625)), "Ana: half the rent");
   await page.click('.w-side [data-scope="all"]');
   await settle(page);
 
@@ -150,7 +147,7 @@ try {
   await settle(page);
   let now_ = Object.fromEntries((await api("GET", "/budgets")).map((b) => [b.category, b]));
   ok(Object.keys(sugg).every((c) => Number(now_[c].amount) === sugg[c]), "Use suggestions sets " + JSON.stringify(sugg));
-  ok(Number(now_.Rent.amount) === 1250 && Number(now_.Travel.amount) === 2400, "fixed and yearly budgets are left alone");
+  ok(Number(now_.Travel.amount) === 2400, "once-a-year budgets are left alone");
   ok((await text(page, "#toast")).includes("average of the last 6 months"), "a toast says what happened");
   await page.click("#toast-undo");
   await settle(page);
@@ -168,7 +165,8 @@ try {
   await row("Food").locator("[data-amt]").fill("260");
   await row("Groceries").locator("[data-amt]").fill("600");
   await row("Groceries").locator("[data-roll]").check();
-  await row("Entertainment").locator("[data-kind]").selectOption("fixed");
+  ok((await row("Entertainment").locator("[data-kind] option").allInnerTexts()).join("|") === "Flexible|Once a year", "kinds: Flexible or Once a year");
+  await row("Entertainment").locator("[data-kind]").selectOption("yearly");
   ok(await row("Entertainment").locator("[data-roll]").isDisabled(), "roll over is only for flexible budgets");
   await row("Shopping").locator("[data-amt]").fill("");
   await row("Healthcare").locator("[data-amt]").fill("100+20");
@@ -176,7 +174,7 @@ try {
   await settle(page);
   now_ = Object.fromEntries((await api("GET", "/budgets")).map((b) => [b.category, b]));
   ok(Number(now_.Groceries.amount) === 600 && now_.Groceries.rollover === true, "Groceries saved as 600 €, rolling over");
-  ok(now_.Entertainment.kind === "fixed" && !now_.Shopping && Number(now_.Healthcare.amount) === 120, "kind changed, a cleared amount removes the budget, sums work");
+  ok(now_.Entertainment.kind === "yearly" && !now_.Shopping && Number(now_.Healthcare.amount) === 120, "kind changed, a cleared amount removes the budget, sums work");
   const gc = 600 - spent("Groceries", pa, pe);
   ok(sp(await page.locator(".w-brow", { hasText: "Groceries" }).innerText()).includes((gc > 0 ? "+" : "−") + f0(Math.abs(gc)) + " rolled over"), "Groceries now rolls over " + f0(gc));
   await page.click("#toast-undo");
@@ -282,6 +280,12 @@ try {
   await shot(page, "bud-goals");
   await done(page, "1440 px");
 
+  console.log("An old Fixed budget");
+  await api("PUT", "/budgets", budgets0.map((b) => ({ category: b.category, amount: String(b.amount), kind: b.kind, rollover: !!b.rollover })).concat([{ category: "Rent", amount: "1250", kind: "fixed", rollover: false }]));
+  page = await open(base, "/budgets");
+  ok(!(await text(page, "main")).includes("Rent"), "an old Fixed budget is not shown");
+  await done(page, "old fixed");
+
   console.log("No budgets");
   await api("PUT", "/budgets", []);
   page = await open(base, "/budgets");
@@ -290,7 +294,7 @@ try {
   await page.click("[data-fill]");
   const filled = await page.locator('.bud-er[data-cat="Groceries"] [data-amt]').inputValue();
   ok(+filled > 0 && +filled % 10 === 0, "Fill in from the last months fills in Groceries (" + filled + ")");
-  ok(await page.locator('.bud-er[data-cat="Rent"] [data-kind]').inputValue() === "fixed", "Rent, paid by a rule, is guessed as fixed");
+  ok(await page.locator('.bud-er[data-cat="Rent"] [data-amt]').inputValue() === "", "Rent, paid by a rule, is a bill: no budget suggested");
   await page.click("[data-dlg-ok]");
   await settle(page);
   ok((await api("GET", "/budgets")).length >= 5 && await page.locator(".bud-sum").count() === 1, "Set up budgets creates them");
@@ -310,7 +314,7 @@ try {
   console.log("Phone, 390 px");
   page = await open(base, "/budgets", { width: 390, height: 844 });
   ok(await page.locator(".bud-back").isVisible(), "a way back to the Dashboard");
-  ok(await page.locator(".w-pchips").isVisible(), "person chips at the top");
+  ok(await page.locator(".bud-head .w-pswitch").isVisible(), "the person switch at the top right");
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= 390), "nothing wider than the screen");
   await page.click(".bud-head [data-edit]");
   await page.waitForTimeout(400);
@@ -318,8 +322,10 @@ try {
   ok(dlg.width === 390 && dlg.y + dlg.height <= 845, "Edit budgets is a sheet from the bottom");
   await shot(page, "bud-390-edit");
   await page.keyboard.press("Escape");
-  await page.click('.w-pchips [data-scope="1"]');
-  ok(await page.locator('.w-pchips [data-scope="1"]').getAttribute("aria-pressed") === "true", "the chips switch the person");
+  await page.click(".w-pswitch-b");
+  await page.click('.w-pswitch-m [data-scope="1"]');
+  await page.waitForTimeout(300);
+  ok(await page.locator('.w-pswitch-m [data-scope="1"]').getAttribute("aria-pressed") === "true", "the switch changes the person");
   await shot(page, "bud-390");
   await done(page, "390 px");
 

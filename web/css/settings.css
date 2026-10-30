@@ -27,7 +27,6 @@
 .w-gi h6 > .w-badge{margin-inline-start:4px;vertical-align:1px}
 .w-gi h6 code,.w-gi p code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--w-fill);border-radius:5px;padding:1px 5px;color:var(--w-ink)}
 .w-gi h6 .w-badge{font-weight:500}
-.w-gi h6 .w-owe{display:block}
 .w-gi .w-link{white-space:nowrap}
 .w-gbtn{width:100%;color:inherit;cursor:pointer}
 .w-gbtn:hover{background:var(--w-panel2)}

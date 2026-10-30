@@ -64,6 +64,8 @@ async function open(base, { width = 1440, height = 900, person, theme = "light" 
 const shot = async (page, name) => { if (SHOTS) await page.waitForTimeout(350), await page.screenshot({ path: join(SHOTS, name + ".png") }); };
 const gateText = (page) => page.locator("#gate").innerText();
 const appShown = (page) => page.waitForSelector("#app:not([hidden])", { timeout: 8000 }).then(() => true, () => false);
+/* Sign out lives in Settings › People, on your own row */
+const signOutVia = async (page) => { await page.goto(new URL("/settings/people", page.url()).href, { waitUntil: "networkidle" }); await page.click("#set-pane [data-signout]"); };
 /* Wrong passwords and codes are answered 400, 401 or 429 on purpose here; the browser logs those
    responses. Anything else in the console is a failure. */
 const EXPECTED = /^Failed to load resource: the server responded with a status of (400|401|429)/;
@@ -80,11 +82,14 @@ try {
   // Who is using this browser (sign-in off)
   {
     const page = await open(demo.base);
-    await page.waitForSelector("#gate .w-prof");
-    ok((await gateText(page)).includes("Who is using Wally on this browser?"), "who: asks who is using this browser");
-    ok(await page.locator("#gate .w-prof").count() === 2, "who: lists both people");
+    await page.waitForSelector("#gate .w-whop");
+    ok((await gateText(page)).includes("Who’s using Wally?"), "who: asks who is using Wally");
+    ok(await page.locator("#gate .w-whop").count() === 2, "who: lists both people");
+    await page.waitForTimeout(700);
     await shot(page, "who");
-    await page.locator("#gate .w-prof").nth(1).focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("ArrowRight");
+    ok(await page.evaluate(() => document.activeElement.dataset.prof) === "2", "who: arrows move between people");
     await page.keyboard.press("Enter");
     ok(await appShown(page), "who: picking a person opens the app");
     ok(await page.evaluate(() => localStorage.getItem("wally.person")) === "2", "who: remembered on this browser");
@@ -216,7 +221,7 @@ try {
   // Sign out, sign in with the code: wrong, then right (typed digit by digit)
   {
     const page = alex;
-    await page.click("[data-signout]");
+    await signOutVia(page);
     await page.waitForSelector("#si-in");
     ok((await gateText(page)).includes("Hi, Alex"), "remember: after Sign out, Wally goes straight to Alex");
     await page.fill("#si-in", "alexpass1");
@@ -235,7 +240,7 @@ try {
   // A recovery code, once
   {
     const page = alex;
-    await page.click("[data-signout]");
+    await signOutVia(page);
     await page.waitForSelector("#si-in");
     await page.fill("#si-in", "alexpass1");
     await page.press("#si-in", "Enter");
@@ -245,7 +250,7 @@ try {
     await page.fill("#si-in", codes[0]);
     await page.press("#si-in", "Enter");
     ok(await appShown(page), "recovery: a recovery code signs in");
-    await page.click("[data-signout]");
+    await signOutVia(page);
     await page.waitForSelector("#si-in");
     await page.fill("#si-in", "alexpass1");
     await page.press("#si-in", "Enter");
@@ -418,7 +423,7 @@ try {
     noErrors(page, "upgrade");
     // Arabic, dark, on a phone: the sign-in screen mirrors
     await page.evaluate(() => fetch("/api/language/ar", { method: "PUT" }));
-    await page.click("[data-signout]");
+    await signOutVia(page);
     await page.waitForSelector("#si-in");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });

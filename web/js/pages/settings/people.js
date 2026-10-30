@@ -1,12 +1,10 @@
-/* Settings › People: who is in the household, settling up, turning tags into people, removing someone. */
-import { t, tn, esc, state, av, pname, num, f, dlabY, GET, POST, PUT, DEL, reloadLedger, reloadRules, reloadSettle, couple, person, monthYear, ym, LANG } from "../../core.js";
+/* Settings › People: who is in the household, turning tags into people, removing someone. */
+import { t, tn, esc, state, av, num, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym, LANG } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { group, gi, giButton, ico, linkBtn, iconBtn, trashBtn, field, textInput, passwordInput, val, paint } from "./common.js";
+import { group, gi, giButton, ico, linkBtn, iconBtn, field, textInput, passwordInput, val, paint } from "./common.js";
 
-const PAYMENTS_SHOWN = 5;
 let box = null;
-let allPayments = false;
 
 export function mount(el) {
   box = el;
@@ -32,7 +30,9 @@ function render() {
     const acts = '<span class="w-acts">' +
       (people.length > 1 ? iconBtn("arrowup", t("Move {name} up", { name: p.name }), ' data-act="up" data-id="' + k + '" data-k="up:' + k + '"' + (i === 0 ? " disabled" : "")) +
         iconBtn("arrowdown", t("Move {name} down", { name: p.name }), ' data-act="down" data-id="' + k + '" data-k="down:' + k + '"' + (i === people.length - 1 ? " disabled" : "")) : "") +
-      linkBtn(t("Rename"), ' data-act="rename" data-id="' + k + '" data-k="rename:' + k + '"') + "</span>";
+      linkBtn(t("Rename"), ' data-act="rename" data-id="' + k + '" data-k="rename:' + k + '"') +
+      // Who is using this browser: switch person, or sign out when sign-in is on (the shell handles both)
+      (k !== state.me ? "" : state.status && state.status.signin ? linkBtn(t("Sign out"), ' data-signout data-k="signout"') : people.length > 1 ? linkBtn(t("Switch"), ' data-switch data-k="switch"') : "") + "</span>";
     return gi(av(k, "lg"), esc(p.name) + (k === state.me ? ' <span class="w-badge">' + t("You") + "</span>" : ""), sub, acts);
   });
   rows.push(giButton('<span class="w-ico w-round">' + '<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></span>', t("Add a person"),
@@ -41,7 +41,6 @@ function render() {
       : t("A child, a flatmate, anyone who shares costs. Each person gets their own view."), ' data-act="add" data-k="add"'));
 
   let html = group(t("People in this household"), rows);
-  if (couple()) html += settleGroup();
   html += sharingGroup();
   const others = people.filter((p) => String(p.id) !== state.me);
   if (people.length > 1 && others.length) {
@@ -49,25 +48,6 @@ function render() {
       t("Their transactions stay. You choose who they go to."), linkBtn(t("Remove"), ' data-act="remove" data-id="' + p.id + '" data-k="remove:' + p.id + '"', "w-bad"))));
   }
   paint(box, html);
-}
-
-function settleGroup() {
-  const s = state.settle || { transfers: [], payments: [] };
-  const owes = (s.transfers || []).map((x) => t("{from} owes {to} {amount}", { from: esc(pname(x.from)), to: esc(pname(x.to)), amount: '<span class="amt">' + f(Number(x.amount)) + "</span>" }));
-  const head = gi(ico("split"), owes.length ? owes.map((o) => '<span class="w-owe">' + o + "</span>").join("") : t("All square"),
-    owes.length ? t("Since the last payment. Shared costs are split by each person’s share.") : t("Nobody owes anything since the last payment."),
-    '<button type="button" class="w-btn ghost" data-act="settle" data-k="settle">' + t("Settle up") + "</button>");
-  const pays = s.payments || [];
-  const shown = allPayments ? pays : pays.slice(0, PAYMENTS_SHOWN);
-  const rows = [head].concat(shown.map((p) => gi(ico("check"),
-    t("{from} paid {to} {amount}", { from: esc(pname(p.from_person)), to: esc(pname(p.to_person)), amount: '<span class="amt">' + f(Number(p.amount)) + "</span>" }),
-    t("{date}. Not counted as spending.", { date: dlabY(p.date) }) + (p.note ? " " + esc(p.note) : ""),
-    trashBtn(t("Delete this payment"), ' data-act="unpay" data-id="' + p.id + '" data-k="unpay:' + p.id + '"'))));
-  if (!pays.length) rows.push(gi(ico("info"), t("No payments yet"), t("When someone pays the other back, Settle up records it here.")));
-  if (pays.length > PAYMENTS_SHOWN) {
-    rows.push('<div class="w-gmore">' + linkBtn(allPayments ? t("Show fewer") : tn(pays.length, "Show the {n} payment", "Show all {n} payments"), ' data-act="morepay" data-k="morepay"') + "</div>");
-  }
-  return group(t("Settled payments"), rows, t("Recorded with Settle up"));
 }
 
 /* Tags named like people, e.g. #ana, from before Wally knew about people */
@@ -98,9 +78,6 @@ async function onClick(ev) {
     case "rename": return renamePerson(id);
     case "up": case "down": return move(id, b.dataset.act === "up" ? -1 : 1);
     case "remove": return removePerson(id);
-    case "settle": return settle();
-    case "unpay": return deletePayment(id);
-    case "morepay": allPayments = !allPayments; return render();
     case "fromtag": return fromTag();
   }
 }
@@ -182,7 +159,7 @@ async function removePerson(id) {
     title: t("Remove {name}?", { name: esc(p.name) }),
     body: "<p>" + t("{name} has {list}. Nothing is deleted.", { name: esc(p.name), list: new Intl.ListFormat(LANG, { type: "conjunction" }).format(parts) }) + "</p>" +
       (usage.own || usage.rules ? "<p>" + t("Move their transactions and rules to:") + "</p>" + radios : "") +
-      "<p>" + t("Their part of shared costs goes to whoever you choose, or to whoever paid. Their settle-up payments, sign-ins and API keys are deleted.") + "</p>",
+      "<p>" + t("Their part of shared costs goes to whoever you choose, or to whoever paid. Their sign-ins and API keys are deleted.") + "</p>",
     ok: t("Remove {name}", { name: esc(p.name) }),
     danger: true,
     onOk: async (root) => {
@@ -190,33 +167,11 @@ async function removePerson(id) {
       const to = pick ? pick.value : String(heir.id);
       await DEL("/people/" + id, { move_to: to === "shared" ? null : Number(to) });
       if (state.scope === String(id)) { state.scope = "all"; try { localStorage.setItem("wally.scope", "all"); } catch (e) { /* fine */ } }
-      await Promise.all([reloadPeople(), reloadLedger(), reloadRules(), reloadSettle()]);
+      await Promise.all([reloadPeople(), reloadLedger(), reloadRules()]);
       refresh({ people: true, data: true });
       toast(t("Removed {name}", { name: p.name }));
     },
   });
-}
-
-async function settle() {
-  try {
-    const m = await import("../../settle.js");
-    await m.openSettle();
-  } catch (e) { errorToast(e); }
-}
-
-async function deletePayment(id) {
-  const p = (state.settle.payments || []).find((x) => String(x.id) === String(id));
-  if (!p) return;
-  try {
-    await DEL("/settlements/" + id);
-    await reloadSettle();
-    refresh({ settle: true });
-    toast(t("Deleted the payment of {amount}", { amount: f(Number(p.amount)) }), async () => {
-      await POST("/settlements", { date: p.date, from_person: p.from_person, to_person: p.to_person, amount: p.amount, note: p.note || "" });
-      await reloadSettle();
-      refresh({ settle: true });
-    });
-  } catch (e) { errorToast(e); }
 }
 
 function fromTag() {

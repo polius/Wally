@@ -71,7 +71,9 @@ export function currentPage() { return pageName; }
 export function setScope(sc) {
   state.scope = sc;
   try { localStorage.setItem("wally.scope", sc); } catch (e) { /* fine */ }
+  closeSwitch();
   refresh({ scope: true });
+  document.querySelectorAll(".w-pswitch").forEach((w) => { w.outerHTML = scopeSwitch(); });
 }
 function scopeButtons(cls) {
   const all = '<button type="button" data-scope="all" aria-pressed="' + (state.scope === "all") + '">' + av("all") + "<span>" + t("Everyone") + "</span><span>" + state.people.length + "</span></button>";
@@ -85,19 +87,13 @@ function scopeButtons(cls) {
 export function renderSide() {
   const side = $("side");
   if (!side) return;
-  const s = state.status || {};
-  const me = state.me;
   side.innerHTML =
     '<a class="w-brand" href="/" data-link><span class="w-mark"></span><span class="w-brand-t">Wally</span></a>' +
     '<button class="w-btn primary w-addbtn" type="button" data-open-add title="' + esc(t("Add")) + ' (N)">' + icon("plus") + '<span class="w-lbl">' + t("Add") + "</span><kbd>N</kbd></button>" +
     '<nav class="w-nav">' + NAV.map(([name, href, ic, label]) =>
       '<a href="' + href + '" data-link class="' + (pageName === name ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ' title="' + esc(label()) + '">' + icon(ic) + '<span class="w-lbl">' + label() + "</span></a>").join("") + "</nav>" +
     (couple() ? '<div class="w-scope" role="group" aria-label="' + esc(t("Show money for")) + '"><div class="w-scope-h">' + t("Showing") + "</div>" + scopeButtons() + "</div>" +
-      '<div class="w-scope-mini"><button type="button" class="w-scope-av" data-scope-menu aria-haspopup="true" aria-label="' + esc(t("Showing")) + '">' + av(state.scope) + "</button></div>" : "") +
-    '<div class="w-side-foot">' +
-      (me ? '<div class="w-me">' + av(me, "sm") + '<span class="w-lbl">' + esc(pname(me)) + "</span>" + (state.people.length > 1 ? '<button type="button" class="w-so" data-switch>' + t("Switch") + "</button>" : "") + "</div>" : "") +
-      (s.signin ? '<button type="button" class="w-so" data-signout>' + t("Sign out") + "</button>" : "") +
-    "</div>";
+      '<div class="w-scope-mini"><button type="button" class="w-scope-av" data-scope-menu aria-haspopup="true" aria-label="' + esc(t("Showing")) + '">' + av(state.scope) + "</button></div>" : "");
 }
 
 /* ---------- phone tab bar: Add in the middle, in thumb reach ---------- */
@@ -109,10 +105,34 @@ function renderTabbar() {
     tab("recurring", "/recurring", "repeat", t("Recurring")) + tab("settings", "/settings", "settings", t("Settings"));
 }
 
-/* Person chips for the top of phone pages (the sidebar is gone there) */
+/* Person chips, for Month in review's story */
 export function scopeChips() {
   if (!couple()) return "";
   return '<div class="w-pchips" role="group" aria-label="' + esc(t("Show money for")) + '">' + scopeButtons() + "</div>";
+}
+/* The person switch at the top right of phone pages (the sidebar is gone there): the avatar
+   of whoever is shown, opening a menu of everyone */
+export function scopeSwitch() {
+  if (!couple()) return "";
+  const who = state.scope === "all" ? t("Everyone") : pname(state.scope);
+  return '<div class="w-pswitch"><button type="button" class="w-pswitch-b" data-pswitch aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t("Showing") + ": " + who) + '">' +
+    av(state.scope) + icon("down") + '</button><div class="w-pswitch-m" role="group" aria-label="' + esc(t("Show money for")) + '" hidden>' + scopeButtons() + "</div></div>";
+}
+function closeSwitch(focusBack) {
+  document.querySelectorAll(".w-pswitch-m:not([hidden])").forEach((m) => {
+    m.hidden = true;
+    const b = m.previousElementSibling;
+    b.setAttribute("aria-expanded", "false");
+    if (focusBack) b.focus();
+  });
+}
+function toggleSwitch(b) {
+  const m = b.nextElementSibling, was = !m.hidden;
+  closeSwitch();
+  if (was) return;
+  m.hidden = false;
+  b.setAttribute("aria-expanded", "true");
+  (m.querySelector('[aria-pressed="true"]') || m.querySelector("button")).focus();
 }
 
 /* ---------- hide amounts, for sharing a screen ---------- */
@@ -146,6 +166,9 @@ export function initShell() {
     if (a && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && a.origin === location.origin) { ev.preventDefault(); navigate(a.pathname + a.search); return; }
     if (ev.target.closest("[data-open-add]")) { handlers.openAdd && handlers.openAdd(); return; }
     if (ev.target.closest("[data-open-cmd]")) { handlers.openCmd && handlers.openCmd(); return; }
+    const ps = ev.target.closest("[data-pswitch]");
+    if (ps) { toggleSwitch(ps); return; }
+    if (!ev.target.closest(".w-pswitch-m")) closeSwitch();
     const sc = ev.target.closest("[data-scope]");
     if (sc) { setScope(sc.dataset.scope); return; }
     if (ev.target.closest("[data-scope-menu]")) { const order = ["all"].concat(state.people.map((p) => String(p.id))); setScope(order[(order.indexOf(state.scope) + 1) % order.length]); return; }
@@ -155,6 +178,7 @@ export function initShell() {
   window.addEventListener("popstate", () => show());
   document.addEventListener("keydown", (ev) => {
     if (ev.defaultPrevented) return;
+    if (ev.key === "Escape" && document.querySelector(".w-pswitch-m:not([hidden])")) { ev.preventDefault(); closeSwitch(true); return; }
     const overlay = dialogOpen() || !$("add-modal").hidden || !$("cmd").hidden;
     if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); if (!overlay || !$("cmd").hidden) handlers.openCmd && handlers.openCmd(); return; }
     if (overlay || typing(ev) || ev.metaKey || ev.ctrlKey || ev.altKey) return;

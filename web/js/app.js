@@ -1,7 +1,7 @@
 /* Start Wally: who is here, which screen comes first, then the app. */
 import { $, t, state, GET, loadAll, loadLanguage, on, person, refreshToday, esc, TODAY } from "./core.js";
 import { initToast, initDialogs } from "./ui.js";
-import { initShell, show, setHandlers, setHide, signOut, navigate, refresh } from "./shell.js";
+import { initShell, show, setHandlers, setHide, signOut, refresh } from "./shell.js";
 
 async function boot() {
   initToast();
@@ -74,10 +74,7 @@ async function startApp() {
   $("boot").hidden = true;
   $("app").hidden = false;
   const params = new URLSearchParams(location.search);
-  // Wally opens on the page chosen in Settings, unless a link says otherwise
-  const open = state.config.open_on;
-  if (location.pathname === "/" && open && open !== "dashboard" && !params.has("add")) await navigate("/" + open, { replace: true });
-  else await show();
+  await show();
   if (params.has("add")) { history.replaceState(null, "", location.pathname); add.openAdd(); }
 
   const review = await import("./pages/review.js");

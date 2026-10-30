@@ -198,12 +198,35 @@ async function forgot() {
 }
 
 /* ======================= who is using this browser (sign-in off) ======================= */
+/* A profile picker: big faces, one tap. Arrows move between them; the choice is remembered here. */
 function renderWho() {
-  paint(card(mark() + head(t("Who is using Wally on this browser?"), t("Wally notes who adds each transaction. Sign-in is off, so it takes your word for it.")) +
-    '<div class="w-profiles" role="list">' + state.people.map((p) =>
-      '<div role="listitem"><button type="button" class="w-prof" data-prof="' + p.id + '">' + bigAv(String(p.id)) + "<span>" + esc(p.name) + "</span></button></div>").join("") + "</div>" +
-    '<span class="w-hint">' + t("Wally remembers it on this browser. Switch at any time.") + "</span>"));
-  root.querySelectorAll("[data-prof]").forEach((b) => b.addEventListener("click", () => { write("wally.person", b.dataset.prof); finish(); }));
+  const people = state.people;
+  paint('<main class="w-who" aria-labelledby="gate-h" tabindex="-1">' +
+    '<div class="w-whohead"><h1 id="gate-h">' + t("Who’s using Wally?") + "</h1><p>" + t("Wally remembers you on this browser and notes who adds each transaction.") + "</p></div>" +
+    '<ul class="w-wholist' + (people.length > 4 ? " many" : "") + '">' + people.map((p, i) =>
+      '<li style="--i:' + i + '"><button type="button" class="w-whop" data-prof="' + p.id + '">' + av(String(p.id), "w-whoav") + '<span class="w-whon">' + esc(p.name) + "</span></button></li>").join("") + "</ul>" +
+    '<p class="w-whofoot">' + t("No password needed while sign-in is off.") + "</p></main>", ".w-who");
+  const box = root.querySelector(".w-who"), btns = [...box.querySelectorAll("[data-prof]")];
+  btns.forEach((b) => b.addEventListener("click", () => pick(b)));
+  box.addEventListener("keydown", (ev) => {
+    const i = btns.indexOf(document.activeElement), rtl = document.documentElement.dir === "rtl";
+    const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 1, ArrowUp: -1 }[ev.key];
+    let to = null;
+    if (step) to = i < 0 ? (step > 0 ? 0 : btns.length - 1) : (i + step + btns.length) % btns.length;
+    else if (ev.key === "Home") to = 0;
+    else if (ev.key === "End") to = btns.length - 1;
+    if (to === null) return;
+    ev.preventDefault();
+    btns[to].focus();
+  });
+  function pick(b) {
+    if (box.classList.contains("picked")) return;
+    write("wally.person", b.dataset.prof);
+    b.classList.add("on");
+    box.classList.add("picked");
+    // A moment for the chosen face to come forward, unless motion is turned down
+    setTimeout(finish, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+  }
 }
 
 /* ======================= choose your own password ======================= */

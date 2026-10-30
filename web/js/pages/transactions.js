@@ -3,7 +3,7 @@
    filters, a calendar, Select mode for bulk changes, and a side panel with every field. */
 import { $, state, t, tn, esc, f, ym, ymAdd, ds, dim, addD, TODAY, on, amt, icon, couple, rerank, isIncomeCat, monthYear, dlabL, dlabW, F, pname, cc } from "../core.js";
 import { chart, el, txt, hover, row, hideTip, openDialog, seg, empty, trapFocus } from "../ui.js";
-import { scopeChips } from "../shell.js";
+import { scopeSwitch } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
 import { S, RANGES, parseQ, withoutWords, txRange, txFiltered, onlyLabel, inLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering } from "./transactions/query.js";
 import { TxList, buildItems } from "./transactions/list.js";
@@ -72,8 +72,7 @@ function skeleton() {
   const first = state.people[0];
   const ph = couple() && first ? t("Search, or try >50 @{name} #holiday food", { name: first.name.split(/\s+/)[0].toLocaleLowerCase() }) : t("Search, or try >50 #holiday food");
   return '<div class="tx-page">' +
-    '<div class="w-mh tx-phead"><h3>' + esc(t("Transactions")) + "</h3></div>" +
-    '<div id="tx-pchips"></div>' +
+    '<div class="w-mh tx-phead"><h3>' + esc(t("Transactions")) + '</h3><div id="tx-pchips"></div></div>' +
     '<div id="tx-none" hidden></div>' +
     '<div class="tx-main" id="tx-main">' +
       '<header class="w-head tx-head">' +
@@ -110,7 +109,7 @@ let rankKey = "";
 function render() {
   if (!mounted || !$("tx-main")) return;
   hideTip();
-  $("tx-pchips").innerHTML = scopeChips();
+  $("tx-pchips").innerHTML = scopeSwitch();
   const none = !state.tx.length;
   $("tx-none").hidden = !none;
   $("tx-main").hidden = none;
@@ -153,11 +152,11 @@ function renderHead(R, P) {
   root.querySelectorAll('[data-act="prev"]').forEach((b) => { b.disabled = !step || y * 12 + m <= fy * 12 + fm; });
   root.querySelectorAll('[data-act="next"]').forEach((b) => { b.disabled = !step || y * 12 + m >= ly * 12 + lm; });
   const cal = S.view === "cal";
-  const items = [["month", t("Month")], ["3m", t("3 months")], ["year", t("Year")], ["12m", t("12 months")], ["all", t("All")]];
+  const items = [["month", t("Month")], ["year", t("Year")], ["all", t("All")]];
   if (S.mode === "custom" && !cal) items.push(["custom", t("Custom")]);
   const pressed = R.search || R.fromQuery ? "" : cal ? "month" : S.mode;
   $("tx-rangew").innerHTML = seg("tx-range", items.map(([k, l]) => [k, esc(l)]), pressed, t("Range"), "tx-range");
-  $("tx-rangew").querySelectorAll("button").forEach((b, i) => { b.dataset.tr = b.dataset.v; if (i < 5) b.title = String(i + 1); });
+  $("tx-rangew").querySelectorAll("button").forEach((b, i) => { b.dataset.tr = b.dataset.v; if (i < 3) b.title = String(i + 1); });
   const q = $("tx-q");
   if (q.value !== S.q && document.activeElement !== q) q.value = S.q;
   // Phones: the range and the filters open as sheets
@@ -538,7 +537,7 @@ export function key(ev) {
   const inList = a && $("tx-list") && $("tx-list").contains(a);
   const blank = !a || a === document.body || a === root;
   const neutral = blank || inList || (a.closest && a.closest("#tx-insp"));
-  if (/^[1-5]$/.test(k)) { ev.preventDefault(); return setRange(RANGES[+k - 1]); }
+  if (/^[1-3]$/.test(k)) { ev.preventDefault(); return setRange(RANGES[+k - 1]); }
   if (k === "Escape") {
     if (!$("tx-catpop").hidden) { toggleCatPop(false); $("tx-catbtn").focus(); return; }
     if (closePanel()) return;

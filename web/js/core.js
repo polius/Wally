@@ -224,7 +224,6 @@ export const state = {
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
   tags: [],
-  settle: { net: {}, transfers: [], payments: [] },
   budgets: [],
   goals: [],
   irules: [],
@@ -300,8 +299,8 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags, settle] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/settlements"),
+  const [status, people, ledger, rules, config, currency, categories, tags] = await Promise.all([
+    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"),
   ]);
   state.status = status;
   state.people = people;
@@ -313,7 +312,6 @@ export async function loadAll() {
   state.currency = { symbol: sel ? sel.symbol : currency.selected, position: currency.position, selected: currency.selected, currencies: currency.currencies };
   state.categories = categories;
   state.tags = tags;
-  state.settle = settle;
   const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
   state.me = person(meKey) ? String(meKey) : null;
   try { state.prefs = state.me ? await GET("/me/prefs") : {}; } catch (e) { state.prefs = {}; }
@@ -328,7 +326,6 @@ export async function loadExtras() {
     emit("change", { extras: true });
   } catch (e) { /* shown when opened */ }
 }
-export async function reloadSettle() { state.settle = await GET("/settlements"); }
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
 export async function reloadLedger() { state.tx = (await GET("/ledger")).rows.map(fromRow); setStart(); }
 export async function savePrefs(changes) {
@@ -426,7 +423,6 @@ export function tile(c, size, col) {
 }
 
 /* Settings that matter to a figure */
-export function savingsTarget() { return Number(state.config.savings_target ?? 15) / 100; }
 export function debounce(fn, ms) { let h; return function () { const args = arguments; clearTimeout(h); h = setTimeout(() => fn.apply(this, args), ms); }; }
 export function uid() { return Math.random().toString(36).slice(2, 10); }
 export const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);

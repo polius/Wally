@@ -14,9 +14,10 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>弹性</b>分类每月设定一个金额。每条进度条上的刻度表示截至今天应花到的位置。",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>每年一次</b>的开销（如旅行）设定年度金额，按月逐步累积。",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>结转</b>会把剩余或超出的金额转入下个月。",
- "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
-  "other": "扣除 {bills} 账单并存下 <b>{saved}</b> 储蓄后，未来{n}天还剩 <b>{amount}</b>，远超你平时的花销节奏。"
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills, well ahead of your usual pace.": {
+  "other": "扣除 {bills} 账单后，未来{n}天还剩 <b>{amount}</b>，远超你平时的花销节奏。"
  },
+ "<b>{amount}</b> left in your budgets for today.": "今天预算还剩 <b>{amount}</b>。",
  "A backup you downloaded earlier. The data now is backed up first.": "之前下载的备份。当前数据会先备份。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "孩子、室友，任何分摊开销的人。每位成员都有自己的视图。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "孩子、室友，任何分摊开销的人。你设置初始密码，对方首次登录时再设置自己的密码。",
@@ -154,6 +155,7 @@
  "Average per day, not counting bills, over the last 90 days.": "最近90天的日均支出，不含账单。",
  "Average spent": "平均支出",
  "Average spent per weekday": "每周各天的平均支出",
+ "Average {amount} a month": "平均每月 {amount}",
  "Back": "返回",
  "Back to columns": "返回列设置",
  "Back to sign in": "返回登录",
@@ -477,7 +479,7 @@
   "other": "来自{n}笔共同支出。"
  },
  "Getting a code ready…": "正在生成验证码…",
- "Give each category an amount, and Wally shows what is left and how much you can spend each day. Fixed bills are only checked, and once-a-year costs fill up month by month.": "为每个分类设定金额，Wally 会显示剩余多少以及每天可以花多少。固定账单只做核对，每年一次的开销按月累积。",
+ "Give each category an amount, and Wally shows what is left and how much you can spend each day. Once-a-year costs fill up month by month.": "为每个分类设定金额，Wally 会显示剩余多少以及每天可以花多少。每年一次的开销按月累积。",
  "Give each part an amount, or leave just one empty.": "为每一项填写金额，或只留一项为空。",
  "Give the goal a name.": "请为目标命名。",
  "Give the view a name.": "请为视图命名。",
@@ -553,6 +555,7 @@
  },
  "Keeps the last 14 nights in the backups folder, next to the database": "在数据库旁的 backups 文件夹中保留最近14晚的备份",
  "Kept": "结余",
+ "Kept each month": "每月结余",
  "Kept in the month": "本月结余",
  "Kept in total": "累计结余",
  "Kept in total: {amount} since {month}": "自{month}起累计结余：{amount}",
@@ -691,6 +694,7 @@
  "No one owes anything.": "谁也不欠谁。",
  "No one owes anything. Shared costs with a payer start a new balance.": "谁也不欠谁。有付款人的共同支出将开始新的余额。",
  "No other browsers": "没有其他浏览器",
+ "No password needed while sign-in is off.": "登录关闭期间无需密码。",
  "No password yet": "还没有密码",
  "No payees yet": "还没有收款方",
  "No payments yet": "还没有付款",
@@ -1061,7 +1065,7 @@
  "Spending by category and month in {range}": "{range}按分类和月份的支出",
  "Spending each day in {month}, {total} in all": "{month}每日支出，共 {total}",
  "Spending each month, {total} in all": "每月支出，共 {total}",
- "Spending has run {amount} past what is left after bills and the {pct} savings target. The month will save less than planned.": "支出已超出扣除账单和{pct}储蓄比例后的剩余金额 {amount}。本月储蓄将少于计划。",
+ "Spending has run {amount} past what is left after bills. The month will end overspent.": "支出已超出扣除账单后的剩余金额 {amount}。本月将入不敷出。",
  "Spending is written as": "支出的写法",
  "Spending looks like a normal month.": "支出与平常月份相当。",
  "Spending looks normal in this range.": "此范围内支出正常。",
@@ -1121,7 +1125,7 @@
  "The first month": "第一个月",
  "The last date must be after {date}.": "最后日期必须晚于{date}。",
  "The month closed even.": "本月收支持平。",
- "The month ends today: <b>{amount}</b> is left after bills and <b>{saved}</b> kept for savings.": "本月今天结束：扣除账单并存下 <b>{saved}</b> 储蓄后，还剩 <b>{amount}</b>。",
+ "The month ends today: <b>{amount}</b> is left after bills.": "本月今天结束：扣除账单后还剩 <b>{amount}</b>。",
  "The page Wally shows when it opens": "Wally 打开时显示的页面",
  "The same again": "再来一笔同样的",
  "The savings target is a share of income, from 0 to 90.": "储蓄比例是收入的百分比，范围为0到90。",
@@ -1149,7 +1153,7 @@
  "The {n} transaction it added stays, as an ordinary one.": {
   "other": "它添加的{n}笔交易会保留，成为普通交易。"
  },
- "Their part of shared costs goes to whoever you choose, or to whoever paid. Their settle-up payments, sign-ins and API keys are deleted.": "其在共同支出中的份额将转给你选择的人，或转给付款人。其结算付款、登录记录和 API 密钥将被删除。",
+ "Their part of shared costs goes to whoever you choose, or to whoever paid. Their sign-ins and API keys are deleted.": "其在共同支出中的份额将转给你选择的人，或转给付款人。其登录记录和 API 密钥将被删除。",
  "Their share of shared costs": "其在共同支出中的份额",
  "Their transactions stay. You choose who they go to.": "其交易会保留，由你选择转给谁。",
  "Theme": "主题",
@@ -1241,14 +1245,13 @@
  "Wally export": "Wally 导出文件",
  "Wally is read-only": "Wally 为只读模式",
  "Wally keeps track of what your household spends and earns. Your data stays on this server.": "Wally 记录你家庭的收入和支出。你的数据保存在此服务器上。",
- "Wally notes who adds each transaction. Sign-in is off, so it takes your word for it.": "Wally 会记录每笔交易的添加者。登录已关闭，因此以你的自述为准。",
  "Wally noticed": "Wally 发现",
  "Wally now keeps track of who spent what. Add the people in your household. Everything already in Wally stays shared between them.": "Wally 现在会记录谁花了什么。请添加你的家庭成员。Wally 中已有的所有内容仍为他们的共同支出。",
  "Wally offers a rule after the same fix twice": "同样的修改出现两次后，Wally 会建议规则",
  "Wally recovery codes": "Wally 恢复码",
  "Wally recovery codes for {name}": "{name}的 Wally 恢复码",
- "Wally remembers it on this browser. Switch at any time.": "Wally 会在此浏览器上记住，可随时切换。",
  "Wally remembers the last person on this browser": "Wally 会在此浏览器上记住上一位成员",
+ "Wally remembers you on this browser and notes who adds each transaction.": "Wally 会在此浏览器上记住你，并记录每笔交易是谁添加的。",
  "Wally v1 file": "Wally v1 文件",
  "Wally v1 file format": "Wally v1 文件格式",
  "Wally won’t offer rules": "Wally 不会建议规则",
@@ -1278,13 +1281,13 @@
  "Which ones change": "哪些会更改",
  "Who": "谁",
  "Who is signing in?": "谁在登录？",
- "Who is using Wally on this browser?": "谁在此浏览器上使用 Wally？",
  "Who owes whom, and what each person earned, spent and kept": "谁欠谁，以及每位成员的收入、支出和结余",
  "Who shares this household?": "这个家庭有哪些成员？",
  "Who spent on what": "谁花在了哪里",
  "Who uses Wally?": "谁在使用 Wally？",
  "Whose": "归属",
  "Whose money": "谁的钱",
+ "Who’s using Wally?": "谁在使用 Wally？",
  "Who…": "成员…",
  "Worth knowing": "值得关注",
  "YYYY-MM-DD": "年-月-日",
@@ -1295,8 +1298,8 @@
  "You": "你",
  "You are signed in only here.": "你只在这里登录。",
  "You can always import more later from Settings.": "之后随时可以在设置中导入更多。",
- "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills and <b>{saved}</b> kept for savings.": {
-  "other": "扣除 {bills} 账单并存下 <b>{saved}</b> 储蓄后，未来{n}天你每天可以花 <b>{amount}</b>。"
+ "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills.": {
+  "other": "扣除 {bills} 账单后，未来{n}天你每天可以花 <b>{amount}</b>。"
  },
  "You can take out at most {amount}.": "最多可取出 {amount}。",
  "You kept {amount}, {pct} of what came in.": "你结余了 {amount}，占收入的{pct}。",
@@ -1330,8 +1333,8 @@
  "duplicate": "复制",
  "edit": "编辑",
  "every month": "所有月份",
- "for {n} day, after bills and {pct} saved": {
-  "other": "共{n}天，扣除账单和{pct}储蓄后"
+ "for {n} day, after bills": {
+  "other": "共{n}天，扣除账单后"
  },
  "from a rule": "来自规则",
  "from {from} to {to} on {date}": "{date}从 {from} 变为 {to}",
@@ -1401,7 +1404,7 @@
  "times": "次",
  "to come": "待发生",
  "today": "今天",
- "today, after bills and {pct} saved": "今天，扣除账单和{pct}储蓄后",
+ "today, after bills": "今天，扣除账单后",
  "tomorrow": "明天",
  "under {amount}": "低于 {amount}",
  "until {date}": "至{date}",

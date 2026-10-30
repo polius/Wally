@@ -23,15 +23,10 @@ function whoText(x) {
   if (even && keys.length === state.people.length) return esc(t("Shared evenly, {amount} each", { amount: f(x.a / keys.length) }));
   return esc(t("Split: {parts}", { parts: keys.map((k) => pname(k) + " " + f(shareOf(x, k))).join(", ") }));
 }
-/* For a shared expense: who paid, and what the others owe them */
+/* For a shared expense: who paid it */
 function paidBy(x) {
   if (x.p !== null || x.type !== "expense" || !couple() || x.by === null || !person(x.by)) return null;
-  const others = sharers(x).filter((k) => k !== x.by);
-  if (!others.length) return { by: x.by, owe: "" };
-  const owe = others.length === 1
-    ? t("{name} owes {amount}", { name: pname(others[0]), amount: f(shareOf(x, others[0])) })
-    : t("the others owe {amount}", { amount: f(others.reduce((s, k) => s + shareOf(x, k), 0)) });
-  return { by: x.by, owe };
+  return x.by;
 }
 function ruleOf(x) { return x.rid ? state.rules.find((r) => r.id === x.rid) || null : null; }
 function siblings(x) { return x.gr ? state.tx.filter((y) => y.gr === x.gr && y.id !== x.id) : []; }
@@ -64,7 +59,7 @@ export function txPanel(x, phone) {
   const fields = [
     [t("Category"), tile(x.c, 22) + "<span>" + esc(x.c) + "</span>"],
     [inc ? t("Whose") : t("Who"), av(owner(x), "sm") + "<span>" + whoText(x) + "</span>"],
-    pb && [t("Paid by"), av(pb.by, "sm") + "<span>" + esc(pname(pb.by)) + (pb.owe ? '<span class="tx-mut">, ' + esc(pb.owe) + "</span>" : "") + "</span>"],
+    pb && [t("Paid by"), av(pb, "sm") + "<span>" + esc(pname(pb)) + "</span>"],
     [t("Date"), "<span>" + esc(dateText(x.d)) + "</span>"],
     [t("Tags"), tags],
     [t("Note"), note],

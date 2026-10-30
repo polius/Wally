@@ -1,14 +1,14 @@
-/* The Dashboard under 768 px: compact forms, not a scaled-down desktop. Spent so far with
-   Safe to spend, a small pace chart, top categories, a Budgets card (Budgets has no tab on
-   phones), bills in the next 7 days, shared costs, recent, then any other widget shown,
-   with cash flow as one stacked bar. */
-import { state, t, tn, esc, TODAY, ds, dim, ym, addD, f, f0, fk, pct, num, dlabW, cc, tile, icon, byCat, totals, couple, F } from "../../core.js";
+/* The Dashboard under 768 px: compact forms, not a scaled-down desktop. Spent so far against
+   last month, a small pace chart, top categories, a Budgets card (Budgets has no tab on phones),
+   recent, kept each month and bills in the next 7 days. */
+import { t, tn, esc, TODAY, ym, addD, f, f0, fk, pct, num, dlab, dlabW, cc, tile, icon, byCat, totals, F } from "../../core.js";
 import { chart, el, txt, niceMax, hover, row } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, inDays } from "../../sched.js";
-import { scopeChips } from "../../shell.js";
+import { scopeSwitch } from "../../shell.js";
 import { view, canStep } from "./range.js";
-import { paceData, safeInfo, countTo } from "./hero.js";
-import { WIDGETS, settleHtml, renderRecent, flowData } from "./widgets.js";
+import { paceData, countTo } from "./hero.js";
+import { compute as computeBudgets } from "../budgets.js";
+import { WIDGETS, renderRecent } from "./widgets.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -17,22 +17,19 @@ export function phoneHeader(r) {
     '<span class="d-pt">' + esc(r.title) + "</span>" + icon("down") + "</button>" +
     (view.mode === "month" ? '<div class="w-step d-pstep"><button type="button" id="d-prev" aria-label="' + esc(t("Previous month")) + '"' + (canStep(-1) ? "" : " disabled") + ">" + icon("left") +
       '</button><button type="button" id="d-next" aria-label="' + esc(t("Next month")) + '"' + (canStep(1) ? "" : " disabled") + ">" + icon("right") + "</button></div>" : "") +
-    '<button type="button" class="d-picon" data-d-cmd aria-label="' + esc(t("Search or jump")) + '">' + icon("search") + "</button></header>" + scopeChips();
+    scopeSwitch() + "</header>";
 }
 
 /* ---------- markup, in phone order ---------- */
-export function phoneHtml(shown) {
-  const sec = (k, html) => (shown(k) ? html : "");
-  return sec("hero", '<section class="d-phero" data-w="hero"><span class="w-eyebrow" id="ph-eye"></span><span class="w-big" id="ph-big"></span><span class="d-pline" id="ph-line"></span></section>' +
-      '<section class="w-panel d-ppace" data-w="hero"><div class="cv" id="ph-pace"></div></section>') +
-    sec("cats", '<section class="w-panel" data-w="cats"><div class="w-ph"><h4>' + t("Top categories") + '</h4></div><div id="ph-cats"></div></section>') +
+export function phoneHtml() {
+  return '<section class="d-phero" data-w="hero"><span class="w-eyebrow" id="ph-eye"></span><span class="w-big" id="ph-big"></span><span class="d-pline" id="ph-line"></span></section>' +
+    '<section class="w-panel d-ppace" data-w="hero"><div class="cv" id="ph-pace"></div></section>' +
+    '<section class="w-panel" data-w="cats"><div class="w-ph"><h4>' + t("Top categories") + '</h4></div><div id="ph-cats"></div></section>' +
     '<a class="w-panel d-pbud" href="/budgets" data-link id="ph-bud"></a>' +
-    sec("upcoming", '<section class="w-panel" data-w="upcoming"><div class="w-ph"><h4>' + t("Coming up · next 7 days") + '</h4></div><div id="ph-up"></div></section>') +
-    (couple() ? '<section class="w-panel" data-w="shared"><div class="w-ph"><h4>' + t("Shared costs") + '</h4></div><div id="ph-shared"></div></section>' : "") +
-    sec("recent", '<section class="w-panel" data-w="recent"><div class="w-ph"><h4>' + t("Recent") + '</h4><a class="w-link d-hlink" href="/transactions" data-link>' + t("All") + '</a></div><div id="recent"></div></section>') +
-    ["savings", "unusual", "flow", "cal", "people", "weekday", "subs", "trends", "payees"].filter((k) => shown(k) && k !== "people").map((k) =>
-      k === "flow" ? '<section class="w-panel" data-w="flow"><div class="w-ph"><div><h4>' + t("Cash flow") + '</h4><p id="ph-flowsub"></p></div></div><div id="ph-flow"></div></section>' : WIDGETS[k].html()).join("") +
-    '<div class="d-pfoot"><button type="button" class="w-btn ghost" id="d-cust">' + icon("layout") + t("Customize") + '</button><button type="button" class="w-btn ghost" data-review>' + icon("history") + t("Month in review") + "</button></div>";
+    '<section class="w-panel" data-w="recent"><div class="w-ph"><h4>' + t("Recent") + '</h4><a class="w-link d-hlink" href="/transactions" data-link>' + t("All") + '</a></div><div id="recent"></div></section>' +
+    WIDGETS.kept.html() +
+    '<section class="w-panel" data-w="upcoming"><div class="w-ph"><h4>' + t("Coming up · next 7 days") + '</h4></div><div id="ph-up"></div></section>' +
+    '<div class="d-pfoot"><button type="button" class="w-btn ghost" data-review>' + icon("history") + t("Month in review") + "</button></div>";
 }
 
 /* ---------- renderers ---------- */
@@ -40,13 +37,13 @@ function renderHero(r) {
   const tt = totals(r.start, r.end);
   $("ph-eye").textContent = r.current ? t("Spent so far") : t("Spent");
   countTo($("ph-big"), tt.exp);
-  const line = $("ph-line");
-  if (r.month && r.current) {
-    const s = safeInfo(r.start);
-    line.innerHTML = s.inc ? tn(Math.max(s.left, 1), "Safe to spend {amount} for {n} day", "Safe to spend {amount} for {n} days", { amount: '<b class="' + (s.per < 0 ? "up-bad" : "acc") + '">' + esc(t("{amount} a day", { amount: (s.per < 0 ? "−" : "") + f0(Math.abs(s.per)) })) + "</b>" })
-      : esc(t("No income this month yet"));
+  const d = paceData(r), ci = d.cur.length - 1, len = d.len, line = $("ph-line");
+  // Against the month before, to the same day; or, without one, what came in and was kept
+  if (d.cmp && tt.n) {
+    const df = d.cur[ci] - d.cmp[ci], up = df > 0, vars = { amount: f0(Math.abs(df)), pct: pct(Math.abs(df) / Math.max(d.cmp[ci], 1)) };
+    line.innerHTML = '<b class="' + (up ? "up-bad" : "dn-good") + '">' + esc(up ? t("{amount} more ({pct})", vars) : t("{amount} less ({pct})", vars)) + "</b> " +
+      esc(r.current && r.month ? t("than {what} by {date}", { what: d.label, date: dlab(r.end) }) : t("than {what}", { what: d.label }));
   } else line.textContent = t("{income} in, {kept} kept", { income: f0(tt.inc), kept: (tt.net < 0 ? "−" : "") + f0(Math.abs(tt.net)) });
-  const d = paceData(r), ci = d.cur.length - 1, len = d.len;
   if (!tt.n) { $("ph-pace").innerHTML = ""; $("ph-pace").closest("section").hidden = true; return; }
   $("ph-pace").closest("section").hidden = false;
   chart("ph-pace", 104, (svg, w, h) => {
@@ -82,21 +79,19 @@ function renderCats(r) {
     '<p class="w-hint">' + t("No spending yet in this range.") + "</p>";
 }
 
-/* Budgets has no tab on phones: this card opens it */
+/* Budgets has no tab on phones: this card opens it, with Budgets' own figures for this month */
 function renderBudgets() {
-  const box = $("ph-bud");
-  const flex = (state.budgets || []).filter((b) => b.kind === "flexible");
-  if (!flex.length) {
+  const box = $("ph-bud"), B = computeBudgets(...ym(TODAY));
+  if (!B.flex.length) {
     box.innerHTML = '<span class="w-ico">' + icon("coin") + '</span><span class="d-min"><b>' + t("Budgets") + "</b><small>" + t("Set a monthly amount for the categories that vary") + "</small></span>" + icon("right", "d-chev");
+    box.setAttribute("aria-label", t("Budgets"));
     return;
   }
-  const now = ym(TODAY), a = ds(now[0], now[1], 1), end = ds(now[0], now[1], dim(now[0], now[1])), spent = byCat(a, TODAY, "all");
-  const cap = flex.reduce((s, b) => s + Number(b.amount), 0), used = flex.reduce((s, b) => s + (spent[b.category] || 0), 0), left = cap - used;
-  const days = Math.max(1, Math.round((Date.parse(end) - Date.parse(TODAY)) / 864e5));
-  const tick = (+TODAY.slice(8) / dim(now[0], now[1])) * 100;
+  const left = B.left, days = B.mi.daysLeft;
+  const note = left <= 0 ? esc(t("Budgets")) : days <= 1 ? t("<b>{amount}</b> left in your budgets for today.", { amount: esc(f0(left)) }) : esc(tn(days, "{amount} a day for {n} day", "{amount} a day for {n} days", { amount: f0(B.perDay) }));
   box.innerHTML = '<span class="d-min"><span class="w-eyebrow">' + (left >= 0 ? t("Flexible left") : t("Flexible over")) + '</span><b class="d-pbig amt">' + f0(Math.abs(left)) + "</b>" +
-    '<span class="w-budbar sm"><span style="width:' + Math.min(used / cap, 1) * 100 + "%" + (left < 0 ? ";background:var(--w-bad)" : "") + '"></span><i style="inset-inline-start:' + tick + '%"></i></span>' +
-    '<small class="w-hint">' + esc(left > 0 ? tn(days, "{amount} a day for {n} day", "{amount} a day for {n} days", { amount: f0(left / days) }) : t("Budgets")) + "</small></span>" + icon("right", "d-chev");
+    '<span class="w-budbar sm"><span style="width:' + Math.min(B.fb > 0 ? B.fs / B.fb : 1, 1) * 100 + "%" + (left < 0 ? ";background:var(--w-bad)" : "") + '"></span><i style="inset-inline-start:' + B.mi.pace * 100 + '%"></i></span>' +
+    '<small class="w-hint">' + note + "</small></span>" + icon("right", "d-chev");
   box.setAttribute("aria-label", t("Budgets") + ": " + (left >= 0 ? t("Flexible left") : t("Flexible over")) + " " + f0(Math.abs(left)));
 }
 
@@ -108,24 +103,11 @@ function renderUpcoming() {
     '<p class="w-hint">' + t("No bills this week") + "</p>";
 }
 
-/* Cash flow as one stacked bar: where the income went */
-function renderFlowBar(r) {
-  const d = flowData(r);
-  $("ph-flowsub").textContent = d.total ? t("{income} came in, {spent} went out", { income: f0(d.inc), spent: f0(d.exp) }) : t("No money in or out in this range");
-  if (!d.total) { $("ph-flow").innerHTML = ""; return; }
-  const col = (x) => (x.saved ? "var(--w-accent)" : x.c ? cc(x.c) : "var(--c9)");
-  $("ph-flow").innerHTML = '<div class="w-share d-fbar">' + d.Rn.map((x, i) => '<span tabindex="0" data-fi="' + i + '" style="flex-basis:' + (x.v / d.total) * 100 + "%;background:" + col(x) + '"></span>').join("") + "</div>" +
-    '<div class="d-flist">' + d.Rn.slice(0, 8).map((x) => '<div class="d-frow"><span class="w-cdot" style="background:' + col(x) + '"></span><span class="d-min">' + esc(x.n) + '</span><span class="amt">' + f0(x.v) + '</span><span class="w-pct">' + (d.inc ? pct(x.v / d.inc) : "—") + "</span></div>").join("") + "</div>";
-  $("ph-flow").querySelectorAll("[data-fi]").forEach((s) => { const x = d.Rn[+s.dataset.fi]; hover(s, "<b>" + esc(x.n) + "</b>" + row(t("Amount"), f(x.v)) + row(t("Share of income"), d.inc ? pct(x.v / d.inc) : "—")); });
-}
-
-export function renderPhone(r, shown) {
-  if (shown("hero")) renderHero(r);
-  if (shown("cats")) renderCats(r);
+export function renderPhone(r) {
+  renderHero(r);
+  renderCats(r);
   renderBudgets();
-  if (shown("upcoming")) renderUpcoming();
-  if (couple()) $("ph-shared").innerHTML = settleHtml(true);
-  if (shown("recent")) renderRecent(r, 5);
-  ["savings", "unusual", "cal", "weekday", "subs", "trends", "payees"].forEach((k) => { if (shown(k)) WIDGETS[k].render(r); });
-  if (shown("flow")) renderFlowBar(r);
+  WIDGETS.kept.render(r);
+  renderUpcoming();
+  renderRecent(r, 5);
 }

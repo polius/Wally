@@ -14,9 +14,10 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>変動</b>：カテゴリごとに月の金額を決めます。各バーの目盛りは、今日までに使っているはずの目安です。",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "<b>年1回</b>：旅行などの費用は年の金額を決め、毎月少しずつ積み立てます。",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>繰り越し</b>：残った分や超えた分を翌月に回します。",
- "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
-  "other": "固定費{bills}と貯金<b>{saved}</b>を引いて、今後{n}日間で<b>{amount}</b>残っています。いつものペースを大きく上回る余裕です。"
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills, well ahead of your usual pace.": {
+  "other": "固定費{bills}を引いて、今後{n}日間で<b>{amount}</b>残っています。いつものペースを大きく上回る余裕です。"
  },
+ "<b>{amount}</b> left in your budgets for today.": "今日使える予算の残りは<b>{amount}</b>です。",
  "A backup you downloaded earlier. The data now is backed up first.": "以前ダウンロードしたバックアップです。現在のデータは先にバックアップされます。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "子ども、ルームメイトなど、費用を分け合う人です。メンバーごとに専用の画面があります。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "子ども、ルームメイトなど、費用を分け合う人です。初回のパスワードを設定すると、本人が最初のログイン時に自分のパスワードを決めます。",
@@ -154,6 +155,7 @@
  "Average per day, not counting bills, over the last 90 days.": "過去90日の1日あたりの平均（固定費を除く）。",
  "Average spent": "平均支出",
  "Average spent per weekday": "曜日別の平均支出",
+ "Average {amount} a month": "平均 月{amount}",
  "Back": "戻る",
  "Back to columns": "列の設定に戻る",
  "Back to sign in": "ログインに戻る",
@@ -477,7 +479,7 @@
   "other": "{n}件の共有の支出から。"
  },
  "Getting a code ready…": "コードを準備中…",
- "Give each category an amount, and Wally shows what is left and how much you can spend each day. Fixed bills are only checked, and once-a-year costs fill up month by month.": "カテゴリごとに金額を決めると、Wallyが残りと1日に使える額を表示します。固定費は支払いを確認するだけで、年1回の費用は毎月積み立てます。",
+ "Give each category an amount, and Wally shows what is left and how much you can spend each day. Once-a-year costs fill up month by month.": "カテゴリごとに金額を決めると、Wallyが残りと1日に使える額を表示します。年1回の費用は毎月積み立てます。",
  "Give each part an amount, or leave just one empty.": "各内訳に金額を入れるか、1つだけ空欄にしてください。",
  "Give the goal a name.": "目標の名前を入力してください。",
  "Give the view a name.": "ビューの名前を入力してください。",
@@ -553,6 +555,7 @@
  },
  "Keeps the last 14 nights in the backups folder, next to the database": "データベースと同じ場所のbackupsフォルダに、直近14日分を保存します",
  "Kept": "黒字",
+ "Kept each month": "毎月の貯蓄額",
  "Kept in the month": "月の黒字",
  "Kept in total": "黒字の累計",
  "Kept in total: {amount} since {month}": "黒字の累計：{month}から{amount}",
@@ -691,6 +694,7 @@
  "No one owes anything.": "貸し借りはありません。",
  "No one owes anything. Shared costs with a payer start a new balance.": "貸し借りはありません。支払った人がいる共有の支出から、新しく残高が始まります。",
  "No other browsers": "ほかのブラウザはありません",
+ "No password needed while sign-in is off.": "ログインがオフの間はパスワード不要です。",
  "No password yet": "パスワード未設定",
  "No payees yet": "支払先はまだありません",
  "No payments yet": "支払いはまだありません",
@@ -1061,7 +1065,7 @@
  "Spending by category and month in {range}": "{range}のカテゴリ別・月別の支出",
  "Spending each day in {month}, {total} in all": "{month}の日別の支出、合計{total}",
  "Spending each month, {total} in all": "月別の支出、合計{total}",
- "Spending has run {amount} past what is left after bills and the {pct} savings target. The month will save less than planned.": "支出が、固定費と先取り貯金{pct}を引いた残りを{amount}超えています。今月の貯金は予定より少なくなります。",
+ "Spending has run {amount} past what is left after bills. The month will end overspent.": "支出が、固定費を引いた残りを{amount}超えています。今月は赤字で終わります。",
  "Spending is written as": "支出の表記",
  "Spending looks like a normal month.": "支出はいつもの月と同じくらいです。",
  "Spending looks normal in this range.": "この期間の支出はいつもどおりです。",
@@ -1121,7 +1125,7 @@
  "The first month": "最初の月",
  "The last date must be after {date}.": "最終日は{date}より後にしてください。",
  "The month closed even.": "今月は収支トントンで終わりました。",
- "The month ends today: <b>{amount}</b> is left after bills and <b>{saved}</b> kept for savings.": "今日で月末です。固定費と貯金<b>{saved}</b>を引いて、<b>{amount}</b>が残っています。",
+ "The month ends today: <b>{amount}</b> is left after bills.": "今日で月末です。固定費を引いて、<b>{amount}</b>が残っています。",
  "The page Wally shows when it opens": "Wallyを開いたときに表示する画面",
  "The same again": "前回と同じ",
  "The savings target is a share of income, from 0 to 90.": "先取り貯金率は収入に対する割合で、0〜90の間です。",
@@ -1149,7 +1153,7 @@
  "The {n} transaction it added stays, as an ordinary one.": {
   "other": "追加済みの{n}件の取引は、通常の取引として残ります。"
  },
- "Their part of shared costs goes to whoever you choose, or to whoever paid. Their settle-up payments, sign-ins and API keys are deleted.": "共有の支出の負担分は、選んだメンバーか支払った人に移ります。精算の支払い、ログイン、APIキーは削除されます。",
+ "Their part of shared costs goes to whoever you choose, or to whoever paid. Their sign-ins and API keys are deleted.": "共有の支出の負担分は、選んだメンバーか支払った人に移ります。ログインとAPIキーは削除されます。",
  "Their share of shared costs": "共有の支出の負担分",
  "Their transactions stay. You choose who they go to.": "取引は残ります。誰に移すかを選んでください。",
  "Theme": "テーマ",
@@ -1241,14 +1245,13 @@
  "Wally export": "Wallyのエクスポート",
  "Wally is read-only": "Wallyは読み取り専用です",
  "Wally keeps track of what your household spends and earns. Your data stays on this server.": "Wallyは世帯の支出と収入を記録します。データはこのサーバーに保存されます。",
- "Wally notes who adds each transaction. Sign-in is off, so it takes your word for it.": "Wallyは誰が取引を追加したかを記録します。ログインがオフなので、自己申告になります。",
  "Wally noticed": "Wallyからのお知らせ",
  "Wally now keeps track of who spent what. Add the people in your household. Everything already in Wally stays shared between them.": "Wallyで誰が何に使ったかを記録できるようになりました。世帯のメンバーを追加してください。すでにある取引はメンバー間で共有のままです。",
  "Wally offers a rule after the same fix twice": "同じ修正を2回するとWallyがルールを提案します",
  "Wally recovery codes": "Wallyのリカバリーコード",
  "Wally recovery codes for {name}": "{name}のWallyリカバリーコード",
- "Wally remembers it on this browser. Switch at any time.": "このブラウザで記憶されます。いつでも切り替えられます。",
  "Wally remembers the last person on this browser": "このブラウザで最後に使ったメンバーを記憶します",
+ "Wally remembers you on this browser and notes who adds each transaction.": "Wallyはこのブラウザであなたを記憶し、各取引を誰が追加したかを記録します。",
  "Wally v1 file": "Wally v1のファイル",
  "Wally v1 file format": "Wally v1のファイル形式",
  "Wally won’t offer rules": "Wallyはルールを提案しません",
@@ -1278,13 +1281,13 @@
  "Which ones change": "変更する範囲",
  "Who": "誰が",
  "Who is signing in?": "どなたがログインしますか？",
- "Who is using Wally on this browser?": "このブラウザでWallyを使うのはどなたですか？",
  "Who owes whom, and what each person earned, spent and kept": "誰が誰にいくら借りているか、各メンバーの収入・支出・黒字",
  "Who shares this household?": "この世帯のメンバーは？",
  "Who spent on what": "誰が何に使ったか",
  "Who uses Wally?": "Wallyを使うのは誰ですか？",
  "Whose": "誰の",
  "Whose money": "誰のお金",
+ "Who’s using Wally?": "Wallyを使うのは誰ですか？",
  "Who…": "メンバー…",
  "Worth knowing": "知っておきたいこと",
  "YYYY-MM-DD": "YYYY-MM-DD",
@@ -1295,8 +1298,8 @@
  "You": "自分",
  "You are signed in only here.": "ここでのみログインしています。",
  "You can always import more later from Settings.": "あとから設定でいつでも取り込めます。",
- "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills and <b>{saved}</b> kept for savings.": {
-  "other": "固定費{bills}と貯金<b>{saved}</b>を引いて、今後{n}日間は<b>1日{amount}</b>使えます。"
+ "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills.": {
+  "other": "固定費{bills}を引いて、今後{n}日間は<b>1日{amount}</b>使えます。"
  },
  "You can take out at most {amount}.": "引き出せるのは最大{amount}です。",
  "You kept {amount}, {pct} of what came in.": "収入の{pct}にあたる{amount}を残せました。",
@@ -1330,8 +1333,8 @@
  "duplicate": "複製",
  "edit": "編集",
  "every month": "すべての月",
- "for {n} day, after bills and {pct} saved": {
-  "other": "{n}日間（固定費と貯金{pct}を除く）"
+ "for {n} day, after bills": {
+  "other": "{n}日間（固定費を除く）"
  },
  "from a rule": "ルールから",
  "from {from} to {to} on {date}": "{date}に{from}から{to}に",
@@ -1401,7 +1404,7 @@
  "times": "回",
  "to come": "予定",
  "today": "今日",
- "today, after bills and {pct} saved": "今日（固定費と貯金{pct}を除く）",
+ "today, after bills": "今日（固定費を除く）",
  "tomorrow": "明日",
  "under {amount}": "{amount}未満",
  "until {date}": "{date}まで",

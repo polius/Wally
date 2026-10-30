@@ -164,7 +164,7 @@ def generate_demo():
 
         # 2.1 and 2.2: budgets, import rules and a savings goal to look at
         for category, amount, kind in [("Groceries", 520, "flexible"), ("Food", 260, "flexible"), ("Shopping", 180, "flexible"),
-                                       ("Entertainment", 70, "flexible"), ("Rent", 1250, "fixed"), ("Utilities", 210, "fixed"), ("Travel", 2400, "yearly")]:
+                                       ("Entertainment", 70, "flexible"), ("Travel", 2400, "yearly")]:
             db.add(Budget(category=category, amount=Decimal(amount), kind=kind, rollover=category == "Food"))
         for position, (match, category, person, learned) in enumerate([("MERCADONA", "Groceries", N, True), ("NETFLIX", "Entertainment", None, False),
                                                                         ("HOLALUZ", "Utilities", A, True), ("DECATHLON", "Shopping", A, False), ("GLOVO", "Food", None, True)]):

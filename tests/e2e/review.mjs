@@ -98,8 +98,8 @@ try {
       const spent = euros(await cards.nth(i).locator(".w-mrtrio > div").nth(1).locator("b").textContent());
       ok(near(spent, M.people[id].expense / 100), "review: person " + id + " spent matches the API by share (" + spent + " vs " + (M.people[id].expense / 100).toFixed(2) + ")");
     }
-    await page.waitForFunction(() => /closed even|owed|Nobody owed/.test(document.getElementById("mr-shared").textContent));
-    ok(true, "review: how the month closed between people (" + (await page.textContent("#mr-shared")).slice(0, 90) + "…)");
+    const shared = await page.textContent("#mr-shared");
+    ok(/shared cost/.test(shared) && !/owed|closed even/.test(shared), "review: shared costs and who paid them, no who-owed-whom (" + shared.slice(0, 90) + "…)");
     await shot(page, "review-1440", true);
 
     // Scope: every figure but the people block
@@ -253,15 +253,15 @@ try {
     ok(await page.locator("#cmd").isHidden(), "cmd: Enter jumps to Recurring and closes");
     // A settings pane, down the list with the arrows
     await page.keyboard.press("Control+k");
-    await page.keyboard.type("backups");
+    await page.keyboard.type("api keys");
     const labels = await page.locator(".w-cmdi .l").allTextContents();
-    const idx = labels.indexOf("Backups");
-    ok(idx >= 0, "cmd: finds the Backups pane");
+    const idx = labels.indexOf("API keys");
+    ok(idx >= 0, "cmd: finds the API keys pane");
     for (let i = 0; i < idx; i++) await page.keyboard.press("ArrowDown");
     ok(await page.getAttribute("#cmd-q", "aria-activedescendant") === "cmd-o" + idx, "cmd: arrows move the highlight (aria-activedescendant)");
     await page.keyboard.press("Enter");
-    await page.waitForFunction(() => location.pathname === "/settings/backups");
-    ok(true, "cmd: Settings › Backups");
+    await page.waitForFunction(() => location.pathname === "/settings/keys");
+    ok(true, "cmd: Settings › API keys");
     // Month in review
     await page.keyboard.press("Control+k");
     await page.keyboard.type("month in");

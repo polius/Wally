@@ -228,7 +228,9 @@ try {
   ok((await api("GET", "/recurring")).find((r) => r.id === swim.id).endDate === endOn, "End sets the end date on the server");
   const chips = await page.locator("#rec-insp .w-next span").allInnerTexts();
   ok(chips.length >= 1 && chips.length < 5, "the panel shows only the dates before the end (" + chips.join(", ") + ")");
-  ok((await text(page, "#rec-insp")).includes("Every 2 weeks on Saturday, until"), "the description says until when");
+  // The demo starts the lessons on a day relative to today, so the weekday comes from the rule
+  const swimDay = new Date(swim.startDate + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+  ok((await text(page, "#rec-insp")).includes("Every 2 weeks on " + swimDay + ", until"), "the description says until when (" + swimDay + ")");
 
   // End today: it moves to the collapsed Ended group
   const digi = byName("Digi Fibra");
@@ -300,7 +302,7 @@ try {
 
   console.log("Phone, 390 px");
   page = await open(base, "/recurring", { width: 390, height: 844 });
-  ok(await page.locator(".w-pchips").isVisible(), "person chips at the top");
+  ok(await page.locator(".rec-head .w-pswitch").isVisible(), "the person switch at the top right");
   ok(!(await page.locator(".w-rrow .rec-spark").first().isVisible()), "rows drop the sparkline");
   ok(/in \d+ days|tomorrow|today/.test(await page.locator(".w-rrow .rec-nxm").first().innerText()), "rows say when the next one is");
   await page.locator(".w-rrow", { hasText: "Netflix" }).click();
@@ -316,8 +318,10 @@ try {
   await page.waitForTimeout(400);
   await page.click("#rec-insp [data-close]");
   ok(!(await sheet.isVisible()), "‹ Recurring closes the sheet");
-  await page.click('.w-pchips [data-scope="1"]');
-  ok(!(await text(page, "#rec-list")).includes("Ana salary"), "the chips switch the person");
+  await page.click(".w-pswitch-b");
+  await page.click('.w-pswitch-m [data-scope="1"]');
+  await page.waitForTimeout(300);
+  ok(!(await text(page, "#rec-list")).includes("Ana salary"), "the switch changes the person");
   await shot(page, "rec-390");
   await done(page, "390 px");
 
@@ -355,7 +359,7 @@ try {
   const H2 = { "Content-Type": "application/json" };
   const p1 = await (await fetch(empty.base + "/api/people", { method: "POST", headers: H2, body: JSON.stringify({ name: "Sam" }) })).json();
   page = await open(empty.base, "/recurring", { person: String(p1.id) });
-  ok((await text(page, "#rec-page")).includes("Nothing repeats yet") && await page.locator(".w-pchips").count() === 0, "a new household of one: empty state, no person switch");
+  ok((await text(page, "#rec-page")).includes("Nothing repeats yet") && await page.locator(".w-pswitch").count() === 0, "a new household of one: empty state, no person switch");
   await done(page, "empty household");
 } catch (e) {
   failures++;

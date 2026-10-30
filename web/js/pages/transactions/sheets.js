@@ -11,9 +11,7 @@ export function openRangeSheet(apply) {
   const presets = [
     ["this", t("This month"), () => ({ mode: "month", ym: [ty, tm] })],
     ["last", t("Last month"), () => ({ mode: "month", ym: last })],
-    ["3m", t("Last 3 months"), () => ({ mode: "3m" })],
     ["year", t("Year to date"), () => ({ mode: "year" })],
-    ["12m", t("Last 12 months"), () => ({ mode: "12m" })],
     ["all", t("All time"), () => ({ mode: "all" })],
   ];
   const isMonth = (q) => S.mode === "month" && S.ym[0] === q[0] && S.ym[1] === q[1];

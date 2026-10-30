@@ -1,19 +1,16 @@
-/* The Dashboard's lead panel: the status headline, the main chart (Spent so far, Income vs
-   spending, By category, Category lines, or the same as a table) and five key figures ending
-   in Safe to spend. */
+/* The Dashboard's lead panel: the main chart (Spent so far, or for a year: Income vs spending
+   and By category) and three key figures. */
 import {
-  state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, bigMoney, monthName, monthIn, monthYear, F,
-  dlab, dlabW, dlabL, dlabY, totals, byCat, daily, cum, extend, monthsIn, monthBounds, cc, savingsTarget, amt, mmin,
+  t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, bigMoney, monthName, monthIn, monthYear, F,
+  dlab, dlabL, dlabY, totals, byCat, daily, cum, extend, monthsIn, monthBounds, cc,
 } from "../../core.js";
 import { chart, el, txt, niceMax, hover, row, showTip, hideTip, empty } from "../../ui.js";
-import { occurrences, ruleAmt, isIncome, active } from "../../sched.js";
 import { view, prevOf, goTx } from "./range.js";
 
 const $ = (id) => document.getElementById(id);
 const DASH = '<div class="r d-sum"><span>';
 
 /* ---------- small helpers ---------- */
-export function cmpMode() { return state.prefs.cmp === "avg3" ? "avg3" : "last"; }
 function monthCum(y, m) { return cum(daily(ds(y, m, 1), dim(y, m))); }
 function haveMonth(y, m, back) { const q = ymAdd(y, m, -back); return ds(q[0], q[1], 1) >= START; }
 /* "Oct 26" on an axis: the year only on January and on the first label */
@@ -36,7 +33,8 @@ export function countTo(node, to) {
   requestAnimationFrame(step);
 }
 
-/* ---------- the running total: this range, what it is set against, and a projection ---------- */
+/* ---------- the running total: this range, the one before it (the dashed line), and a projection
+   shaped like the last three months ---------- */
 export function paceData(r) {
   const p = prevOf(r), days = span(r.start, r.end), cur = cum(daily(r.start, days));
   let len = r.len, cmp = null, cmpName = "", cmpShort = "", proj = null, label = "", avg3 = null;
@@ -46,8 +44,7 @@ export function paceData(r) {
       avg3 = [1, 2, 3].map((k) => { const q = ymAdd(y, m, -k); return extend(monthCum(q[0], q[1]), len); })
         .reduce((a, b) => a.map((v, i) => v + b[i])).map((v) => v / 3);
     }
-    if (cmpMode() === "avg3" && avg3) { cmp = avg3; cmpName = t("3-month average"); cmpShort = t("3-month avg"); label = t("the 3-month average"); }
-    else if (haveMonth(y, m, 1)) { const q = ymAdd(y, m, -1); cmp = extend(monthCum(q[0], q[1]), len); cmpName = cmpShort = monthName(q[1]); label = monthIn(q[1]); }
+    if (haveMonth(y, m, 1)) { const q = ymAdd(y, m, -1); cmp = extend(monthCum(q[0], q[1]), len); cmpName = cmpShort = monthName(q[1]); label = monthIn(q[1]); }
     if (r.current && avg3) { const ci = cur.length - 1; proj = []; for (let i = ci; i < len; i++) proj.push(cur[ci] + (avg3[i] - avg3[ci])); }
   } else if (r.mode === "year") {
     const py = +r.start.slice(0, 4) - 1, ly = py + "-01-01";
@@ -60,7 +57,7 @@ export function paceData(r) {
     cmp = extend(cum(daily(p.start, span(p.start, p.end))), len); cmpName = t("Previous period"); cmpShort = t("previous"); label = p.label;
   }
   const curName = r.month ? monthName(+r.start.slice(5, 7)) : r.mode === "year" ? r.start.slice(0, 4) : t("This range");
-  return { len, cur, cmp, cmpName, cmpShort, proj, label, curName, avg3: !!avg3 };
+  return { len, cur, cmp, cmpName, cmpShort, proj, label, curName };
 }
 /* The axis label for day i of the pace chart */
 function paceLabel(r, len) {
@@ -165,35 +162,27 @@ function heroMonthly(svg, w, h, months) {
       row(x.inc >= x.exp ? t("Kept") : t("Overspent"), f(Math.abs(x.inc - x.exp))));
   });
 }
-function heroCats(svg, w, h, months, keys, lines) {
+function heroCats(svg, w, h, months, keys) {
   const m = { l: 50, r: 16, t: 16, b: 26 };
   if (!keys.length) { txt(svg, w / 2, h / 2, t("All categories are hidden. Click one in the legend to show it."), "lb2", "middle"); return; }
   const sum = (x) => keys.reduce((s, k) => s + (x.cats[k] || 0), 0);
-  const ymax = niceMax(Math.max(...months.map((x) => (lines ? Math.max(...keys.map((k) => x.cats[k] || 0)) : sum(x))), 1));
+  const ymax = niceMax(Math.max(...months.map(sum), 1));
   const Y = (v) => h - m.b - (v / ymax) * (h - m.t - m.b), bw = (w - m.l - m.r) / months.length, X = (i) => m.l + bw * i + bw / 2;
   const band = el("rect", { y: m.t, width: bw, height: h - m.t - m.b, rx: 8, fill: "var(--w-fill)", opacity: 0 }, svg);
   grid(svg, m, w, h, ymax, Y, 4);
   const skip = bw < 34 ? 2 : 1;
   months.forEach((x, i) => { if (i % skip === 0) txt(svg, X(i), h - 7, monLabel(x.y, x.m, x.m === 1 || i === 0), x.partial ? "lb" : "ax", "middle"); });
-  if (lines) {
-    keys.slice().reverse().forEach((k) => {
-      const pts = months.map((x, i) => [X(i), Y(x.cats[k] || 0)]);
-      el("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(""), fill: "none", stroke: cc(k), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
-      pts.forEach((p) => el("circle", { cx: p[0], cy: p[1], r: 3, fill: cc(k), stroke: "var(--w-panel)", "stroke-width": 1.5 }, svg));
+  const bar = Math.min(44, bw * 0.58);
+  months.forEach((x, i) => {
+    let y0 = h - m.b;
+    const x0 = X(i) - bar / 2, vis = keys.filter((k) => x.cats[k] > 0), last = vis[vis.length - 1];
+    vis.forEach((k) => {
+      const hh = (x.cats[k] / ymax) * (h - m.t - m.b), top = y0 - hh, r = k === last ? Math.min(4, hh / 2) : 0;
+      el("path", { d: "M" + x0 + " " + y0 + "V" + (top + r) + (r ? "q0 " + -r + " " + r + " " + -r : "") + "H" + (x0 + bar - r) + (r ? "q" + r + " 0 " + r + " " + r : "") + "V" + y0 + "Z",
+        fill: cc(k), stroke: "var(--w-panel)", "stroke-width": 1.5, "fill-opacity": x.partial ? 0.75 : 1 }, svg);
+      y0 = top;
     });
-  } else {
-    const bar = Math.min(44, bw * 0.58);
-    months.forEach((x, i) => {
-      let y0 = h - m.b;
-      const x0 = X(i) - bar / 2, vis = keys.filter((k) => x.cats[k] > 0), last = vis[vis.length - 1];
-      vis.forEach((k) => {
-        const hh = (x.cats[k] / ymax) * (h - m.t - m.b), top = y0 - hh, r = k === last ? Math.min(4, hh / 2) : 0;
-        el("path", { d: "M" + x0 + " " + y0 + "V" + (top + r) + (r ? "q0 " + -r + " " + r + " " + -r : "") + "H" + (x0 + bar - r) + (r ? "q" + r + " 0 " + r + " " + r : "") + "V" + y0 + "Z",
-          fill: cc(k), stroke: "var(--w-panel)", "stroke-width": 1.5, "fill-opacity": x.partial ? 0.75 : 1 }, svg);
-        y0 = top;
-      });
-    });
-  }
+  });
   months.forEach((x, i) => {
     const hit = el("rect", { x: m.l + bw * i, y: m.t, width: bw, height: h - m.t, fill: "transparent" }, svg);
     hit.addEventListener("pointerenter", () => { band.setAttribute("x", m.l + bw * i); band.setAttribute("opacity", 1); });
@@ -205,10 +194,6 @@ function heroCats(svg, w, h, months, keys, lines) {
     });
   });
 }
-function heroTable(rows, head) {
-  $("h-tview").innerHTML = '<div class="w-tview"><table class="w-table"><thead><tr>' + head.map((x, i) => '<th scope="col"' + (i ? ' class="d-num"' : "") + ">" + esc(x) + "</th>").join("") +
-    "</tr></thead><tbody>" + rows.map((r) => "<tr>" + r.map((c, i) => (i ? '<td class="d-num amt">' : '<th scope="row">') + c + (i ? "</td>" : "</th>")).join("") + "</tr>").join("") + "</tbody></table></div>";
-}
 
 /* ---------- figures under the chart ---------- */
 function deltaHtml(cur, prev, goodWhenUp, fmt) {
@@ -219,131 +204,32 @@ function deltaHtml(cur, prev, goodWhenUp, fmt) {
   return "<small>" + t("{change} than before", { change: '<b class="' + cls + '">' + (up ? t("{amount} more", { amount: mag }) : t("{amount} less", { amount: mag })) + "</b>" }) + "</small>";
 }
 
-/* Usual everyday spending a day: the three months before this one, bills left out */
-export function typicalDaily(sc) {
-  const now = ym(TODAY), e = ymAdd(now[0], now[1], -1), s = ymAdd(now[0], now[1], -3);
-  let a = ds(s[0], s[1], 1);
-  const b = ds(e[0], e[1], dim(e[0], e[1]));
-  if (a < START) a = START;
-  if (b < a) return 0;
-  let tot = 0;
-  for (const x of state.tx) if (x.type === "expense" && !x.rec && x.d >= a && x.d <= b) tot += amt(x, sc);
-  return tot / span(a, b);
-}
-
-/* Safe to spend this month: income so far and still due, minus the savings target, what is
-   spent, and bills still due, shared over the days left */
-export function safeInfo(start, sc) {
-  sc = sc || state.scope;
-  const [y, m] = ym(start), endM = ds(y, m, dim(y, m)), tt = totals(start, mmin(endM, TODAY), sc), left = span(TODAY, endM) - 1;
-  let bills = 0, due = 0;
-  if (left > 0) occurrences(addD(TODAY, 1), endM).forEach((x) => { const v = ruleAmt(x.r, sc); if (isIncome(x.r)) due += v; else bills += v; });
-  const inc = tt.inc + due, target = inc * savingsTarget(), free = inc - target - tt.exp - bills;
-  const rules = state.rules.filter((x) => !x.paused && active(x) && ruleAmt(x, sc) > 0).length;
-  return { t: tt, left, bills, due, inc, target, free, per: free / Math.max(left, 1), rules };
-}
-
-/* Budget-aware: the flexible budget that will run over the most this month at this pace */
-export function budgetWarning(r) {
-  if (state.scope !== "all" || !r.month || !r.current || !state.budgets || !state.budgets.length) return null;
-  const spent = byCat(r.start, r.end, "all"), day = +TODAY.slice(8), D = r.len;
-  let worst = null;
-  state.budgets.forEach((b) => {
-    if (b.kind !== "flexible") return;
-    const s = spent[b.category] || 0, cap = Number(b.amount);
-    if (!s || !cap) return;
-    const already = s > cap, over = already ? s - cap : (s / day) * D - cap;
-    if (over < 1 || (!already && day < 5)) return; // too early in the month to call it
-    if (!worst || over > worst.over) worst = { c: b.category, over, already };
-  });
-  return worst;
-}
-
-export function renderStatus(r) {
-  const box = $("h-status");
-  const tt = totals(r.start, r.end);
-  if (!tt.n && !(r.month && r.current)) { box.hidden = true; return; }
-  box.hidden = false;
-  const target = num(Number(state.config.savings_target ?? 15)) + "%";
-  if (r.month && r.current) {
-    const s = safeInfo(r.start), typ = typicalDaily(), bud = budgetWarning(r);
-    let key, sent;
-    if (!s.inc) {
-      key = "watch";
-      sent = t("No income recorded this month yet. Add it, or a repeating income, to see what is safe to spend.");
-    } else {
-      // The pill is about the household's money as a whole; a budget running over is told, not flagged
-      key = s.per < 0 ? "over" : s.per < typ * 0.8 ? "watch" : "ok";
-      if (key === "over") sent = t("Spending has run {amount} past what is left after bills and the {pct} savings target. The month will save less than planned.", { amount: "<b>" + f0(-s.free) + "</b>", pct: target });
-      else if (!s.left) sent = t("The month ends today: <b>{amount}</b> is left after bills and <b>{saved}</b> kept for savings.", { amount: f0(s.free), saved: f0(s.target) });
-      // Far above the usual pace, a daily figure means nothing: say what is left
-      else if (typ > 0 && s.per > typ * 2)
-        sent = tn(s.left, "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.",
-          "<b>{amount}</b> is left for the next {n} days after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.", { amount: f0(s.free), bills: f0(s.bills), saved: f0(s.target) });
-      else {
-        sent = tn(s.left, "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills and <b>{saved}</b> kept for savings.",
-          "You can spend <b>{amount} a day</b> for the next {n} days, after {bills} in bills and <b>{saved}</b> kept for savings.", { amount: f0(s.per), bills: f0(s.bills), saved: f0(s.target) });
-        if (typ > 0) sent += " " + (s.per < typ * 0.8 ? t("That is less than your usual {amount} a day.", { amount: f0(typ) }) : t("Your usual is {amount} a day.", { amount: f0(typ) }));
-      }
-      if (bud) sent += " " + esc(bud.already ? t("{category} is already {amount} over budget.", { category: bud.c, amount: f0(bud.over) }) : t("{category} will run {amount} over at this pace.", { category: bud.c, amount: f0(bud.over) }));
-    }
-    const pill = { ok: t("On track"), watch: t("Watch"), over: t("Over") }[key];
-    box.className = "w-status " + key;
-    box.innerHTML = '<span class="w-spill">' + pill + "</span><p>" + sent + '</p><a class="w-link" href="/settings/savings" data-link>' +
-      esc(t("{pct} target", { pct: target })) + " · " + esc(tn(s.rules, "{n} rule", "{n} rules")) + "</a>";
-  } else {
-    const ok = tt.net >= 0, amount = "<b>" + esc((ok ? t("{amount} kept", { amount: f0(Math.abs(tt.net)) }) : t("{amount} overspent", { amount: f0(Math.abs(tt.net)) }))) + "</b>";
-    let sent = r.month ? t("{month} closed with {amount}", { month: esc(monthYear(...ym(r.start))), amount }) : t("Across {range}: {amount}", { range: esc(r.noun), amount });
-    sent += tt.rate != null ? ", " + t("{pct} of income.", { pct: pct(Math.abs(tt.rate)) }) : ".";
-    box.className = "w-status " + (ok ? "ok" : "over");
-    box.innerHTML = '<span class="w-spill">' + (ok ? t("Kept") : t("Overspent")) + "</span><p>" + sent + "</p><span></span>";
-  }
-}
-
+/* Income, kept and the savings rate; the big number above is already the spending */
 function renderKpis(r, tt, pt) {
   const k = $("h-kpis");
   let html =
     '<div class="w-kpi"><span>' + t("Income") + '</span><b class="pos">' + f(tt.inc) + "</b>" + deltaHtml(tt.inc, pt && pt.inc, true) + "</div>" +
-    '<div class="w-kpi"><span>' + t("Spending") + "</span><b>" + f(tt.exp) + "</b>" + deltaHtml(tt.exp, pt && pt.exp, false) + "</div>" +
     '<div class="w-kpi"><span>' + (tt.net >= 0 ? t("Kept") : t("Overspent")) + "</span><b>" + f(Math.abs(tt.net)) + "</b>" + deltaHtml(tt.net, pt && pt.net, true) + "</div>" +
     '<div class="w-kpi"><span>' + t("Savings rate") + "</span><b>" + (tt.rate == null ? "—" : pct(tt.rate)) + "</b>" +
       (tt.rate != null && pt && pt.rate != null ? deltaHtml(tt.rate * 100, pt.rate * 100, true, (x) => tn(Math.round(x), "{n} pt", "{n} pts")) : "<small>&nbsp;</small>") + "</div>";
-  let n = 4, si = null;
-  if (r.month && r.current) {
-    si = safeInfo(r.start);
-    const target = num(Number(state.config.savings_target ?? 15)) + "%";
-    html += '<div class="w-kpi safe" id="kpi-safe" tabindex="0"><span>' + t("Safe to spend") + "</span>" +
-      (si.inc ? '<b class="' + (si.per < 0 ? "up-bad" : "") + '">' + signed(si.per, f0) + '<span class="d-unit"> ' + t("a day") + "</span></b>" +
-        "<small>" + (si.left ? tn(si.left, "for {n} day, after bills and {pct} saved", "for {n} days, after bills and {pct} saved", { pct: target }) : t("today, after bills and {pct} saved", { pct: target })) + "</small>"
-        : "<b>—</b><small>" + t("No income this month yet") + "</small>") + "</div>";
-    n = 5;
-  } else if (!r.month) {
+  let n = 3;
+  if (!r.month) {
     const mo = monthsIn(r.start, r.end).length;
-    html += '<div class="w-kpi safe"><span>' + t("Kept per month") + "</span><b>" + signed(tt.net / mo, f0) + "</b><small>" + tn(mo, "average over {n} month", "average over {n} months") + "</small></div>";
-    n = 5;
+    html += '<div class="w-kpi"><span>' + t("Kept per month") + "</span><b>" + signed(tt.net / mo, f0) + "</b><small>" + tn(mo, "average over {n} month", "average over {n} months") + "</small></div>";
+    n = 4;
   }
   k.innerHTML = html;
   k.style.setProperty("--n", n);
-  if (si && si.inc) {
-    const target = num(Number(state.config.savings_target ?? 15)) + "%";
-    hover($("kpi-safe"), () => "<b>" + t("Safe to spend") + "</b>" + row(t("Income this month"), f(si.inc)) + (si.due ? row(t("of it still to come"), f(si.due)) : "") +
-      row(t("Savings target, {pct}", { pct: target }), "−" + f(si.target)) + row(t("Spent so far"), "−" + f(si.t.exp)) + row(t("Bills still due"), "−" + f(si.bills)) +
-      DASH + t("Free to spend") + "</span><b>" + signed(si.free) + "</b></div>" + row(t("Days left"), num(si.left)));
-  }
 }
 
 /* ---------- the panel ---------- */
 export function renderHero(r) {
   const tt = totals(r.start, r.end), p = prevOf(r), pt = p.ok ? totals(p.start, p.end) : null;
   const delta = $("h-delta"), legend = $("h-legend");
-  $("h-hh").classList.toggle("d-wide", !r.daily && (view.hv === "cats" || view.hv === "lines"));
+  $("h-hh").classList.toggle("d-wide", !r.daily && view.hv === "cats");
   countTo($("h-big"), tt.exp);
-  $("h-cmp").hidden = !r.month;
   $("h-view").hidden = r.daily;
   $("h-view").querySelectorAll("[data-hv]").forEach((b) => b.setAttribute("aria-pressed", String(view.hv === b.dataset.hv)));
-  $("h-table").setAttribute("aria-pressed", String(view.table));
-  $("h-table").classList.toggle("on", view.table);
-  renderStatus(r);
   renderKpis(r, tt, pt);
 
   // Nothing in the range: a short empty line instead of a blank chart
@@ -359,15 +245,12 @@ export function renderHero(r) {
     legend.innerHTML = "";
     return;
   }
-  const cmpBtns = $("h-cmp").querySelectorAll("[data-cmp]");
-  cmpBtns.forEach((b) => b.setAttribute("aria-pressed", String(cmpMode() === b.dataset.cmp)));
   if (r.daily || view.hv === "pace") renderPace(r, p, delta, legend);
   else renderMonthly(r, p, tt, pt, delta, legend);
 }
 
 function renderPace(r, p, delta, legend) {
   const d = paceData(r), idx = d.cur.length - 1, len = d.len;
-  $("h-cmp").querySelector('[data-cmp="avg3"]').disabled = r.month && !d.avg3;
   if (d.cmp) {
     const df = d.cur[idx] - d.cmp[idx], up = df > 0;
     delta.className = "w-delta " + (up ? "bad" : "good");
@@ -382,17 +265,6 @@ function renderPace(r, p, delta, legend) {
   const isLong = len > 62, xlab = paceLabel(r, len);
   let ticks = null;
   if (isLong) { ticks = []; for (let i = 0; i < len; i++) if (i === 0 || (addD(r.start, i).slice(8) === "01" && i > 8)) ticks.push(i); }
-  showChart(!view.table);
-  if (view.table) {
-    const rows = [];
-    for (let i = 0; i < len; i++) {
-      const s = addD(r.start, i);
-      const v = i < d.cur.length ? f(d.cur[i]) : d.proj ? "≈ " + f(d.proj[i - idx] || 0) : "—";
-      rows.push([esc(isLong ? dlabY(s) : dlabW(s)), v].concat(d.cmp ? [f(d.cmp[i])] : []));
-    }
-    heroTable(rows, [t("Day"), t("{name}, running total", { name: d.curName })].concat(d.cmp ? [d.cmpName] : []));
-    return;
-  }
   const label = () => t("Spent so far: {amount} by {date}", { amount: f(d.cur[idx]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[idx]) }) : "") +
     (d.proj ? ". " + t("Projected: {amount}", { amount: f(d.proj[d.proj.length - 1]) }) : "");
   chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroDaily(svg, w, h, { start: r.start, len, cur: d.cur, cmp: d.cmp, proj: d.proj, today: r.current, curName: d.curName, cmpName: d.cmpName, cmpShort: d.cmpShort, ticks, xlab }), label);
@@ -415,36 +287,29 @@ function renderMonthly(r, p, tt, pt, delta, legend) {
     delta.innerHTML = "<b>" + esc((up ? t("{amount} more ({pct})", { amount: f0(Math.abs(d2)), pct: pct(Math.abs(d2) / Math.max(pt.exp, 1)) }) : t("{amount} less ({pct})", { amount: f0(Math.abs(d2)), pct: pct(Math.abs(d2) / Math.max(pt.exp, 1)) }))) + "</b><span>" + esc(t("than {what}", { what: p.label })) + "</span>";
   } else { delta.className = "w-delta"; delta.innerHTML = "<span>" + esc(t("No data before {month} to compare", { month: monthYear(...ym(START)) })) + "</span>"; }
   $("h-eye").textContent = r.current ? t("Spent so far in {range}", { range: r.noun }) : t("Spent in {range}", { range: r.noun });
-  showChart(!view.table);
   if (view.hv !== "ivs") {
     const tot = byCat(r.start, r.end), keys = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
     months.forEach((x) => { x.cats = byCat(x.a, x.b); });
     legend.innerHTML = keys.map((k) => '<button type="button" class="lg" data-lg="' + esc(k) + '" aria-pressed="' + !view.hoff[k] + '"><s style="background:' + cc(k) + '"></s>' + esc(k) + "</button>").join("");
     const vis = keys.filter((k) => !view.hoff[k]);
-    if (view.table) heroTable(months.map((x) => [esc(monthYear(x.y, x.m))].concat(vis.map((k) => f0(x.cats[k] || 0)))), [t("Month")].concat(vis));
-    else chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroCats(svg, w, h, months, vis, view.hv === "lines"),
+    chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroCats(svg, w, h, months, vis),
       () => t("Spending by category and month in {range}", { range: r.noun }) + ": " + vis.slice(0, 5).map((k) => k + " " + f0(tot[k])).join(", "));
   } else {
     legend.innerHTML = '<span><s style="background:var(--w-good);opacity:.75"></s>' + t("Income") + '</span><span><s style="background:var(--w-accent)"></s>' + t("Spending") + "</span>";
-    if (view.table) heroTable(months.map((x) => [esc(monthYear(x.y, x.m)), f(x.inc), f(x.exp), signed(x.inc - x.exp)]), [t("Month"), t("Income"), t("Spending"), t("Kept")]);
-    else chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroMonthly(svg, w, h, months),
+    chart("c-hero", (w) => (w < 560 ? 220 : 280), (svg, w, h) => heroMonthly(svg, w, h, months),
       () => t("Income and spending by month in {range}", { range: r.noun }) + ": " + months.map((x) => monthYear(x.y, x.m) + " " + f0(x.inc) + " / " + f0(x.exp)).join(", "));
   }
 }
-function showChart(on) { $("c-hero").hidden = !on; $("h-tview").hidden = on; if (on) $("h-tview").innerHTML = ""; }
 
 /* The panel's markup; renderHero fills it */
 export function heroHtml() {
   const pill = (v, l) => '<button type="button" data-hv="' + v + '" aria-pressed="false">' + l + "</button>";
-  return '<section class="w-panel d-hero" data-w="hero" aria-label="' + esc(t("Status and spending")) + '">' +
-    '<div data-w="status"><div class="w-status" id="h-status"></div></div>' +
+  return '<section class="w-panel d-hero" data-w="hero" aria-label="' + esc(t("Spent so far")) + '">' +
     '<div class="w-hh" id="h-hh"><div><div class="w-eyebrow" id="h-eye"></div><div class="w-hnum"><span class="w-big" id="h-big"></span><span class="w-delta" id="h-delta"></span></div></div>' +
     '<div class="w-hright"><div class="w-hctl">' +
-      '<div class="w-seg sm" id="h-view" role="group" aria-label="' + esc(t("Chart")) + '" hidden>' + pill("pace", t("Spent so far")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category")) + pill("lines", t("Category lines")) + "</div>" +
-      '<button type="button" class="w-btn ghost w-tbtn" id="h-table" aria-pressed="false">' + t("Table") + "</button></div>" +
-      '<div class="w-seg sm" id="h-cmp" role="group" aria-label="' + esc(t("Compare with")) + '"><button type="button" data-cmp="last">' + t("vs last month") + '</button><button type="button" data-cmp="avg3">' + t("vs 3-month average") + "</button></div>" +
+      '<div class="w-seg sm" id="h-view" role="group" aria-label="' + esc(t("Chart")) + '" hidden>' + pill("pace", t("Spent so far")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category")) + "</div></div>" +
       '<div class="w-legend" id="h-legend"></div></div></div>' +
-    '<div id="h-chartwrap"><div class="cv" id="c-hero"></div><div class="d-tview" id="h-tview" hidden></div></div>' +
+    '<div id="h-chartwrap"><div class="cv" id="c-hero"></div></div>' +
     '<div id="h-empty" hidden></div>' +
     '<div class="w-kpis" id="h-kpis"></div></section>';
 }

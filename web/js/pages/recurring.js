@@ -8,7 +8,7 @@ import {
 } from "../core.js";
 import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, PER } from "../sched.js";
 import { hover, hideTip, row, chart, el, txt, toast, errorToast, openDialog, seg, trapFocus } from "../ui.js";
-import { refresh, scopeChips } from "../shell.js";
+import { refresh, scopeSwitch } from "../shell.js";
 
 const RECENT = 548;          // a price change from the last 18 months is still news
 const DETECT_SINCE = 366;    // payees are checked over the last year
@@ -107,8 +107,7 @@ export function mount(el, route) {
   root.innerHTML =
     '<header class="w-head rec-head"><div class="w-title"><h3>' + t("Recurring") + "</h3></div>" +
       seg("rec-tab", [["all", t("All")], ["expense", t("Bills")], ["income", t("Income")]], ui.tab, t("Show")) +
-      '<div class="w-head-r"><button type="button" class="w-btn ghost" id="rec-new">' + icon("plus") + t("New rule") + "</button></div></header>" +
-    '<div id="rec-chips"></div>' +
+      '<div class="w-head-r"><div id="rec-chips"></div><button type="button" class="w-btn ghost" id="rec-new">' + icon("plus") + t("New rule") + "</button></div></header>" +
     '<div id="rec-page"></div>';
   root.addEventListener("click", onClick);
   root.addEventListener("keydown", onKeydown);
@@ -155,7 +154,7 @@ function render() {
   rerank(TODAY.slice(0, 8) + "01", TODAY);   // category colors by rank this month, as on the Dashboard
   const focus = rememberFocus();
   root.querySelectorAll("#rec-tab button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === ui.tab)));
-  root.querySelector("#rec-chips").innerHTML = scopeChips();
+  root.querySelector("#rec-chips").innerHTML = scopeSwitch();
   const page = root.querySelector("#rec-page");
   const rules = state.rules.filter((r) => ruleAmt(r) > 0);
   root.querySelector("#rec-tab").hidden = !state.rules.length;

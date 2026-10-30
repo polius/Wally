@@ -90,7 +90,7 @@ export function splitInner(withBy) {
     '<input type="range" id="add-split-r" min="0" max="100" step="1" class="w-range" hidden>' +
     '<div id="add-splitv"></div>' +
     '<p class="w-err" id="add-cerr" hidden role="alert"></p>' +
-    (withBy ? '<div class="w-inline" id="add-byrow"><span class="lbl w-bylbl">' + t("Paid by") + '</span><div class="w-seg sm" role="group" aria-label="' + esc(t("Paid by")) + '" id="add-by"></div><span class="w-hint">' + t("Used to work out who owes whom") + "</span></div>" : "");
+    (withBy ? '<div class="w-inline" id="add-byrow"><span class="lbl w-bylbl">' + t("Paid by") + '</span><div class="w-seg sm" role="group" aria-label="' + esc(t("Paid by")) + '" id="add-by"></div></div>' : "");
 }
 
 /* Keypad: what a key does to the amount typed so far */

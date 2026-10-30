@@ -14,9 +14,10 @@
  "<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.": "<b>변동</b> 카테고리에는 월 금액을 정해요. 막대의 눈금은 오늘까지의 적정 지출 수준이에요.",
  "<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.": "여행 같은 <b>연 1회</b> 비용은 연간 금액을 정하고 매달 조금씩 채워 가요.",
  "<b>Roll over</b> moves what is left, or what went over, into next month.": "<b>이월</b>은 남은 금액이나 초과한 금액을 다음 달로 넘겨요.",
- "<b>{amount}</b> is left for the next {n} day after {bills} in bills and <b>{saved}</b> kept for savings, well ahead of your usual pace.": {
-  "other": "고정 지출({bills})과 저축(<b>{saved}</b>)을 빼면, 앞으로 {n}일 동안 <b>{amount}</b>이 남아요. 평소 속도보다 훨씬 여유 있어요."
+ "<b>{amount}</b> is left for the next {n} day after {bills} in bills, well ahead of your usual pace.": {
+  "other": "고정 지출({bills})을 빼면, 앞으로 {n}일 동안 <b>{amount}</b>이 남아요. 평소 속도보다 훨씬 여유 있어요."
  },
+ "<b>{amount}</b> left in your budgets for today.": "오늘 쓸 수 있는 예산이 <b>{amount}</b> 남았어요.",
  "A backup you downloaded earlier. The data now is backed up first.": "이전에 내려받은 백업 파일이에요. 현재 데이터는 먼저 백업해 둬요.",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 구성원마다 자기 화면이 따로 있어요.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 초기 비밀번호를 정해 주면 첫 로그인 때 본인이 새로 정해요.",
@@ -154,6 +155,7 @@
  "Average per day, not counting bills, over the last 90 days.": "최근 90일 하루 평균이에요 (고정 지출 제외).",
  "Average spent": "평균 지출",
  "Average spent per weekday": "요일별 평균 지출",
+ "Average {amount} a month": "평균 월 {amount}",
  "Back": "뒤로",
  "Back to columns": "열 설정으로 돌아가기",
  "Back to sign in": "로그인으로 돌아가기",
@@ -477,7 +479,7 @@
   "other": "공동 지출 {n}건 기준이에요."
  },
  "Getting a code ready…": "코드를 준비하는 중…",
- "Give each category an amount, and Wally shows what is left and how much you can spend each day. Fixed bills are only checked, and once-a-year costs fill up month by month.": "카테고리마다 금액을 정하면, Wally가 남은 금액과 하루에 쓸 수 있는 돈을 보여 줘요. 고정 지출은 납부 여부만 확인하고, 연 1회 비용은 매달 조금씩 채워요.",
+ "Give each category an amount, and Wally shows what is left and how much you can spend each day. Once-a-year costs fill up month by month.": "카테고리마다 금액을 정하면, Wally가 남은 금액과 하루에 쓸 수 있는 돈을 보여 줘요. 연 1회 비용은 매달 조금씩 채워요.",
  "Give each part an amount, or leave just one empty.": "각 항목에 금액을 입력하거나, 하나만 비워 두세요.",
  "Give the goal a name.": "목표 이름을 입력하세요.",
  "Give the view a name.": "보기 이름을 입력하세요.",
@@ -553,6 +555,7 @@
  },
  "Keeps the last 14 nights in the backups folder, next to the database": "데이터베이스 옆 backups 폴더에 최근 14일 치를 보관해요",
  "Kept": "남긴 돈",
+ "Kept each month": "매달 남긴 돈",
  "Kept in the month": "그달 남긴 돈",
  "Kept in total": "누적 남긴 돈",
  "Kept in total: {amount} since {month}": "{month}부터 누적 남긴 돈: {amount}",
@@ -691,6 +694,7 @@
  "No one owes anything.": "갚을 돈이 없어요.",
  "No one owes anything. Shared costs with a payer start a new balance.": "갚을 돈이 없어요. 결제자가 있는 공동 지출이 생기면 새로 계산을 시작해요.",
  "No other browsers": "다른 브라우저 없음",
+ "No password needed while sign-in is off.": "로그인이 꺼져 있는 동안에는 비밀번호가 필요 없어요.",
  "No password yet": "아직 비밀번호 없음",
  "No payees yet": "아직 사용처가 없어요",
  "No payments yet": "아직 정산 기록이 없어요",
@@ -1061,7 +1065,7 @@
  "Spending by category and month in {range}": "{range} 카테고리별·월별 지출",
  "Spending each day in {month}, {total} in all": "{month} 일별 지출, 총 {total}",
  "Spending each month, {total} in all": "월별 지출, 총 {total}",
- "Spending has run {amount} past what is left after bills and the {pct} savings target. The month will save less than planned.": "고정 지출과 선저축 {pct}를 빼고 남은 돈보다 {amount} 더 썼어요. 이번 달 저축은 계획보다 적을 거예요.",
+ "Spending has run {amount} past what is left after bills. The month will end overspent.": "고정 지출을 빼고 남은 돈보다 {amount} 더 썼어요. 이번 달은 적자로 끝나요.",
  "Spending is written as": "지출 표기 방식",
  "Spending looks like a normal month.": "지출이 평소와 비슷해요.",
  "Spending looks normal in this range.": "이 기간 지출은 평소와 비슷해요.",
@@ -1121,7 +1125,7 @@
  "The first month": "첫 달",
  "The last date must be after {date}.": "마지막 날짜는 {date} 이후여야 해요.",
  "The month closed even.": "이번 달은 수입과 지출이 같았어요.",
- "The month ends today: <b>{amount}</b> is left after bills and <b>{saved}</b> kept for savings.": "오늘이 월말이에요. 고정 지출과 저축(<b>{saved}</b>)을 빼고 <b>{amount}</b> 남았어요.",
+ "The month ends today: <b>{amount}</b> is left after bills.": "오늘이 월말이에요. 고정 지출을 빼고 <b>{amount}</b> 남았어요.",
  "The page Wally shows when it opens": "Wally를 열 때 처음 보이는 화면",
  "The same again": "똑같이 한 번 더",
  "The savings target is a share of income, from 0 to 90.": "선저축 비율은 수입 대비 비율로, 0~90 사이예요.",
@@ -1149,7 +1153,7 @@
  "The {n} transaction it added stays, as an ordinary one.": {
   "other": "이 규칙으로 추가된 거래 {n}건은 일반 거래로 남아요."
  },
- "Their part of shared costs goes to whoever you choose, or to whoever paid. Their settle-up payments, sign-ins and API keys are deleted.": "이 구성원의 공동 지출 몫은 선택한 사람이나 결제한 사람에게 넘어가요. 정산 기록, 로그인, API 키는 삭제돼요.",
+ "Their part of shared costs goes to whoever you choose, or to whoever paid. Their sign-ins and API keys are deleted.": "이 구성원의 공동 지출 몫은 선택한 사람이나 결제한 사람에게 넘어가요. 로그인과 API 키는 삭제돼요.",
  "Their share of shared costs": "공동 지출 중 이 구성원의 몫",
  "Their transactions stay. You choose who they go to.": "거래는 남아요. 누구에게 넘길지 선택하세요.",
  "Theme": "테마",
@@ -1241,14 +1245,13 @@
  "Wally export": "Wally 내보내기",
  "Wally is read-only": "Wally가 읽기 전용이에요",
  "Wally keeps track of what your household spends and earns. Your data stays on this server.": "Wally는 가구의 지출과 수입을 기록해요. 데이터는 이 서버에만 보관돼요.",
- "Wally notes who adds each transaction. Sign-in is off, so it takes your word for it.": "Wally는 누가 거래를 추가했는지 기록해요. 로그인이 꺼져 있어서 선택한 이름을 그대로 믿어요.",
  "Wally noticed": "Wally 알림",
  "Wally now keeps track of who spent what. Add the people in your household. Everything already in Wally stays shared between them.": "이제 Wally가 누가 무엇에 썼는지 기록해요. 가구 구성원을 추가하세요. 기존 기록은 모두 구성원의 공동 지출로 남아요.",
  "Wally offers a rule after the same fix twice": "같은 수정을 두 번 하면 Wally가 규칙을 제안해요",
  "Wally recovery codes": "Wally 복구 코드",
  "Wally recovery codes for {name}": "{name} 님의 Wally 복구 코드",
- "Wally remembers it on this browser. Switch at any time.": "Wally가 이 브라우저에서 기억해요. 언제든 바꿀 수 있어요.",
  "Wally remembers the last person on this browser": "Wally가 이 브라우저의 마지막 사용자를 기억해요",
+ "Wally remembers you on this browser and notes who adds each transaction.": "Wally가 이 브라우저에서 당신을 기억하고, 각 거래를 누가 추가했는지 기록해요.",
  "Wally v1 file": "Wally v1 파일",
  "Wally v1 file format": "Wally v1 파일 형식",
  "Wally won’t offer rules": "Wally가 규칙을 제안하지 않아요",
@@ -1278,13 +1281,13 @@
  "Which ones change": "변경 범위",
  "Who": "누가",
  "Who is signing in?": "누가 로그인하나요?",
- "Who is using Wally on this browser?": "이 브라우저에서 Wally를 쓰는 사람은 누구인가요?",
  "Who owes whom, and what each person earned, spent and kept": "누가 누구에게 갚을지, 구성원별 수입·지출·남긴 돈",
  "Who shares this household?": "이 가구를 함께 쓰는 사람은 누구인가요?",
  "Who spent on what": "누가 무엇에 썼나",
  "Who uses Wally?": "누가 Wally를 쓰나요?",
  "Whose": "누구의",
  "Whose money": "누구의 돈",
+ "Who’s using Wally?": "누가 Wally를 쓰나요?",
  "Who…": "누가…",
  "Worth knowing": "알아 두면 좋은 점",
  "YYYY-MM-DD": "YYYY-MM-DD",
@@ -1295,8 +1298,8 @@
  "You": "나",
  "You are signed in only here.": "여기에서만 로그인되어 있어요.",
  "You can always import more later from Settings.": "나중에 설정에서 언제든 더 가져올 수 있어요.",
- "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills and <b>{saved}</b> kept for savings.": {
-  "other": "고정 지출({bills})과 저축(<b>{saved}</b>)을 빼면, 앞으로 {n}일 동안 <b>하루 {amount}</b> 쓸 수 있어요."
+ "You can spend <b>{amount} a day</b> for the next {n} day, after {bills} in bills.": {
+  "other": "고정 지출({bills})을 빼면, 앞으로 {n}일 동안 <b>하루 {amount}</b> 쓸 수 있어요."
  },
  "You can take out at most {amount}.": "최대 {amount}까지 꺼낼 수 있어요.",
  "You kept {amount}, {pct} of what came in.": "{amount} 남겼어요. 들어온 돈의 {pct}예요.",
@@ -1330,8 +1333,8 @@
  "duplicate": "복제",
  "edit": "편집",
  "every month": "매월",
- "for {n} day, after bills and {pct} saved": {
-  "other": "{n}일간, 고정 지출과 선저축 {pct} 제외"
+ "for {n} day, after bills": {
+  "other": "{n}일간, 고정 지출 제외"
  },
  "from a rule": "규칙 적용",
  "from {from} to {to} on {date}": "{date}에 {from} → {to}",
@@ -1401,7 +1404,7 @@
  "times": "회",
  "to come": "예정",
  "today": "오늘",
- "today, after bills and {pct} saved": "오늘, 고정 지출과 선저축 {pct} 제외",
+ "today, after bills": "오늘, 고정 지출 제외",
  "tomorrow": "내일",
  "under {amount}": "{amount} 미만",
  "until {date}": "{date}까지",

@@ -383,6 +383,16 @@ def test_import_matches_skips_and_learns(couple):
     learned = [r for r in client.get("/rules").json() if r["learned"]]
     assert learned and learned[0]["match"] == "UNKNOWN SHOP" and learned[0]["category"] == "Shopping"
 
+def test_import_remembers_past_payees(couple):
+    client, alex, ana = couple
+    expense(client, name="Lidl", category="Groceries", amount="30.00", date="2026-09-02", person_id=ana)
+    expense(client, name="Lidl", category="Groceries", amount="25.00", date="2026-09-20")
+    rows = [{"date": "2026-10-21", "name": "lidl", "amount": "18.40"}, {"date": "2026-10-21", "name": "NEW PLACE", "amount": "5.00"}]
+    p = client.post("/import/preview", json=rows).json()["rows"]
+    # The latest Lidl was shared, so the import is too
+    assert p[0]["category"] == "Groceries" and p[0]["shared"] is True and p[0]["rule_id"] is None
+    assert p[1]["category"] in ("", None)
+
 # ---------- categories, tags, people ----------
 def test_delete_category_moves_transactions(couple):
     client, *_ = couple

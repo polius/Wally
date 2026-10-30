@@ -1,10 +1,10 @@
 /* Transactions: what is shown. The view state, the search language, the range and the filter.
    Nothing here touches the page; it only works out which transactions to show. */
-import { state, t, F, LANG, ds, dim, ym, ymAdd, pad, TODAY, START, dlab, monthYear, amt, pname, parseAmt, f0 } from "../../core.js";
+import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt, pname, parseAmt, f0 } from "../../core.js";
 
 /* The view state. It lives as long as the app does; mount() resets it from the address. */
 export const S = {
-  mode: "month",        // month | 3m | year | 12m | custom | all
+  mode: "month",        // month | year | custom | all
   ym: [0, 0],           // the month shown in month mode and in the calendar
   custom: null,         // [from, to] in custom mode
   searchAll: true,      // a search looks in every month, until "Only this range"
@@ -27,7 +27,7 @@ export function resetView() {
   });
 }
 
-export const RANGES = ["month", "3m", "year", "12m", "all"];
+export const RANGES = ["month", "year", "all"];
 const lower = (s) => String(s || "").toLocaleLowerCase(LANG);
 
 /* The last day any range reaches: today, or a later date someone gave a transaction */
@@ -82,11 +82,6 @@ export function withoutWords(q, idx) {
 }
 
 /* ---------- the range shown: a month, a longer range, or every month while searching ---------- */
-function monthSpan(a, b) {
-  const [ya, ma] = ym(a), [yb, mb] = ym(b);
-  if (ya === yb && ma === mb) return monthYear(ya, ma);
-  return ya === yb ? F.mon[ma - 1] + " – " + F.mon[mb - 1] + " " + yb : F.mon[ma - 1] + " " + ya + " – " + F.mon[mb - 1] + " " + yb;
-}
 export function txRange(P) {
   P = P || parseQ(S.q);
   const cal = S.view === "cal", last = lastDay(), [ty, tm] = ym(TODAY);
@@ -100,9 +95,7 @@ export function txRange(P) {
     const [y, m] = S.ym;
     return { a: ds(y, m, 1), b: monthEnd(y, m), month: [y, m], title: F.months[m - 1], sub: String(y) };
   }
-  if (S.mode === "3m") { const [y, m] = ymAdd(ty, tm, -2), a = ds(y, m, 1); return { a, b: last, title: t("Last 3 months"), sub: monthSpan(a, TODAY) }; }
   if (S.mode === "year") return { a: ds(ty, 1, 1), b: last, title: String(ty), sub: t("so far") };
-  if (S.mode === "12m") { const [y, m] = ymAdd(ty, tm, -11), a = ds(y, m, 1); return { a, b: last, title: t("Last 12 months"), sub: monthSpan(a, TODAY) }; }
   if (S.mode === "custom" && S.custom) {
     const [a, b] = S.custom;
     return { a, b, title: dlab(a) + " – " + dlab(b), sub: a.slice(0, 4) === b.slice(0, 4) ? a.slice(0, 4) : a.slice(0, 4) + " – " + b.slice(0, 4) };
@@ -114,15 +107,15 @@ export function txRange(P) {
 export function onlyLabel() {
   const [y, m] = S.ym;
   return {
-    month: t("Only {range}", { range: monthYear(y, m) }), "3m": t("Only the last 3 months"), year: t("Only {range}", { range: TODAY.slice(0, 4) }),
-    "12m": t("Only the last 12 months"), custom: t("Only this range"),
+    month: t("Only {range}", { range: monthYear(y, m) }), year: t("Only {range}", { range: TODAY.slice(0, 4) }),
+    custom: t("Only this range"),
   }[S.mode] || "";
 }
 export function inLabel() {
   const [y, m] = S.ym;
   return {
-    month: t("in {range}", { range: monthYear(y, m) }), "3m": t("in the last 3 months"), year: t("in {range}", { range: TODAY.slice(0, 4) }),
-    "12m": t("in the last 12 months"), custom: t("in this range"),
+    month: t("in {range}", { range: monthYear(y, m) }), year: t("in {range}", { range: TODAY.slice(0, 4) }),
+    custom: t("in this range"),
   }[S.mode] || "";
 }
 
@@ -172,7 +165,8 @@ export function fromQuery(q) {
   resetView();
   const day = q.get("day");
   const okDay = (s) => /^\d{4}-\d\d-\d\d$/.test(s || "");
-  const mode = q.get("mode");
+  // Links from before 3 months and 12 months were retired open as Month and Year
+  const mode = { "3m": "month", "12m": "year" }[q.get("mode")] || q.get("mode");
   if (RANGES.includes(mode) || mode === "custom") S.mode = mode;
   if (/^\d{4}-\d\d$/.test(q.get("ym") || "")) { const [y, m] = q.get("ym").split("-").map(Number); if (m >= 1 && m <= 12) S.ym = [y, m]; }
   if (S.mode === "custom") {

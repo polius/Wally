@@ -31,6 +31,45 @@
 /* Only for password managers: a username they can save with the password */
 .w-sr{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0!important}
 
+/* Who is using this browser: a profile picker, no card. Big faces that lift under the pointer,
+   come in one after another, and the chosen one comes forward while the rest step back. */
+.w-who{--who-av:112px;--who-hl:rgba(255,255,255,.6);--who-sh:rgba(20,22,27,.16);width:min(720px,100%);display:grid;justify-items:center;text-align:center;gap:52px;padding:24px 0;outline:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-who{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}}
+:root[data-theme="dark"] .w-who{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}
+.w-whohead{display:grid;gap:12px;max-width:460px;animation:w-whoin 600ms var(--ease) both}
+.w-whohead h1{font-size:40px;font-weight:600;letter-spacing:-.035em;line-height:1.08;text-wrap:balance}
+.w-whohead p{font-size:16px;line-height:1.5;color:var(--w-ink2);text-wrap:pretty}
+.w-wholist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:28px 36px}
+.w-wholist li{animation:w-whoin 600ms var(--ease) both;animation-delay:calc(120ms + var(--i) * 70ms)}
+.w-whop{display:grid;justify-items:center;gap:16px;padding:10px;border-radius:28px;color:var(--w-ink2);-webkit-tap-highlight-color:transparent;transition:opacity 280ms var(--ease),transform 380ms var(--ease)}
+.w-whop .w-av.w-whoav{width:var(--who-av);height:var(--who-av);font-size:calc(var(--who-av) * .4);font-weight:600;letter-spacing:-.03em;
+  background-image:linear-gradient(165deg,var(--who-hl),transparent 62%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 10px 28px -14px var(--who-sh);
+  transition:transform 380ms var(--ease),box-shadow 380ms var(--ease)}
+.w-whon{font-size:16px;font-weight:500;letter-spacing:-.01em;max-width:calc(var(--who-av) + 32px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color 200ms var(--ease)}
+.w-whop:focus-visible{outline:0}
+.w-whop:focus-visible .w-whoav{box-shadow:0 0 0 4px var(--w-canvas),0 0 0 7px var(--w-accent),0 10px 28px -14px var(--who-sh)}
+.w-whop:focus-visible .w-whon{color:var(--w-ink)}
+@media (hover:hover){
+  .w-whop:hover .w-whoav{transform:scale(1.06);box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 18px 36px -16px var(--who-sh)}
+  .w-whop:hover .w-whon{color:var(--w-ink)}
+}
+.w-whop:active .w-whoav{transform:scale(.97);transition-duration:120ms}
+.w-who.picked .w-whop:not(.on){opacity:0;transform:scale(.9)}
+.w-who.picked .w-whop.on .w-whoav{transform:scale(1.12)}
+.w-who.picked .w-whop.on .w-whon{color:var(--w-ink)}
+.w-who.picked :is(.w-whohead,.w-whofoot){opacity:0;transition:opacity 280ms var(--ease)}
+.w-whofoot{font-size:13px;color:var(--w-ink3);animation:w-whoin 600ms var(--ease) both;animation-delay:400ms}
+@keyframes w-whoin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:767px){
+  .w-who{--who-av:96px;min-height:100%;align-content:center;gap:44px;padding:calc(40px + env(safe-area-inset-top,0px)) 24px calc(32px + env(safe-area-inset-bottom,0px))}
+  .w-whohead h1{font-size:32px}
+  .w-whohead p{font-size:15px}
+  .w-wholist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px;width:100%;max-width:320px}
+  .w-wholist li{display:grid;justify-items:center}
+}
+@media (max-width:767px) and (max-height:640px){.w-who{--who-av:80px;gap:32px}}
+
 /* Two-step setup */
 .w-tsteps{list-style:none;margin:0;padding:0;counter-reset:ts;display:grid;gap:18px;width:100%;text-align:start}
 .w-tsteps > li{display:grid;gap:10px;counter-increment:ts;padding-inline-start:30px;position:relative}

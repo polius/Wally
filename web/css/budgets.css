@@ -2,14 +2,13 @@
 [data-page="budgets"] .w-brow{text-align:start;text-decoration:none;color:inherit}
 [data-page="budgets"] .w-budbar > span{left:auto;inset-inline-start:0}
 [data-page="budgets"] .w-ph b.num{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bud-note{text-align:center;margin:0}
 .bud-back{display:none;text-decoration:none;align-items:center;gap:2px;justify-self:start}
 .bud-back svg.i{width:18px;height:18px}
 .bud-head .w-title{align-items:center;gap:10px}
 .bud-goals .w-ph .w-btn{white-space:nowrap;flex:none}
 .bud-col{display:grid;gap:16px;align-content:start}
 .bud-empty{padding:32px 16px}
-.bud-paid{display:inline-flex;align-items:center;gap:4px;color:var(--w-good)!important}
-.bud-paid svg.i{width:14px;height:14px}
 .up-bad{color:var(--w-bad)!important}
 
 /* Edit budgets */

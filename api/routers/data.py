@@ -88,6 +88,14 @@ def apply_rules(rules: list[ImportRule], name: str) -> ImportRule | None:
             return rule
     return None
 
+def past_choices(db: Session, rows: list[ImportRow]) -> dict[tuple[str, str], Transaction]:
+    """The latest transaction for each name and type in the file, as the add sheet remembers payees."""
+    names = {r.name.strip().lower() for r in rows if r.name.strip()}
+    if not names:
+        return {}
+    past = db.exec(select(Transaction).where(func.lower(func.trim(Transaction.name)).in_(names)).order_by(Transaction.date, Transaction.created_date)).all()
+    return {(t.name.strip().lower(), t.type): t for t in past}
+
 def _person_from(raw: str, people: dict[str, int]) -> tuple[int | None, bool]:
     """(person_id, shared) from a name in a file."""
     value = raw.strip().lower()
@@ -109,6 +117,7 @@ def import_preview(
     people = {p.name.lower(): p.id for p in db.exec(select(Person)).all()}
     rules = db.exec(select(ImportRule).order_by(ImportRule.position, ImportRule.id)).all()
     known = set(db.exec(select(Transaction.import_ref).where(Transaction.import_ref.in_(refs))).all())
+    past = past_choices(db, rows)
 
     lo, hi = min(r.date for r in rows) - timedelta(days=3), max(r.date for r in rows) + timedelta(days=3)
     typed = db.exec(select(Transaction).where(Transaction.import_ref.is_(None)).where(Transaction.date >= lo).where(Transaction.date <= hi)).all()
@@ -143,6 +152,12 @@ def import_preview(
                         category = rule.category
                     if not row.person and rule.set_person:
                         person_id, shared = rule.person_id, rule.person_id is None
+                elif (last := past.get((row.name.strip().lower(), row.type))):
+                    # No rule: the same name was added before, so it gets what it got then
+                    if not category:
+                        category = last.category
+                    if not row.person:
+                        person_id, shared = last.person_id, last.person_id is None
         item.update({"category": category, "person_id": person_id, "shared": shared})
         counts[item["status"]] += 1
         out.append(item)

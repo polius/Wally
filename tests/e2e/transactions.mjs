@@ -81,9 +81,10 @@ async function demo() {
   await go(p, "/transactions?ym=" + first.slice(0, 7));
   ok(await p.$eval('#tx-step [data-act="prev"]', (b) => b.disabled), "previous is off on the first month");
 
-  section("Ranges and keys 1 to 5");
+  section("Ranges and keys 1 to 3");
   await go(p, "/transactions");
-  for (const [k, label, key] of [["3m", "Last 3 months", "2"], ["year", String(ty), "3"], ["12m", "Last 12 months", "4"], ["all", "All time", "5"], ["month", months[tm - 1], "1"]]) {
+  ok((await p.$$eval("#tx-range button", (b) => b.map((x) => x.textContent))).join("|") === "Month|Year|All", "Month, Year and All only");
+  for (const [k, label, key] of [["year", String(ty), "2"], ["all", "All time", "3"], ["month", months[tm - 1], "1"]]) {
     await p.click('#tx-range [data-v="' + k + '"]'); await wait(p);
     ok((await title(p)).startsWith(label), k + " title", await title(p));
     ok((await pressed(p, "#tx-range")).join() === k, k + " pressed");
@@ -96,11 +97,17 @@ async function demo() {
   ok((await countN(p)) === all, "All shows every transaction", [await countN(p), all]);
   ok(await p.$eval("#tx-list", (e) => e.classList.contains("tx-win")), "over 500 rows: the windowed list");
   ok((await p.$$("#tx-list .w-monh")).length >= 1, "All is grouped by month");
-  await p.click('#tx-range [data-v="12m"]'); await wait(p);
+  await p.click('#tx-range [data-v="year"]'); await wait(p);
   const bars = await p.$$("#tx-strip rect.tx-bar");
-  ok(bars.length === 12, "12 months: one bar a month", bars.length);
-  await bars[5].click(); await wait(p);
+  ok(bars.length === tm, "Year: one bar a month so far", bars.length);
+  await bars[Math.min(5, bars.length - 1)].click(); await wait(p);
   ok((await pressed(p, "#tx-range")).join() === "month" && url(p).searchParams.get("ym"), "a month bar opens the month", p.url());
+
+  section("Old 3 months and 12 months links");
+  await go(p, "/transactions?mode=3m");
+  ok((await pressed(p, "#tx-range")).join() === "month", "mode=3m opens as Month");
+  await go(p, "/transactions?mode=12m");
+  ok((await pressed(p, "#tx-range")).join() === "year", "mode=12m opens as Year");
 
   section("Custom range from the address");
   await go(p, "/transactions?mode=custom&from=" + ty + "-02-03&to=" + ty + "-03-10");
@@ -170,7 +177,7 @@ async function demo() {
   ok((await p.inputValue("#tx-q")) === "" && (await title(p)) === months[tm - 1] + " " + ty, "removing the last chip clears the search");
 
   section("Type, categories, Shared only");
-  await go(p, "/transactions?mode=3m");
+  await go(p, "/transactions?mode=year");
   await p.click('#tx-type [data-v="income"]'); await wait(p);
   rr = await rows(p);
   ok(rr.length && rr.every((r) => r.pos), "Income only", rr.length);
@@ -446,14 +453,14 @@ async function demo() {
 
   section("900 px, dark");
   p = await newPage({ w: 900, h: 800, theme: "dark" });
-  await go(p, "/transactions?mode=12m");
+  await go(p, "/transactions?mode=year");
   ok((await p.$$("#tx-list .w-row")).length > 50, "list at 900 px");
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll");
 
   section("390 px: phone");
   p = await newPage({ w: 390, h: 844 });
   await go(p, "/transactions");
-  ok(await p.$eval(".tx-phead", (e) => getComputedStyle(e).display !== "none") && !!(await p.$("#tx-pchips .w-pchips")), "phone header with person chips");
+  ok(await p.$eval(".tx-phead", (e) => getComputedStyle(e).display !== "none") && !!(await p.$(".tx-phead .w-pswitch")), "phone header with the person switch");
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll");
   const tap = (await rows(p))[1];
   await p.click('#tx-list [data-id="' + tap.id + '"]'); await wait(p, 400);
@@ -471,8 +478,8 @@ async function demo() {
   await p.click('#tx-pbar [data-act="filters"]'); await wait(p, 300);
   await p.click('#dlg [data-f="reset"]'); await p.click("#dlg [data-dlg-ok]"); await wait(p);
   await p.click('#tx-pbar [data-act="range"]'); await wait(p, 300);
-  await p.click('#dlg [data-pr="3m"]'); await p.click("#dlg [data-dlg-ok]"); await wait(p);
-  ok((await title(p)).startsWith("Last 3 months"), "Range sheet: Last 3 months", await title(p));
+  await p.click('#dlg [data-pr="year"]'); await p.click("#dlg [data-dlg-ok]"); await wait(p);
+  ok((await title(p)).startsWith(String(ty)), "Range sheet: Year to date", await title(p));
   await p.click('#tx-pbar [data-act="range"]'); await wait(p, 300);
   await p.fill("#tx-rfrom", ty + "-01-05"); await p.dispatchEvent("#tx-rfrom", "change");
   await p.fill("#tx-rto", ty + "-01-20"); await p.dispatchEvent("#tx-rto", "change");

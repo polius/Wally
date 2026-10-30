@@ -13,8 +13,7 @@ let back = null;   // where focus goes back to on close
 /* Settings panes, as Settings names them */
 const PANES = [
   ["people", "users", () => t("People")], ["categories", "overview", () => t("Categories")], ["tags", "tag", () => t("Tags")],
-  ["currency", "coin", () => t("Currency")], ["savings", "savings", () => t("Savings target")], ["import", "io", () => t("Import and export")],
-  ["rules", "split", () => t("Rules")], ["backups", "file", () => t("Backups")], ["keys", "key", () => t("API keys")],
+  ["currency", "coin", () => t("Currency")], ["import", "io", () => t("Import and export")], ["keys", "key", () => t("API keys")],
   ["signin", "lock", () => t("Sign-in")], ["language", "globe", () => t("Language")], ["appearance", "layout", () => t("Appearance")],
 ];
 

@@ -99,12 +99,12 @@ async function shot(name, p = page) { if (SHOTS) await p.screenshot({ path: join
 /* ======================================================================= */
 section("Layout and moving between panes");
 await open("/settings");
-ok(await page.locator("#set-nav a").count() === 12, "twelve panes in four groups");
+ok(await page.locator("#set-nav a").count() === 9, "nine panes in three groups");
 ok(await page.getAttribute('#set-nav a[data-pane="people"]', "aria-current") === "page", "/settings opens People on desktop");
 ok(/People in this household/.test(await paneText()), "People pane is drawn");
 ok(/Wally \d/.test(await page.textContent("#set-nav")), "version at the bottom of the panes");
 ok(/2/.test(await page.textContent('#set-nav a[data-pane="people"] span')), "People shows how many");
-for (const id of ["categories", "tags", "currency", "savings", "import", "rules", "backups", "keys", "signin", "language", "appearance", "people"]) await pane(id);
+for (const id of ["categories", "tags", "currency", "import", "keys", "signin", "language", "appearance", "people"]) await pane(id);
 ok(true, "every pane opens");
 await page.goBack(); await page.waitForFunction(() => location.pathname === "/settings/appearance");
 await page.waitForSelector("#set-pane .w-group");
@@ -174,20 +174,10 @@ await toastText(new RegExp("Moved " + before + " transactions to Ana"));
 const tagsAfter = (await api("GET", "/tags/stats")).data;
 ok(!tagsAfter.some((t) => t.name === "sport" && t.count > 0), "the tag is taken off them");
 
-// Settled payments: delete one, undo
-const pays = (await api("GET", "/settlements")).data.payments.length;
-await page.click('[data-act="unpay"] >> nth=0');
-await toastText(/Deleted the payment/);
-ok((await api("GET", "/settlements")).data.payments.length === pays - 1, "a payment is deleted");
-await undo();
-ok((await api("GET", "/settlements")).data.payments.length === pays, "Undo puts it back");
-await page.click('[data-act="morepay"]');
-ok(await page.locator('[data-act="unpay"]').count() === pays, "Show all lists every payment");
-// Settle up opens the settle dialog
-await page.click('[data-act="settle"]');
-await page.waitForSelector("#dlg .w-dialog", { timeout: 5000 });
-ok(/payment|Settle|square/i.test(await dialog().textContent()), "Settle up opens its dialog");
-await dlgCancel();
+// No settling up; your own row can switch who is using this browser
+ok(!/Settled payments|Settle up|owes/.test(await paneText()), "no settle up and no who-owes-whom");
+ok(await page.locator("#set-pane [data-switch]").count() === 1, "Switch sits on your own row");
+ok(await page.locator("#side [data-switch], #side .w-me").count() === 0, "and no longer in the sidebar");
 
 /* ======================================================================= */
 section("Categories");
@@ -273,24 +263,6 @@ ok((await api("GET", "/currency")).data.currencies.some((c) => c.name === "XBC")
 ok(await page.locator('[data-act="delete"][data-name="USD"]').count() === 0, "the currency in use can't be deleted");
 await page.selectOption("#cur-sel", "EUR");
 await page.click('#cur-pos [data-v="right"]');
-await page.waitForTimeout(300);
-
-/* ======================================================================= */
-section("Savings target");
-await pane("savings");
-await page.click('#sv-seg [data-v="20"]');
-await toastText(/20%/);
-ok((await api("GET", "/config")).data.savings_target === 20, "a preset is saved");
-ok(/20%/.test(await page.textContent('#set-nav a[data-pane="savings"]')), "the pane list shows it");
-await page.fill("#sv-other", "33");
-await page.keyboard.press("Enter");
-await toastText(/33%/);
-ok((await api("GET", "/config")).data.savings_target === 33, "a typed share is saved");
-await page.fill("#sv-other", "95");
-await page.keyboard.press("Enter");
-await toastText(/from 0 to 90/);
-ok((await api("GET", "/config")).data.savings_target === 33, "95% is refused");
-await page.click('#sv-seg [data-v="15"]');
 await page.waitForTimeout(300);
 
 /* ======================================================================= */
@@ -392,41 +364,6 @@ ok(/^[0-2] new/.test(reCounts), "re-importing the export adds nothing typed or i
 await page.click('#imp-foot [data-act="reset"]');
 
 /* ======================================================================= */
-section("Rules");
-await pane("rules");
-const nRules = (await api("GET", "/rules")).data.length;
-await page.fill("#rule-m", "ikea");
-await page.selectOption("#rule-c", "Shopping");
-await page.selectOption("#rule-p", "1");
-await page.click('[data-act="add"]');
-await toastText(/Rule added/);
-let rules = (await api("GET", "/rules")).data;
-const ikea = rules.find((r) => r.match === "IKEA");
-ok(ikea && ikea.category === "Shopping" && ikea.person_id === 1 && rules.length === nRules + 1, "a rule is added at the bottom");
-await page.click(`[data-act="edit"][data-id="${ikea.id}"]`);
-await page.selectOption("#re-c", "Food");
-await page.selectOption("#re-p", "keep");
-await dlgOk(); await dlgClosed();
-rules = (await api("GET", "/rules")).data;
-ok(rules.find((r) => r.id === ikea.id).category === "Food" && rules.find((r) => r.id === ikea.id).set_person === false, "edited: category and keep the person");
-await page.click(`[data-act="up"][data-id="${ikea.id}"]`);
-await page.waitForTimeout(300);
-rules = (await api("GET", "/rules")).data;
-ok(rules[rules.length - 2].id === ikea.id, "moved up one");
-ok(await page.evaluate(() => document.activeElement && document.activeElement.dataset.k) === "up:" + ikea.id, "focus stays on the arrow");
-const first = rules[0];
-await page.click(`[data-act="delete"][data-id="${first.id}"]`);
-await toastText(/Deleted the rule/);
-await undo();
-rules = (await api("GET", "/rules")).data;
-ok(rules[0].match === first.match && rules.length === nRules + 1, "Undo puts the rule back at the top");
-await page.click("#learn-toggle");
-await toastText(/won’t offer/);
-ok((await api("GET", "/config")).data.learn_rules === false, "Learn from my edits off");
-await page.click("#learn-toggle");
-await page.waitForTimeout(300);
-
-/* ======================================================================= */
 section("API keys");
 await pane("keys");
 await page.fill("#key-name", "Test script");
@@ -441,6 +378,8 @@ const viaKey = await fetch(BASE + "/api/transactions", { method: "POST", headers
 const viaKeyJson = await viaKey.json();
 ok(viaKey.status === 200 && viaKeyJson.created_by === 1, "the key adds a transaction, added by its owner");
 await page.reload(); await page.waitForSelector("#set-pane .w-group");
+// The keys arrive after the pane is drawn
+await page.waitForFunction(() => /Test script/.test(document.getElementById("set-pane").textContent) && /\d/.test(document.querySelector('#set-nav a[data-pane="keys"] span').textContent), null, { timeout: 8000 }).catch(() => {});
 ok(/Test script/.test(await paneText()) && /last used just now/.test(await paneText()) && /Alex/.test(await paneText()), "the list shows owner and last used");
 ok(/1/.test(await page.textContent('#set-nav a[data-pane="keys"] span')), "the pane list counts keys");
 await page.click('[data-act="ios"]');
@@ -453,53 +392,6 @@ const keyId = (await api("GET", "/api-keys")).data[0].id;
 await page.click(`[data-act="delete"][data-id="${keyId}"]`);
 await dlgOk(); await dlgClosed();
 ok((await api("GET", "/api-keys")).data.length === 0, "a key is deleted after confirming");
-
-/* ======================================================================= */
-section("Backups");
-await pane("backups");
-await page.click("#nightly-toggle");
-await toastText(/Nightly backups off/);
-ok((await api("GET", "/config")).data.nightly_backup === false, "nightly off");
-ok(/Off/.test(await page.textContent('#set-nav a[data-pane="backups"] span')), "the pane list says Off");
-await page.click("#nightly-toggle");
-await toastText(/Nightly backups on/);
-await page.click('[data-act="now"]');
-await toastText(/Backed up/);
-let backups = (await api("GET", "/backups")).data;
-ok(backups.length === 1 && backups[0].kind === "manual", "Back up now makes a manual backup");
-const bname = backups[0].name;
-const dlr = await W.ctx.request.get(BASE + "/api/backups/" + bname);
-ok(dlr.status() === 200 && (await dlr.body()).slice(0, 15).toString() === "SQLite format 3", "Download gives the database file");
-writeFileSync(join(TMP, "backup.db"), await dlr.body());
-// A change after the backup, then restore: the change is gone
-await api("POST", "/categories", { name: "AfterBackup" });
-await page.click(`[data-act="restore"][data-name="${bname}"]`);
-ok(/sign in again/.test(await dialog().textContent()), "restore warns you may need to sign in again");
-await dlgOk();
-await toastText(/Restored/);
-await page.waitForURL(BASE + "/settings/backups", { timeout: 8000 });
-await page.waitForSelector("#set-pane .w-group");
-ok(!(await api("GET", "/categories")).data.includes("AfterBackup"), "restore puts the backup's data back");
-backups = (await api("GET", "/backups")).data;
-ok(backups.some((b) => b.kind === "restore"), "the data from before the restore is kept as a backup");
-// Upload a backup file to restore
-await api("POST", "/categories", { name: "BeforeUpload" });
-await page.setInputFiles("#bk-file", join(TMP, "backup.db"));
-await page.waitForSelector("#dlg .w-dialog");
-await dlgOk();
-await toastText(/Restored/);
-await page.waitForTimeout(1600);
-await page.waitForSelector("#set-pane .w-group");
-ok(!(await api("GET", "/categories")).data.includes("BeforeUpload"), "uploading a backup file restores it");
-writeFileSync(join(TMP, "not-a-backup.db"), "hello");
-await page.setInputFiles("#bk-file", join(TMP, "not-a-backup.db"));
-await expectHttpError(async () => { await dlgOk(); ok(/not a Wally backup/.test(await dlgError()), "a file that is not a backup is refused in the dialog"); });
-await dlgCancel();
-backups = (await api("GET", "/backups")).data;
-const manual = backups.find((b) => b.kind === "manual");
-await page.click(`[data-act="delete"][data-name="${manual.name}"]`);
-await dlgOk(); await dlgClosed();
-ok(!(await api("GET", "/backups")).data.some((b) => b.name === manual.name), "a backup is deleted after confirming");
 
 /* ======================================================================= */
 section("Appearance");
@@ -518,9 +410,6 @@ ok(!(await page.evaluate(() => document.documentElement.classList.contains("w-hi
 await page.click('#ap-week [data-v="sun"]');
 await page.waitForTimeout(300);
 ok((await api("GET", "/config")).data.week_start === "sun", "Week starts on Sunday saved");
-await page.click('#ap-open [data-v="transactions"]');
-await page.waitForTimeout(300);
-ok((await api("GET", "/config")).data.open_on === "transactions", "Open on Transactions saved");
 await page.selectOption("#tz-sel", "Europe/Madrid");
 await toastText(/Europe\/Madrid/);
 ok((await api("GET", "/config")).data.timezone === "Europe/Madrid", "time zone saved");
@@ -529,8 +418,8 @@ await toastText(/follows the server/);
 await page.reload(); await page.waitForSelector("#set-pane .w-group");
 ok(await page.getAttribute('#ap-week [data-v="sun"]', "aria-pressed") === "true", "week start is kept after reload");
 await page.click('#ap-week [data-v="mon"]');
-await page.click('#ap-open [data-v="dashboard"]');
 await page.waitForTimeout(300);
+ok(!/Open on/.test(await paneText()), "no Open on: Wally always opens on the Dashboard");
 
 /* ======================================================================= */
 section("Language");
@@ -659,7 +548,7 @@ for (const [w, h] of [[1440, 900], [1100, 800], [900, 800]]) {
 const P = await newPage(BASE, { viewport: { width: 390, height: 844 }, dark: true });
 await P.page.goto(BASE + "/settings", { waitUntil: "networkidle" });
 await P.page.waitForSelector(".w-scell");
-ok(await P.page.locator(".w-scell").count() === 12, "phone: Settings is a list of panes");
+ok(await P.page.locator(".w-scell").count() === 9, "phone: Settings is a list of panes");
 await shot("phone-list", P.page);
 await P.page.click('.w-scell[data-pane="signin"]');
 await P.page.waitForSelector("#set-pane .w-group");
@@ -669,7 +558,7 @@ const sw = await P.page.locator("#si-toggle").boundingBox();
 ok(sw.height >= 26 && sw.width >= 44, "switches are big enough to tap");
 ok(await P.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "390 px: no sideways scrolling");
 await shot("phone-signin", P.page);
-for (const id of ["people", "import", "keys", "appearance", "currency", "rules"]) {
+for (const id of ["people", "import", "keys", "appearance", "currency"]) {
   await P.page.goto(BASE + "/settings/" + id, { waitUntil: "networkidle" });
   await P.page.waitForSelector("#set-pane .w-group");
   ok(await P.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "390 px " + id + ": no sideways scrolling");
@@ -694,8 +583,8 @@ if (EMPTY) {
   await E.page.goto(EMPTY + "/settings/people", { waitUntil: "networkidle" });
   await E.page.waitForSelector("#set-pane .w-group");
   const txt = await E.page.textContent("#set-pane");
-  ok(!/Settled payments/.test(txt) && !/Removing a person/.test(txt), "no settle up and no removing with one person");
-  for (const [id, re] of [["tags", /No tags yet/], ["rules", /No rules yet/], ["backups", /No backups yet/], ["keys", /No API keys yet/]]) {
+  ok(!/Removing a person/.test(txt) && !(await E.page.locator("#set-pane [data-switch]").count()), "one person: no removing and no Switch");
+  for (const [id, re] of [["tags", /No tags yet/], ["keys", /No API keys yet/]]) {
     await E.page.goto(EMPTY + "/settings/" + id, { waitUntil: "networkidle" });
     await E.page.waitForFunction((src) => new RegExp(src).test(document.getElementById("set-pane").textContent), re.source);
     ok(true, id + ": empty state");

@@ -210,7 +210,10 @@ check(await focused(page) === "add-cat", "then to the category");
 // a date in the future needs Repeat
 await pickCat(page, "Food");
 await page.click("#add-pickb");
-check(await page.isDisabled('#add-cal [data-cd="' + addDays(TODAY, 1) + '"]') && !(await page.isDisabled('#add-cal [data-cd="' + TODAY + '"]')), "without Repeat, days after today cannot be picked");
+// On the last day of a month, tomorrow is not in the grid at all: the next month cannot be opened
+const tomorrow = '#add-cal [data-cd="' + addDays(TODAY, 1) + '"]';
+const tomorrowOff = (await page.$(tomorrow)) ? await page.isDisabled(tomorrow) : await page.isDisabled('#add-cal [data-cm="1"]');
+check(tomorrowOff && !(await page.isDisabled('#add-cal [data-cd="' + TODAY + '"]')), "without Repeat, days after today cannot be picked");
 await page.click("#add-rep");
 await pickDate(page, addDays(TODAY, 3));
 await page.click("#add-rep");

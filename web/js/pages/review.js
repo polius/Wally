@@ -3,7 +3,7 @@
    from the ledger, for whoever is shown, except the people block, which always shows everyone.
    On a phone it is four pages you tap or swipe through. Route: /review?m=YYYY-MM */
 import {
-  t, tn, esc, state, GET, f, f0, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
+  t, tn, esc, state, f, f0, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
   tile, cat, av, pname, couple, isIncomeCat, dows, wkOff, dlab, dlabL, dlabW, monthYear, F, savePrefs, on, icon,
 } from "../core.js";
 import { hover, row, chart, el, txt, hideTip } from "../ui.js";
@@ -14,7 +14,6 @@ let root = null;
 let shown = null;        // [year, month] on screen
 let story = 0;           // phone page, 0 to 3
 const STORY = 4;
-const settleAt = {};     // "YYYY-MM" → /settlements?until=<last day>, for "who owed whom"
 
 /* ---------- months ---------- */
 const mkey = (q) => q[0] + "-" + pad(q[1]);
@@ -186,10 +185,7 @@ export function mount(el, route) {
   story = 0;
   render();
 }
-export function update(reason) {
-  if (!reason || !reason.scope) for (const k in settleAt) delete settleAt[k];
-  render();
-}
+export function update() { render(); }
 export function unmount() { root = null; }
 export function key(ev) {
   if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
@@ -219,7 +215,6 @@ function render() {
   wireDesktop(m);
   wireStory(m);
   drawChart(m);
-  loadSettle(m);
 }
 
 function goMonth(q) {
@@ -326,7 +321,7 @@ function peopleSection(m) {
     (rows ? '<div class="w-mrws">' + rows + "</div>" : '<p class="w-hint">' + t("No spending this month.") + "</p>") +
     '<div class="w-mrshared">' + av(null) + '<span id="mr-shared">' + sharedText(m) + "</span></div></section>";
 }
-/* Shared costs this month, who paid them, and how the month closed between people */
+/* Shared costs this month, and who paid them */
 function sharedText(m) {
   const { a, b } = m, by = {};
   let n = 0, tot = 0;
@@ -339,23 +334,7 @@ function sharedText(m) {
   let text = tn(n, "{amount} in {n} shared cost.", "{amount} in {n} shared costs.", { amount: "<b>" + f0(tot) + "</b>" });
   const payers = state.people.filter((p) => by[String(p.id)]).map((p) => t("{name} paid {amount}", { name: esc(p.name), amount: f0(by[String(p.id)]) }));
   if (payers.length) text += " " + payers.join(", ") + ".";
-  const paidIn = (state.settle.payments || []).filter((p) => p.date >= a && p.date <= b).sort((x, y) => (x.date < y.date ? 1 : -1))[0];
-  const end = settleAt[mkey(m.q)];
-  if (end) {
-    const even = !end.transfers.length;
-    if (paidIn) text += " " + t("{from} paid {to} {amount} on {date}.", { from: esc(pname(paidIn.from_person)), to: esc(pname(paidIn.to_person)), amount: "<b>" + f(Number(paidIn.amount)) + "</b>", date: esc(dlab(paidIn.date)) }) + (even ? " " + t("The month closed even.") : "");
-    if (!even) text += " " + end.transfers.map((x) => t("At the end of the month {from} owed {to} {amount}.", { from: esc(pname(x.from)), to: esc(pname(x.to)), amount: "<b>" + f(Number(x.amount)) + "</b>" })).join(" ");
-    else if (!paidIn) text += " " + t("Nobody owed anything at the end of the month.");
-  }
   return text;
-}
-async function loadSettle(m) {
-  if (!couple()) return;
-  const k = mkey(m.q);
-  if (settleAt[k]) return;
-  try { settleAt[k] = await GET("/settlements?until=" + m.b); } catch (e) { return; }
-  const out = root && root.querySelector("#mr-shared");
-  if (out && same(shown, m.q)) out.innerHTML = sharedText(m);
 }
 
 function catTable(m) {
@@ -554,9 +533,8 @@ export async function maybeShowOnFirstOfMonth() {
   if (seen && seen >= k) return;
   if (!seen || !state.tx.length || !hasData(last)) { await savePrefs({ reviewed: k }); return; }
   // Only when Wally opens on its first page, not from a link to something else
-  const home = ["/", "/" + ((state.config && state.config.open_on) || "dashboard")];
   const addOpen = document.getElementById("add-modal") && !document.getElementById("add-modal").hidden;
-  if (!home.includes(location.pathname) || location.search || addOpen) return;
+  if (location.pathname !== "/" || location.search || addOpen) return;
   await savePrefs({ reviewed: k });
   navigate("/review?m=" + k);
 }

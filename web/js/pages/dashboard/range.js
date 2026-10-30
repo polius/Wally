@@ -1,11 +1,11 @@
-/* The Dashboard's range: Month, 3 months, Year, 12 months or Custom, the period it is compared
+/* The Dashboard's range: Month, Year or Custom, the period it is compared
    with, the two-month Custom picker, the phone's range sheet, and links into Transactions that
    keep the range. The last range is remembered on this browser. */
 import { t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, mmin, mmax, monthName, monthIn, monthYear, F, dlab, dows, wkOff, icon, num } from "../../core.js";
 import { openDialog, closeDialog } from "../../ui.js";
 import { navigate } from "../../shell.js";
 
-export const MODES = ["month", "3m", "year", "12m", "custom"];
+export const MODES = ["month", "year", "custom"];
 const KEY = "wally.dash.range";
 
 /* What the Dashboard shows. Lives with the module, so it survives leaving and coming back. */
@@ -13,9 +13,7 @@ export const view = {
   mode: "month",
   ym: ym(TODAY),        // the month shown in Month mode
   custom: null,         // [from, to] in Custom mode
-  hv: "pace",           // main chart: pace | ivs | cats | lines
-  ctab: "cats",         // Categories widget: cats | tags
-  table: false,         // main chart as a table
+  hv: "pace",           // main chart for a year or a long range: pace | ivs | cats
   hoff: {},             // categories hidden from the legend
 };
 
@@ -23,6 +21,8 @@ export function loadRange() {
   view.ym = ym(TODAY);
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
+    // 3 months and 12 months were retired: they open as Month and Year
+    if (s && (s.mode === "3m" || s.mode === "12m")) s.mode = s.mode === "3m" ? "month" : "year";
     if (s && MODES.includes(s.mode)) {
       const ok = s.mode !== "custom" || (Array.isArray(s.custom) && /^\d{4}-\d\d-\d\d$/.test(s.custom[0]) && /^\d{4}-\d\d-\d\d$/.test(s.custom[1]) && s.custom[0] <= s.custom[1]);
       if (ok) { view.mode = s.mode; view.custom = s.mode === "custom" ? [s.custom[0], mmin(s.custom[1], TODAY)] : null; }
@@ -68,9 +68,7 @@ export function rangeOf() {
   }
   const now = ym(TODAY);
   let s, e = TODAY, title, sub, noun;
-  if (view.mode === "3m") { const q = ymAdd(now[0], now[1], -2); s = ds(q[0], q[1], 1); title = t("Last 3 months"); sub = monthSpan(q, now); noun = t("these 3 months"); }
-  else if (view.mode === "year") { s = now[0] + "-01-01"; title = String(now[0]); sub = t("so far"); noun = String(now[0]); }
-  else if (view.mode === "12m") { const q = ymAdd(now[0], now[1], -11); s = ds(q[0], q[1], 1); title = t("Last 12 months"); sub = monthSpan(q, now); noun = t("the last 12 months"); }
+  if (view.mode === "year") { s = now[0] + "-01-01"; title = String(now[0]); sub = t("so far"); noun = String(now[0]); }
   else {
     [s, e] = view.custom;
     title = t("{from} – {to}", { from: dlab(s), to: dlab(e) });
@@ -95,12 +93,6 @@ export function prevOf(r) {
     let pe = py + r.end.slice(4);
     if (pe.slice(5) === "02-29" && dim(py, 2) === 28) pe = py + "-02-28";
     return { start: ps, end: pe, label: t("the same days of {year}", { year: py }), ok: ps >= START };
-  }
-  if (r.mode === "3m" || r.mode === "12m") {
-    // The same days N months earlier, so rent and salaries fall on the same days
-    const n = r.mode === "3m" ? 3 : 12, a = ym(r.start), b = ym(r.end), pa = ymAdd(a[0], a[1], -n), pb = ymAdd(b[0], b[1], -n);
-    const start = ds(pa[0], pa[1], 1), end = ds(pb[0], pb[1], Math.min(+r.end.slice(8), dim(pb[0], pb[1])));
-    return { start, end, label: n === 3 ? t("the 3 months before") : t("the 12 months before"), ok: start >= START };
   }
   const e = addD(r.start, -1), s = addD(e, -(r.len - 1));
   return { start: s, end: e, label: tn(r.len, "the previous {n} day", "the previous {n} days"), ok: s >= START };
@@ -251,9 +243,7 @@ export function openRangeSheet(r, onApply) {
   const items = [
     ["month", t("This month")],
     ["last", t("Last month")],
-    ["3m", t("Last 3 months")],
     ["year", t("Year to date")],
-    ["12m", t("Last 12 months")],
   ];
   const on = (k) => (k === "month" ? view.mode === "month" && view.ym[0] === now[0] && view.ym[1] === now[1]
     : k === "last" ? view.mode === "month" && view.ym[0] === lm[0] && view.ym[1] === lm[1] : view.mode === k);

@@ -1,16 +1,15 @@
 /* Budgets: a plan for the month that adjusts as it goes, and savings goals.
-   Fixed bills are only checked, flexible categories get a monthly amount and a pace,
-   once-a-year costs fill up month by month, and roll over carries last month's rest.
+   Flexible categories get a monthly amount and a pace, once-a-year costs fill up month by
+   month, and roll over carries last month's rest. Bills are Recurring's job, not a budget.
    Budgets are stored for the whole household; one person's view counts their share. */
 import {
-  state, t, tn, esc, f, f0, pct, bigMoney, dlab, dlabY, monthYear, TODAY, START, ds, dim, ym, ymAdd, addD, span,
+  state, t, tn, esc, f, f0, pct, bigMoney, dlabY, monthYear, TODAY, START, ds, dim, ym, ymAdd, span,
   byCat, amt, tile, cc, rerank, expCats, isIncomeCat, icon, av, pname, couple, GET, PUT, POST, DEL, evalAmt,
 } from "../core.js";
-import { occurrences } from "../sched.js";
 import { toast, errorToast, openDialog, closeDialog, confirmDialog } from "../ui.js";
-import { refresh, scopeChips } from "../shell.js";
+import { refresh, scopeSwitch } from "../shell.js";
 
-const KINDS = () => [["flexible", t("Flexible")], ["fixed", t("Fixed")], ["yearly", t("Once a year")]];
+const KINDS = () => [["flexible", t("Flexible")], ["yearly", t("Once a year")]];
 const ui = { y: 0, m: 0, loaded: false, error: "", hist: {}, doneOpen: false };
 let root = null;
 
@@ -22,7 +21,9 @@ const m = (n, sign) => bdi((sign || "") + esc(f(n)));
 const sum = (list, fn) => list.reduce((s, x) => s + fn(x), 0);
 /* A household amount for whoever is shown: one person counts an even share */
 function share() { return state.scope === "all" ? 1 : 1 / Math.max(state.people.length, 1); }
-function budgets() { return (state.budgets || []).map((b) => ({ c: b.category, a: Number(b.amount), kind: b.kind, roll: !!b.rollover })); }
+/* Fixed budgets are retired (Recurring checks bills): older ones are left out, and dropped on the next save */
+const live = () => (state.budgets || []).filter((b) => b.kind !== "fixed");
+function budgets() { return live().map((b) => ({ c: b.category, a: Number(b.amount), kind: b.kind, roll: !!b.rollover })); }
 function round10(v) { return v > 0 ? Math.max(10, Math.round(v / 10) * 10) : 0; }
 /* The month on screen: its days, how far into it today is, and which day spending counts up to */
 function monthInfo(y, mo) {
@@ -54,13 +55,12 @@ export function compute(y, mo) {
     const budget = base + carry, v = spent[b.c] || 0;
     return { c: b.c, base, carry, budget, v, left: budget - v, proj: mi.pace ? v / mi.pace : v, roll: b.roll };
   });
-  const fixed = list.filter((b) => b.kind === "fixed").map((b) => ({ c: b.c, budget: b.a * k, v: spent[b.c] || 0 }));
   const yearStart = ds(y, 1, 1), yearSpent = list.some((b) => b.kind === "yearly") ? byCat(yearStart, mi.to, sc) : {};
   const doy = span(yearStart, mi.to), yearDays = span(yearStart, ds(y, 12, 31));
   const yearly = list.filter((b) => b.kind === "yearly").map((b) => ({ c: b.c, budget: b.a * k, v: yearSpent[b.c] || 0, tick: doy / yearDays }));
   const fb = sum(flex, (x) => x.budget), fs = sum(flex, (x) => x.v), proj = sum(flex, (x) => x.proj);
   const status = fs > fb ? "over" : mi.cur && proj > fb * 1.03 ? "watch" : "ok";
-  return { mi, flex, fixed, yearly, fb, fs, left: fb - fs, perDay: mi.daysLeft ? (fb - fs) / mi.daysLeft : 0, proj, status };
+  return { mi, flex, yearly, fb, fs, left: fb - fs, perDay: mi.daysLeft ? (fb - fs) / mi.daysLeft : 0, proj, status };
 }
 
 /* What the household spent in each category over the last complete months: the suggestions */
@@ -87,9 +87,10 @@ export function suggestions() {
   Object.keys(out).forEach((c) => {
     const o = out[c];
     o.avg = n6 ? o.six / n6 : 0;
-    // A guess at the kind: mostly rules is a fixed bill, a few big months is a once-a-year cost
-    o.kind = o.six && o.rec6 / o.six >= 0.8 ? "fixed" : o.months.size <= 3 && o.year >= 300 ? "yearly" : "flexible";
-    o.amount = { flexible: round10(o.avg), fixed: Math.round(o.avg), yearly: round10(o.year) };
+    // A guess: mostly recurring rules is a bill (no budget), a few big months is a once-a-year cost
+    o.bill = o.six > 0 && o.rec6 / o.six >= 0.8;
+    o.kind = o.months.size <= 3 && o.year >= 300 ? "yearly" : "flexible";
+    o.amount = { flexible: o.bill ? 0 : round10(o.avg), yearly: o.bill ? 0 : round10(o.year) };
   });
   return { n: n6, by: out };
 }
@@ -129,12 +130,12 @@ function render() {
     '<a class="w-plink bud-back" href="/" data-link>' + icon("left") + t("Dashboard") + "</a>" +
     '<header class="w-head bud-head"><div class="w-title"><h3>' + t("Budgets") + " <span>" + esc(monthYear(ui.y, ui.m)) + "</span></h3>" +
       '<div class="w-step"><button type="button" data-step="-1" aria-label="' + esc(t("Previous month")) + '"' + (canBack() ? "" : " disabled") + ">" + icon("left") + "</button>" +
-      '<button type="button" data-step="1" aria-label="' + esc(t("Next month")) + '"' + (canForward() ? "" : " disabled") + ">" + icon("right") + "</button></div></div>" +
+      '<button type="button" data-step="1" aria-label="' + esc(t("Next month")) + '"' + (canForward() ? "" : " disabled") + ">" + icon("right") + "</button></div></div>" + scopeSwitch() +
       (has ? '<div class="w-head-r"><button type="button" class="w-btn ghost" data-sugg>' + t("Use suggestions") + '</button><button type="button" class="w-btn ghost" data-edit>' + t("Edit budgets") + "</button></div>" : "") +
-    "</header>" + scopeChips() +
+    "</header>" +
     (!ui.loaded ? skeleton() : ui.error ? '<section class="w-panel">' + emptyBox("alert", t("Budgets could not be loaded"), esc(ui.error), '<button type="button" class="w-btn ghost" data-retry>' + t("Try again") + "</button>") + "</section>"
       : has ? budgetsHtml(compute(ui.y, ui.m)) : '<section class="w-panel">' + emptyBox("coin", t("No budgets yet"),
-        t("Give each category an amount, and Wally shows what is left and how much you can spend each day. Fixed bills are only checked, and once-a-year costs fill up month by month."),
+        t("Give each category an amount, and Wally shows what is left and how much you can spend each day. Once-a-year costs fill up month by month."),
         '<button type="button" class="w-btn primary" data-edit>' + t("Set up budgets") + "</button>") + "</section>") +
     (ui.loaded && !ui.error && !has ? goalsHtml() : "");
 }
@@ -146,15 +147,9 @@ function skeleton() { return '<div class="w-skel" aria-busy="true"><i style="wid
 function budgetsHtml(B) {
   const mi = B.mi;
   return summary(B) +
-    '<div class="w-grid2 bud-grid"><div class="bud-col">' + flexHtml(B) + fixedHtml(B) + "</div>" +
-    '<div class="bud-col">' + yearlyHtml(B) + goalsHtml() +
-      '<section class="w-panel"><div class="w-ph"><div><h4>' + t("How it works") + '</h4></div></div><ul class="w-howto">' +
-        "<li>" + t("<b>Fixed</b> bills are known in advance. Wally only checks they were paid.") + "</li>" +
-        "<li>" + t("<b>Flexible</b> categories get a monthly amount. The tick on each bar is where spending should be by today.") + "</li>" +
-        "<li>" + t("<b>Once a year</b> costs, like travel, get a yearly amount and fill up month by month.") + "</li>" +
-        "<li>" + t("<b>Roll over</b> moves what is left, or what went over, into next month.") + "</li>" +
-        (state.scope !== "all" ? "<li>" + t("Showing {name}: each budget counts an even share, and shared costs count by share.", { name: esc(pname(state.scope)) }) + "</li>" : "") +
-      "</ul></section></div></div>";
+    '<div class="w-grid2 bud-grid"><div class="bud-col">' + flexHtml(B) + "</div>" +
+    '<div class="bud-col">' + yearlyHtml(B) + goalsHtml() + "</div></div>" +
+    (state.scope !== "all" ? '<p class="w-hint bud-note">' + t("Showing {name}: each budget counts an even share, and shared costs count by share.", { name: esc(pname(state.scope)) }) + "</p>" : "");
 }
 
 function summary(B) {
@@ -192,20 +187,6 @@ function flexHtml(B) {
   }).join("");
   return '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Flexible") + "</h4><p>" + (mi.cur ? t("The tick is where spending should be by today") : t("What each category had, and what it spent")) +
     '</p></div><b class="num">' + m0(B.fs) + " / " + m0(B.fb) + "</b></div>" + rows + "</section>";
-}
-
-function fixedHtml(B) {
-  if (!B.fixed.length) return "";
-  const mi = B.mi;
-  const due = mi.cur ? occurrences(addD(TODAY, 1), mi.end) : [];
-  const rows = B.fixed.map((x) => {
-    const paid = x.v >= x.budget * 0.95, over = x.v > x.budget * 1.05;
-    const next = !paid && due.find((o) => o.r.c === x.c && o.r.type === "expense");
-    const status = over ? t("{amount} more than planned", { amount: m0(x.v - x.budget) }) : paid ? t("Paid") : mi.cur ? t("{amount} still due", { amount: m0(x.budget - x.v) }) : t("{amount} not paid", { amount: m0(x.budget - x.v) });
-    return '<div class="w-brow fixed">' + tile(x.c) + '<div><div class="w-brh"><b>' + esc(x.c) + '</b><span class="' + (over ? "up-bad" : paid ? "bud-paid" : "") + '">' + (paid && !over ? icon("check") : "") + status + "</span></div>" +
-      "<p>" + t("{spent} of {budget}", { spent: m0(x.v), budget: m0(x.budget) }) + (next ? " · " + t("{name} due {date}", { name: esc(next.r.n), date: esc(dlab(next.d)) }) : "") + "</p></div></div>";
-  }).join("");
-  return '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Fixed") + "</h4><p>" + t("Bills Wally expects every month") + "</p></div></div>" + rows + "</section>";
 }
 
 function yearlyHtml(B) {
@@ -281,7 +262,7 @@ function openEditor() {
     },
   });
 }
-function apiList() { return (state.budgets || []).map((b) => ({ category: b.category, amount: String(b.amount), kind: b.kind, rollover: !!b.rollover })); }
+function apiList() { return live().map((b) => ({ category: b.category, amount: String(b.amount), kind: b.kind, rollover: !!b.rollover })); }
 async function save(list, msg) {
   const before = apiList();
   state.budgets = await PUT("/budgets", list);

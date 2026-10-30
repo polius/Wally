@@ -1,33 +1,14 @@
 /* Dashboard. The components come from wally.css (the prototype); this file adds what the app
-   needs around them: the header's popovers, right-to-left fixes, the range picker, settle up,
+   needs around them: the header's popovers, right-to-left fixes, the range picker,
    the tablet layout and the compact phone dashboard. */
 
 /* ---------- header ---------- */
 .d-head{position:relative}
-.d-search{width:190px;cursor:pointer}
-.d-search span{flex:1;text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.d-search kbd{margin-inline-start:auto;margin-left:0}
-.d-more{width:32px;padding:0}
-.d-pop{top:calc(100% + 6px);inset-inline-end:0}
-.d-pop .d-custall{justify-self:start;font-size:12.5px;padding:8px 8px 4px;margin-top:4px;border-top:1px solid var(--w-line2);width:100%;text-align:start}
-.d-custlist{display:grid;gap:1px}
-.d-menupop{min-width:200px}
-.d-mi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-weight:500;text-align:start;color:var(--w-ink)}
-.d-mi:hover,.d-mi:focus-visible{background:var(--w-fill)}
-.d-mi svg.i{color:var(--w-ink2)}
-.d-custsheet{display:grid;gap:2px}
-.d-custsheet label{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 4px;font-weight:500;border-top:1px solid var(--w-line2)}
-.d-custsheet label:first-child{border-top:0}
-.d-custsheet input{accent-color:var(--w-accent);width:18px;height:18px;margin:0}
-.d-custsheet .d-custall{justify-self:start;padding:12px 4px 0;font-size:13px}
 
 /* ---------- lead panel ---------- */
 .d-hero #h-chartwrap{margin-top:10px}
-.d-tview{height:280px}
 .d-num{text-align:end!important}
 .w-table th[scope=row]{font-weight:400;color:var(--w-ink);text-align:start}
-.w-tview .w-table th[scope=col]{text-align:start}
-.w-tview .w-table th.d-num{text-align:end}
 .d-unit{font-size:13px;font-weight:500;letter-spacing:0}
 .w-kpi.safe{cursor:help}
 /* The key figures' dividers and the Safe to spend corner follow the reading direction */
@@ -39,9 +20,6 @@
 .d-emptyb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
 .d-emptyb .w-btn{margin:0;text-decoration:none}
 .d-welcome{padding:40px 20px}
-.w-status .w-link{text-decoration:none;white-space:nowrap}
-.w-status .w-link:hover{text-decoration:underline}
-#h-cmp button[disabled]{opacity:.4;cursor:default}
 
 /* ---------- widgets ---------- */
 .d-min{min-width:0}
@@ -59,14 +37,13 @@
 .d-paidh b{color:var(--w-ink);font-weight:600;font-variant-numeric:tabular-nums}
 .d-calleg{font-size:11.5px;gap:10px}
 .d-flowleg{justify-content:flex-end}
-.w-bar > i.d-bud{background:var(--w-accent-ink);opacity:.9;width:2px}
 #main[data-page=dashboard] .w-row{text-align:start}
 #main[data-page=dashboard] .w-row .amt{text-align:end}
 #main[data-page=dashboard] .w-row h6{max-width:100%}
 .w-li .w-amt small{text-align:end}
 
 /* Right to left: bars grow from the start edge, text aligns to the start */
-#main[data-page=dashboard] :is(.w-cat,.w-unu,.w-trend){text-align:start}
+#main[data-page=dashboard] .w-cat{text-align:start}
 #main[data-page=dashboard] :is(.w-amt,.w-pct,.w-dl){text-align:end}
 #main[data-page=dashboard] .w-bar > span{left:auto;inset-inline-start:0}
 #main[data-page=dashboard] .w-rcal .w-rday{text-align:start}
@@ -90,37 +67,12 @@
 .d-sheetlist .w-cell{width:100%;text-align:start;color:var(--w-ink);min-height:46px}
 .d-sheetlist .w-cell[aria-pressed=true]{color:var(--w-accent-ink);font-weight:500}
 .d-sheetlist .w-cell:first-child{border-top:0}
-.d-date,.st-date{border:0;background:none;color:var(--w-accent-ink);font:inherit;font-weight:500;text-align:end;min-height:32px;padding:0}
+.d-date{border:0;background:none;color:var(--w-accent-ink);font:inherit;font-weight:500;text-align:end;min-height:32px;padding:0}
 
-/* ---------- settle up ---------- */
-.w-dialog.st-dlg{max-width:440px;max-height:calc(100dvh - 40px);overflow:auto;overscroll-behavior:contain}
-.st{display:grid;gap:12px}
-.st-who{display:flex;align-items:center;justify-content:center;gap:10px;padding-top:4px}
-.st-who .w-av{width:44px;height:44px;font-size:17px}
-.st-who .w-av.shared{display:none}
-.st-arrow{color:var(--w-ink3)}
-.st-line{text-align:center;font-size:14px;font-weight:500}
-.st-amt{display:flex;align-items:baseline;justify-content:center;gap:6px}
-.st-cur{font-size:24px;font-weight:500;color:var(--w-ink3)}
-.st-amt input:focus-visible{outline:none}
-.st-amt input{width:7ch;field-sizing:content;min-width:3ch;max-width:260px;border:0;border-bottom:2px solid var(--w-line);background:none;text-align:center;font-size:34px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;padding:2px 0 4px;outline:0;color:var(--w-ink)}
-.st-amt input:focus{border-bottom-color:var(--w-accent)}
-.st-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-#st-for,.st-note{text-align:center;display:block}
-.st .w-hint{font-size:12px;color:var(--w-ink3)}
-.st-hist .w-cell{gap:8px;padding:6px 6px 6px 14px;padding-inline:14px 6px}
-.st-hist .w-cell > span{flex:1;min-width:0}
-.st-hist .w-cell b{font-size:12.5px;white-space:nowrap}
-.st-pnote{display:block;color:var(--w-ink3);font-size:11.5px}
-.st-del{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--w-ink3);flex:none}
-.st-del:hover{background:var(--w-bad-soft);color:var(--w-bad)}
-.st-more{justify-self:start;font-size:12.5px}
 
 /* ---------- tablet: one column, the range control scrolls sideways ---------- */
 @media (max-width:1180px){
-  .d-search{width:auto}
-  .d-search span,.d-search kbd{display:none}
-}
+    }
 @media (max-width:1023px){
   #main[data-page=dashboard] .w-grid2{grid-template-columns:minmax(0,1fr)}
   .d-rangewrap{order:5;flex:1 1 100%;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px}
@@ -139,7 +91,6 @@
 @media (min-width:1024px) and (max-width:1279px){
   /* Pairs stay side by side: the share column gives the bars room (the share is in the tooltip) */
   #main[data-page=dashboard] .w-cat{grid-template-columns:30px minmax(0,104px) minmax(0,1fr) 80px 52px}
-  #main[data-page=dashboard] .w-cat .w-pct{display:none}
 }
 
 /* ---------- phone ---------- */
@@ -150,7 +101,6 @@
   .d-ptitle .d-pt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .d-ptitle svg.i{color:var(--w-ink3);width:18px;height:18px}
   .d-pstep button{width:40px;height:44px}
-  .d-picon{margin-inline-start:auto;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--w-panel);border:1px solid var(--w-line);color:var(--w-ink2);flex:none}
   .d-phero{display:grid;gap:4px;padding:2px 0}
   .d-phero .w-big{font-size:38px}
   .d-pline{font-size:13px;color:var(--w-ink2)}
@@ -172,16 +122,8 @@
   .d-pbud .d-min > small{font-size:12px;color:var(--w-ink3)}
   .d-pbig{font-size:26px;font-weight:600;letter-spacing:-.03em}
   .d-pbud .w-budbar{margin:4px 0 2px}
-  .d-settle-m{flex-direction:column;align-items:stretch;background:none;padding:0}
-  .d-settle-m .w-btn{width:100%;height:44px}
-  .w-settle.even{padding:10px 12px}
   .d-phone .w-row{min-height:48px;padding:7px 4px}
   .d-phone .w-li{min-height:48px}
-  .d-fbar{height:14px;margin:4px 0 10px}
-  .d-flist{display:grid;gap:2px}
-  .d-frow{display:grid;grid-template-columns:8px minmax(0,1fr) auto 40px;gap:8px;align-items:center;font-size:13px;padding:3px 0}
-  .d-frow .d-min{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .d-frow .amt{font-weight:500}
   .d-pfoot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px 0}
   .d-pfoot .w-btn{min-height:44px}
   .d-phone .w-trends{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -196,12 +138,10 @@
   .d-rng .w-presets{border-inline-end:0;border-bottom:1px solid var(--w-line);display:flex;flex-wrap:wrap}
   .d-rng .w-months{grid-template-columns:minmax(0,1fr)}
   .d-welcome{padding:24px 12px}
-  .st-hist .w-cell b{white-space:normal;text-align:end}
 }
 
 /* app.css's ".w a{color:inherit}" outranks .w-link; links on this page keep the accent */
 #main[data-page=dashboard] a.w-link{color:var(--w-accent-ink)}
-.w-settle .w-btn{white-space:nowrap;flex:none}
 .d-calleg{justify-content:flex-end;max-width:55%;row-gap:4px}
 /* By category and Category lines: the long legend gets a row of its own; the controls stay where they are */
 .w-hh.d-wide > .w-hright{display:contents}
@@ -211,9 +151,7 @@
 [dir=rtl] #main[data-page=dashboard] :is(.w-big,.w-kpi > b,.w-trio b,.w-trend .row b,.d-pbig,.w-amt,.amt,.w-delta b,.w-pct,.w-dl,.w-date){direction:ltr;unicode-bidi:isolate}
 [dir=rtl] #main[data-page=dashboard] :is(.w-kpi > b,.w-trio b){justify-self:start}
 [dir=rtl] #main[data-page=dashboard] :is(.w-amt,.amt,.w-pct,.w-dl){text-align:left}
-[dir=rtl] .st-amt{direction:ltr}
 
 /* Hide amounts (H) also blurs this page's own figures */
-.w-hide #main[data-page=dashboard] :is(.d-pbig,.d-pline b,.w-status p b,.w-delta b,.w-foot b,.w-settle b,.d-paidh b){filter:blur(6px)}
-.w-hide .st-amt input{filter:blur(6px)}
+.w-hide #main[data-page=dashboard] :is(.d-pbig,.d-pline b,.w-delta b,.w-foot b,.d-paidh b){filter:blur(6px)}
 #d-phead{display:grid;gap:10px}

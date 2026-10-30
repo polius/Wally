@@ -1,4 +1,4 @@
-/* Settings › Appearance: theme, hide amounts, week start, the page Wally opens on, and the time zone. */
+/* Settings › Appearance: theme, hide amounts, week start, and the time zone. */
 import { t, esc, state, PUT, icon } from "../../core.js";
 import { toast, errorToast } from "../../ui.js";
 import { refresh, setTheme, theme, setHide } from "../../shell.js";
@@ -30,7 +30,6 @@ function render() {
       gi(ico("sun"), t("Theme"), t("Auto follows the device"), ctl(seg("ap-theme", [["auto", t("Auto")], ["light", t("Light")], ["dark", t("Dark")]], theme(), t("Theme"), "sm"))),
       gi(ico("eye"), t("Hide amounts"), t("Blurs every figure, for sharing your screen. {key} toggles it.", { key: '<kbd class="w-k">H</kbd>' }), toggle("hide-toggle", state.hide, t("Hide amounts"))),
       gi(ico("cal"), t("Week starts on"), t("Used by the calendars"), ctl(seg("ap-week", [["mon", t("Monday")], ["sun", t("Sunday")], ["sat", t("Saturday")]], cfg.week_start || "mon", t("Week starts on"), "sm"))),
-      gi(ico("overview"), t("Open on"), t("The page Wally shows when it opens"), ctl(seg("ap-open", [["dashboard", t("Dashboard")], ["transactions", t("Transactions")], ["recurring", t("Recurring")], ["budgets", t("Budgets")]], cfg.open_on || "dashboard", t("Open on"), "sm"))),
     ]) +
     group(t("Time"), [
       gi(ico("globe"), t("Time zone"), t("Decides when a new day starts for recurring transactions and the nightly backup. This browser is in {zone}.", { zone: esc(here) }),
@@ -56,5 +55,4 @@ function onClick(ev) {
   const v = b.dataset.v, id = b.closest(".w-seg").id;
   if (id === "ap-theme") { setTheme(v); render(); }
   else if (id === "ap-week" && v !== state.config.week_start) save({ week_start: v });
-  else if (id === "ap-open" && v !== state.config.open_on) save({ open_on: v });
 }
