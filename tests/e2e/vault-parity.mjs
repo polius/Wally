@@ -17,7 +17,7 @@ const servers = [];
 
 async function startServer(port) {
   const data = mkdtempSync(join(tmpdir(), "wally-parity-"));
-  const env = { ...process.env, WALLY_DATA: data, WALLY_RECOVERY_FILE: join(data, "password.txt") };
+  const env = { ...process.env, WALLY_DATA: data };
   delete env.DEMO;
   const proc = spawn(PYTHON, ["-m", "uvicorn", "utils.dev_server:app", "--port", String(port)], { cwd: REPO, env, stdio: "ignore" });
   servers.push(proc);
@@ -52,9 +52,9 @@ try {
     await c("POST", "/people", { name: "Alex" });
     await c("POST", "/people", { name: "Ana" });
     await c("PUT", "/config", { timezone: "UTC" });
-    await c("PUT", "/signin", { enabled: true, passwords: { 1: "alex-pass-1", 2: "ana-pass-1" } }, { "x-wally-person": "1" });
+    await c("PUT", "/signin", { enabled: true, password: "house-pass-1" }, { "x-wally-person": "1" });
   }
-  await p("POST", "/login", { person_id: 1, password: "alex-pass-1" });
+  await p("POST", "/login", { person_id: 1, password: "house-pass-1" });
   // Colors are given the first time anyone asks; the browser asks when it opens, so ask here too
   await p("GET", "/categories/colors");
   // The encrypted one: Alex turns encryption on in a browser, which then answers everything
@@ -64,12 +64,12 @@ try {
   page.on("pageerror", (x) => errors.push(x.message));
   await page.goto(E + "/", { waitUntil: "networkidle" });
   await page.click('[data-prof="1"]');
-  await page.fill("#si-in", "alex-pass-1");
+  await page.fill("#si-in", "house-pass-1");
   await page.click("#si-go");
   await page.waitForSelector("#app:not([hidden])");
   await page.evaluate(async () => {
     const s = await import("/js/vault/session.js"); s.bind(await import("/js/core.js"));
-    await s.turnOn("alex-pass-1");
+    await s.turnOn("house-pass-1");
   });
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForSelector("#app:not([hidden])");
@@ -261,7 +261,7 @@ try {
   await both("", "GET", "/people/from-tag/preview?tag=week");
   await both("", "POST", "/people/2/from-tag", { tag: "week", remove_tag: true });
   await both("", "POST", "/people/from-tags/preview", { tags: { holiday: 1, fit: 2 }, remove_tag: false });
-  ok((await p("POST", "/people", { name: "Sam", password: "sam-pass-1" })).status === 200, "Sam joins the household in the clear");
+  ok((await p("POST", "/people", { name: "Sam" })).status === 200, "Sam joins the household in the clear, with only a name");
   ok(await page.evaluate(async () => { const c = await import("/js/core.js"); await c.POST("/people", { name: "Sam" }); c.state.people = await c.GET("/people"); return c.state.people.length; }) === 3, "and the encrypted one");
   await both("sam", "POST", "/transactions", { name: "Pizza", category: "Food", amount: "30.01", date: D(1), paid_by: 3 });
   await both("", "POST", "/transactions", { name: "Cinema", category: "Entertainment", amount: "12", date: D(1), person_id: 3 });

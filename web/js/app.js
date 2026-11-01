@@ -44,14 +44,11 @@ async function enter(soft) {
   let next = nextGate(status);
   if (!next && v.on) {
     const session = await vaultSession();
-    if (!v.mine) next = "invite";
-    else {
-      try {
-        if (!(await session.resume(status))) next = "unlock";
-      } catch (e) {
-        if (e.status === 401) return location.reload();
-        return fatal(t("Wally can’t be reached"), esc(e.message));
-      }
+    try {
+      if (!(await session.resume(status))) next = "unlock";
+    } catch (e) {
+      if (e.status === 401) return location.reload();
+      return fatal(t("Wally can’t be reached"), esc(e.message));
     }
     if (!next) { core.useVault(session); session.startSync(); }
   }
@@ -79,8 +76,8 @@ function nextGate(s) {
   if (s.signin && !s.signed_in) return "signin";
   if (!s.people.length && !s.onboarded) return "welcome";
   if (!s.people.length) return "people";
-  if (s.must_change_password) return "password";
-  if (s.needs_two_step) return "twostep";
+  // No Emergency Kit yet (upgraded from 1.x, or encryption just turned off): whoever is here saves one
+  if (s.signin && s.signed_in && s.me && !s.kit) return "kit";
   if (!s.signin) {
     // With sign-in off, Wally asks who you are once on each browser, and takes it on trust
     let who = null;
@@ -134,7 +131,7 @@ async function switchPerson() {
   location.href = "/";
 }
 
-/* The banner along the top: the demo, a conversion under way, and "Sam helped Alex back in" */
+/* The banner along the top: the demo, a conversion under way, and encryption turned off by someone */
 const SEEN = "wally.seenEvents";
 function banners(status) {
   const parts = [];
@@ -151,12 +148,6 @@ function banners(status) {
   if (off && !seen.includes("off:" + off.at) && status.signed_in) {
     parts.push('<span>' + esc(t("{name} turned off encryption on {date}. Whoever runs the server can read your data again.", { name: name(off.by), date: F.dayMonth ? F.dayMonth.format(T(off.at.slice(0, 10))) : off.at.slice(0, 10) })) +
       ' <button type="button" class="w-link" data-seen="off:' + esc(off.at) + '">' + t("OK") + "</button></span>");
-  }
-  for (const e of v.events || []) {
-    if (e.kind !== "helped" || seen.includes(e.id)) continue;
-    const when = F.dayMonth ? F.dayMonth.format(T(e.at.slice(0, 10))) : e.at.slice(0, 10);
-    parts.push('<span data-event="' + e.id + '">' + esc(t("{helper} helped {name} back in on {date}.", { helper: name(e.by), name: name(e.person_id), date: when })) +
-      ' <button type="button" class="w-link" data-seen="' + e.id + '">' + t("OK") + "</button></span>");
   }
   if (!parts.length) { $("banner").hidden = true; return; }
   banner(parts.join(" "));

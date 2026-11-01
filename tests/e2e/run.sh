@@ -11,7 +11,7 @@ FAILED=""
 
 serve() { # serve <port> <folder> [demo]
   rm -rf "$2" && mkdir -p "$2"
-  (cd "$REPO" && WALLY_DATA="$2" DEMO="${3:-false}" WALLY_RECOVERY_FILE="$2/password.txt" "$PYTHON" -m uvicorn utils.dev_server:app --port "$1" >"$2/server.log" 2>&1 &)
+  (cd "$REPO" && WALLY_DATA="$2" DEMO="${3:-false}" "$PYTHON" -m uvicorn utils.dev_server:app --port "$1" >"$2/server.log" 2>&1 &)
   for _ in $(seq 1 50); do curl -s "http://localhost:$1/api/health" >/dev/null && return 0; sleep 0.2; done
   echo "server on $1 did not start"; cat "$2/server.log"; return 1
 }

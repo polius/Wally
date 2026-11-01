@@ -88,7 +88,7 @@ Access Wally at: [http://localhost](http://localhost)
 - **Recurring**: bills, subscriptions and salaries, added on their day by the server. Wally notices price rises and payees that look like they repeat.
 - **People**: each person's money, and shared costs split evenly, by income or by hand.
 - **Month in review** on the 1st, and a command bar (⌘K).
-- **Your own password for each person**, with optional two-step sign-in. Optional for the whole household, as before.
+- **One password for the household**: pick your name, type the password. Optional two-step sign-in, one code for everyone's phone. Sign-in is optional, as before.
 - **End-to-end encryption**, optional: your devices encrypt everything before it reaches the server, so whoever runs it can't read it. See [below](#end-to-end-encryption).
 - **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
 - **Backups** every night, in the data folder.
@@ -113,7 +113,7 @@ docker run --rm -v /path/to/your/data:/wally/data poliuscorp/wally python3 -m ap
 What changes on purpose:
 
 - The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person in **Settings › People**.
-- If you had a password, it becomes everyone's first password. Each person chooses their own at their next sign-in.
+- If you had a password, it stays the household's password: everyone picks their name and signs in with it. 1.x had no Emergency Kit, so whoever signs in first is asked to save one.
 - Recurring transactions are no longer created in advance: each one is added on its day. Those 1.x had already added for dates after today are taken out, listed in the report, and come back on their day.
 
 ## Environment variables
@@ -128,17 +128,26 @@ Wally supports the following environment variables:
 
 ## Forgot your password
 
-On the sign-in screen, pick your name and choose **Forgot password**. Wally writes a one-time password for you to `password.txt` in the container's working folder (`docker exec wally cat /wally/password.txt`). Signing in with it turns your two-step sign-in off, so a lost phone never locks anyone out, and asks you to choose a new password.
+Everyone uses the same password, so first ask someone else in the household.
 
-With encryption on, whoever runs the server can't reset a password: see the next section.
+Otherwise, use the **Emergency Kit**. Wally gives the household one when sign-in is turned on: a recovery key to print, download or keep in a password manager. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Make a new kit in **Settings › Sign-in**; the old one stops working.
+
+Lost the kit too? Whoever runs the server can turn sign-in off, then you turn it on again with a new password:
+
+```bash
+docker exec wally python3 -m api.signin_off
+```
+
+This doesn't work while the household is encrypted: then nobody can open the data without the password or the kit.
 
 ## End-to-end encryption
 
 When you set Wally up with a password, it asks **who runs this server**. Answer *someone else* and Wally is encrypted right then, before anything is saved. You can also turn it on later in **Settings › Privacy** (sign-in must be on, and Wally must be opened over HTTPS: browsers only encrypt on secure pages). If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household without asking, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
 
 - **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
-- **Passwords**: your browser turns your password into keys (Argon2id) and never sends it. Each person gets an **Emergency Kit** with a recovery key to print and keep. If someone loses both, another person in the household can make them a one-use code in **Settings › People**. Their two-step sign-in still asks for its code; `password.txt` can still turn two-step off, but opens nothing.
-- **If nobody can get in**, the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
+- **The password**: the household password is the key. Your browser turns it into keys (Argon2id) and never sends it, and each browser asks for it once. Everyone keeps using the same password; nobody needs a code to join.
+- **The Emergency Kit**: turning encryption on gives the household a new one; its recovery key also opens the household key, in your browser. **Forgot password** works as above, and it's the only way back in: whoever runs the server can't turn sign-in off. Turning encryption off gives you a new kit again.
+- **If nobody can get in** (the password forgotten and the kit lost), the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
 - **Off while encrypted**: API keys and phone shortcuts (the server can't read or add to the data), and turning sign-in off.
 - **Turning it on or off** builds a new database file next to the old one, checks it, and only then switches. Wally is read-only for about a minute. If Wally or the browser stops half-way, the old file is used, untouched. Turning it on deletes backups made before, which are in the clear; download them first if you want them.
 - **Limits**: the server sends the web app, so someone who controls the server could change it to capture a password the next time it is typed. It can also delete records or bring back old ones. End-to-end encryption protects what is stored, not a server that is actively attacking you.

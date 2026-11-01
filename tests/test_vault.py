@@ -23,7 +23,8 @@ from api.services import conversion, totp
 from tests import vault_crypto as vc
 from tests.test_api import TODAY, expense, rule, make_client  # noqa: F401 (the fixture)
 
-PASS = {"Alex": "alex-pass-1", "Ana": "ana-pass-1"}
+# One password for the household
+PASS = "household-pass-1"
 
 def plain_household(client):
     alex = client.post("/people", json={"name": "Alex"}).json()["id"]
@@ -37,7 +38,7 @@ def plain_household(client):
     client.post("/import/commit", json={"rows": [{"date": "2026-10-20", "name": "AMAZON MKTPLACE 99", "amount": "-15.20", "import_ref": "ref-1", "action": "add", "category": "Shopping"}]})
     client.post("/categories", json={"name": "Kids", "color": 3})
     client.post("/tags", json={"name": "holiday"})
-    r = client.put("/signin", json={"enabled": True, "passwords": {str(alex): PASS["Alex"], str(ana): PASS["Ana"]}})
+    r = client.put("/signin", json={"enabled": True, "password": PASS})
     assert r.status_code == 200, r.text
     client.headers.pop("x-wally-person", None)
     return alex, ana
@@ -56,14 +57,14 @@ def export(client_db=None):
     return sorted(json.dumps(i, sort_keys=True) for i in items)
 
 class Browser:
-    """One device of one person: their keys, as the browser keeps them."""
+    """One device of one person: the household's keys, as the browser keeps them."""
     def __init__(self, client: TestClient, person_id: int, password: str):
         self.c, self.person, self.password = client, person_id, password
         self.house = None
         self.vault_id = None
 
     def login(self, code: str | None = None):
-        kdf = self.c.get(f"/vault/kdf?person_id={self.person}").json()
+        kdf = self.c.get("/vault/kdf").json()
         login, unlock_key = vc.from_password(self.password, kdf["salt"])
         r = self.c.post("/login", json={"person_id": self.person, "password": login})
         if r.status_code == 200 and r.json().get("code_needed"):
@@ -75,31 +76,25 @@ class Browser:
         return self
 
     def proof(self) -> str:
-        kdf = self.c.get(f"/vault/kdf?person_id={self.person}").json()
+        kdf = self.c.get("/vault/kdf").json()
         return vc.from_password(self.password, kdf["salt"])[0] if kdf["salt"] else self.password
 
     def all(self) -> dict:
         body = self.c.get("/vault/changes?since=0").json()
         return {r["id"]: (r["v"], self.house.open(r["id"], r["v"], r["ct"])) for r in body["records"]}
 
-def turn_on(client, person_id, password, others=(), fail_at=None):
-    """Turning encryption on, as js/vault/session.js turnOn() does. Returns the secret, codes and recovery key."""
-    kdf = client.get(f"/vault/kdf?person_id={person_id}").json()
+def turn_on(client, person_id, password, fail_at=None):
+    """Turning encryption on, as js/vault/session.js turnOn() does. Returns the secret and the recovery key."""
+    kdf = client.get("/vault/kdf").json()
     current = vc.from_password(password, kdf["salt"])[0] if kdf["salt"] else password
     salt = vc.new_salt()
     login, unlock_key = vc.from_password(password, salt)
     secret, vault_id = __import__("os").urandom(32), __import__("os").urandom(16).hex()
     recovery = vc.new_recovery_key()
     rlogin, runlock = vc.from_recovery_key(vc.parse_recovery_key(recovery))
-    codes, invites = {}, []
-    for pid in others:
-        code = vc.new_code()
-        clogin, cunlock = vc.from_code(vc.parse_code(code))
-        codes[pid] = code
-        invites.append({"person_id": pid, "login": clogin, "wrap": vc.lock(cunlock, secret, vault_id)})
     r = client.post("/vault/convert/start", json={
         "direction": "on", "current": current, "vault_id": vault_id, "salt": salt, "login_key": login, "wrap": vc.lock(unlock_key, secret, vault_id),
-        "recovery_login": rlogin, "recovery_wrap": vc.lock(runlock, secret, vault_id), "invites": invites,
+        "recovery_login": rlogin, "recovery_wrap": vc.lock(runlock, secret, vault_id),
     })
     assert r.status_code == 200, r.text
     cid = r.json()["id"]
@@ -121,23 +116,22 @@ def turn_on(client, person_id, password, others=(), fail_at=None):
         return cid
     r = client.post("/vault/convert/finish", json={"id": cid, "count": len(sent)})
     assert r.status_code == 200, r.text
-    return {"secret": secret, "vault_id": vault_id, "codes": codes, "recovery": recovery, "count": len(sent), "house": house}
+    return {"secret": secret, "vault_id": vault_id, "recovery": recovery, "count": len(sent), "house": house}
 
 @pytest.fixture
 def encrypted(make_client):
     client = make_client()
     alex, ana = plain_household(client)
-    assert client.post("/login", json={"person_id": alex, "password": PASS["Alex"]}).status_code == 200
+    assert client.post("/login", json={"person_id": alex, "password": PASS}).status_code == 200
     before = export()
-    result = turn_on(client, alex, PASS["Alex"], others=[ana])
+    result = turn_on(client, alex, PASS)
     return client, alex, ana, result, before
 
 # ---------- turning on ----------
 def test_turning_on_leaves_nothing_in_the_clear(encrypted):
     client, alex, ana, result, before = encrypted
     status = client.get("/auth/status").json()
-    assert status["vault"]["on"] and status["vault"]["mine"]
-    assert status["vault"]["people"][str(ana)] == {"key": False, "invite": True}
+    assert status["vault"]["on"] and status["vault"]["kdf"]
     # Every plain table is empty, and no plain backup or old file is left
     conn = sqlite3.connect(database.DB_PATH)
     for table in ("transaction", "recurringtransaction", "category", "categorycolor", "tag", "importrule"):
@@ -154,7 +148,7 @@ def test_turning_on_leaves_nothing_in_the_clear(encrypted):
 
 def test_the_browsers_records_open_with_the_password_from_outside(encrypted):
     client, alex, ana, result, before = encrypted
-    house, items = vc.open_database(database.DB_PATH, PASS["Alex"], alex)
+    house, items = vc.open_database(database.DB_PATH, PASS)
     for i in items:
         if i["k"] == "irule":
             i.pop("id")
@@ -183,135 +177,89 @@ def test_sign_in_sends_a_login_key_never_the_password(encrypted):
     client, alex, ana, result, before = encrypted
     client.post("/logout")
     # The password itself no longer works: the server has a hash of the login key only
-    assert client.post("/login", json={"person_id": alex, "password": PASS["Alex"]}).status_code == 401
-    b = Browser(client, alex, PASS["Alex"]).login()
+    assert client.post("/login", json={"person_id": alex, "password": PASS}).status_code == 401
+    b = Browser(client, alex, PASS).login()
     assert len(b.all()) == result["count"]
     conn = sqlite3.connect(database.DB_PATH)
-    stored = conn.execute("SELECT password_hash FROM person WHERE id=?", (alex,)).fetchone()[0]
+    stored = conn.execute("SELECT value FROM appconfig WHERE key='LOGIN_PASSWORD'").fetchone()[0]
     conn.close()
-    assert PASS["Alex"] not in stored
+    assert PASS not in stored
 
-def test_someone_without_a_key_needs_their_code(encrypted):
+def test_everyone_opens_it_with_the_same_password(encrypted):
     client, alex, ana, result, before = encrypted
     other = TestClient(client.app)
-    kdf = other.get(f"/vault/kdf?person_id={ana}").json()
-    assert kdf["state"] == "invite"
-    r = other.post("/login", json={"person_id": ana, "password": PASS["Ana"]})
-    assert r.status_code == 403 and r.json()["detail"]["needs_code"]
-
-def redeem(c, person_id, code, password, second=None):
-    clogin, cunlock = vc.from_code(vc.parse_code(code))
-    r = c.post("/vault/redeem", json={"person_id": person_id, "login": clogin, **(second or {})})
-    if r.status_code != 200 or r.json().get("code_needed"):
-        return r, None
-    secret = vc.unlock(cunlock, r.json()["wrap"], r.json()["vault_id"])
-    salt = vc.new_salt()
-    login, unlock_key = vc.from_password(password, salt)
-    rec = vc.new_recovery_key()
-    rlogin, runlock = vc.from_recovery_key(vc.parse_recovery_key(rec))
-    vid = r.json()["vault_id"]
-    s = c.post("/vault/setup", json={"salt": salt, "login_key": login, "wrap": vc.lock(unlock_key, secret, vid), "recovery_login": rlogin, "recovery_wrap": vc.lock(runlock, secret, vid)})
-    return s, rec
-
-def test_a_code_lets_the_second_person_in_once(encrypted):
-    client, alex, ana, result, before = encrypted
-    other = TestClient(client.app)
-    s, rec = redeem(other, ana, result["codes"][ana], "ana-new-pass")
-    assert s.status_code == 200, s.text
-    assert other.get("/auth/status").json()["vault"]["mine"]
-    b = Browser(other, ana, "ana-new-pass").login()
+    assert other.get("/vault/kdf").json()["state"] == "key"
+    b = Browser(other, ana, PASS).login()
     assert len(b.all()) == result["count"]
-    # One use
-    third = TestClient(client.app)
-    r, _ = redeem(third, ana, result["codes"][ana], "x" * 10)
-    assert r.status_code == 404
+    assert other.get("/auth/status").json()["me"]["id"] == ana
+    # No codes for anyone: those routes are gone
+    assert other.post("/vault/invites", json={}).status_code in (404, 405)
+    assert other.post("/vault/redeem", json={}).status_code in (404, 405)
 
-def test_three_wrong_codes_cancel_it(encrypted):
-    client, alex, ana, result, before = encrypted
-    other = TestClient(client.app)
-    for left in (2, 1):
-        r, _ = redeem(other, ana, vc.new_code(), "whatever1")
-        assert r.status_code == 401 and r.json()["detail"]["tries_left"] == left
-    r, _ = redeem(other, ana, vc.new_code(), "whatever1")
-    assert r.status_code == 401 and r.json()["detail"]["cancelled"]
-    r, _ = redeem(other, ana, result["codes"][ana], "whatever1")
-    assert r.status_code == 404
+def turn_on_two_step(client) -> str:
+    setup = client.post("/two-step/setup").json()
+    proof = vc.from_password(PASS, client.get("/vault/kdf").json()["salt"])[0]
+    r = client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": proof})
+    assert r.status_code == 200, r.text
+    auth_router._last_counter["value"] = -1
+    return setup["secret"]
 
-def test_recovery_key_replaces_the_password_but_two_step_still_asks(encrypted):
+def test_the_emergency_kit_gets_in_without_two_step(encrypted):
     client, alex, ana, result, before = encrypted
-    # Alex turns on two-step
-    setup = client.post("/me/two-step/setup").json()
-    client.post("/me/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30))})
-    auth_router._last_counter.clear()
+    ana_c = TestClient(client.app)
+    Browser(ana_c, ana, PASS).login()
+    turn_on_two_step(client)
     other = TestClient(client.app)
     rlogin, runlock = vc.from_recovery_key(vc.parse_recovery_key(result["recovery"]))
-    assert other.post("/vault/recover", json={"person_id": alex, "login": "0" * 64}).status_code == 401
-    r = other.post("/vault/recover", json={"person_id": alex, "login": rlogin})
-    assert r.json() == {"code_needed": True}
-    assert other.post("/vault/setup", json={"salt": vc.new_salt(), "login_key": "a" * 64, "wrap": vc.lock(b"k" * 32, b"s" * 32, "x")}).status_code == 401
-    r = other.post("/vault/recover", json={"person_id": alex, "login": rlogin, "code": totp.code_at(setup["secret"], int(time.time() // 30) + 1)})
+    assert other.post("/kit/recover", json={"person_id": alex, "login": "0" * 64}).status_code == 401
+    assert other.post("/kit/password", json={"salt": vc.new_salt(), "new": "a" * 64, "wrap": vc.lock(b"k" * 32, b"s" * 32, "x")}).status_code == 401
+    # Password forgotten and phone lost: the recovery key alone is enough
+    r = other.post("/kit/recover", json={"person_id": alex, "login": rlogin})
     assert r.status_code == 200, r.text
     secret = vc.unlock(runlock, r.json()["wrap"], r.json()["vault_id"])
     assert secret == result["secret"]
     salt = vc.new_salt()
     login, unlock_key = vc.from_password("brand-new-pass", salt)
-    assert other.post("/vault/setup", json={"salt": salt, "login_key": login, "wrap": vc.lock(unlock_key, secret, r.json()["vault_id"])}).status_code == 200
-    # The old browser was signed out; the recovery key still works afterwards
-    assert client.get("/vault/key").status_code == 401
-    assert other.post("/vault/recover", json={"person_id": alex, "login": rlogin}).json() == {"code_needed": True}
+    assert other.post("/kit/password", json={"salt": salt, "new": login, "wrap": vc.lock(unlock_key, secret, r.json()["vault_id"])}).status_code == 200
+    # A new password for the household: every other browser signs in again, with it
+    assert client.get("/vault/key").status_code == 401 and ana_c.get("/vault/key").status_code == 401
+    assert other.get("/vault/key").status_code == 200
+    status = other.get("/auth/status").json()
+    assert status["me"]["id"] == alex and status["two_step"]
+    # The kit keeps working, and the new password opens the key
+    assert other.post("/kit/recover", json={"person_id": alex, "login": rlogin}).status_code == 200
+    # A new kit replaces it, made in the browser, with the password
+    kdf = other.get("/vault/kdf").json()
+    rec2 = vc.new_recovery_key()
+    rlogin2, runlock2 = vc.from_recovery_key(vc.parse_recovery_key(rec2))
+    body = {"recovery_login": rlogin2, "recovery_wrap": vc.lock(runlock2, secret, result["vault_id"])}
+    assert other.post("/kit", json={**body, "current": "0" * 64}).status_code == 401
+    assert other.post("/kit", json={**body, "current": vc.from_password("brand-new-pass", kdf["salt"])[0]}).json() == {"made": other.get("/auth/status").json()["kit"]}
+    assert other.post("/kit/recover", json={"person_id": alex, "login": rlogin}).status_code == 401
+    assert other.post("/kit/recover", json={"person_id": alex, "login": rlogin2}).status_code == 200
+    third = TestClient(client.app)
+    kdf = third.get("/vault/kdf").json()
+    assert third.post("/login", json={"person_id": ana, "password": vc.from_password("brand-new-pass", kdf["salt"])[0]}).json()["code_needed"]
 
-def test_password_txt_turns_off_two_step_but_opens_nothing(encrypted):
+def test_nobody_can_turn_sign_in_off_from_the_server_while_encrypted(encrypted):
     client, alex, ana, result, before = encrypted
-    setup = client.post("/me/two-step/setup").json()
-    client.post("/me/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30))})
-    other = TestClient(client.app)
-    one_time = None
-    other.post("/login/recover", json={"person_id": alex})
-    for line in Path(auth_router.recovery_file()).read_text().splitlines():
-        if line.startswith("Alex: "):
-            one_time = line.split(": ", 1)[1]
-    # As a password it does nothing: the server never compares typed passwords any more
-    assert other.post("/login", json={"person_id": alex, "password": one_time}).status_code == 401
-    rlogin, _ = vc.from_recovery_key(vc.parse_recovery_key(result["recovery"]))
-    r = other.post("/vault/recover", json={"person_id": alex, "login": rlogin, "recovery_code": one_time})
-    assert r.status_code == 200 and "wrap" in r.json()
-    assert not client.get("/auth/status").json()["me"]["two_step"]
-
-def test_helping_someone_back_in_is_seen_by_everyone(encrypted):
-    client, alex, ana, result, before = encrypted
-    ana_c = TestClient(client.app)
-    redeem(ana_c, ana, result["codes"][ana], "ana-new-pass")
-    alex_b = Browser(client, alex, PASS["Alex"])
-    alex_b.vault_id = result["vault_id"]
-    # Alex makes a code for Ana: it needs Alex's password
-    code = vc.new_code()
-    clogin, cunlock = vc.from_code(vc.parse_code(code))
-    body = {"person_id": ana, "current": "f" * 64, "login": clogin, "wrap": vc.lock(cunlock, result["secret"], result["vault_id"])}
-    assert client.post("/vault/invites", json=body).status_code == 401
-    r = client.post("/vault/invites", json={**body, "current": alex_b.proof()})
-    assert r.status_code == 200 and r.json()["kind"] == "help"
-    assert client.post("/vault/invites", json={**body, "person_id": alex, "current": alex_b.proof()}).status_code == 400
-    helped = TestClient(client.app)
-    s, rec = redeem(helped, ana, code, "ana-third-pass")
-    assert s.status_code == 200
-    # Every device of Ana's was signed out, and the banner is there for all
-    assert ana_c.get("/vault/key").status_code == 401
-    events = client.get("/auth/status").json()["vault"]["events"]
-    assert events[0]["kind"] == "helped" and events[0]["person_id"] == ana and events[0]["by"] == alex
+    from api import signin_off
+    assert signin_off.main() == 1
+    assert client.get("/auth/status").json()["signin"]
 
 def test_changing_the_password_locks_the_key_again_and_signs_out_the_rest(encrypted):
     client, alex, ana, result, before = encrypted
     other = TestClient(client.app)
-    Browser(other, alex, PASS["Alex"]).login()
-    b = Browser(client, alex, PASS["Alex"])
+    Browser(other, ana, PASS).login()
+    b = Browser(client, alex, PASS)
     salt = vc.new_salt()
     login, unlock_key = vc.from_password("changed-pass-1", salt)
-    assert client.put("/me/password", json={"current": b.proof(), "new": login, "salt": salt}).status_code == 400
-    r = client.put("/me/password", json={"current": b.proof(), "new": login, "salt": salt, "wrap": vc.lock(unlock_key, result["secret"], result["vault_id"])})
+    assert client.put("/password", json={"current": b.proof(), "new": login, "salt": salt}).status_code == 400
+    assert client.put("/password", json={"current": "0" * 64, "new": login, "salt": salt, "wrap": vc.lock(unlock_key, result["secret"], result["vault_id"])}).status_code == 401
+    r = client.put("/password", json={"current": b.proof(), "new": login, "salt": salt, "wrap": vc.lock(unlock_key, result["secret"], result["vault_id"])})
     assert r.status_code == 200, r.text
     assert other.get("/vault/key").status_code == 401
-    client.post("/logout")
-    Browser(client, alex, "changed-pass-1").login()
+    Browser(other, ana, "changed-pass-1").login()
 
 # ---------- records ----------
 def test_batches_are_all_or_nothing_and_conflicts_say_what_changed(encrypted):
@@ -382,23 +330,23 @@ def test_removing_a_person_moves_their_records_in_the_same_save(encrypted):
 def test_the_household_is_read_only_while_converting(make_client):
     client = make_client()
     alex, ana = plain_household(client)
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
+    client.post("/login", json={"person_id": alex, "password": PASS})
     ana_c = TestClient(client.app)
-    ana_c.post("/login", json={"person_id": ana, "password": PASS["Ana"]})
-    turn_on(client, alex, PASS["Alex"], others=[ana], fail_at="start")
+    ana_c.post("/login", json={"person_id": ana, "password": PASS})
+    turn_on(client, alex, PASS, fail_at="start")
     r = ana_c.post("/transactions", json={"name": "x", "category": "Food", "amount": "1", "date": TODAY})
     assert r.status_code == 503 and r.json()["detail"]["paused"]["by"] == "Alex"
     assert ana_c.get("/transactions").status_code == 200
     assert ana_c.get("/auth/status").json()["vault"]["paused"] == {"by": "Alex", "direction": "on"}
     # Nobody else can start one meanwhile
-    assert ana_c.post("/vault/convert/start", json={"direction": "on", "current": PASS["Ana"]}).status_code in (403, 409, 400)
+    assert ana_c.post("/vault/convert/start", json={"direction": "on", "current": PASS}).status_code in (403, 409, 400)
 
 def test_a_lost_browser_is_noticed_and_nothing_changes(make_client, monkeypatch):
     client = make_client()
     alex, ana = plain_household(client)
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
+    client.post("/login", json={"person_id": alex, "password": PASS})
     digest, before = db_digest(), export()
-    cid = turn_on(client, alex, PASS["Alex"], others=[ana], fail_at="check")
+    cid = turn_on(client, alex, PASS, fail_at="check")
     assert conversion.next_path().exists()
     later = time.time() + conversion.PAUSE_SECONDS + 1
     monkeypatch.setattr(conversion.time, "time", lambda: later)
@@ -410,9 +358,9 @@ def test_a_lost_browser_is_noticed_and_nothing_changes(make_client, monkeypatch)
 def test_a_wrong_count_switches_nothing(make_client):
     client = make_client()
     alex, ana = plain_household(client)
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
+    client.post("/login", json={"person_id": alex, "password": PASS})
     digest = db_digest()
-    cid = turn_on(client, alex, PASS["Alex"], fail_at="check")
+    cid = turn_on(client, alex, PASS, fail_at="check")
     assert client.post("/vault/convert/finish", json={"id": cid, "count": 3}).status_code == 409
     assert db_digest() == digest and not conversion.next_path().exists()
     assert not client.get("/auth/status").json()["vault"]["on"]
@@ -420,9 +368,9 @@ def test_a_wrong_count_switches_nothing(make_client):
 def test_not_enough_disk_is_said_up_front(make_client, monkeypatch):
     client = make_client()
     alex, ana = plain_household(client)
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
+    client.post("/login", json={"person_id": alex, "password": PASS})
     monkeypatch.setattr(conversion.shutil, "disk_usage", lambda p: shutil._ntuple_diskusage(10, 9, 1))
-    r = client.post("/vault/convert/start", json={"direction": "on", "current": PASS["Alex"]})
+    r = client.post("/vault/convert/start", json={"direction": "on", "current": PASS})
     # The password is checked first; then the space
     assert r.status_code in (400, 507)
     digest = db_digest()
@@ -436,9 +384,9 @@ def _stopped(make_client, step):
     as if the container died, and start Wally again."""
     client = make_client()
     alex, ana = plain_household(client)
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
+    client.post("/login", json={"person_id": alex, "password": PASS})
     old_digest, before = db_digest(), export()
-    turn_on(client, alex, PASS["Alex"], others=[ana], fail_at="check")
+    turn_on(client, alex, PASS, fail_at="check")
     c = conversion.current()
     conversion._close_next()
     database.engine.dispose()
@@ -475,8 +423,8 @@ def test_stopped_before_the_switch_keeps_the_old_file(make_client, step):
     assert not client.get("/auth/status").json()["vault"]["on"]
     assert export() == before
     # And it can be tried again
-    client.post("/login", json={"person_id": alex, "password": PASS["Alex"]})
-    assert turn_on(client, alex, PASS["Alex"])["count"] == len(before)
+    client.post("/login", json={"person_id": alex, "password": PASS})
+    assert turn_on(client, alex, PASS)["count"] == len(before)
 
 @pytest.mark.parametrize("step", ["switch-before-rename", "switch-between-renames", "switch-after-renames", "cleanup"])
 def test_stopped_during_the_switch_finishes_it(make_client, step):
@@ -484,7 +432,7 @@ def test_stopped_during_the_switch_finishes_it(make_client, step):
     assert db_digest() == new_digest
     assert not conversion.next_path().exists() and not conversion.prev_path().exists() and not conversion.journal_path().exists()
     assert client.get("/auth/status").json()["vault"]["on"]
-    house, items = vc.open_database(database.DB_PATH, PASS["Alex"], alex)
+    house, items = vc.open_database(database.DB_PATH, PASS)
     for i in items:
         if i["k"] == "irule":
             i.pop("id")
@@ -512,23 +460,22 @@ def turn_off(client, browser: Browser, fail_at=None):
 
 def test_plain_encrypted_plain_is_identical(encrypted):
     client, alex, ana, result, before = encrypted
-    b = Browser(client, alex, PASS["Alex"])
+    b = Browser(client, alex, PASS)
     b.house, b.vault_id = result["house"], result["vault_id"]
     turn_off(client, b)
     assert export() == before
     status = client.get("/auth/status").json()
     assert not status["vault"]["on"] and status["signed_in"]
-    # The encrypted file is kept as a backup; codes and keys are gone; passwords still work
+    # The encrypted file is kept as a backup; the key and the kit are gone; the password still works
     assert any(x["kind"] == "encrypted" for x in client.get("/backups").json())
     conn = sqlite3.connect(database.DB_PATH)
     assert conn.execute("SELECT COUNT(*) FROM record").fetchone()[0] == 0
-    assert conn.execute("SELECT COUNT(*) FROM vaultkey").fetchone()[0] == 0
-    assert conn.execute("SELECT COUNT(*) FROM invite").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM householdkey").fetchone()[0] == 0
     conn.close()
     client.post("/logout")
-    kdf = client.get(f"/vault/kdf?person_id={alex}").json()
+    kdf = client.get("/vault/kdf").json()
     assert kdf["state"] == "plain" and kdf["salt"]
-    login, _ = vc.from_password(PASS["Alex"], kdf["salt"])
+    login, _ = vc.from_password(PASS, kdf["salt"])
     assert client.post("/login", json={"person_id": alex, "password": login}).status_code == 200
     # The server works on the data again
     assert client.get("/transactions").status_code == 200 and len(client.get("/ledger").json()["rows"]) == 6
@@ -539,17 +486,17 @@ def test_turning_off_needs_the_password(encrypted):
 
 def test_turning_off_tells_everyone_for_a_month(encrypted):
     client, alex, ana, result, before = encrypted
-    b = Browser(client, alex, PASS["Alex"])
+    b = Browser(client, alex, PASS)
     b.house, b.vault_id = result["house"], result["vault_id"]
     turn_off(client, b)
     off = client.get("/auth/status").json()["vault"]["turned_off"]
     assert off["by"] == alex
     # Turning it on again forgets the note
     client.post("/logout")
-    Browser(client, alex, PASS["Alex"])
-    kdf = client.get(f"/vault/kdf?person_id={alex}").json()
-    client.post("/login", json={"person_id": alex, "password": vc.from_password(PASS["Alex"], kdf["salt"])[0]})
-    turn_on(client, alex, PASS["Alex"])
+    Browser(client, alex, PASS)
+    kdf = client.get("/vault/kdf").json()
+    client.post("/login", json={"person_id": alex, "password": vc.from_password(PASS, kdf["salt"])[0]})
+    turn_on(client, alex, PASS)
     assert "turned_off" not in client.get("/auth/status").json()["vault"]
 
 # ---------- WALLY_ENCRYPTION=required ----------
@@ -563,12 +510,12 @@ def test_required_saves_nothing_in_the_clear_and_stays_on(make_client, monkeypat
     assert r.status_code == 409 and "encrypted" in r.json()["detail"]
     assert client.get("/transactions").status_code == 200
     assert client.post("/api-keys", json={"name": "phone"}).status_code == 400
-    assert client.put("/signin", json={"enabled": True, "passwords": {str(alex): PASS["Alex"]}}).status_code == 200
+    assert client.put("/signin", json={"enabled": True, "password": PASS}).status_code == 200
     client.headers.pop("x-wally-person")
-    assert client.put("/signin", json={"enabled": False, "current": PASS["Alex"]}).status_code == 400
-    result = turn_on(client, alex, PASS["Alex"])
+    assert client.put("/signin", json={"enabled": False, "current": PASS}).status_code == 400
+    result = turn_on(client, alex, PASS)
     assert result["count"] == 10  # the default categories, now sealed
-    b = Browser(client, alex, PASS["Alex"])
+    b = Browser(client, alex, PASS)
     assert client.post("/vault/convert/start", json={"direction": "off", "current": b.proof()}).status_code == 403
     assert client.put("/signin", json={"enabled": False, "current": b.proof()}).status_code == 400
 

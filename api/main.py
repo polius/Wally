@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from . import database
 from .database import create_db_and_tables, STATE
 from .demo import generate_demo
-from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault
+from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault, kit
 from .services import conversion
 from .services.vault import load_state, purge_tombstones, required
 from .models.app import AppConfig, DEFAULT_CONFIG
@@ -148,6 +148,7 @@ app.include_router(money.router)
 app.include_router(data.router)
 app.include_router(api_keys.router)
 app.include_router(vault.router)
+app.include_router(kit.router)
 
 # Add root route
 @app.get("/", tags=["Root"])

@@ -21,10 +21,9 @@ TODAY = "2026-10-24"
 
 @pytest.fixture
 def make_client(tmp_path, monkeypatch):
-    monkeypatch.setenv("WALLY_RECOVERY_FILE", str(tmp_path / "password.txt"))
     monkeypatch.setenv("WALLY_TODAY", TODAY)
     auth_router._failures.clear()
-    auth_router._last_counter.clear()
+    auth_router._last_counter["value"] = -1
     clients = []
 
     def make(db_file: Path | None = None):
@@ -176,119 +175,182 @@ def test_delete_rule_keeps_or_removes_past(client):
     names = [t["name"] for t in client.get("/transactions").json()]
     assert names.count("Netflix") == 9 and names.count("Gym") == 0
 
-# ---------- sign-in ----------
-def turn_on_signin(client, alex, ana):
-    r = client.put("/signin", json={"enabled": True, "passwords": {str(alex): "alex-pass-1", str(ana): "ana-pass-1"}})
+# ---------- sign-in: one password, one two-step, for the household ----------
+PW = "household-pass-1"
+
+def turn_on_signin(client, alex, ana) -> str:
+    """Returns the household's Emergency Kit, made with the password"""
+    r = client.put("/signin", json={"enabled": True, "password": PW})
     assert r.status_code == 200, r.text
     client.headers.pop("x-wally-person", None)
     client.cookies.clear()
+    return r.json()["kit"]
 
-def test_signin_per_person(couple):
+def login(client, person_id, password=PW):
+    return client.post("/login", json={"person_id": person_id, "password": password})
+
+def two_step(client) -> tuple[str, list[str]]:
+    setup = client.post("/two-step/setup").json()
+    codes = client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": PW}).json()["recovery_codes"]
+    auth_router._last_counter["value"] = -1
+    return setup["secret"], codes
+
+def test_everyone_signs_in_with_the_household_password(couple):
     client, alex, ana = couple
     turn_on_signin(client, alex, ana)
     assert client.get("/transactions").status_code == 401
     status = client.get("/auth/status").json()
     assert status["signin"] and not status["signed_in"] and [p["name"] for p in status["people"]] == ["Alex", "Ana"]
+    assert "has_password" not in status["people"][0] and not status["two_step"]
+    # Who you are comes first: one password, so the name is needed
+    assert client.post("/login", json={"password": PW}).status_code == 400
 
-    r = client.post("/login", json={"person_id": ana, "password": "wrong"})
+    r = login(client, ana, "wrong")
     assert r.status_code == 401 and r.json()["detail"]["tries_left"] == 4
-    r = client.post("/login", json={"person_id": ana, "password": "ana-pass-1"})
-    assert r.json() == {"ok": True, "code_needed": False, "must_change_password": True}
+    r = login(client, ana)
+    assert r.json() == {"ok": True, "code_needed": False}
     cookie = r.headers["set-cookie"]
     assert "HttpOnly" in cookie and "Max-Age=31536000" in cookie
     me = client.get("/auth/status").json()
-    assert me["me"]["name"] == "Ana" and me["must_change_password"]
+    assert me["me"]["name"] == "Ana" and me["kit"]
 
     # Created by comes from sign-in, not from what the browser says
     t = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "5", "date": TODAY}, headers={"x-wally-person": str(alex)}).json()
     assert t["created_by"] == ana
 
-def test_five_wrong_tries_wait(couple):
+    # The same password for Alex, on another browser
+    other = TestClient(client.app)
+    assert login(other, alex).status_code == 200 and other.get("/auth/status").json()["me"]["name"] == "Alex"
+
+def test_five_wrong_tries_wait_whoever_types_them(couple):
     client, alex, ana = couple
     turn_on_signin(client, alex, ana)
-    for _ in range(5):
-        assert client.post("/login", json={"person_id": alex, "password": "nope"}).status_code == 401
-    r = client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    # One password, so one count: trying every name doesn't give more guesses
+    for who in (alex, ana, alex, ana, alex):
+        assert login(client, who, "nope").status_code == 401
+    r = login(client, ana)
     assert r.status_code == 429 and 0 < r.json()["detail"]["retry_after"] <= 30
-    auth_router._failures[str(alex)][-1] -= 31
-    assert client.post("/login", json={"person_id": alex, "password": "alex-pass-1"}).status_code == 200
+    auth_router._failures[-1] -= 31
+    assert login(client, ana).status_code == 200
 
-def test_two_step_and_recovery_codes(couple):
+def test_two_step_is_one_for_the_household(couple):
     client, alex, ana = couple
     turn_on_signin(client, alex, ana)
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
-    setup = client.post("/me/two-step/setup").json()
-    assert setup["uri"].startswith("otpauth://totp/Wally:Alex?secret=")
-    assert client.post("/me/two-step/confirm", json={"code": "000000"}).status_code == 400
-    codes = client.post("/me/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30))}).json()["recovery_codes"]
+    login(client, alex)
+    setup = client.post("/two-step/setup").json()
+    assert setup["uri"].startswith("otpauth://totp/Wally:Household?secret=")
+    # It changes everyone's sign-in, so it asks for the password, then a code from the new secret
+    assert client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": "wrong-pass"}).status_code == 401
+    assert client.post("/two-step/confirm", json={"code": "000000", "password": PW}).status_code == 400
+    codes = client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": PW}).json()["recovery_codes"]
     assert len(codes) == 10 and len(set(codes)) == 10
+    assert client.get("/auth/status").json()["two_step"]
+    auth_router._last_counter["value"] = -1
 
-    client.post("/logout")
-    r = client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    # Ana's phone has the same secret: her code is the same code
+    other = TestClient(client.app)
+    r = login(other, ana)
     assert r.json()["code_needed"] is True
-    assert client.get("/transactions").status_code == 401
-    r = client.post("/login/code", json={"code": "123456"})
+    assert other.get("/transactions").status_code == 401
+    r = other.post("/login/code", json={"code": "123456"})
     assert r.status_code == 401 and "30 seconds" in r.json()["detail"]["message"]
+    assert other.post("/login/code", json={"code": totp.code_at(setup["secret"], int(time.time() // 30))}).status_code == 200
+    assert other.get("/auth/status").json()["me"]["name"] == "Ana"
+
+    # Adding a phone shows the same secret again, after the password
+    assert client.post("/two-step/show", json={"password": "wrong-pass"}).status_code == 401
+    assert client.post("/two-step/show", json={"password": PW}).json()["secret"] == setup["secret"]
+
+    # A recovery code works once, for anyone
+    client.post("/logout")
+    login(client, alex)
     r = client.post("/login/code", json={"recovery_code": codes[0].upper()})
     assert r.status_code == 200 and r.json()["recovery_codes_left"] == 9
-    assert client.get("/transactions").status_code == 200
-
-    # A recovery code works once
     client.post("/logout")
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    login(client, ana)
     assert client.post("/login/code", json={"recovery_code": codes[0]}).status_code == 401
 
-def test_forgot_password_writes_file_and_turns_two_step_off(couple, tmp_path):
-    client, alex, ana = couple
-    turn_on_signin(client, alex, ana)
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
-    secret = client.post("/me/two-step/setup").json()["secret"]
-    client.post("/me/two-step/confirm", json={"code": totp.code_at(secret, int(time.time() // 30))})
+    # Off for everyone, with the password
+    login(client, ana)
+    client.post("/login/code", json={"recovery_code": codes[1]})
+    assert client.request("DELETE", "/two-step", json={"password": "wrong-pass"}).status_code == 401
+    assert client.request("DELETE", "/two-step", json={"password": PW}).status_code == 200
     client.post("/logout")
+    assert login(client, alex).json()["code_needed"] is False
 
-    client.post("/login/recover", json={"person_id": alex})
-    line = (tmp_path / "password.txt").read_text().strip()
-    name, one_time = line.split(": ")
-    assert name == "Alex"
-    r = client.post("/login", json={"person_id": alex, "password": one_time})
-    assert r.json() == {"ok": True, "code_needed": False, "must_change_password": True}
-    assert not (tmp_path / "password.txt").exists()
-    assert client.get("/auth/status").json()["me"]["two_step"] is False
-    assert client.put("/me/password", json={"new": "short"}).status_code == 400
-    assert client.put("/me/password", json={"new": "a-new-password"}).status_code == 200
-    client.post("/logout")
-    assert client.post("/login", json={"person_id": alex, "password": "a-new-password"}).status_code == 200
-
-def test_password_change_ends_other_sessions(couple, make_client):
+def test_the_emergency_kit_gets_in_without_the_password_or_two_step(couple):
     client, alex, ana = couple
-    turn_on_signin(client, alex, ana)
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    kit = turn_on_signin(client, alex, ana)
+    assert len(kit) == 64 and kit.count("-") == 12
+    login(client, alex)
+    two_step(client)
     other = TestClient(client.app)
-    other.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    login(other, ana)
+    other.post("/login/code", json={"code": totp.code_at(client.post("/two-step/show", json={"password": PW}).json()["secret"], int(time.time() // 30) + 1)})
     assert other.get("/transactions").status_code == 200
-    # This browser, the other one, and the one that turned sign-in on
-    assert len(client.get("/me/sessions").json()) == 3
-    client.put("/me/password", json={"current": "alex-pass-1", "new": "another-pass"})
+    client.post("/logout")
+
+    # Password forgotten and phone lost: the kit alone, typed any old way
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit[:-1] + ("0" if kit[-1] != "0" else "1")}).status_code == 400
+    wrong = __import__("api.services.kit", fromlist=["new_key"]).new_key()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": wrong}).json()["detail"]["tries_left"] == 4
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 401
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit.lower().replace("-", " ")}).status_code == 200
+    assert client.post("/kit/password", json={"new": "short"}).status_code == 400
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 200
+    # Signed in as Alex; every other browser signs in again, with the new password. Two-step stays on.
+    status = client.get("/auth/status").json()
+    assert status["me"]["name"] == "Alex" and status["two_step"]
+    assert other.get("/transactions").status_code == 401
+    assert login(other, ana, PW).status_code == 401
+    assert login(other, ana, "a-new-password").json()["code_needed"]
+    # The kit keeps working until a new one is made, with the password
+    client.cookies.clear()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 200
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 200
+    assert client.post("/kit", json={"current": "wrong-pass"}).status_code == 401
+    new = client.post("/kit", json={"current": "a-new-password"}).json()["key"]
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 401
+    assert client.post("/kit/recover", json={"person_id": alex, "key": new}).status_code == 200
+
+def test_whoever_runs_the_server_can_turn_sign_in_off(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    two_step(client)
+    from api import signin_off
+    assert signin_off.main() == 0
+    client.headers["x-wally-person"] = str(alex)
+    status = client.get("/auth/status").json()
+    assert not status["signin"] and not status["two_step"] and status["kit"] is None
+    assert client.get("/transactions").status_code == 200
+    assert signin_off.main() == 0
+
+def test_password_change_ends_other_sessions(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    other = TestClient(client.app)
+    login(other, ana)
+    assert other.get("/transactions").status_code == 200
+    # This browser, Ana's, and the one that turned sign-in on, with who is on each
+    sessions = client.get("/sessions").json()
+    assert len(sessions) == 3 and {s["person_id"] for s in sessions} == {alex, ana}
+    assert client.put("/password", json={"current": "wrong-pass", "new": "another-pass"}).status_code == 401
+    assert client.put("/password", json={"current": PW, "new": "another-pass"}).status_code == 200
     assert other.get("/transactions").status_code == 401
     assert client.get("/transactions").status_code == 200
-    assert len(client.get("/me/sessions").json()) == 1
+    assert len(client.get("/sessions").json()) == 1
 
 def test_sign_out_others(couple):
     client, alex, ana = couple
     turn_on_signin(client, alex, ana)
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
+    login(client, alex)
     other = TestClient(client.app)
-    other.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
-    client.delete("/me/sessions/others")
+    login(other, ana)
+    client.delete("/sessions/others")
     assert other.get("/transactions").status_code == 401
-    assert [s["current"] for s in client.get("/me/sessions").json()] == [True]
-
-def test_require_two_step(couple):
-    client, alex, ana = couple
-    turn_on_signin(client, alex, ana)
-    client.post("/login", json={"person_id": alex, "password": "alex-pass-1"})
-    client.put("/signin", json={"enabled": True, "require_two_step": True})
-    assert client.get("/auth/status").json()["needs_two_step"] is True
+    assert [s["current"] for s in client.get("/sessions").json()] == [True]
 
 def test_api_key_belongs_to_person(couple):
     client, alex, ana = couple
@@ -300,10 +362,28 @@ def test_api_key_belongs_to_person(couple):
     assert t["created_by"] == ana
     assert client.get("/transactions", headers={"x-api-key": "wly_nope"}).status_code == 401
 
-def test_turning_signin_on_needs_passwords(couple):
+def test_turning_signin_on_and_off(couple):
     client, alex, ana = couple
-    r = client.put("/signin", json={"enabled": True, "passwords": {str(alex): "alex-pass-1"}})
-    assert r.status_code == 400 and r.json()["detail"]["missing"] == ["Ana"]
+    assert client.put("/signin", json={"enabled": True, "password": "short"}).status_code == 400
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    two_step(client)
+    # People added later use the same password and kit: nothing to set for them
+    sam = client.post("/people", json={"name": "Sam"}).json()["id"]
+    other = TestClient(client.app)
+    assert login(other, sam).json()["code_needed"]
+    # Off: no password and no two-step are left, and turning it on again asks for a new one
+    assert client.put("/signin", json={"enabled": False, "current": "wrong-pass"}).status_code == 401
+    assert client.put("/signin", json={"enabled": False, "current": PW}).status_code == 200
+    client.headers["x-wally-person"] = str(alex)
+    status = client.get("/auth/status").json()
+    assert not status["signin"] and not status["two_step"] and status["kit"] is None
+    assert client.put("/signin", json={"enabled": True}).status_code == 400
+    assert client.put("/signin", json={"enabled": True, "password": "fresh-pass-1"}).status_code == 200
+    client.headers.pop("x-wally-person")
+    client.cookies.clear()
+    assert login(client, ana, PW).status_code == 401
+    assert login(client, ana, "fresh-pass-1").json()["code_needed"] is False
 
 # ---------- settle up is gone ----------
 def test_settle_up_is_gone(couple):
@@ -498,7 +578,7 @@ def test_upgrade_from_v1(make_client, tmp_path):
     conn.close()
 
     status = client.get("/auth/status").json()
-    assert status["signin"] and status["household_password"] and status["onboarded"] and status["people"] == []
+    assert status["signin"] and status["onboarded"] and status["people"] == []
 
     # Before anyone is added, the household password still signs in
     assert client.post("/login", json={"password": "household"}).status_code == 200
@@ -509,23 +589,20 @@ def test_upgrade_from_v1(make_client, tmp_path):
     r = client.get("/recurring").json()[0]
     assert r["interval"] == 1 and r["last_run"] == TODAY and r["endDate"] == "2027-12-31"
 
-    # A forgotten household password: a new one in password.txt, which signs in once from the file
-    # and stays the household password
-    client.cookies.clear()
-    assert client.post("/login/recover", json={}).status_code == 200
-    name, new = (tmp_path / "password.txt").read_text().strip().split(": ")
-    assert name == "Household password"
-    assert client.post("/login", json={"password": new}).status_code == 200
-    assert not (tmp_path / "password.txt").exists()
-    assert client.post("/login", json={"password": "household"}).status_code == 401
-
-    # People added later sign in with the household password, then choose their own
+    # People added next sign in with the same household password, as before: nothing to choose
+    assert client.get("/auth/status").json()["kit"] is None
     alex = client.post("/people", json={"name": "Alex"}).json()["id"]
     client.cookies.clear()
-    r = client.post("/login", json={"person_id": alex, "password": new})
-    assert r.json()["must_change_password"] is True
-    # Once there are people, each one recovers their own
-    assert client.post("/login/recover", json={}).status_code == 400
+    r = client.post("/login", json={"person_id": alex, "password": "household"})
+    assert r.json() == {"ok": True, "code_needed": False}
+    # 1.x had no Emergency Kit: whoever signs in first makes one, no password asked as none is replaced
+    assert client.get("/auth/status").json()["kit"] is None
+    kit = client.post("/kit", json={}).json()["key"]
+    assert client.get("/auth/status").json()["kit"]
+    assert client.post("/kit", json={}).status_code == 409
+    client.cookies.clear()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 200
+    assert client.post("/kit/password", json={"new": "new-household-pass"}).status_code == 200
 
     # Old API keys keep working
     assert client.get("/api-keys").json()[0]["prefix"] == ""

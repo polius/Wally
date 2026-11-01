@@ -10,7 +10,7 @@ DEFAULT_CONFIG = {
     "CURRENCY_POSITION": "right",
     "LANGUAGE": "en",
     # Added in 2.0
-    "REQUIRE_TWO_STEP": False,
+    "TWO_STEP": False,
     "SAVINGS_TARGET": "15",
     "TIMEZONE": "",
     "WEEK_START": "mon",

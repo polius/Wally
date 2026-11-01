@@ -1,6 +1,6 @@
-/* End-to-end encryption on this device: signing in and unlocking, getting back in, codes for
-   someone else, a new password or recovery key, turning encryption on or off, and keeping the
-   copy in step with the server. The pages call these; crypto.js makes the keys, store.js keeps
+/* End-to-end encryption on this device: signing in and unlocking, getting back in with the
+   Emergency Kit, a new password or recovery key, turning encryption on or off, and keeping the
+   copy in step with the server. There is one household key, opened by the household password. The pages call these; crypto.js makes the keys, store.js keeps
    the copy, local.js answers the app's requests from it. */
 import * as C from "./crypto.js";
 import * as store from "./store.js";
@@ -20,17 +20,16 @@ function flag(on) { try { if (on) localStorage.setItem(FLAG, "1"); else localSto
 export function hadVault() { try { return localStorage.getItem(FLAG) === "1"; } catch (e) { return false; } }
 
 /* ---------- passwords into keys ---------- */
-/* What the server needs to check a password: the login key when the person has a salt, otherwise
-   the password as typed (only with encryption off, for someone who never had a salt) */
-export async function credentials(personId, password) {
-  const kdf = await raw("GET", "/vault/kdf?person_id=" + Number(personId));
+/* What the server needs to check the household password: the login key when there is a salt,
+   otherwise the password as typed (only with encryption off, when it never had a salt) */
+export async function credentials(password) {
+  const kdf = await raw("GET", "/vault/kdf");
   if (!kdf.salt) return { kdf, login: password, unlock: null };
   const k = await C.fromPassword(password, kdf.salt);
   return { kdf, login: k.login, unlock: k.unlock };
 }
 export async function proof(password) {
-  if (!core.state.me) return password;
-  return (await credentials(core.state.me, password)).login;
+  return (await credentials(password)).login;
 }
 
 /* ---------- unlocking ---------- */
@@ -48,8 +47,8 @@ export async function unlockWith(unlockKey, personId) {
 }
 /* Signed in, but this browser has no key (cleared, Safari's seven days, a new tab after "Lock when Wally closes") */
 export async function unlockWithPassword(password, personId) {
-  const kdf = await raw("GET", "/vault/kdf?person_id=" + Number(personId));
-  if (!kdf.salt) throw new core.ApiError(403, "You have no key yet. Ask someone in the household for a code.");
+  const kdf = await raw("GET", "/vault/kdf");
+  if (!kdf.salt) throw new core.ApiError(401, "That password is not right.");
   const k = await C.fromPassword(password, kdf.salt);
   await unlockWith(k.unlock, personId);
 }
@@ -114,79 +113,51 @@ export function handle(method, path, body, send) {
 }
 
 /* ---------- getting back in ---------- */
-/* With the recovery key from the Emergency Kit, or a code from someone in the household.
-   Returns {code_needed} when two-step is on and the code was not typed yet, or {secret, kind}. */
-export async function prove(kind, personId, text, second) {
-  let bytes, keys;
-  if (kind === "recovery") {
-    bytes = await C.parseRecoveryKey(text);
-    if (!bytes) throw new core.ApiError(400, "That recovery key has a typo. Check each group of four.");
-    keys = await C.fromRecoveryKey(bytes);
-  } else {
-    bytes = await C.parseCode(text);
-    if (!bytes) throw new core.ApiError(400, "That code has a typo. It has 20 letters and digits.");
-    keys = await C.fromCode(bytes);
-  }
+/* With the recovery key from the household's Emergency Kit, which also stands in for two-step
+   sign-in. Returns what opens the household key. */
+export async function prove(personId, text) {
+  const bytes = await C.parseRecoveryKey(text);
+  if (!bytes) throw new core.ApiError(400, "That recovery key has a typo. Check each group of four.");
+  const keys = await C.fromRecoveryKey(bytes);
   bytes.fill(0);
-  const body = Object.assign({ person_id: Number(personId), login: keys.login }, second || {});
-  const r = await quiet("POST", kind === "recovery" ? "/vault/recover" : "/vault/redeem", body);
-  if (r.code_needed) return { code_needed: true };
+  const r = await quiet("POST", "/kit/recover", { person_id: Number(personId), login: keys.login });
   const secret = await C.unlock(keys.unlock, r.wrap, r.vault_id);
-  if (!secret) throw new core.ApiError(400, "This key opened nothing. Ask someone in the household for a code.");
-  return { secret, kind: r.kind, vault_id: r.vault_id };
+  if (!secret) throw new core.ApiError(400, "This recovery key opened nothing. Check that it’s this household’s Emergency Kit.");
+  return { secret, vault_id: r.vault_id };
 }
-/* A new password after getting back in. With a code, also a new Emergency Kit: returns its key. */
+/* A new household password after the recovery key */
 export async function setup(found, password, personId) {
   const salt = C.newSalt();
   const k = await C.fromPassword(password, salt);
-  const body = { salt, login_key: k.login, wrap: await C.lock(k.unlock, found.secret, found.vault_id) };
-  let recoveryKey = null;
-  if (found.kind !== "recovery") {
-    recoveryKey = await C.newRecoveryKey();
-    const rk = await C.fromRecoveryKey(await C.parseRecoveryKey(recoveryKey));
-    body.recovery_login = rk.login;
-    body.recovery_wrap = await C.lock(rk.unlock, found.secret, found.vault_id);
-  }
-  await raw("POST", "/vault/setup", body);
+  await raw("POST", "/kit/password", { salt, new: k.login, wrap: await C.lock(k.unlock, found.secret, found.vault_id) });
   try { await adopt(found.secret, found.vault_id, personId); } finally { found.secret.fill(0); }
-  return recoveryKey;
 }
 
 /* The household secret, opened again with the password: needed to lock it under anything new */
 async function secretFrom(password) {
-  const k = await credentials(core.state.me, password);
+  const k = await credentials(password);
   const key = await raw("GET", "/vault/key");
   const secret = k.unlock && await C.unlock(k.unlock, key.wrap, key.vault_id);
   if (!secret) throw new core.ApiError(401, "That password is not right.");
   return { secret, login: k.login, vaultId: key.vault_id };
-}
-/* A one-use code for someone else: their first way in, or back in. Made only when asked. */
-export async function makeCode(personId, password) {
-  const s = await secretFrom(password);
-  try {
-    const code = await C.newCode();
-    const ck = await C.fromCode(await C.parseCode(code));
-    const r = await quiet("POST", "/vault/invites", { person_id: Number(personId), current: s.login, login: ck.login, wrap: await C.lock(ck.unlock, s.secret, s.vaultId) });
-    return { code, expires: r.expires_at, kind: r.kind };
-  } finally { s.secret.fill(0); }
 }
 export async function newRecoveryKey(password) {
   const s = await secretFrom(password);
   try {
     const key = await C.newRecoveryKey();
     const rk = await C.fromRecoveryKey(await C.parseRecoveryKey(key));
-    await quiet("POST", "/vault/recovery-key", { current: s.login, recovery_login: rk.login, recovery_wrap: await C.lock(rk.unlock, s.secret, s.vaultId) });
+    await quiet("POST", "/kit", { current: s.login, recovery_login: rk.login, recovery_wrap: await C.lock(rk.unlock, s.secret, s.vaultId) });
     return key;
   } finally { s.secret.fill(0); }
 }
-/* A new password. With encryption on, the household key is locked under it again. */
+/* A new household password. With encryption on, the household key is locked under it again. */
 export async function changePassword(current, next) {
-  const me = core.state.me, encrypted = !!(core.state.status && core.state.status.vault && core.state.status.vault.on);
-  const kdf = await raw("GET", "/vault/kdf?person_id=" + Number(me));
+  const encrypted = !!(core.state.status && core.state.status.vault && core.state.status.vault.on);
+  const kdf = await raw("GET", "/vault/kdf");
   if (!kdf.salt && !encrypted) {
     // Never had a salt: from now on the server never sees this password
     const salt = C.newSalt(), k = await C.fromPassword(next, salt);
-    return quiet("PUT", "/me/password", { current, new: k.login, salt });
+    return quiet("PUT", "/password", { current, new: k.login, salt });
   }
   const old = await C.fromPassword(current, kdf.salt);
   const salt = C.newSalt(), k = await C.fromPassword(next, salt);
@@ -197,34 +168,28 @@ export async function changePassword(current, next) {
     if (!secret) throw new core.ApiError(401, { message: "That password is not right." });
     try { body.wrap = await C.lock(k.unlock, secret, key.vault_id); } finally { secret.fill(0); }
   }
-  return quiet("PUT", "/me/password", body);
+  return quiet("PUT", "/password", body);
 }
 
 /* ---------- turning encryption on or off ---------- */
 /* Turning on: every record is sealed here, sent to a new file, read back and compared, and only
-   then does the server switch to it. Returns the recovery key and a code for each other person. */
+   then does the server switch to it. Returns the recovery key of the household's Emergency Kit. */
 export async function turnOn(password, progress) {
   progress = progress || (() => {});
   const me = Number(core.state.me);
   progress("keys");
-  const kdf = await raw("GET", "/vault/kdf?person_id=" + me);
+  const kdf = await raw("GET", "/vault/kdf");
   const current = kdf.salt ? (await C.fromPassword(password, kdf.salt)).login : password;
   const salt = C.newSalt(), mine = await C.fromPassword(password, salt);
   const secret = C.newSecret(), vaultId = C.randomId();
   try {
     const recoveryKey = await C.newRecoveryKey();
     const rk = await C.fromRecoveryKey(await C.parseRecoveryKey(recoveryKey));
-    const codes = [];
-    for (const p of core.state.people) {
-      if (p.id === me) continue;
-      const code = await C.newCode(), ck = await C.fromCode(await C.parseCode(code));
-      codes.push({ person_id: p.id, name: p.name, code, login: ck.login, wrap: await C.lock(ck.unlock, secret, vaultId) });
-    }
     const keys = await C.householdKeys(secret);
     progress("pause");
     const start = await quiet("POST", "/vault/convert/start", {
       direction: "on", current, vault_id: vaultId, salt, login_key: mine.login, wrap: await C.lock(mine.unlock, secret, vaultId),
-      recovery_login: rk.login, recovery_wrap: await C.lock(rk.unlock, secret, vaultId), invites: codes.map(({ person_id, login, wrap }) => ({ person_id, login, wrap })),
+      recovery_login: rk.login, recovery_wrap: await C.lock(rk.unlock, secret, vaultId),
     });
     const id = start.id;
     try {
@@ -257,7 +222,7 @@ export async function turnOn(password, progress) {
     await store.wipe();
     await store.useKeys(keys, vaultId, me);
     flag(true);
-    return { recoveryKey, codes: codes.map(({ person_id, name, code }) => ({ person_id, name, code })) };
+    return { recoveryKey };
   } finally { secret.fill(0); }
 }
 /* The shape a record keeps: as exported, with an import rule's id made a record id */
@@ -271,9 +236,8 @@ async function ridFor(keys, item) {
 /* Turning off: every record opened here, sent to a new file in the clear, read back and compared */
 export async function turnOff(password, progress) {
   progress = progress || (() => {});
-  const me = Number(core.state.me);
   progress("keys");
-  const kdf = await raw("GET", "/vault/kdf?person_id=" + me);
+  const kdf = await raw("GET", "/vault/kdf");
   const current = (await C.fromPassword(password, kdf.salt)).login;
   progress("pause");
   const start = await quiet("POST", "/vault/convert/start", { direction: "off", current });

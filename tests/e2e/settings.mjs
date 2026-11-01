@@ -449,24 +449,74 @@ await page.waitForSelector("#set-pane .w-group");
 /* ======================================================================= */
 section("Sign-in");
 await pane("signin");
+ok(/Off\. Anyone who can reach this address/.test(await paneText()) && !/Household password/.test(await paneText()), "off: only “Ask for a password”, no password rows");
 await page.click("#si-toggle");
-await page.waitForSelector("#so-me");
-await page.fill("#so-me", "short");
-await page.fill("#so-p2", "anapassword");
+await page.waitForSelector("#so-pw");
+ok(/Everyone in the household signs in with this password/.test(await dialog().textContent()), "turning on asks for one password, for everyone");
+await page.fill("#so-pw", "short");
+await page.fill("#so-rep", "short");
 await dlgOk();
 ok(/at least 8/.test(await dlgError()), "a short password is refused in the dialog");
-await page.fill("#so-me", "alexpassword");
+await page.fill("#so-pw", "alexpassword");
+await page.fill("#so-rep", "alexpassw0rd");
+await dlgOk();
+ok(/different/.test(await dlgError()), "the two passwords must match");
+await page.fill("#so-rep", "alexpassword");
+await dlgOk();
+// Then the household's Emergency Kit, once
+await page.waitForSelector("#kit-saved", { timeout: 10000 });
+ok(/Save the household’s Emergency Kit/.test(await dialog().textContent()), "turning on shows the household's Emergency Kit");
+const kit1 = (await page.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
+ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(kit1), "a 52-character recovery key");
+ok(await page.isDisabled("#dlg [data-dlg-ok]"), "Done waits until it is saved");
+const [kitDl] = await Promise.all([page.waitForEvent("download"), page.click("#dlg [data-save]")]);
+ok(readFileSync(await kitDl.path(), "utf8").includes(kit1), "the kit downloads, with the key in it");
+await page.check("#kit-saved");
 await dlgOk(); await dlgClosed();
 await toastText(/Sign-in is on/);
 let status = (await api("GET", "/auth/status")).data;
-ok(status.signin && status.me && status.me.id === 1, "sign-in is on and this browser stays signed in as Alex");
+ok(status.signin && status.me && status.me.id === 1 && status.two_step === false, "sign-in is on and this browser stays signed in as Alex");
 await page.reload(); await page.waitForSelector("#set-pane .w-group");
 ok(/On/.test(await page.textContent('#set-nav a[data-pane="signin"] span')), "still in after reload (session cookie)");
-ok(/Password set · Two-step off/.test(await paneText()), "Household shows each person's status");
+await page.waitForFunction(() => /Last seen/.test(document.getElementById("set-pane").textContent));
+let txt = await paneText();
+ok(/Household password/.test(txt) && /Everyone uses it\. Changing it signs out every other browser\./.test(txt), "a Household password row");
+ok(/Two-step sign-in/.test(txt) && /Off\. The password alone opens Wally\./.test(txt) && await page.locator('[data-act="2on"]').count() === 1, "a Two-step sign-in row with Turn on");
+ok(!/Recovery codes/.test(txt), "no recovery codes while two-step is off");
+ok(/Signed-in browsers/.test(txt) && /Alex · Last seen/.test(txt) && await page.locator('[data-act="signout"]').count() === 1, "Signed-in browsers: who is on this one, and Sign out of this browser");
+ok(/If you forget the password/.test(txt) && /Emergency Kit\s*Made /.test(txt) && await page.locator('[data-act="kit"]').count() === 1, "If you forget the password: the Emergency Kit, when it was made, and Make a new one");
+ok(/Lost the kit too\?/.test(txt) && /python3 -m api\.signin_off/.test(txt) && !/password\.txt/.test(txt), "Lost the kit too?: the command for whoever runs the server, and no password.txt");
+ok(typeof status.kit === "string", "status says when the kit was made");
 const anon = await fetch(BASE + "/api/ledger");
 ok(anon.status === 401, "without the cookie, the API now asks to sign in");
 ok((await fetch(BASE + "/api/ledger", { headers: { "X-API-Key": rawKey } })).status === 401, "the deleted API key no longer works");
-// Change password
+
+// Adding a person with sign-in on: a name, nothing else
+await open("/settings/people");
+ok(/They sign in with the household password\./.test(await paneText()), "People: new people sign in with the household password");
+await page.click('[data-act="add"]');
+await page.waitForSelector("#np-name");
+ok(await page.locator("#dlg input").count() === 1 && await page.locator('#dlg input[type="password"]').count() === 0, "Add a person asks only for a name");
+await page.fill("#np-name", "Lee");
+await dlgOk(); await dlgClosed();
+await toastText(/Added Lee/);
+const leeId = (await api("GET", "/people")).data.find((p) => p.name === "Lee").id;
+const lee = await browser.newContext();
+const leeIn = await lee.request.post(BASE + "/api/login", { data: { person_id: leeId, password: "alexpassword" } });
+ok(leeIn.ok() && (await leeIn.json()).code_needed === false, "Lee signs in with the household password");
+ok((await (await lee.request.get(BASE + "/api/auth/status")).json()).me.name === "Lee", "as Lee");
+await page.click(`[data-act="remove"][data-id="${leeId}"]`);
+await page.waitForSelector("#dlg [data-dlg-ok]");
+ok(/They still know the household password/.test(await dialog().textContent()), "removing someone says they still know the password");
+await dlgOk(); await dlgClosed();
+await toastText(/Removed Lee/);
+ok((await lee.request.get(BASE + "/api/ledger", { failOnStatusCode: false })).status() === 401, "and their sign-in ends");
+await lee.close();
+await open("/settings/signin");
+
+// Change the household password: every other browser is signed out
+const anaCtx = await browser.newContext();
+ok((await anaCtx.request.post(BASE + "/api/login", { data: { person_id: 2, password: "alexpassword" } })).ok(), "Ana signs in elsewhere with the same password");
 await page.click('[data-act="password"]');
 await page.fill("#pw-cur", "wrongwrong"); await page.fill("#pw-new", "alexpassword2"); await page.fill("#pw-rep", "alexpassword2");
 await expectHttpError(async () => { await dlgOk(); ok(/not right/.test(await dlgError()), "a wrong current password is refused"); });
@@ -476,16 +526,58 @@ ok(/not the same/.test(await dlgError()), "the two new passwords must match");
 await page.fill("#pw-rep", "alexpassword2");
 await dlgOk(); await dlgClosed();
 await toastText(/Password changed/);
-// Two-step: set up with a real QR and secret, confirm with a code worked out here
+ok((await anaCtx.request.get(BASE + "/api/ledger", { failOnStatusCode: false })).status() === 401, "changing the password signs Ana's browser out");
+await anaCtx.close();
+ok((await api("GET", "/ledger")).status === 200, "and keeps this one in");
+// From now on the browser sends a login key made from the password, never the password
+const loginKey = (pw) => page.evaluate(async (pw) => {
+  const kdf = await fetch("/api/vault/kdf").then((r) => r.json());
+  return (await (await import("/js/vault/crypto.js")).fromPassword(pw, kdf.salt)).login;
+}, pw);
+
+// A new Emergency Kit: the password, then the new key; the old one stops working
+const recoverWith = async (key) => {
+  const c = await browser.newContext();
+  const r = await c.request.post(BASE + "/api/kit/recover", { data: { person_id: 2, key }, failOnStatusCode: false });
+  await c.close();
+  return r.status();
+};
+ok(await expectHttpError(() => recoverWith(kit1)) === 200, "the first kit works");
+await page.click('[data-act="kit"]');
+await page.waitForSelector("#kit-pw");
+await page.fill("#kit-pw", "wrongwrong");
+await expectHttpError(async () => { await dlgOk(); ok(/not right/.test(await dlgError()), "a new kit asks for the password, and a wrong one is refused"); });
+await page.fill("#kit-pw", "alexpassword2");
+await dlgOk();
+await page.waitForSelector("#kit-saved", { timeout: 10000 });
+const kit2 = (await page.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
+ok(kit2 !== kit1, "a new key is shown");
+await page.check("#kit-saved");
+await dlgOk(); await dlgClosed();
+await toastText(/New Emergency Kit saved/);
+ok(await expectHttpError(() => recoverWith(kit1)) === 401, "the old kit stops working");
+ok(await expectHttpError(() => recoverWith(kit2)) === 200, "the new one works");
+await page.reload(); await page.waitForSelector("#set-pane .w-group");
+
+// Two-step: set up with a real QR and secret, confirmed with a code worked out here and the password
 await page.click('[data-act="2on"]');
 await page.waitForSelector("#ts-secret");
 const qrPath = await page.getAttribute("#dlg svg.w-qr path", "d");
 ok(qrPath && qrPath.length > 500, "a real QR code is drawn");
 const secret = (await page.textContent("#ts-secret")).replace(/\s/g, "");
 ok(/^[A-Z2-7]{32}$/.test(secret), "the secret is shown to type in");
+ok(/One code for the household/.test(await dialog().textContent()) && await page.locator("#dlg #ts-pw").count() === 1, "one code for the household, and it asks for the password");
+await page.fill("#ts-code", totp(secret));
+await page.waitForTimeout(300);
+ok(!(await page.locator("#rc-codes").count()) && await dialog().isVisible(), "six digits alone don't send it");
+await page.fill("#ts-pw", "wrongwrong");
+await expectHttpError(async () => { await dlgOk(); ok(/password is not right/.test(await dlgError()), "a wrong password is refused"); });
 await page.fill("#ts-code", "000000");
-await expectHttpError(async () => { await dlgOk(); ok(/not right/.test(await dlgError()), "a wrong code is refused"); });
-await page.fill("#ts-code", totp(secret));   // sent as soon as the sixth digit is typed
+await page.fill("#ts-pw", "alexpassword2");
+await page.evaluate(() => { const e = document.getElementById("dlg-err"); e.hidden = true; e.textContent = ""; });
+await expectHttpError(async () => { await dlgOk(); ok(/code is not right/.test(await dlgError()), "a wrong code is refused"); });
+await page.fill("#ts-code", totp(secret));
+await dlgOk();
 await page.waitForSelector("#rc-codes", { timeout: 8000 });
 const codes = await page.$$eval("#rc-codes span", (s) => s.map((x) => x.textContent));
 ok(codes.length === 10, "ten recovery codes are shown");
@@ -495,6 +587,9 @@ await dlgOk(); await dlgClosed();
 await toastText(/Two-step sign-in is on/);
 await page.waitForFunction(() => /10 of 10 left/.test(document.getElementById("set-pane").textContent));
 ok(true, "10 of 10 codes left");
+txt = await paneText();
+ok(/the same on everyone’s phone/.test(txt) && await page.locator('[data-act="2show"]').count() === 1 && await page.locator('[data-act="2off"]').count() === 1, "two-step on: Add a phone and Turn off");
+ok((await api("GET", "/auth/status")).data.two_step === true, "status says two-step is on");
 // New codes replace the old ones
 await page.click('[data-act="codes"]');
 await page.fill("#ts-pw", "alexpassword2");
@@ -503,9 +598,9 @@ await page.waitForSelector("#rc-codes");
 const codes2 = await page.$$eval("#rc-codes span", (s) => s.map((x) => x.textContent));
 ok(codes2.length === 10 && codes2[0] !== codes[0], "new recovery codes");
 await dlgOk(); await dlgClosed();
-// Another browser signs in with a recovery code; Settings lists it, then signs it out
+// Ana signs in on a phone with a recovery code; Settings lists it, with her name, then signs it out
 const other = await browser.newContext({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" });
-const l1 = await other.request.post(BASE + "/api/login", { data: { person_id: 1, password: "alexpassword2" } });
+const l1 = await other.request.post(BASE + "/api/login", { data: { person_id: 2, password: await loginKey("alexpassword2") } });
 ok((await l1.json()).code_needed === true, "signing in elsewhere asks for the code");
 const oldCode = await other.request.post(BASE + "/api/login/code", { data: { recovery_code: codes[0] }, failOnStatusCode: false });
 ok(oldCode.status() === 401, "an old recovery code no longer works");
@@ -513,36 +608,38 @@ const l2 = await other.request.post(BASE + "/api/login/code", { data: { recovery
 ok(l2.status() === 200, "a new recovery code signs in");
 await page.reload(); await page.waitForSelector("#set-pane .w-group");
 await page.waitForFunction(() => /Safari on iPhone/.test(document.getElementById("set-pane").textContent));
-ok(/This browser/.test(await paneText()) && /9 of 10 left/.test(await paneText()), "Signed-in browsers lists both, and 9 codes are left");
+txt = await paneText();
+ok(/This browser/.test(txt) && /9 of 10 left/.test(txt), "Signed-in browsers lists both, and 9 codes are left");
+ok(/Safari on iPhone\s*Ana · Last seen/.test(txt), "the phone shows it is Ana's");
+await shot("signin-on");
 await page.click('[data-act="others"]');
 await toastText(/Signed out of 1 other browser/);
 ok((await other.request.get(BASE + "/api/ledger", { failOnStatusCode: false })).status() === 401, "Sign out others ends the other session");
 await other.close();
-// Require two-step for everyone
-await page.click("#req2-toggle");
-await toastText(/next sign-in/);
-ok((await api("GET", "/auth/status")).data.require_two_step === true, "two-step required for everyone");
-await page.waitForFunction(() => /Asked at next sign-in/.test(document.getElementById("set-pane").textContent));
-ok(await page.locator('[data-act="2off"]').count() === 0, "you can't turn yours off while it is required");
-await page.click("#req2-toggle");
-await toastText(/optional again/);
 // Two-step off
 await page.click('[data-act="2off"]');
 await page.fill("#ts-pw", "alexpassword2");
 await dlgOk(); await dlgClosed();
 await toastText(/Two-step sign-in is off/);
-ok((await api("GET", "/auth/status")).data.me.two_step === false, "two-step off");
-await shot("signin-on");
-// Turn sign-in off: asks your password
+ok((await api("GET", "/auth/status")).data.two_step === false, "two-step off");
+await page.waitForSelector('[data-act="2on"]');
+ok(!/Recovery codes/.test(await paneText()), "and the recovery codes row is gone");
+// Turn sign-in off: asks the password, and removes it
 await page.click("#si-toggle");
 await page.fill("#sf-pw", "nope");
 await expectHttpError(async () => { await dlgOk(); ok(/not right/.test(await dlgError()), "turning off with a wrong password is refused"); });
 await page.fill("#sf-pw", "alexpassword2");
 await dlgOk(); await dlgClosed();
 await toastText(/Sign-in is off/);
-ok((await fetch(BASE + "/api/auth/status").then((r) => r.json())).signin === false, "sign-in is off");
+const offStatus = await fetch(BASE + "/api/auth/status").then((r) => r.json());
+ok(offStatus.signin === false && offStatus.kit === null, "sign-in is off, and there is no kit");
+ok(await recoverWith(kit2) === 400, "the kit no longer opens anything");
 await page.reload(); await page.waitForSelector("#set-pane .w-group");
 ok(/Off/.test(await page.textContent('#set-nav a[data-pane="signin"] span')), "and Wally still opens in this browser");
+await page.click("#si-toggle");
+await page.waitForSelector("#so-pw");
+ok(true, "turning it on again asks for a new password");
+await dlgCancel();
 
 /* ======================================================================= */
 section("Widths, dark, and the phone");

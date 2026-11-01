@@ -1,6 +1,6 @@
 """Look inside a Wally database from outside the browser, for the browser tests (tests/e2e/vault.mjs).
 
-    python tests/vault_check.py open  <wally.db> <password> <person id>   everything, opened with that password
+    python tests/vault_check.py open  <wally.db> <password>               everything, opened with the household password
     python tests/vault_check.py plain <wally.db>                           everything in the clear (encryption off)
     python tests/vault_check.py grep  <wally.db> <word> [<word>...]        which words appear anywhere in the file
 
@@ -17,7 +17,7 @@ def main():
     cmd, path = sys.argv[1], sys.argv[2]
     if cmd == "open":
         from tests.vault_crypto import open_database
-        _, items = open_database(path, sys.argv[3], int(sys.argv[4]))
+        _, items = open_database(path, sys.argv[3])
     elif cmd == "plain":
         from sqlmodel import Session
         from api import database

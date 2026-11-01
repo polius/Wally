@@ -1,7 +1,8 @@
-"""End-to-end encryption: keys, sealed records, getting back in, and turning it on or off.
+"""End-to-end encryption: the household key, sealed records, getting back in, and turning it on or off.
 
 Everything is opened and closed in the browser. The server checks who is asking and keeps what
-it is given; it cannot read a password, a key or a figure.
+it is given; it cannot read the password, a key or a figure. There is one household key, locked
+under the household password and under the recovery key of the household's Emergency Kit.
 """
 import json
 import logging
@@ -11,36 +12,30 @@ from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-import jwt
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlmodel import Session, select, delete, func
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlmodel import Session, select, func
 
 from .. import database
 from ..database import get_session
 from ..models.app import AppConfig
 from ..models.categories import Category, CategoryColor
 from ..models.money import ImportRule
-from ..models.people import Person, SessionToken
+from ..models.people import Person
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.tags import Tag
 from ..models.transactions import Transaction
-from ..models.vault import Kdf, VaultKey, Invite, Record, VaultEvent
+from ..models.vault import HouseholdKey, Record
 from ..services import conversion, vault as records
 from ..services.backups import plain_rows, plain_backups
 from ..util import utcnow, to_cents, from_cents
 from .auth import (
-    Actor, check_login, config, flag, set_config, hash_password, check_password, check_locked, record_failure,
-    clear_failures, start_session, is_https, second_step, _aware, has_recovery_password,
+    Actor, check_login, config, flag, set_config, hash_password, prove_password, password_salt,
 )
 
 router = APIRouter(tags=["Encryption"])
 log = logging.getLogger("wally")
 
-SETUP_COOKIE = "wally_setup"
-SETUP_MINUTES = 15
-INVITE_HOURS = 48
-INVITE_TRIES = 3
 EVENT_DAYS = 30
 
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -73,93 +68,50 @@ def _person(db: Session, person_id: int) -> Person:
         raise HTTPException(status_code=404, detail="This person does not exist.")
     return person
 
+def _key(db: Session) -> HouseholdKey:
+    key = db.get(HouseholdKey, 1)
+    if not key:
+        raise HTTPException(status_code=409, detail="This household has no key.")
+    return key
+
 def signed_in(actor: Actor = Depends(check_login)) -> Actor:
     """Keys and records are only for someone signed in on this browser, never an API key."""
     if actor.via != "session" or actor.person_id is None:
         raise HTTPException(status_code=401, detail="Sign in to continue.")
     return actor
 
-def _proof(db: Session, person: Person, value: str):
-    """The person's login key, made from their password in the browser, for sensitive changes."""
-    check_locked(person.id)
-    if not person.password_hash or not check_password(value or "", person.password_hash):
-        left = record_failure(person.id)
-        raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": left})
-    clear_failures(person.id)
-
-def _set_kdf(db: Session, person_id: int, salt: str):
-    row = db.get(Kdf, person_id) or Kdf(person_id=person_id, salt=salt)
-    row.salt = salt
-    db.add(row)
-
-def _purge_invites(db: Session):
-    now = utcnow()
-    for inv in db.exec(select(Invite)).all():
-        if _aware(inv.expires_at) < now:
-            db.delete(inv)
-
-def vault_status(db: Session, me: Person | None) -> dict:
+def vault_status(db: Session) -> dict:
     """What /auth/status says about encryption."""
     vid = records.vault_id(db)
-    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail(), "required": records.required()}
+    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail(), "required": records.required(), "kdf": bool(password_salt(db))}
     if not vid:
-        out["kdf"] = bool(me and db.get(Kdf, me.id))
         try:
             off = json.loads(config(db, "ENCRYPTION_OFF") or "null")
             if off and utcnow() - datetime.fromisoformat(off["at"]) < timedelta(days=EVENT_DAYS):
                 out["turned_off"] = off
         except (ValueError, KeyError, TypeError):
             pass
-        return out
-    keys = {k.person_id for k in db.exec(select(VaultKey)).all()}
-    now = utcnow()
-    invites = {i.person_id: i for i in db.exec(select(Invite)).all() if _aware(i.expires_at) >= now}
-    out["kdf"] = bool(me and db.get(Kdf, me.id))
-    out["mine"] = bool(me and me.id in keys)
-    out["people"] = {str(p.id): {"key": p.id in keys, "invite": bool(invites.get(p.id))} for p in db.exec(select(Person)).all()}
-    since = now - timedelta(days=EVENT_DAYS)
-    out["events"] = [{"id": e.id, "kind": e.kind, "person_id": e.person_id, "by": e.by, "at": _aware(e.at).isoformat()}
-                     for e in db.exec(select(VaultEvent).order_by(VaultEvent.at.desc())).all() if _aware(e.at) >= since]
     return out
 
 # ---------- signing in: the salt, then the locked key ----------
 @router.get("/vault/kdf")
 def read_kdf(
-    person_id: int,
     db: Annotated[Session, Depends(get_session)],
 ):
-    """The salt the browser needs to turn a password into keys. With encryption on, also whether
-    this person can unlock Wally yet ("key"), or has a code waiting ("invite")."""
-    person = _person(db, person_id)
-    row = db.get(Kdf, person_id)
-    if not records.vault_id(db):
-        return {"salt": row.salt if row else None, "state": "plain", "one_time": bool(row) and has_recovery_password(person.name)}
-    if db.get(VaultKey, person_id):
-        state = "key"
-    else:
-        inv = db.get(Invite, person_id)
-        state = "invite" if inv and _aware(inv.expires_at) >= utcnow() else "none"
-    return {"salt": row.salt if row else None, "state": state}
+    """The salt the browser turns the household password into keys with, if there is one."""
+    return {"salt": password_salt(db) or None, "state": "key" if records.vault_id(db) else "plain"}
 
 @router.get("/vault/key")
 def read_key(
     db: Annotated[Session, Depends(get_session)],
     actor: Actor = Depends(signed_in),
 ):
-    """Your household key, locked under your password. Only your browser can unlock it."""
+    """The household key, locked under the password. Only a browser that knows the password can unlock it."""
     _need_on(db)
-    key = db.get(VaultKey, actor.person_id)
-    kdf = db.get(Kdf, actor.person_id)
-    if not key or not kdf:
-        raise HTTPException(status_code=404, detail="You have no key yet. Ask someone in the household for a code.")
-    return {"vault_id": records.vault_id(db), "salt": kdf.salt, "wrap": key.wrap, "recovery_made": key.recovery_made}
+    key = _key(db)
+    return {"vault_id": records.vault_id(db), "salt": password_salt(db), "wrap": key.wrap, "recovery_made": key.recovery_made}
 
 # ---------- records ----------
-def _keyholder(db: Session, actor: Actor):
-    _need_on(db)
-    if not db.get(VaultKey, actor.person_id):
-        raise HTTPException(status_code=403, detail="You have no key yet. Ask someone in the household for a code.")
-
 @router.get("/vault/changes")
 def read_changes(
     db: Annotated[Session, Depends(get_session)],
@@ -167,7 +119,7 @@ def read_changes(
     actor: Actor = Depends(signed_in),
 ):
     """Every sealed record changed after `since` (the counter this device last saw); 0 for all of them."""
-    _keyholder(db, actor)
+    _need_on(db)
     body = records.changes(db, max(0, since))
     return Response(content=_dumps(body), media_type="application/json")
 
@@ -184,7 +136,7 @@ def write_batch(
     actor: Actor = Depends(signed_in),
 ):
     """Save sealed records, all or none. 409 lists the records another device changed first."""
-    _keyholder(db, actor)
+    _need_on(db)
     with records.WRITE_LOCK:
         try:
             result = records.apply_batch(db, body.ops)
@@ -193,242 +145,6 @@ def write_batch(
             raise HTTPException(status_code=409, detail=records.conflict_response(error))
         db.commit()
     return result
-
-# ---------- the recovery key ----------
-class RecoveryKey(BaseModel):
-    current: str
-    recovery_login: str
-    recovery_wrap: str
-
-@router.post("/vault/recovery-key")
-def new_recovery_key(
-    body: RecoveryKey,
-    db: Annotated[Session, Depends(get_session)],
-    actor: Actor = Depends(signed_in),
-):
-    """A new recovery key, for a new Emergency Kit. The old one stops working."""
-    _need_on(db)
-    me = _person(db, actor.person_id)
-    _proof(db, me, body.current)
-    key = db.get(VaultKey, me.id)
-    if not key:
-        raise HTTPException(status_code=404, detail="You have no key yet.")
-    key.recovery_hash = hash_password(_hex64(body.recovery_login, "recovery key"))
-    key.recovery_wrap = _wrap(body.recovery_wrap)
-    key.recovery_made = utcnow()
-    db.add(key)
-    db.commit()
-    return {"ok": True, "recovery_made": key.recovery_made}
-
-# ---------- getting back in ----------
-class Proof(BaseModel):
-    person_id: int
-    login: str
-    code: str = ""
-    recovery_code: str = ""
-
-def _setup_cookie(db: Session, request: Request, response: Response, person_id: int, via: str):
-    token = jwt.encode(
-        {"sub": str(person_id), "purpose": "vault-setup", "via": via, "exp": datetime.now(timezone.utc) + timedelta(minutes=SETUP_MINUTES)},
-        config(db, "SECRET_KEY"), algorithm="HS512",
-    )
-    response.set_cookie(SETUP_COOKIE, token, max_age=SETUP_MINUTES * 60, httponly=True, samesite="lax", secure=is_https(request), path="/")
-
-def _two_step(db: Session, person: Person, body: Proof) -> dict | None:
-    """With two-step on, the code is still needed: a recovery key or a code from someone replaces
-    the password only. Returns {"code_needed": True} when it has not been typed yet."""
-    if not person.totp_enabled:
-        return None
-    if not body.code and not body.recovery_code:
-        return {"code_needed": True}
-    if not second_step(db, person, body.code, body.recovery_code):
-        left = record_failure(person.id)
-        message = "That recovery code is not right, or it was already used." if body.recovery_code else "That code is not right. Codes change every 30 seconds."
-        raise HTTPException(status_code=401, detail={"message": message, "tries_left": left, "second_step": True})
-    return None
-
-@router.post("/vault/recover")
-def recover_with_key(
-    body: Proof,
-    request: Request,
-    response: Response,
-    db: Annotated[Session, Depends(get_session)],
-):
-    """Back in with the recovery key from the Emergency Kit: then a new password."""
-    _need_on(db)
-    person = _person(db, body.person_id)
-    check_locked(person.id)
-    key = db.get(VaultKey, person.id)
-    if not key or not key.recovery_hash or not check_password(body.login or "", key.recovery_hash):
-        left = record_failure(person.id)
-        raise HTTPException(status_code=401, detail={"message": "That recovery key is not right.", "tries_left": left})
-    pending = _two_step(db, person, body)
-    if pending:
-        return pending
-    clear_failures(person.id)
-    db.commit()
-    _setup_cookie(db, request, response, person.id, "recovery")
-    return {"wrap": key.recovery_wrap, "vault_id": records.vault_id(db), "kind": "recovery"}
-
-@router.post("/vault/redeem")
-def redeem_code(
-    body: Proof,
-    request: Request,
-    response: Response,
-    db: Annotated[Session, Depends(get_session)],
-):
-    """A one-use code from someone in the household: a first way in, or a way back in."""
-    _need_on(db)
-    person = _person(db, body.person_id)
-    check_locked(person.id)
-    inv = db.get(Invite, person.id)
-    if not inv or _aware(inv.expires_at) < utcnow():
-        if inv:
-            db.delete(inv)
-            db.commit()
-        raise HTTPException(status_code=404, detail="This code expired or was cancelled. Ask for a new one.")
-    if not check_password(body.login or "", inv.login_hash):
-        inv.failures += 1
-        if inv.failures >= INVITE_TRIES:
-            db.delete(inv)
-            db.commit()
-            raise HTTPException(status_code=401, detail={"message": "Three wrong codes: this code was cancelled. Ask for a new one.", "tries_left": 0, "cancelled": True})
-        db.add(inv)
-        db.commit()
-        raise HTTPException(status_code=401, detail={"message": "That code is not right.", "tries_left": INVITE_TRIES - inv.failures})
-    pending = _two_step(db, person, body)
-    if pending:
-        return pending
-    clear_failures(person.id)
-    db.commit()
-    _setup_cookie(db, request, response, person.id, "invite")
-    return {"wrap": inv.wrap, "vault_id": records.vault_id(db), "kind": inv.kind}
-
-class Setup(BaseModel):
-    salt: str
-    login_key: str
-    wrap: str
-    recovery_login: str | None = None
-    recovery_wrap: str | None = None
-
-@router.post("/vault/setup")
-def finish_setup(
-    body: Setup,
-    request: Request,
-    response: Response,
-    db: Annotated[Session, Depends(get_session)],
-):
-    """After a recovery key or a code: the new password's keys, and with a code, a new recovery key.
-    Every other sign-in of this person ends."""
-    _need_on(db)
-    try:
-        claims = jwt.decode(request.cookies.get(SETUP_COOKIE) or "", config(db, "SECRET_KEY"), algorithms=["HS512"])
-        assert claims.get("purpose") == "vault-setup"
-        person = db.get(Person, int(claims["sub"]))
-        assert person
-    except Exception:
-        raise HTTPException(status_code=401, detail="That took too long. Start again.")
-    via = claims.get("via")
-    salt, login, wrap = _salt(body.salt), _hex64(body.login_key, "login key"), _wrap(body.wrap)
-    inv = None
-    if via == "invite":
-        inv = db.get(Invite, person.id)
-        if not inv:
-            raise HTTPException(status_code=409, detail="This code was cancelled meanwhile. Ask for a new one.")
-        if not body.recovery_login or not body.recovery_wrap:
-            raise HTTPException(status_code=400, detail="A new Emergency Kit is needed.")
-    _set_kdf(db, person.id, salt)
-    person.password_hash = hash_password(login)
-    person.must_change_password = False
-    db.add(person)
-    key = db.get(VaultKey, person.id) or VaultKey(person_id=person.id, wrap=wrap)
-    key.wrap = wrap
-    if body.recovery_login or body.recovery_wrap:
-        key.recovery_hash = hash_password(_hex64(body.recovery_login, "recovery key"))
-        key.recovery_wrap = _wrap(body.recovery_wrap)
-        key.recovery_made = utcnow()
-    db.add(key)
-    if inv:
-        if inv.kind == "help":
-            db.add(VaultEvent(kind="helped", person_id=person.id, by=inv.created_by))
-        db.delete(inv)
-    # A new password: every device of this person signs in again
-    db.exec(delete(SessionToken).where(SessionToken.person_id == person.id))
-    start_session(db, request, response, person.id)
-    response.delete_cookie(SETUP_COOKIE, path="/")
-    db.commit()
-    return {"ok": True}
-
-# ---------- codes for someone else ----------
-class NewInvite(BaseModel):
-    person_id: int
-    current: str
-    login: str
-    wrap: str
-
-@router.get("/vault/invites")
-def list_invites(
-    db: Annotated[Session, Depends(get_session)],
-    actor: Actor = Depends(signed_in),
-):
-    _need_on(db)
-    _purge_invites(db)
-    db.commit()
-    return [{"person_id": i.person_id, "kind": i.kind, "created_by": i.created_by, "created_at": _aware(i.created_at).isoformat(), "expires_at": _aware(i.expires_at).isoformat()}
-            for i in db.exec(select(Invite)).all()]
-
-@router.post("/vault/invites")
-def create_invite(
-    body: NewInvite,
-    db: Annotated[Session, Depends(get_session)],
-    actor: Actor = Depends(signed_in),
-):
-    """Lock the household key under a code for one person, for 48 hours. Made only when asked,
-    never in advance; a new code replaces the old one."""
-    _keyholder(db, actor)
-    me = _person(db, actor.person_id)
-    _proof(db, me, body.current)
-    target = _person(db, body.person_id)
-    if target.id == me.id:
-        raise HTTPException(status_code=400, detail="Use your recovery key to get yourself back in.")
-    kind = "help" if db.get(VaultKey, target.id) else "invite"
-    inv = db.get(Invite, target.id) or Invite(person_id=target.id, kind=kind, login_hash="", wrap="", expires_at=utcnow())
-    inv.kind = kind
-    inv.login_hash = hash_password(_hex64(body.login, "code"))
-    inv.wrap = _wrap(body.wrap)
-    inv.created_by = me.id
-    inv.created_at = utcnow()
-    inv.expires_at = utcnow() + timedelta(hours=INVITE_HOURS)
-    inv.failures = 0
-    db.add(inv)
-    db.commit()
-    return {"person_id": target.id, "kind": kind, "expires_at": _aware(inv.expires_at).isoformat()}
-
-@router.delete("/vault/invites/{person_id}")
-def cancel_invite(
-    person_id: int,
-    db: Annotated[Session, Depends(get_session)],
-    actor: Actor = Depends(signed_in),
-):
-    _need_on(db)
-    inv = db.get(Invite, person_id)
-    if inv:
-        db.delete(inv)
-        db.commit()
-    return {"ok": True}
-
-@router.delete("/vault/events/{event_id}")
-def dismiss_event(
-    event_id: int,
-    db: Annotated[Session, Depends(get_session)],
-    actor: Actor = Depends(signed_in),
-):
-    """Only the person it is about can clear it for everyone."""
-    event = db.get(VaultEvent, event_id)
-    if event and event.person_id == actor.person_id:
-        db.delete(event)
-        db.commit()
-    return {"ok": True}
 
 # ---------- what the server still holds in the clear ----------
 @router.get("/vault/check")
@@ -446,11 +162,6 @@ def check_server(
     }
 
 # ---------- turning it on or off ----------
-class InviteIn(BaseModel):
-    person_id: int
-    login: str
-    wrap: str
-
 class Start(BaseModel):
     direction: Literal["on", "off"]
     current: str
@@ -460,7 +171,6 @@ class Start(BaseModel):
     wrap: str | None = None
     recovery_login: str | None = None
     recovery_wrap: str | None = None
-    invites: list[InviteIn] = []
 
 @router.post("/vault/convert/start")
 def convert_start(
@@ -468,8 +178,8 @@ def convert_start(
     db: Annotated[Session, Depends(get_session)],
     actor: Actor = Depends(signed_in),
 ):
-    """Pause the household and build the new file. Turning on: your keys and the others' codes
-    go in it now; the records follow from your browser."""
+    """Pause the household and build the new file. Turning on: the household key, locked under the
+    password and the new Emergency Kit, goes in it now; the records follow from your browser."""
     me = _person(db, actor.person_id)
     on = bool(records.vault_id(db))
     if body.direction == "on" and on:
@@ -479,21 +189,13 @@ def convert_start(
     if body.direction == "off" and records.required():
         raise HTTPException(status_code=403, detail="This server keeps every household encrypted, so it can’t be turned off.")
     if not flag(db, "LOGIN_PAGE"):
-        raise HTTPException(status_code=400, detail="Turn on sign-in first: encryption needs everyone to have their own password.")
-    if body.direction == "off" and not db.get(VaultKey, me.id):
-        raise HTTPException(status_code=403, detail="You have no key yet.")
-    _proof(db, me, body.current)
+        raise HTTPException(status_code=400, detail="Turn on sign-in first: the household password is the key to encryption.")
+    prove_password(db, body.current)
     if body.direction == "on":
         if not body.vault_id or not HEX32.match(body.vault_id):
             raise HTTPException(status_code=400, detail="Not a valid vault id.")
         salt, login, wrap = _salt(body.salt), _hex64(body.login_key, "login key"), _wrap(body.wrap)
         rec_login, rec_wrap = _hex64(body.recovery_login, "recovery key"), _wrap(body.recovery_wrap)
-        others = {p.id for p in db.exec(select(Person)).all() if p.id != me.id}
-        for inv in body.invites:
-            if inv.person_id not in others:
-                raise HTTPException(status_code=400, detail="A code can only be for someone else in the household.")
-            _hex64(inv.login, "code")
-            _wrap(inv.wrap)
 
     c = conversion.start(body.direction, me.id, me.name)
     try:
@@ -501,15 +203,12 @@ def convert_start(
             if body.direction == "on":
                 for key, value in (("VAULT_ID", body.vault_id), ("VAULT_SEQ", 0), ("VAULT_FLOOR", 0)):
                     nx.add(AppConfig(key=key, value=str(value)))
-                _set_kdf(nx, me.id, salt)
-                p = nx.get(Person, me.id)
-                p.password_hash = hash_password(login)
-                p.must_change_password = False
-                nx.add(p)
-                nx.add(VaultKey(person_id=me.id, wrap=wrap, recovery_hash=hash_password(rec_login), recovery_wrap=rec_wrap, recovery_made=utcnow()))
-                for inv in body.invites:
-                    nx.add(Invite(person_id=inv.person_id, kind="invite", login_hash=hash_password(inv.login), wrap=inv.wrap,
-                                  created_by=me.id, expires_at=utcnow() + timedelta(hours=INVITE_HOURS)))
+                set_config(nx, "LOGIN_SALT", salt)
+                set_config(nx, "LOGIN_PASSWORD", hash_password(login))
+                # The new Emergency Kit replaces the one made without encryption
+                set_config(nx, "KIT_HASH", "")
+                set_config(nx, "KIT_MADE", "")
+                nx.add(HouseholdKey(wrap=wrap, recovery_hash=hash_password(rec_login), recovery_wrap=rec_wrap, recovery_made=utcnow()))
             nx.commit()
     except Exception:
         conversion.abort()

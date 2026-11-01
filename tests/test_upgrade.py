@@ -132,9 +132,8 @@ def test_an_upgraded_household_can_turn_on_encryption(make_client, tmp_path):
     client = make_client(FIXTURES / "v1.16.db")
     sign_in(client, read(FIXTURES / "v1.16.db")["config"])
     alex = client.post("/people", json={"name": "Alex"}).json()["id"]
-    # As after the upgrade: the household password the first time, then their own
+    # As after the upgrade: everyone signs in as themselves with the same household password
     client.post("/logout")
-    assert client.post("/login", json={"person_id": alex, "password": PASSWORD}).json()["must_change_password"]
-    assert client.put("/me/password", json={"new": "alex-pass-1"}).status_code == 200
+    assert client.post("/login", json={"person_id": alex, "password": PASSWORD}).json() == {"ok": True, "code_needed": False}
     before = export()
-    assert turn_on(client, alex, "alex-pass-1")["count"] == len(before)
+    assert turn_on(client, alex, PASSWORD)["count"] == len(before)

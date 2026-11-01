@@ -92,20 +92,6 @@ def parse_recovery_key(text: str) -> bytes:
 def from_recovery_key(raw: bytes) -> tuple[str, bytes]:
     return hkdf(raw, "wally recovery login v1").hex(), hkdf(raw, "wally recovery unlock v1")
 
-def new_code() -> str:
-    body = os.urandom(12)
-    bits = "".join(f"{b:08b}" for b in body) + f"{hashlib.sha256(body).digest()[0] >> 4:04b}"
-    code = "".join(ABC[int(bits[i * 5:i * 5 + 5], 2)] for i in range(20))
-    return "-".join(code[i:i + 5] for i in range(0, 20, 5))
-
-def parse_code(text: str) -> bytes:
-    raw, rest = _unbase32(_clean(text), 100)
-    assert int(rest, 2) == hashlib.sha256(raw).digest()[0] >> 4, "code check bits"
-    return raw
-
-def from_code(raw: bytes) -> tuple[str, bytes]:
-    return hkdf(raw, "wally code login v1").hex(), hkdf(raw, "wally code unlock v1")
-
 def record_id(item: dict, house: Household) -> str:
     """The record id the browser gives an item, as js/vault/session.js does when turning encryption on."""
     if item["k"] in ("tx", "rule"):
@@ -118,15 +104,15 @@ def record_id(item: dict, house: Household) -> str:
         return rid
     raise ValueError(item["k"])
 
-def open_database(path, password: str, person_id: int) -> tuple[Household, list[dict]]:
-    """Everything an encrypted wally.db holds, opened with one person's password, as a check
+def open_database(path, password: str) -> tuple[Household, list[dict]]:
+    """Everything an encrypted wally.db holds, opened with the household password, as a check
     from outside the browser."""
     import sqlite3
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         vault_id = conn.execute("SELECT value FROM appconfig WHERE key='VAULT_ID'").fetchone()[0]
-        salt = conn.execute("SELECT salt FROM kdf WHERE person_id=?", (person_id,)).fetchone()[0]
-        wrap = conn.execute("SELECT wrap FROM vaultkey WHERE person_id=?", (person_id,)).fetchone()[0]
+        salt = conn.execute("SELECT value FROM appconfig WHERE key='LOGIN_SALT'").fetchone()[0]
+        wrap = conn.execute("SELECT wrap FROM householdkey WHERE id=1").fetchone()[0]
         _, unlock_key = from_password(password, salt)
         house = Household(unlock(unlock_key, wrap, vault_id))
         items = [house.open(rid, v, b64(ct)) for rid, v, ct in conn.execute("SELECT id, version, ct FROM record WHERE deleted = 0")]

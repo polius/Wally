@@ -1,5 +1,6 @@
-/* The full-screen steps before the app: sign in, first run, the upgrade from 1.x,
-   choosing your own password, turning on two-step sign-in, and "who is using this browser".
+/* The full-screen steps before the app: sign in, first run, the upgrade from 1.x, saving the
+   household's Emergency Kit, getting back in with it, unlocking an encrypted household, and
+   "who is using this browser".
    app.js decides which one comes first (nextGate) and calls mountGate; done() reloads Wally. */
 import * as core from "../core.js";
 import { t, tn, esc, state, GET, POST, PUT, av, pname, person, icon, loadLanguage, LANGUAGES, LANG } from "../core.js";
@@ -21,8 +22,8 @@ export function mountGate(el, kind, s, done) {
   state.people = s.people || [];
   root.classList.add("w-gate");
   root.addEventListener("keydown", (ev) => { const card = root.firstElementChild; if (card) trapFocus(card, ev); });
-  ({ signin: startSignin, welcome: startWelcome, people: startPeople, password: renderPassword, twostep: startTwoStep, who: renderWho,
-     unlock: () => startVault("unlock", s.me && String(s.me.id)), invite: () => startVault("invite", s.me && String(s.me.id)) }[kind] || startSignin)();
+  ({ signin: startSignin, welcome: startWelcome, people: startPeople, kit: startKit, who: renderWho,
+     unlock: () => startVault("unlock", s.me && String(s.me.id)) }[kind] || startSignin)();
 }
 
 /* ---------- shared pieces ---------- */
@@ -56,7 +57,7 @@ const signOutLink = () => '<button type="button" class="w-link w-silink" data-si
 function wireSignOut() { const b = root.querySelector("[data-signout-gate]"); if (b) b.addEventListener("click", signOutNow); }
 
 /* ======================= sign in ======================= */
-const si = { step: "who", p: null, rec: false, err: "", wait: 0, forgotFile: "" };
+const si = { step: "who", p: null, rec: false, err: "", wait: 0 };
 let countdown = null;
 
 function startSignin() {
@@ -77,20 +78,17 @@ function go(step, p) {
 function renderSignin() {
   const s = si.step, name = si.p ? esc(pname(si.p)) : "";
   if (s === "who") {
-    paint(card(mark() + head(t("Who is signing in?"), t("Each person has their own password")) +
+    paint(card(mark() + head(t("Who is signing in?"), t("Everyone uses the household password")) +
       '<div class="w-profiles" role="list">' + state.people.map((p) =>
         '<div role="listitem"><button type="button" class="w-prof" data-prof="' + p.id + '">' + bigAv(String(p.id)) + "<span>" + esc(p.name) + "</span></button></div>").join("") + "</div>" +
       '<span class="w-hint">' + t("Wally remembers the last person on this browser") + "</span>"));
     root.querySelectorAll("[data-prof]").forEach((b) => b.addEventListener("click", () => go("pw", b.dataset.prof)));
     return;
   }
-  if (s === "forgot") {
-    // Before anyone has been added, it is the household password that was forgotten
-    paint(card(mark() + head(t("Check the server"), si.p ? t("Wally wrote a one-time password for {name} to this file on the server:", { name }) : t("Wally wrote a new household password to this file on the server:")) +
-      '<div class="w-keybox w-sifile"><code>' + esc(si.forgotFile) + "</code></div>" +
-      '<p class="w-sip">' + (si.p
-        ? t("Sign in with it, then choose a new password. It works once, then it is removed from the file. It also turns off two-step sign-in for {name}, who can turn it back on in Settings. If you can’t reach the server, ask whoever runs it.", { name })
-        : t("Sign in with it. It replaces the old household password: everyone you add next signs in with it the first time, then chooses their own. If you can’t reach the server, ask whoever runs it.")) + "</p>" +
+  if (s === "nokit") {
+    // Upgraded from 1.x and nobody has signed in since: there is no Emergency Kit yet
+    paint(card(mark() + head(t("There is no Emergency Kit yet"), t("Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:")) +
+      '<div class="w-keybox w-sifile"><code translate="no">docker exec wally python3 -m api.signin_off</code></div>' +
       '<button type="button" class="w-btn primary w-submit w-wide" id="si-back" data-autofocus>' + t("Back to sign in") + "</button>"));
     root.querySelector("#si-back").addEventListener("click", () => go(si.p ? "pw" : "household"));
     return;
@@ -103,9 +101,10 @@ function renderSignin() {
       ? '<input id="si-in" class="w-sicode" placeholder="xxxx-xxxx" aria-label="' + esc(t("Recovery code")) + '" autocomplete="off" autocapitalize="off" spellcheck="false"'
       : '<input id="si-in" class="w-sicode" placeholder="123 456" aria-label="' + esc(t("6-digit code")) + '" inputmode="numeric" pattern="[0-9 ]*" autocomplete="one-time-code" maxlength="7"';
     field = '<div class="w-input' + (bad ? " err" : "") + '">' + field + ' aria-invalid="' + bad + '" aria-describedby="si-msg"></div>';
-    links = '<button type="button" class="w-link w-silink" id="si-alt">' + (si.rec ? t("Use the authenticator app") : t("Use a recovery code")) + "</button>";
+    links = '<div class="w-silinks"><button type="button" class="w-link w-silink" id="si-alt">' + (si.rec ? t("Use the authenticator app") : t("Use a recovery code")) + "</button>" +
+      '<button type="button" class="w-link w-silink" id="si-nophone">' + t("No phone or codes?") + "</button></div>";
   } else {
-    top = household ? mark() + head(t("Sign in"), t("Enter the household password")) : bigAv(si.p) + head(t("Hi, {name}", { name }), t("Enter your password"));
+    top = household ? mark() + head(t("Sign in"), t("Enter the household password")) : bigAv(si.p) + head(t("Hi, {name}", { name }), t("Enter the household password"));
     field = (household ? "" : '<input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>') +
       '<div class="w-input' + (bad ? " err" : "") + '"><input type="password" id="si-in" placeholder="' + esc(t("Password")) + '" aria-label="' + esc(t("Password")) + '" aria-invalid="' + bad + '" aria-describedby="si-msg" autocomplete="current-password">' + eye("si-in") + "</div>";
     links = '<div class="w-silinks">' + (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
@@ -122,6 +121,8 @@ function renderSignin() {
   root.querySelector("#si-form").addEventListener("submit", (ev) => { ev.preventDefault(); submitSignin(input.value); });
   if (code) {
     root.querySelector("#si-alt").addEventListener("click", () => { si.rec = !si.rec; go("code"); });
+    // Encrypted: the Emergency Kit stands in for two-step. Otherwise a one-time password from the server turns it off.
+    root.querySelector("#si-nophone").addEventListener("click", forgot);
     // The code goes as soon as the sixth digit is typed or pasted
     if (!si.rec) input.addEventListener("input", () => { if (input.value.replace(/\D/g, "").length === 6) submitSignin(input.value); });
   } else {
@@ -162,16 +163,12 @@ async function submitSignin(value) {
     }
     const body = { person_id: si.p ? Number(si.p) : null, password: value };
     si.unlock = null;
-    if (si.p) {
-      // A person with a salt never sends their password: the browser makes a login key from it
-      const kdf = await GET("/vault/kdf?person_id=" + Number(si.p));
-      if (kdf.state === "invite" || kdf.state === "none") return startVault("invite", si.p);
-      if (kdf.salt) {
-        const k = await (await vs()).crypto.fromPassword(value, kdf.salt);
-        body.password = k.login;
-        si.unlock = k.unlock;
-        if (kdf.one_time) body.one_time = value;
-      }
+    // With a salt the password is never sent: the browser makes a login key from it
+    const kdf = await GET("/vault/kdf");
+    if (kdf.salt) {
+      const k = await (await vs()).crypto.fromPassword(value, kdf.salt);
+      body.password = k.login;
+      si.unlock = k.unlock;
     }
     const r = await POST("/login", body, { quiet401: true });
     if (r && r.code_needed) { si.rec = false; return go("code"); }
@@ -197,7 +194,6 @@ function loginError(e, code) {
   }
   if (code && e.status === 401) { si.step = "pw"; si.err = t("That took too long. Sign in again."); return renderSignin(); }
   if (e.status === 404) { si.step = "who"; si.p = null; }
-  if (e.status === 403 && e.detail && e.detail.needs_code && si.p) return startVault("invite", si.p);
   si.err = apiMessage(e);
   renderSignin();
 }
@@ -213,18 +209,10 @@ async function signedIn() {
   }
   finish();
 }
-async function forgot() {
-  if (status.vault && status.vault.on && si.p) return startVault("recover", si.p);
-  const btn = root.querySelector("#si-forgot");
-  busy(btn, true);
-  try {
-    const r = await POST("/login/recover", { person_id: si.p ? Number(si.p) : null });
-    si.forgotFile = r.file || "password.txt";
-    go("forgot");
-  } catch (e) {
-    si.err = apiMessage(e);
-    renderSignin();
-  }
+/* Forgot the password, or no two-step code at hand: the household's Emergency Kit */
+function forgot() {
+  if (!status.kit || !si.p) return go("nokit");
+  startVault("recover", si.p);
 }
 
 /* ======================= who is using this browser (sign-in off) ======================= */
@@ -259,108 +247,46 @@ function renderWho() {
   }
 }
 
-/* ======================= choose your own password ======================= */
-function renderPassword(err) {
-  const me = status.me ? String(status.me.id) : null;
-  paint(card((me ? bigAv(me) : mark()) + head(t("Choose your own password"), t("You signed in with a password someone else knows. Choose one only you know, of at least 8 characters.")) +
-    '<form id="pw-form" class="w-siform" novalidate>' +
-    '<input type="text" class="w-sr" autocomplete="username" value="' + esc(me ? pname(me) : "") + '" tabindex="-1" aria-hidden="true" readonly>' +
-    '<div class="w-input' + (err ? " err" : "") + '"><input type="password" id="pw-new" placeholder="' + esc(t("New password")) + '" aria-label="' + esc(t("New password")) + '" autocomplete="new-password" aria-describedby="pw-msg">' + eye("pw-new") + "</div>" +
-    '<div class="w-input' + (err ? " err" : "") + '"><input type="password" id="pw-again" placeholder="' + esc(t("The same again")) + '" aria-label="' + esc(t("The same again")) + '" autocomplete="new-password" aria-describedby="pw-msg">' + eye("pw-again") + "</div>" +
-    '<p class="w-err" id="pw-msg" role="alert"' + (err ? "" : " hidden") + ">" + (err || "") + "</p>" +
-    '<button class="w-btn primary w-submit" type="submit" id="pw-go">' + t("Save password") + "</button></form>" + signOutLink()), "#pw-new");
-  wireEyes();
-  wireSignOut();
-  root.querySelector("#pw-form").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const a = root.querySelector("#pw-new").value, b = root.querySelector("#pw-again").value;
-    if (a.length < 8) return renderPassword(t("Use at least 8 characters."));
-    if (a !== b) return renderPassword(t("The two passwords are different."));
-    const btn = root.querySelector("#pw-go");
-    busy(btn, true);
-    try { await PUT("/me/password", { new: a }); finish(); }
-    catch (e) { renderPassword(apiMessage(e)); }
-  });
+/* ======================= saving the household's Emergency Kit ======================= */
+/* After the upgrade from 1.x, or turning encryption off: the household has no kit yet. Whoever
+   signs in next makes one and saves it. */
+const kg = { key: "", qr: "", saved: false, err: "" };
+async function startKit() {
+  paint(card(mark() + head(t("Save the household’s Emergency Kit"), t("Getting it ready…"))));
+  try {
+    kg.key = (await POST("/kit", {}, { quiet401: true })).key;
+    kg.qr = await (await import("../vault/kit.js")).qrSvg(kg.key);
+  } catch (e) {
+    // Someone else in the household saved it a moment ago: nothing to do here
+    if (e.status === 409) return finish();
+    paint(card(mark() + head(t("Save the household’s Emergency Kit"), apiMessage(e)) + '<button type="button" class="w-btn primary w-submit w-wide" id="kg-retry">' + t("Try again") + "</button>" + signOutLink()));
+    root.querySelector("#kg-retry").addEventListener("click", startKit);
+    wireSignOut();
+    return;
+  }
+  renderKit();
+}
+function renderKit() {
+  paint(card(mark() + head(t("Save the household’s Emergency Kit"), t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) +
+    '<div class="w-kit">' + kg.qr + keyGroups(kg.key) + "</div>" +
+    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="kg-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="kg-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="kg-copy">' + icon("copy") + t("Copy") + "</button></div>" +
+    '<label class="w-sichk"><input type="checkbox" id="kg-saved"' + (kg.saved ? " checked" : "") + ">" + t("I saved it somewhere safe") + "</label>" +
+    '<button type="button" class="w-btn primary w-submit w-wide" id="kg-done"' + (kg.saved ? "" : " disabled") + ">" + t("Open Wally") + "</button>", "wide"), "#kg-print");
+  root.querySelector("#kg-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(kg.key));
+  root.querySelector("#kg-dl").addEventListener("click", () => downloadKit(kg.key));
+  root.querySelector("#kg-copy").addEventListener("click", (ev) => copy(kg.key, ev.currentTarget));
+  root.querySelector("#kg-saved").addEventListener("change", (ev) => { kg.saved = ev.target.checked; root.querySelector("#kg-done").disabled = !kg.saved; });
+  root.querySelector("#kg-done").addEventListener("click", () => finish());
+}
+async function downloadKit(key) {
+  const kit = await import("../vault/kit.js");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([kit.kitText(key)], { type: "text/plain" }));
+  a.download = "wally-emergency-kit.txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/* ======================= two-step sign-in, required by the household ======================= */
-const ts = { secret: "", uri: "", qr: "", codes: null, err: "" };
-async function startTwoStep() {
-  paint(card(mark() + head(t("Turn on two-step sign-in"), t("Getting a code ready…"))));
-  try {
-    const [r, qr] = await Promise.all([POST("/me/two-step/setup"), loadQr()]);
-    ts.secret = r.secret; ts.uri = r.uri;
-    if (qr) {
-      const q = qr(0, "M");
-      q.addData(r.uri);
-      q.make();
-      ts.qr = q.createSvgTag({ cellSize: 4, margin: 3, scalable: true, alt: t("QR code for your authenticator app") });
-    }
-    renderTwoStep();
-  } catch (e) {
-    paint(card(mark() + head(t("Turn on two-step sign-in"), apiMessage(e)) + '<button type="button" class="w-btn primary w-submit w-wide" id="ts-retry">' + t("Try again") + "</button>" + signOutLink()));
-    root.querySelector("#ts-retry").addEventListener("click", startTwoStep);
-    wireSignOut();
-  }
-}
-function loadQr() {
-  return new Promise((resolve) => {
-    if (window.qrcode) return resolve(window.qrcode);
-    const s = document.createElement("script");
-    s.src = "/js/vendors/qrcode.js";
-    s.onload = () => resolve(window.qrcode || null);
-    s.onerror = () => resolve(null);
-    document.head.appendChild(s);
-  });
-}
-function groupKey(secret) { return secret.replace(/(.{4})/g, "$1 ").trim(); }
-function renderTwoStep() {
-  if (ts.codes) return renderCodes();
-  const bad = !!ts.err;
-  paint(card(mark() + head(t("Turn on two-step sign-in"), t("This household asks everyone for a code from an authenticator app when they sign in. Any authenticator app works.")) +
-    '<ol class="w-tsteps">' +
-    "<li><b>" + (ts.qr ? t("Scan this with your authenticator app") : t("Add Wally to your authenticator app with this key")) + "</b>" +
-      (ts.qr ? '<div class="w-qr">' + ts.qr + "</div>" : "") +
-      (ts.qr ? '<span class="w-hint">' + t("Can’t scan it? Type this key instead:") + "</span>" : "") +
-      '<div class="w-keybox"><code id="ts-key">' + esc(groupKey(ts.secret)) + '</code><button type="button" class="w-btn ghost" id="ts-copy">' + t("Copy") + "</button></div></li>" +
-    "<li><b>" + t("Enter the 6-digit code it shows") + "</b>" +
-      '<form id="ts-form" class="w-siform" novalidate><div class="w-input' + (bad ? " err" : "") + '"><input id="ts-in" class="w-sicode" placeholder="123 456" aria-label="' + esc(t("6-digit code")) + '" inputmode="numeric" autocomplete="one-time-code" maxlength="7" aria-invalid="' + bad + '" aria-describedby="ts-msg"></div>' +
-      '<p class="w-err" id="ts-msg" role="alert"' + (bad ? "" : " hidden") + ">" + (ts.err || "") + "</p>" +
-      '<button class="w-btn primary w-submit" type="submit" id="ts-go">' + t("Turn on") + "</button></form></li></ol>" + signOutLink(), "wide"), "#ts-in");
-  wireSignOut();
-  root.querySelector("#ts-copy").addEventListener("click", (ev) => copy(ts.secret, ev.currentTarget));
-  const input = root.querySelector("#ts-in");
-  input.addEventListener("input", () => { if (input.value.replace(/\D/g, "").length === 6) confirmTwoStep(input.value); });
-  root.querySelector("#ts-form").addEventListener("submit", (ev) => { ev.preventDefault(); confirmTwoStep(input.value); });
-}
-let confirming = false;
-async function confirmTwoStep(value) {
-  const code = value.replace(/\D/g, "");
-  if (confirming) return;
-  if (code.length !== 6) { ts.err = t("Enter the 6 digits your app shows."); return renderTwoStep(); }
-  confirming = true;
-  busy(root.querySelector("#ts-go"), true);
-  try { ts.codes = (await POST("/me/two-step/confirm", { code })).recovery_codes; ts.err = ""; }
-  catch (e) { ts.err = apiMessage(e); }
-  finally { confirming = false; }
-  renderTwoStep();
-}
-function renderCodes() {
-  const text = ts.codes.join("\n");
-  paint(card(mark() + head(t("Save your recovery codes"), t("If you lose your phone, each of these signs you in once. Wally keeps only a scrambled copy, so it can’t show them again.")) +
-    '<ul class="w-codes" aria-label="' + esc(t("Recovery codes")) + '">' + ts.codes.map((c) => "<li><code>" + esc(c) + "</code></li>").join("") + "</ul>" +
-    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="rc-copy">' + icon("copy") + t("Copy") + '</button><button type="button" class="w-btn ghost" id="rc-dl">' + icon("download") + t("Download") + "</button></div>" +
-    '<button type="button" class="w-btn primary w-submit w-wide" id="rc-done">' + t("I saved them. Open Wally") + "</button>", "wide"), "#rc-copy");
-  root.querySelector("#rc-copy").addEventListener("click", (ev) => copy(text, ev.currentTarget));
-  root.querySelector("#rc-dl").addEventListener("click", () => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([t("Wally recovery codes") + "\n\n" + text + "\n"], { type: "text/plain" }));
-    a.download = "wally-recovery-codes.txt";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
-  root.querySelector("#rc-done").addEventListener("click", finish);
-}
 async function copy(text, btn) {
   try { await navigator.clipboard.writeText(text); } catch (e) { return; }
   const before = btn.innerHTML;
@@ -417,7 +343,7 @@ async function createPeople(names) {
 /* ---------- first run: Basics, People, Privacy, Your data ---------- */
 /* Privacy asks who runs the server once sign-in is on: when it's someone else, Wally is encrypted
    now, before there is anything to encrypt. With WALLY_ENCRYPTION=required it isn't a question. */
-const onb = { step: 0, names: [""], people: [], pw: false, data: "add", currency: null, who: "", secret: "", kit: "", qr: "", codes: [], saved: false };
+const onb = { step: 0, names: [""], people: [], pw: false, data: "add", currency: null, who: "", secret: "", plainKit: "", kit: "", qr: "", saved: false, sealed: false };
 const mustEncrypt = () => !!(status.vault && status.vault.required);
 const canEncrypt = () => !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
 function onbSteps() { return ["basics", "people", ...(onb.pw || mustEncrypt() ? ["privacy"] : []), "data"]; }
@@ -450,7 +376,7 @@ function renderWelcome() {
       (onb.people.length ? "" : '<div class="w-onbf w-onbpw"><div class="w-onbrow"><span id="onb-pw-l">' + t("Password") + '</span><span class="w-inline w-nowrap"><button type="button" class="w-switch" role="switch" id="onb-pw" aria-checked="' + onb.pw + '" aria-labelledby="onb-pw-l"' + (locked ? " disabled" : "") + "></button>" +
         '<input class="w-mini" type="password" id="onb-pwd" placeholder="' + esc(t("Choose a password")) + '" aria-label="' + esc(t("Password")) + '" autocomplete="new-password"' + (onb.pw ? "" : " hidden") + "></span></div>" +
         '<p class="w-hint">' + (locked ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
-          : onb.pw ? t("Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.") : t("Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.")) + "</p></div>") +
+          : onb.pw ? t("Wally asks for it when it opens. Everyone in the household uses this one password.") : t("Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.")) + "</p></div>") +
       '<p class="w-hint">' + t("Living alone? Keep just yourself. The person switch then stays hidden.") + "</p>";
     foot = backBtn() + nextBtn(t("Continue"));
   } else if (k === "privacy") {
@@ -471,19 +397,19 @@ function renderWelcome() {
 function whatItMeans(others) {
   return '<ul class="w-onbmeans">' +
     "<li>" + icon("lock") + "<span><b>" + t("Your password is the key.") + "</b> " + t("Nobody can reset it for you, not even whoever runs the server.") + "</span></li>" +
-    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("A recovery key to print or keep in a password manager. It gets you back in if you forget your password.") + "</span></li>" +
-    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone else gets a code.") + "</b> " + t("A one-time code from you, to join on their own phone or computer. They choose their own password then.") + "</span></li>" : "") +
+    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("One for the household, to print or keep in a password manager. It gets you back in if you forget the password.") + "</span></li>" +
+    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone uses the same password.") + "</b> " + t("Each person types it once on their own phone or computer.") + "</span></li>" : "") +
     "<li>" + icon("phone") + "<span><b>" + t("Phone shortcuts and API keys are off.") + "</b> " + t("They talk to the server, and the server can’t read your data.") + "</span></li></ul>";
 }
 function privacyStep() {
   const others = onb.people.length > 1;
-  // Encrypted: the Emergency Kit, then everyone's code
+  // The household's Emergency Kit: made with the password, or anew as Wally was encrypted
   if (onb.kit) {
-    const body = '<h1 id="gate-h">' + t("Save your Emergency Kit") + '</h1><p class="w-onbp">' + t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") + "</p>" +
+    const body = '<h1 id="gate-h">' + t("Save the household’s Emergency Kit") + '</h1><p class="w-onbp">' +
+      (onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
+        : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) + "</p>" +
       '<div class="w-kit">' + onb.qr + keyGroups(onb.kit) + "</div>" +
       '<div class="w-silinks w-onbkit"><button type="button" class="w-btn ghost" id="onb-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
-      (onb.codes.length ? '<h2 class="w-onbh2">' + t("Codes for everyone else") + '</h2><p class="w-hint">' + t("Each person types theirs when they first open Wally. A code works once, for 48 hours. Lost one? Make a new one in Settings › People.") + "</p>" +
-        '<div class="w-onbf">' + onb.codes.map((c) => '<div class="w-onbrow"><span>' + esc(c.name) + '</span><span class="w-keybox"><code translate="no">' + esc(c.code) + '</code><button type="button" class="w-btn ghost" data-code="' + esc(c.code) + '">' + t("Copy") + "</button></span></div>").join("") + "</div>" : "") +
       '<label class="w-sichk"><input type="checkbox" id="onb-saved"' + (onb.saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>";
     return { body, foot: "<span></span>" + nextBtn(t("Continue")) };
   }
@@ -519,7 +445,15 @@ async function savePrivacy() {
   }
   if (!mustEncrypt()) {
     if (!onb.who) { onbError(t("Choose who runs this server.")); return false; }
-    if (onb.who === "me") { onb.secret = ""; return true; }
+    if (onb.who === "me") {
+      // Not encrypted: the kit made with the password
+      onb.secret = "";
+      onb.kit = onb.plainKit;
+      onb.plainKit = "";
+      onb.qr = await (await import("../vault/kit.js")).qrSvg(onb.kit);
+      renderWelcome();
+      return false;
+    }
   }
   const prog = root.querySelector("#onb-prog");
   const say = (step, n, total) => {
@@ -532,8 +466,10 @@ async function savePrivacy() {
   state.me = String(onb.people[0].id);
   const r = await session.turnOn(onb.secret, say);
   onb.secret = "";
+  // Encrypting replaced the kit made with the password
+  onb.plainKit = "";
   onb.kit = r.recoveryKey;
-  onb.codes = r.codes;
+  onb.sealed = true;
   onb.qr = await (await import("../vault/kit.js")).qrSvg(r.recoveryKey);
   renderWelcome();
   return false;
@@ -578,18 +514,9 @@ function wireWelcome() {
   root.querySelectorAll("[data-onb-data]").forEach((b) => b.addEventListener("click", () => { onb.data = b.dataset.onbData; renderWelcome(); root.querySelector('[data-onb-data="' + onb.data + '"]').focus(); }));
   root.querySelectorAll("[data-who]:not([disabled])").forEach((b) => b.addEventListener("click", () => { onb.who = b.dataset.who; onbError(""); renderWelcome(); root.querySelector('[data-who="' + onb.who + '"]').focus(); }));
   if (onb.kit && k === "privacy") {
-    const me = onb.people[0] ? onb.people[0].name : "";
-    root.querySelector("#onb-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(me, onb.kit));
-    root.querySelector("#onb-dl").addEventListener("click", async () => {
-      const kit = await import("../vault/kit.js");
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([kit.kitText(me, onb.kit)], { type: "text/plain" }));
-      a.download = "wally-emergency-kit.txt";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    });
+    root.querySelector("#onb-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(onb.kit));
+    root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(onb.kit));
     root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(onb.kit, ev.currentTarget));
-    root.querySelectorAll("[data-code]").forEach((b) => b.addEventListener("click", (ev) => copy(b.dataset.code, ev.currentTarget)));
     root.querySelector("#onb-saved").addEventListener("change", (ev) => { onb.saved = ev.target.checked; onbError(""); });
   }
 }
@@ -611,9 +538,10 @@ async function savePeople() {
   write("wally.person", String(people[0].id));
   write(LAST, String(people[0].id));
   if (password) {
-    const passwords = Object.fromEntries(people.map((p) => [String(p.id), password]));
-    await PUT("/signin", { enabled: true, passwords });
+    const r = await PUT("/signin", { enabled: true, password });
     state.status.signin = true;
+    // Shown on the next step, unless encrypting there makes a new one
+    onb.plainKit = r.kit || "";
     // Kept in memory for the next step only, where it may become the household's key
     onb.secret = password;
   }
@@ -695,7 +623,7 @@ function renderUpgrade() {
       '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label></div>";
     foot = backBtn() + nextBtn(t("Continue"));
   } else {
-    body = '<h1 id="gate-h">' + t("Now sign in as yourself") + '</h1><p class="w-onbp">' + t("Each person signs in with the household password the first time, then chooses their own.") + "</p>" +
+    body = '<h1 id="gate-h">' + t("Now sign in as yourself") + '</h1><p class="w-onbp">' + t("Pick your name, then type the household password, as before.") + "</p>" +
       '<ul class="w-onbppl">' + up.people.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span></li>").join("") + "</ul>";
     foot = backBtn() + nextBtn(t("Sign in"));
   }
@@ -789,24 +717,24 @@ function showCounts() {
 }
 
 
-/* ======================= encryption: unlocking, codes, getting back in ======================= */
-/* With encryption on, a password opens the household key on this browser. Without it, there are
-   two ways back in: the recovery key from the Emergency Kit, then a code from someone else in the
-   household. Both replace the password only: two-step sign-in still asks for its code. */
+/* ======================= unlocking, and getting back in with the Emergency Kit ======================= */
+/* With encryption on, the household password opens the household key on this browser. Forgot it, or
+   no two-step code at hand? The recovery key from the household's Emergency Kit gets you back in,
+   with or without encryption, and a new password follows, for everyone. */
 let vmod = null;
 async function vs() { if (!vmod) { vmod = await import("../vault/session.js"); vmod.bind(core); } return vmod; }
-const vg = { step: "unlock", p: null, err: "", kind: "code", text: "", rec: false, found: null, key: "", saved: false, file: "", signedIn: false };
+const vg = { step: "unlock", p: null, err: "", text: "", found: null, signedIn: false };
 
 function startVault(step, p) {
-  Object.assign(vg, { step, p: p || vg.p, err: "", text: "", rec: false, found: null, key: "", saved: false, signedIn: !!(status && status.signed_in) });
-  vg.kind = step === "recover" ? "recovery" : "code";
+  Object.assign(vg, { step, p: p || vg.p, err: "", text: "", found: null, signedIn: !!(status && status.signed_in) });
   renderVault();
 }
 function vgo(step) { vg.step = step; vg.err = ""; renderVault(); }
 function others() { return state.people.filter((p) => String(p.id) !== String(vg.p)); }
 
+const sealed = () => !!(status.vault && status.vault.on);
 function renderVault() {
-  if (!(window.crypto && crypto.subtle && window.isSecureContext !== false)) {
+  if (sealed() && !canEncrypt()) {
     // Browsers only encrypt on secure pages: there is nothing this page can do
     paint(card(mark() + head(t("Open Wally over HTTPS"), t("This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.")) + (vg.signedIn ? signOutLink() : "")));
     wireSignOut();
@@ -816,61 +744,38 @@ function renderVault() {
   const errP = '<p class="w-err" id="vg-msg" role="alert"' + (msg ? "" : " hidden") + ">" + msg + "</p>";
   const submit = (label) => '<button class="w-btn primary w-submit" type="submit" id="vg-go">' + label + "</button>";
   const bad = msg ? " err" : "";
-  const out = vg.signedIn ? signOutLink() : (state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="vg-not">' + t("Not {name}?", { name }) + "</button>" : "");
   let html;
   if (s === "unlock") {
-    html = bigAv(vg.p) + head(t("Unlock Wally"), t("Wally is encrypted. Enter your password to open it on this browser.")) +
+    html = bigAv(vg.p) + head(t("Unlock Wally"), t("Wally is encrypted. Enter the household password to open it on this browser.")) +
       '<form id="vg-form" class="w-siform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>' +
       '<div class="w-input' + bad + '"><input type="password" id="vg-in" placeholder="' + esc(t("Password")) + '" aria-label="' + esc(t("Password")) + '" autocomplete="current-password" aria-describedby="vg-msg">' + eye("vg-in") + "</div>" +
       errP + submit(t("Unlock")) + "</form>" +
       '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-forgot">' + t("Forgot password?") + "</button>" + signOutLink() + "</div>";
-  } else if (s === "invite" || s === "recover") {
-    const recovery = s === "recover";
-    html = bigAv(vg.p) + (recovery
-      ? head(t("Use your recovery key"), t("It’s on your Emergency Kit: 52 letters and digits, in groups of four."))
-      : head(t("Hi, {name}", { name }), vg.kind === "help" ? t("Enter the code someone in the household made for you.") : t("Wally is encrypted. Enter the code someone in the household gave you."))) +
+  } else if (s === "recover") {
+    html = bigAv(vg.p) + head(t("Use your recovery key"), t("It’s on the household’s Emergency Kit: 52 letters and digits, in groups of four. It works without two-step sign-in too.")) +
       '<form id="vg-form" class="w-siform" novalidate><div class="w-input' + bad + '">' +
-      (recovery
-        ? '<textarea id="vg-in" class="w-sikey" rows="3" placeholder="XXXX-XXXX-XXXX-…" aria-label="' + esc(t("Recovery key")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vg-msg">' + esc(vg.text) + "</textarea>"
-        : '<input id="vg-in" class="w-sicode" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" aria-label="' + esc(t("Code")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vg-msg" value="' + esc(vg.text) + '">') +
+      '<textarea id="vg-in" class="w-sikey" rows="3" placeholder="XXXX-XXXX-XXXX-…" aria-label="' + esc(t("Recovery key")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vg-msg">' + esc(vg.text) + "</textarea>" +
       "</div>" + errP + submit(t("Continue")) + "</form>" +
-      (recovery
-        ? '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-help">' + t("Lost it too?") + "</button>" + (vg.signedIn ? signOutLink() : '<button type="button" class="w-link w-silink" id="vg-back">' + t("Back to sign in") + "</button>") + "</div>"
-        : '<p class="w-hint w-sip">' + t("A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.") + "</p>" + out);
+      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-help">' + t("Lost it too?") + "</button>" + (vg.signedIn ? signOutLink() : '<button type="button" class="w-link w-silink" id="vg-back">' + t("Back to sign in") + "</button>") + "</div>";
   } else if (s === "help") {
     const list = others();
-    html = bigAv(vg.p) + (list.length
-      ? head(t("Ask someone to help"), t("{names} can let you back in: in Settings › People, they choose Help {name} back in, then give you the code it shows. It works once, for 48 hours.", { names: esc(new Intl.ListFormat(LANG, { type: "disjunction" }).format(list.map((p) => p.name))), name }))
-      : head(t("No one else can help"), t("Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it."))) +
-      (list.length ? '<button type="button" class="w-btn primary w-submit w-wide" id="vg-have">' + t("I have a code") + "</button>" : "") +
-      '<p class="w-sip">' + t("Lost your two-step sign-in too? Whoever runs the server can turn it off for you. That opens the sign-in only, never the data.") + "</p>" +
-      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-file">' + t("Write a one-time code on the server") + '</button><button type="button" class="w-link w-silink" id="vg-rec">' + t("Use my recovery key") + "</button></div>";
-  } else if (s === "file") {
-    html = mark() + head(t("Check the server"), t("Wally wrote a one-time code for {name} to this file on the server:", { name })) +
-      '<div class="w-keybox w-sifile"><code>' + esc(vg.file) + "</code></div>" +
-      '<p class="w-sip">' + t("When Wally asks for your two-step code, choose Use a recovery code and type it. It works once and turns off two-step sign-in, which you can turn on again in Settings.") + "</p>" +
-      '<button type="button" class="w-btn primary w-submit w-wide" id="vg-back2" data-autofocus>' + t("Back") + "</button>";
-  } else if (s === "code2") {
-    html = bigAv(vg.p) + head(t("Two-step sign-in"), vg.rec ? t("Enter one of your recovery codes") : t("Enter the 6-digit code from your authenticator app")) +
-      '<form id="vg-form" class="w-siform" novalidate><div class="w-input' + bad + '">' +
-      (vg.rec ? '<input id="vg-in" class="w-sicode" placeholder="xxxx-xxxx" aria-label="' + esc(t("Recovery code")) + '" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="vg-msg">'
-        : '<input id="vg-in" class="w-sicode" placeholder="123 456" aria-label="' + esc(t("6-digit code")) + '" inputmode="numeric" autocomplete="one-time-code" maxlength="7" aria-describedby="vg-msg">') +
-      "</div>" + errP + submit(t("Continue")) + "</form>" +
-      '<button type="button" class="w-link w-silink" id="vg-alt">' + (vg.rec ? t("Use the authenticator app") : t("Use a recovery code")) + "</button>";
+    const last = sealed()
+      ? t("Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.")
+      : t("Whoever runs the server can turn sign-in off with this command, then you turn it on again with a new password:");
+    html = bigAv(vg.p) + head(t("Lost the Emergency Kit too?"), list.length
+      ? t("Ask {names}: everyone in the household signs in with the same password.", { names: esc(new Intl.ListFormat(LANG, { type: "disjunction" }).format(list.map((p) => p.name))) })
+      : last) +
+      (list.length ? '<p class="w-sip">' + last + "</p>" : "") +
+      (sealed() ? "" : '<div class="w-keybox w-sifile"><code translate="no">docker exec wally python3 -m api.signin_off</code></div>') +
+      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-rec">' + t("Use my recovery key") + "</button></div>";
   } else if (s === "newpw") {
-    html = bigAv(vg.p) + head(t("Choose a new password"), t("At least 8 characters. Your other browsers will ask you to sign in again.")) +
-      '<form id="vg-form" class="w-siform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>' +
+    html = bigAv(vg.p) + head(t("Choose a new household password"), t("At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.")) +
+      '<form id="vg-form" class="w-siform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + esc(t("Household")) + '" tabindex="-1" aria-hidden="true" readonly>' +
       '<div class="w-input' + bad + '"><input type="password" id="vg-in" placeholder="' + esc(t("New password")) + '" aria-label="' + esc(t("New password")) + '" autocomplete="new-password" aria-describedby="vg-msg">' + eye("vg-in") + "</div>" +
       '<div class="w-input' + bad + '"><input type="password" id="vg-in2" placeholder="' + esc(t("The same again")) + '" aria-label="' + esc(t("The same again")) + '" autocomplete="new-password" aria-describedby="vg-msg">' + eye("vg-in2") + "</div>" +
       errP + submit(t("Save password")) + "</form>";
-  } else if (s === "kit") {
-    html = mark() + head(t("Save your Emergency Kit"), t("If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) +
-      '<div class="w-kit">' + vg.qr + keyGroups(vg.key) + "</div>" +
-      '<div class="w-silinks"><button type="button" class="w-btn ghost" id="vg-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="vg-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="vg-copy">' + icon("copy") + t("Copy") + "</button></div>" +
-      '<label class="w-sichk"><input type="checkbox" id="vg-saved"' + (vg.saved ? " checked" : "") + ">" + t("I saved it somewhere safe") + "</label>" +
-      '<button type="button" class="w-btn primary w-submit w-wide" id="vg-done"' + (vg.saved ? "" : " disabled") + ">" + t("Open Wally") + "</button>";
   }
-  paint(card(html, s === "kit" || s === "help" ? "wide" : ""), "#vg-in");
+  paint(card(html, s === "help" ? "wide" : ""), "#vg-in");
   wireEyes();
   wireSignOut();
   const on = (id, fn) => { const n = root.querySelector(id); if (n) n.addEventListener("click", fn); };
@@ -878,36 +783,8 @@ function renderVault() {
   if (form) form.addEventListener("submit", (ev) => { ev.preventDefault(); submitVault(); });
   on("#vg-forgot", () => startVault("recover", vg.p));
   on("#vg-help", () => vgo("help"));
-  on("#vg-have", () => { vg.kind = "help"; vgo("invite"); });
-  on("#vg-rec", () => { vg.kind = "recovery"; vg.text = ""; vgo("recover"); });
-  on("#vg-back", () => { startSignin(); });
-  on("#vg-back2", () => vgo("help"));
-  on("#vg-not", () => { si.p = null; go("who"); });
-  on("#vg-alt", () => { vg.rec = !vg.rec; vgo("code2"); });
-  on("#vg-file", async (ev) => {
-    busy(ev.currentTarget, true);
-    try { vg.file = (await POST("/login/recover", { person_id: Number(vg.p) })).file || "password.txt"; vgo("file"); }
-    catch (e) { vg.err = apiMessage(e); renderVault(); }
-  });
-  if (s === "code2" && !vg.rec) {
-    const input = root.querySelector("#vg-in");
-    input.addEventListener("input", () => { if (input.value.replace(/\D/g, "").length === 6) submitVault(); });
-  }
-  if (s === "kit") {
-    const who = pname(vg.p);
-    on("#vg-print", async () => (await import("../vault/kit.js")).printKit(who, vg.key));
-    on("#vg-dl", async () => {
-      const kit = await import("../vault/kit.js");
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([kit.kitText(who, vg.key)], { type: "text/plain" }));
-      a.download = "wally-emergency-kit.txt";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    });
-    on("#vg-copy", (ev) => copy(vg.key, ev.currentTarget));
-    root.querySelector("#vg-saved").addEventListener("change", (ev) => { vg.saved = ev.target.checked; root.querySelector("#vg-done").disabled = !vg.saved; });
-    on("#vg-done", () => finish(true));
-  }
+  on("#vg-rec", () => { vg.text = ""; vgo("recover"); });
+  on("#vg-back", () => go("pw", vg.p));
 }
 function keyGroups(key) { return '<code class="w-kitkey" translate="no">' + key.split("-").map((g) => "<span>" + esc(g) + "</span>").join("") + "</code>"; }
 
@@ -926,24 +803,27 @@ async function submitVault() {
       await session.unlockWithPassword(value, vg.p);
       return finish(true);
     }
-    if (s === "invite" || s === "recover") {
+    if (s === "recover") {
       vg.text = value;
-      return await proveStep(session, null);
-    }
-    if (s === "code2") {
-      return await proveStep(session, vg.rec ? { recovery_code: value.trim() } : { code: value.replace(/\D/g, "") });
+      // Encrypted: the browser opens the household key with it. Otherwise the server checks it.
+      if (sealed()) vg.found = await session.prove(vg.p, value);
+      else { await POST("/kit/recover", { person_id: Number(vg.p), key: value }, { quiet401: true }); vg.found = {}; }
+      return vgo("newpw");
     }
     if (s === "newpw") {
       const a = value, b = root.querySelector("#vg-in2").value;
       if (a.length < 8) { vg.err = t("Use at least 8 characters."); return renderVault(); }
       if (a !== b) { vg.err = t("The two passwords are different."); return renderVault(); }
-      const key = await session.setup(vg.found, a, vg.p);
+      if (sealed()) await session.setup(vg.found, a, vg.p);
+      else {
+        // Where the browser can, the server never sees the new password: only a login key made from it
+        let body = { new: a };
+        if (canEncrypt()) { const salt = session.crypto.newSalt(); body = { new: (await session.crypto.fromPassword(a, salt)).login, salt }; }
+        await POST("/kit/password", body, { quiet401: true });
+      }
       vg.found = null;
       write(LAST, vg.p);
-      if (!key) return finish(true);
-      vg.key = key;
-      vg.qr = await (await import("../vault/kit.js")).qrSvg(key);
-      return vgo("kit");
+      return finish(true);
     }
   } catch (e) {
     vaultError(e);
@@ -953,23 +833,13 @@ async function submitVault() {
     if (go) busy(go, false);
   }
 }
-async function proveStep(session, second) {
-  const kind = vg.kind === "recovery" ? "recovery" : "code";
-  const r = await session.prove(kind, vg.p, vg.text, second);
-  if (r.code_needed) { vg.rec = false; return vgo("code2"); }
-  vg.found = r;
-  vgo("newpw");
-}
 function vaultError(e) {
   const d = e && e.detail && typeof e.detail === "object" ? e.detail : {};
   if (e.status === 429) vg.err = tn(d.retry_after || 30, "Too many tries. Wait {n} second, then try again.", "Too many tries. Wait {n} seconds, then try again.");
-  else if (d.cancelled) { vg.err = t("Three wrong codes: this code was cancelled. Ask for a new one."); vg.text = ""; }
-  else if (e.status === 401 && d.second_step) vg.err = (vg.rec ? t("That recovery code isn’t right, or it was already used.") : t("That code isn’t right. Codes change every 30 seconds, so use the newest one.")) + (d.tries_left !== undefined ? " " + tn(d.tries_left, "{n} try left.", "{n} tries left.") : "");
   else if (e.status === 401 && vg.step === "unlock") vg.err = t("That password isn’t right. Try again, or use Forgot password.");
   else if (e.status === 401 && d.tries_left !== undefined) {
-    vg.err = (vg.kind === "recovery" ? t("That recovery key isn’t right.") : t("That code isn’t right.")) + " " + tn(d.tries_left, "{n} try left.", "{n} tries left.");
-    if (vg.step === "code2") vg.step = vg.kind === "recovery" ? "recover" : "invite";
-  } else if (e.status === 401 && vg.step === "newpw") { vg.err = t("That took too long. Start again."); vg.step = vg.kind === "recovery" ? "recover" : "invite"; }
+    vg.err = t("That recovery key isn’t right.") + " " + tn(d.tries_left, "{n} try left.", "{n} tries left.");
+  } else if (e.status === 401 && vg.step === "newpw") { vg.err = t("That took too long. Start again."); vg.step = "recover"; }
   else vg.err = apiMessage(e);
   renderVault();
 }

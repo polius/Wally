@@ -1,10 +1,9 @@
 import os
 import time
 import hashlib
+import json
 import secrets
-import string
 from dataclasses import dataclass
-from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -29,25 +28,14 @@ MAX_FAILURES = 5
 LOCK_SECONDS = 30
 MIN_PASSWORD = 8
 
-def recovery_file() -> Path:
-    return Path(os.getenv("WALLY_RECOVERY_FILE", "password.txt")).resolve()
-
-# The line in password.txt for the household password, asked for before anyone has been added
-HOUSEHOLD_LINE = "Household password"
-
 class Login(BaseModel):
+    # Who is signing in. None only before anyone has been added (just upgraded from 1.x).
     person_id: int | None = None
     password: str
-    # When the browser makes a login key from the password, a one-time password from
-    # password.txt comes as typed, here (only with encryption off)
-    one_time: str = ""
 
 class LoginCode(BaseModel):
     code: str = ""
     recovery_code: str = ""
-
-class Recover(BaseModel):
-    person_id: int | None = None
 
 @dataclass
 class Actor:
@@ -93,30 +81,64 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 # ---------- wrong tries ----------
-# Five wrong passwords or codes for one person: wait 30 seconds. Kept in memory on purpose:
-# a restart clears it, and it never locks anyone out for long.
-_failures: dict[str, list[float]] = {}
-# The last two-step counter each person used, so one code cannot be used twice
-_last_counter: dict[int, int] = {}
+# Five wrong passwords or codes: wait 30 seconds. One count for the household, since everyone types
+# the same password. Kept in memory on purpose: a restart clears it, and it never locks anyone out for long.
+_failures: list[float] = []
+# The last two-step counter used, so one code cannot be used twice
+_last_counter = {"value": -1}
 
-def _key(person_id: int | None) -> str:
-    return str(person_id)
-
-def check_locked(person_id: int | None):
-    tries = _failures.get(_key(person_id), [])
-    if len(tries) >= MAX_FAILURES:
-        wait = LOCK_SECONDS - (time.monotonic() - tries[-1])
+def check_locked():
+    if len(_failures) >= MAX_FAILURES:
+        wait = LOCK_SECONDS - (time.monotonic() - _failures[-1])
         if wait > 0:
             raise HTTPException(status_code=429, detail={"message": "Too many tries. Wait a moment.", "retry_after": int(wait) + 1})
-        _failures.pop(_key(person_id), None)
+        _failures.clear()
 
-def record_failure(person_id: int | None) -> int:
-    tries = _failures.setdefault(_key(person_id), [])
-    tries.append(time.monotonic())
-    return max(MAX_FAILURES - len(tries), 0)
+def record_failure() -> int:
+    _failures.append(time.monotonic())
+    return max(MAX_FAILURES - len(_failures), 0)
 
-def clear_failures(person_id: int | None):
-    _failures.pop(_key(person_id), None)
+def clear_failures():
+    _failures.clear()
+
+def wrong_password():
+    raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": record_failure()})
+
+# ---------- the household password ----------
+def password_salt(db: Session) -> str:
+    """With a salt, the browser turns the password into keys (Argon2id) and sends only a login key
+    made from it. Always so with encryption on; the salt stays when encryption is turned off."""
+    return config(db, "LOGIN_SALT")
+
+def is_household_password(db: Session, value: str) -> bool:
+    stored = config(db, "LOGIN_PASSWORD")
+    return bool(stored) and check_password(value or "", stored)
+
+def prove_password(db: Session, value: str):
+    """Sensitive changes ask for the household password: the login key, when there is a salt."""
+    check_locked()
+    if not is_household_password(db, value):
+        wrong_password()
+    clear_failures()
+
+# ---------- two-step sign-in, one for the household ----------
+def two_step_on(db: Session) -> bool:
+    return flag(db, "TWO_STEP") and bool(config(db, "TOTP_SECRET"))
+
+def recovery_hashes(db: Session) -> list[str]:
+    try:
+        return list(json.loads(config(db, "TOTP_RECOVERY") or "[]"))
+    except ValueError:
+        return []
+
+def set_recovery_hashes(db: Session, hashes: list[str]):
+    set_config(db, "TOTP_RECOVERY", json.dumps(hashes))
+
+def turn_two_step_off(db: Session):
+    set_config(db, "TWO_STEP", False)
+    set_config(db, "TOTP_SECRET", "")
+    set_config(db, "TOTP_PENDING", "")
+    set_recovery_hashes(db, [])
 
 # ---------- sessions ----------
 def start_session(db: Session, request: Request, response: Response, person_id: int | None):
@@ -136,8 +158,9 @@ def start_session(db: Session, request: Request, response: Response, person_id: 
     )
     response.delete_cookie(PENDING_COOKIE, path="/")
 
-def end_other_sessions(db: Session, person_id: int, keep: str | None):
-    stmt = delete(SessionToken).where(SessionToken.person_id == person_id)
+def end_other_sessions(db: Session, keep: str | None):
+    """Every other browser in the household signs in again, as after a new password."""
+    stmt = delete(SessionToken)
     if keep:
         stmt = stmt.where(SessionToken.id != keep)
     db.exec(stmt)
@@ -235,15 +258,15 @@ def auth_status(
     me = db.get(Person, actor.person_id) if actor and actor.person_id is not None else None
     from .vault import vault_status
     return {
-        "vault": vault_status(db, me if actor and actor.via == "session" or not signin else None),
+        "vault": vault_status(db),
         "signin": signin,
-        "require_two_step": flag(db, "REQUIRE_TWO_STEP"),
+        "two_step": signin and two_step_on(db),
         "signed_in": actor is not None,
         "people": [person_public(p) for p in _people(db)],
         "me": person_public(me) if me else None,
-        "must_change_password": bool(me and signin and me.must_change_password),
-        "needs_two_step": bool(me and signin and flag(db, "REQUIRE_TWO_STEP") and not me.totp_enabled),
-        "household_password": bool(config(db, "LOGIN_PASSWORD")),
+        # When the household's Emergency Kit was made. None: Forgot password can't help, and
+        # whoever signs in next is asked to save one.
+        "kit": _kit_made(db) if signin else None,
         "onboarded": flag(db, "ONBOARDED"),
         # The upgrade from 1.x, until someone has read it
         "upgrade": _upgrade_report(db) if actor is not None else None,
@@ -252,6 +275,10 @@ def auth_status(
         "version": VERSION,
         "language": config(db, "LANGUAGE", "en"),
     }
+
+def _kit_made(db: Session) -> str | None:
+    from .kit import kit_made
+    return kit_made(db)
 
 def _upgrade_report(db: Session) -> dict | None:
     import json
@@ -269,146 +296,54 @@ def login(
     response: Response,
     db: Annotated[Session, Depends(get_session)],
 ):
+    """The household password, for the person who says who they are. With a salt, the browser
+    sends a login key made from the password, never the password itself."""
     if not flag(db, "LOGIN_PAGE"):
         return {"ok": True, "message": "Sign-in is off"}
 
-    people = _people(db)
     person = db.get(Person, login.person_id) if login.person_id is not None else None
     if login.person_id is not None and not person:
         raise HTTPException(status_code=404, detail="This person does not exist.")
-    if person is None and people:
+    if person is None and _people(db):
         raise HTTPException(status_code=400, detail="Pick who is signing in.")
 
-    check_locked(login.person_id)
+    check_locked()
+    if not is_household_password(db, login.password):
+        wrong_password()
+    clear_failures()
 
-    if vault_on():
-        return _login_encrypted(db, request, response, person, login.password)
-
-    household = config(db, "LOGIN_PASSWORD")
-    recovered = False
-    if person and person.password_hash:
-        ok = check_password(login.password, person.password_hash)
-    else:
-        # Before choosing their own, everyone signs in with the household password
-        ok = bool(household) and check_password(login.password, household)
-
-    if not ok and person:
-        recovered = _use_recovery_password(person.name, login.one_time or login.password)
-        ok = recovered
-        if recovered:
-            # They choose a new password next, as typed: the old salt goes with the old password
-            from ..models.vault import Kdf
-            kdf = db.get(Kdf, person.id)
-            if kdf:
-                db.delete(kdf)
-    elif not ok and not people and _use_recovery_password(HOUSEHOLD_LINE, login.password):
-        # It becomes the household password: everyone added next signs in with it the first time
-        set_config(db, "LOGIN_PASSWORD", hash_password(login.password))
-        ok = True
-
-    if not ok:
-        left = record_failure(login.person_id)
-        raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": left})
-
-    clear_failures(login.person_id)
-
-    if recovered:
-        # A one-time password also turns two-step off, so a lost phone never locks anyone out
-        person.totp_enabled = False
-        person.totp_secret = None
-        person.recovery_codes = []
-        person.must_change_password = True
-        db.add(person)
-    elif person and not person.password_hash:
-        person.must_change_password = True
-        db.add(person)
-
-    if person and person.totp_enabled:
-        pending = jwt.encode(
-            {"sub": str(person.id), "purpose": "code", "exp": datetime.now(timezone.utc) + timedelta(minutes=PENDING_MINUTES)},
-            config(db, "SECRET_KEY"), algorithm="HS512",
-        )
-        response.set_cookie(PENDING_COOKIE, pending, max_age=PENDING_MINUTES * 60, httponly=True, samesite="lax", secure=is_https(request), path="/")
+    if two_step_on(db):
+        _pending_code(db, request, response, person)
         db.commit()
         return {"ok": True, "code_needed": True}
 
     start_session(db, request, response, person.id if person else None)
     db.commit()
-    return {"ok": True, "code_needed": False, "must_change_password": bool(person and person.must_change_password)}
+    return {"ok": True, "code_needed": False}
 
-def _pending_code(db: Session, request: Request, response: Response, person: Person):
+def _pending_code(db: Session, request: Request, response: Response, person: Person | None):
+    """The password was right: the code from the authenticator app comes next, within five minutes."""
     pending = jwt.encode(
-        {"sub": str(person.id), "purpose": "code", "exp": datetime.now(timezone.utc) + timedelta(minutes=PENDING_MINUTES)},
+        {"sub": str(person.id) if person else "", "purpose": "code", "exp": datetime.now(timezone.utc) + timedelta(minutes=PENDING_MINUTES)},
         config(db, "SECRET_KEY"), algorithm="HS512",
     )
     response.set_cookie(PENDING_COOKIE, pending, max_age=PENDING_MINUTES * 60, httponly=True, samesite="lax", secure=is_https(request), path="/")
 
-def _login_encrypted(db: Session, request: Request, response: Response, person: Person | None, login_key: str):
-    """With encryption on, the browser sends a login key made from the password, never the password.
-    There is no household password and no one-time password from password.txt here: only the
-    person's own password opens their key."""
-    from ..models.vault import VaultKey
-    if person is None:
-        raise HTTPException(status_code=400, detail="Pick who is signing in.")
-    if not db.get(VaultKey, person.id):
-        raise HTTPException(status_code=403, detail={"message": "Wally is encrypted. Use the code someone in the household gave you.", "needs_code": True})
-    if not person.password_hash or not check_password(login_key, person.password_hash):
-        left = record_failure(person.id)
-        raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": left})
-    clear_failures(person.id)
-    if person.totp_enabled:
-        _pending_code(db, request, response, person)
-        return {"ok": True, "code_needed": True}
-    start_session(db, request, response, person.id)
-    db.commit()
-    return {"ok": True, "code_needed": False, "must_change_password": False}
-
-def second_step(db: Session, person: Person, code: str, recovery_code: str) -> bool:
-    """A code from the authenticator app, or one of the recovery codes. With encryption on, a
-    one-time password from password.txt also works here, and turns two-step off: whoever runs the
-    server can always undo two-step, because it only guards the sign-in, never the data."""
+def second_step(db: Session, code: str, recovery_code: str) -> bool:
+    """A code from the authenticator app, or one of the household's recovery codes."""
     if recovery_code:
         hashed = totp.hash_code(recovery_code)
-        if hashed in (person.recovery_codes or []):
-            person.recovery_codes = [c for c in person.recovery_codes if c != hashed]
-            db.add(person)
-            return True
-        if vault_on() and _use_recovery_password(person.name, recovery_code.strip()):
-            person.totp_enabled = False
-            person.totp_secret = None
-            person.recovery_codes = []
-            db.add(person)
+        hashes = recovery_hashes(db)
+        if hashed in hashes:
+            set_recovery_hashes(db, [c for c in hashes if c != hashed])
             return True
         return False
-    counter = totp.match(person.totp_secret, code) if person.totp_secret else None
-    if counter is not None and counter > _last_counter.get(person.id, -1):
-        _last_counter[person.id] = counter
+    secret = config(db, "TOTP_SECRET")
+    counter = totp.match(secret, code) if secret else None
+    if counter is not None and counter > _last_counter["value"]:
+        _last_counter["value"] = counter
         return True
     return False
-
-def has_recovery_password(name: str) -> bool:
-    path = recovery_file()
-    return path.exists() and any(line.partition(": ")[0] == name for line in path.read_text(encoding="utf-8").splitlines())
-
-def _use_recovery_password(name: str, password: str) -> bool:
-    """password.txt holds one line per person who asked: "Name: one-time password"."""
-    path = recovery_file()
-    if not path.exists():
-        return False
-    lines = path.read_text(encoding="utf-8").splitlines()
-    kept, matched = [], False
-    for line in lines:
-        who, _, value = line.partition(": ")
-        if not matched and who == name and value and secrets.compare_digest(value.strip(), password):
-            matched = True
-            continue
-        kept.append(line)
-    if matched:
-        if kept:
-            path.write_text("\n".join(kept) + "\n", encoding="utf-8")
-        else:
-            path.unlink(missing_ok=True)
-    return matched
 
 @router.post("/login/code")
 def login_code(
@@ -420,24 +355,21 @@ def login_code(
     pending = request.cookies.get(PENDING_COOKIE)
     try:
         claims = jwt.decode(pending or "", config(db, "SECRET_KEY"), algorithms=["HS512"])
-        assert claims.get("purpose") == "code"
-        person = db.get(Person, int(claims["sub"]))
-        assert person and person.totp_enabled and person.totp_secret
+        assert claims.get("purpose") == "code" and two_step_on(db)
+        person_id = int(claims["sub"]) if claims.get("sub") else None
+        assert person_id is None or db.get(Person, person_id)
     except Exception:
         raise HTTPException(status_code=401, detail="Sign in again: that took too long.")
 
-    check_locked(person.id)
-    ok = second_step(db, person, body.code, body.recovery_code)
-
-    if not ok:
-        left = record_failure(person.id)
+    check_locked()
+    if not second_step(db, body.code, body.recovery_code):
         message = "That recovery code is not right, or it was already used." if body.recovery_code else "That code is not right. Codes change every 30 seconds."
-        raise HTTPException(status_code=401, detail={"message": message, "tries_left": left})
+        raise HTTPException(status_code=401, detail={"message": message, "tries_left": record_failure()})
 
-    clear_failures(person.id)
-    start_session(db, request, response, person.id)
+    clear_failures()
+    start_session(db, request, response, person_id)
     db.commit()
-    return {"ok": True, "must_change_password": person.must_change_password, "recovery_codes_left": len(person.recovery_codes or [])}
+    return {"ok": True, "recovery_codes_left": len(recovery_hashes(db))}
 
 @router.post("/logout")
 def logout(
@@ -454,30 +386,6 @@ def logout(
     response.delete_cookie(SESSION_COOKIE, path="/")
     response.delete_cookie(PENDING_COOKIE, path="/")
     return {"message": "Signed out"}
-
-@router.post("/login/recover")
-def recover_password(
-    body: Recover,
-    db: Annotated[Session, Depends(get_session)],
-):
-    """Write a one-time password for this person to password.txt on the server, or, before anyone has
-    been added (just upgraded from 1.x), a new household password."""
-    if body.person_id is None:
-        if _people(db):
-            raise HTTPException(status_code=400, detail="Pick who is signing in.")
-        name = HOUSEHOLD_LINE
-    else:
-        person = db.get(Person, body.person_id)
-        if not person:
-            raise HTTPException(status_code=404, detail="This person does not exist.")
-        name = person.name
-    chars = string.ascii_letters + string.digits
-    password = "".join(secrets.choice(chars) for _ in range(12))
-    path = recovery_file()
-    lines = [l for l in (path.read_text(encoding="utf-8").splitlines() if path.exists() else []) if not l.startswith(f"{name}: ")]
-    lines.append(f"{name}: {password}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return {"message": "Recovery password written.", "file": str(path)}
 
 @router.get("/login/check", response_model=bool)
 def get_login_page_enabled(

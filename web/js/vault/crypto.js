@@ -1,11 +1,10 @@
 /* End-to-end encryption: every key Wally makes, and how a record is sealed. Nothing here talks to
    the server. tests/vault_crypto.py does the same in Python, to check what the browser wrote.
 
-   password ──Argon2id (64 MiB, 3 passes, per-person salt)──▶ master
+   household password ──Argon2id (64 MiB, 3 passes, one salt per household)──▶ master
      master ──HKDF "wally login v1"──▶ login key: sent at sign-in instead of the password
      master ──HKDF "wally unlock v1"─▶ unlock key: never leaves the browser; opens the household key
    recovery key (52 characters) ──HKDF──▶ its own login key and unlock key, the same way
-   one-use code (20 characters) ──HKDF──▶ its own login key and unlock key, the same way
    household secret (32 random bytes, one per household)
      ──HKDF "wally record key v1"──▶ AES-256-GCM key for records
      ──HKDF "wally id key v1"──────▶ HMAC key for ids that must be the same on every device
@@ -192,7 +191,7 @@ export function newUuid() {
   return uuid(hex(b));
 }
 
-/* ---------- recovery keys and one-use codes: Crockford base32, easy to read and type ---------- */
+/* ---------- recovery keys: Crockford base32, easy to read and type ---------- */
 const ABC = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 function toBase32(bytes, chars) {
   let bits = "";
@@ -230,24 +229,4 @@ export async function fromRecoveryKey(bytes) {
   return { login: hex(await hkdf(bytes, "wally recovery login v1")), unlock: await aesKey(await hkdf(bytes, "wally recovery unlock v1")) };
 }
 
-/* 12 random bytes and 4 check bits: 20 characters, in 4 groups of 5 */
-export async function newCode() {
-  const body = random(12);
-  const check = (await checkByte(body)) >> 4;
-  let bits = "";
-  for (const b of body) bits += b.toString(2).padStart(8, "0");
-  bits += check.toString(2).padStart(4, "0");
-  let out = "";
-  for (let i = 0; i < 20; i++) out += ABC[parseInt(bits.slice(i * 5, i * 5 + 5), 2)];
-  return out.match(/.{5}/g).join("-");
-}
-export async function parseCode(text) {
-  const s = clean(text);
-  if (s.length !== 20) return null;
-  const r = fromBase32(s, 100);
-  if (!r) return null;
-  return parseInt(r.rest, 2) === (await checkByte(r.bytes)) >> 4 ? r.bytes : null;
-}
-export async function fromCode(bytes) {
-  return { login: hex(await hkdf(bytes, "wally code login v1")), unlock: await aesKey(await hkdf(bytes, "wally code unlock v1")) };
-}
+

@@ -30,7 +30,7 @@ log = logging.getLogger("wally")
 # Two minutes without a word from the converting browser and the half-built file is thrown away
 PAUSE_SECONDS = int(os.getenv("WALLY_PAUSE_SECONDS", "120"))
 # Copied to the new file either way: who is here, how they sign in, the household's settings
-KEEP = ["person", "sessiontoken", "appconfig", "currency", "kdf"]
+KEEP = ["person", "sessiontoken", "appconfig", "currency"]
 # The household's data in the clear
 PLAIN = ["transaction", "recurringtransaction", "category", "categorycolor", "tag", "importrule"]
 VAULT_CONFIG = ("VAULT_ID", "VAULT_SEQ", "VAULT_FLOOR")

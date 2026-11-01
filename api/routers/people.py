@@ -10,13 +10,9 @@ from ..models.recurring_transactions import RecurringTransaction
 from ..models.api_keys import ApiKeys
 from ..services.ledger import people_ids
 from ..util import to_cents, even_shares
-from .auth import Actor, check_login, flag, config, hash_password, check_new_password
+from .auth import Actor, check_login, flag
 
 router = APIRouter(tags=["People"], dependencies=[Depends(check_login)])
-
-class NewPerson(PersonCreate):
-    # With sign-in on, a first password they change at their next sign-in
-    password: str = ""
 
 class RemovePerson(BaseModel):
     # Their own transactions move to this person, or become shared when None
@@ -42,21 +38,15 @@ def read_people(
 
 @router.post("/people", response_model=PersonPublic)
 def create_person(
-    body: NewPerson,
+    body: PersonCreate,
     db: Annotated[Session, Depends(get_session)],
 ):
     name = body.name.strip()
     if db.exec(select(Person).where(func.lower(Person.name) == name.lower())).first():
         raise HTTPException(status_code=400, detail="Someone with this name is already here.")
     position = (db.exec(select(func.max(Person.position))).first() or 0) + 1
+    # They sign in with the household password, like everyone else
     person = Person(name=name, position=position)
-    if body.password:
-        check_new_password(body.password)
-        person.password_hash = hash_password(body.password)
-        person.must_change_password = True
-    elif flag(db, "LOGIN_PAGE") and not config(db, "LOGIN_PASSWORD") and not STATE.get("vault"):
-        # With encryption on, they get a code instead, made by the browser of whoever adds them
-        raise HTTPException(status_code=400, detail="Sign-in is on: give them a first password.")
     db.add(person)
     db.commit()
     db.refresh(person)
@@ -149,7 +139,6 @@ def delete_person(
         raise HTTPException(status_code=400, detail="Move their transactions to someone still here.")
 
     if STATE.get("vault"):
-        from ..models.vault import Kdf, VaultKey, Invite
         from ..services import vault as records
         with records.WRITE_LOCK:
             result = {"seq": 0, "versions": {}, "skipped": []}
@@ -159,7 +148,7 @@ def delete_person(
                 except records.Conflict as error:
                     db.rollback()
                     raise HTTPException(status_code=409, detail=records.conflict_response(error))
-            _remove_person(db, person, (Kdf, VaultKey, Invite))
+            _remove_person(db, person)
             db.commit()
         return {"ok": True, **result}
 
@@ -170,17 +159,14 @@ def delete_person(
         if (item.person_id, item.shares, item.paid_by) != before:
             db.add(item)
 
-    from ..models.vault import Kdf
-    _remove_person(db, person, (Kdf,))
+    _remove_person(db, person)
     db.commit()
     return {"ok": True}
 
-def _remove_person(db: Session, person: Person, extra: tuple):
+def _remove_person(db: Session, person: Person):
+    """Their sign-ins and API keys go with them. They still know the household password:
+    Settings says to change it if they shouldn't come back."""
     person_id = person.id
-    for model in extra:
-        row = db.get(model, person_id)
-        if row:
-            db.delete(row)
     db.exec(delete(SessionToken).where(SessionToken.person_id == person_id))
     db.exec(delete(ApiKeys).where(ApiKeys.person_id == person_id))
     db.delete(person)
