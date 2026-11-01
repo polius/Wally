@@ -187,6 +187,29 @@ def recovery_codes_left(
 ):
     return {"left": len(recovery_hashes(db)) if two_step_on(db) else 0}
 
+# ---------- after the upgrade from 1.x: this browser becomes someone ----------
+class Claim(BaseModel):
+    person_id: int
+
+@router.post("/me/claim")
+def claim(
+    body: Claim,
+    db: Annotated[Session, Depends(get_session)],
+    actor: Actor = Depends(check_login),
+):
+    """The browser that signed in with the 1.x password, before anyone was added, becomes the
+    person on the "You" row: no signing out and in again. Only a sign-in that is nobody yet can."""
+    if actor.via != "session" or actor.person_id is not None:
+        raise HTTPException(status_code=400, detail="This browser is already signed in as someone.")
+    person = db.get(Person, body.person_id)
+    if not person:
+        raise HTTPException(status_code=404, detail="This person does not exist.")
+    row = db.get(SessionToken, actor.session_id)
+    row.person_id = person.id
+    db.add(row)
+    db.commit()
+    return {"ok": True}
+
 # ---------- each person's own choices ----------
 @router.put("/me/prefs")
 def update_prefs(

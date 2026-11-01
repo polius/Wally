@@ -470,7 +470,8 @@ const kit1 = (await page.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, 
 ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(kit1), "a 52-character recovery key");
 ok(await page.isDisabled("#dlg [data-dlg-ok]"), "Done waits until it is saved");
 const [kitDl] = await Promise.all([page.waitForEvent("download"), page.click("#dlg [data-save]")]);
-ok(readFileSync(await kitDl.path(), "utf8").includes(kit1), "the kit downloads, with the key in it");
+const kitPdf = readFileSync(await kitDl.path(), "latin1");
+ok(kitDl.suggestedFilename() === "wally-emergency-kit.pdf" && kitPdf.startsWith("%PDF-") && kit1.split("-").every((g) => kitPdf.includes(g)), "the kit downloads as a PDF, with the key in it as text");
 await page.check("#kit-saved");
 await dlgOk(); await dlgClosed();
 await toastText(/Sign-in is on/);

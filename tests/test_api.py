@@ -589,12 +589,18 @@ def test_upgrade_from_v1(make_client, tmp_path):
     r = client.get("/recurring").json()[0]
     assert r["interval"] == 1 and r["last_run"] == TODAY and r["endDate"] == "2027-12-31"
 
-    # People added next sign in with the same household password, as before: nothing to choose
+    # The people are added, and this browser becomes the one on the "You" row: no second sign-in
     assert client.get("/auth/status").json()["kit"] is None
     alex = client.post("/people", json={"name": "Alex"}).json()["id"]
-    client.cookies.clear()
-    r = client.post("/login", json={"person_id": alex, "password": "household"})
-    assert r.json() == {"ok": True, "code_needed": False}
+    ana = client.post("/people", json={"name": "Ana"}).json()["id"]
+    assert client.post("/me/claim", json={"person_id": 999}).status_code == 404
+    assert client.post("/me/claim", json={"person_id": alex}).status_code == 200
+    assert client.get("/auth/status").json()["me"]["name"] == "Alex"
+    # Once someone, always: a browser can't become someone else this way
+    assert client.post("/me/claim", json={"person_id": ana}).status_code == 400
+    # Everyone signs in with the same household password, as before: nothing to choose
+    other = TestClient(client.app)
+    assert other.post("/login", json={"person_id": ana, "password": "household"}).json() == {"ok": True, "code_needed": False}
     # 1.x had no Emergency Kit: whoever signs in first makes one, no password asked as none is replaced
     assert client.get("/auth/status").json()["kit"] is None
     kit = client.post("/kit", json={}).json()["key"]

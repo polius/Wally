@@ -4,7 +4,7 @@
    Screenshots go to SHOTS (a folder) when it is set. */
 import { chromium } from "playwright";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { mkdtempSync, copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac, createHash, randomBytes } from "node:crypto";
@@ -497,6 +497,7 @@ try {
     await page.waitForSelector("#onb-err:not([hidden])");
     ok((await page.textContent("#onb-err")).includes("your own name"), "welcome: a name is needed");
     await page.fill('[data-name="0"]', "Sam");
+    ok((await page.locator('[data-av="0"]').innerText()).trim() === "S", "welcome: the face fills in as the name is typed");
     await page.click("#onb-add");
     ok(await page.evaluate(() => document.activeElement.dataset.name) === "1", "welcome: Add someone focuses the new row");
     await page.keyboard.type("Kim");
@@ -522,7 +523,7 @@ try {
     ok((await gateText(page)).includes("Save the household’s Emergency Kit") && !(await gateText(page)).includes("Wally is encrypted"), "welcome: Me: the household's Emergency Kit, not encrypted");
     const onbKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(checks(onbKit), "welcome: a real recovery key (" + onbKit + ")");
-    ok(await page.locator("#onb-print").count() === 1 && await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1, "welcome: Print, Download and Copy");
+    ok(await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1 && (await page.locator("#onb-dl").innerText()).includes("Download PDF"), "welcome: Download PDF and Copy");
     await shot(page, "welcome-kit");
     await page.click("#onb-next");
     await page.waitForSelector("#onb-err:not([hidden])");
@@ -609,7 +610,7 @@ try {
     await shot(page, "upgrade-people");
     await page.click("#onb-next");
     await page.waitForSelector("[data-tagfor]");
-    ok((await gateText(page)).includes("Turn a tag into a person"), "upgrade: offers to turn a tag into a person");
+    ok((await gateText(page)).includes("Tagged with someone’s name?"), "upgrade: offers to turn tags into people");
     const ids = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.dataset.tagfor));
     const picked = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value));
     ok(picked.join() === "alex,ana", "upgrade: the tag with each person’s name is picked (" + picked + ")");
@@ -624,44 +625,32 @@ try {
     ok((await counts()) === " / 4 transactions become Ana’s / ", "upgrade: without Alex’s tag, it becomes Ana’s (" + (await counts()) + ")");
     await page.selectOption(`[data-tagfor="${ids[0]}"]`, "alex");
     await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
-    await page.click("#onb-next");
-    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Now sign in as yourself"));
-    ok((await gateText(page)).includes("Pick your name, then type the household password, as before."), "upgrade: then each person picks their name and types the household password, as before");
-    // Back, all the way: nothing is lost, and the tags are applied only at the end
-    await page.click("#onb-back");
-    await page.waitForSelector("[data-tagfor]");
-    ok((await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value))).join() === "alex,ana", "upgrade: back on Tags, the picks are as they were left");
+    ok(await page.locator("#gate .w-steps").count() === 0 && await page.locator(".w-onbfoot #onb-skip").count() === 1, "upgrade: no stepper for two short steps, and Skip sits next to Continue");
+    // The "You" row is this browser now: no signing out and in again
+    const mid = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
+    ok(mid.me && mid.me.name === "Alex", "upgrade: this browser became Alex, on the You row, without a second sign-in");
+    // Back: nothing is lost, and the tags are applied only at the end
     await page.click("#onb-back");
     await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Who uses Wally?"));
-    ok((await page.$$eval(".w-onbppl li > span:last-child", (l) => l.map((x) => x.textContent.trim()))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, and no Back on the first step");
+    ok((await page.$$eval(".w-onbppl li > span:not(.w-av):not(.w-badge)", (l) => l.map((x) => x.textContent.trim()))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, and no Back on the first step");
     await page.click("#onb-next");
     await page.waitForSelector("[data-tagfor]");
+    ok((await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value))).join() === "alex,ana", "upgrade: back on Tags, the picks are as they were left");
     await page.click("#onb-next");
-    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Now sign in as yourself"));
-    await page.click("#onb-next");
-    await page.waitForSelector("#gate .w-prof");
-    await page.click("#gate .w-prof >> nth=0");
-    // Still no kit: Forgot says so here too
-    await page.click("#si-forgot");
-    await page.waitForSelector(".w-sifile");
-    ok((await gateText(page)).includes("There is no Emergency Kit yet"), "upgrade: with a name picked, still no kit to use");
-    await page.click("#si-back");
-    await page.waitForSelector("#si-in");
-    await page.fill("#si-in", household);
-    await page.press("#si-in", "Enter");
     // Signed in as a person, with no kit yet: Wally makes one and asks to save it
     await page.waitForSelector("#kg-saved", { timeout: 10000 });
     ok((await gateText(page)).includes("Save the household’s Emergency Kit"), "upgrade: signed in as yourself, Wally makes the household's Emergency Kit");
     const upKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(checks(upKit) && await page.locator("#gate svg").count() >= 1, "upgrade: a recovery key, with its QR code");
-    ok(await page.locator("#kg-print").count() === 1 && await page.locator("#kg-dl").count() === 1 && await page.locator("#kg-copy").count() === 1, "upgrade: Print, Download and Copy");
+    ok(await page.locator("#kg-dl").count() === 1 && await page.locator("#kg-copy").count() === 1, "upgrade: Download PDF and Copy");
     ok(await page.isDisabled("#kg-done"), "upgrade: Open Wally waits for the tick");
     await shot(page, "upgrade-kit");
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#kg-dl")]);
-    ok(dl.suggestedFilename() === "wally-emergency-kit.txt", "upgrade: the kit downloads");
+    const upPdf = readFileSync(await dl.path(), "latin1");
+    ok(dl.suggestedFilename() === "wally-emergency-kit.pdf" && upPdf.startsWith("%PDF-") && upKit.split("-").every((g) => upPdf.includes(g)), "upgrade: the kit downloads as a PDF, with its key");
     await page.check("#kg-saved");
     await page.click("#kg-done");
-    ok(await appShown(page), "upgrade: the 1.x household password opens the app, with no password of their own to choose");
+    ok(await appShown(page), "upgrade: then the app, with no second sign-in and no password of their own to choose");
     const kst2 = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(!!kst2.kit, "upgrade: the household has its kit now");
     await page.reload({ waitUntil: "networkidle" });

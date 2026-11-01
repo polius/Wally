@@ -4,7 +4,7 @@ import * as core from "../../core.js";
 import { t, tn, esc, state, GET, num } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { openPane } from "../settings.js";
-import { group, gi, ico, linkBtn, toggle, field, passwordInput, parseUtc, dayLabel, ago, size, paint, copyText, download } from "./common.js";
+import { group, gi, ico, linkBtn, toggle, field, passwordInput, parseUtc, dayLabel, ago, size, paint, copyText } from "./common.js";
 
 let box = null;
 let check = null;        // /vault/check, with encryption on
@@ -163,7 +163,7 @@ function turnOff() {
   });
 }
 
-/* The recovery key, once: print it, download it or copy it, and say it's saved */
+/* The recovery key, once: download the PDF or copy it, and say it is saved */
 export async function showKit(key, then) {
   const kit = await import("../../vault/kit.js");
   const qr = await kit.qrSvg(key);
@@ -171,7 +171,7 @@ export async function showKit(key, then) {
     title: t("Save the household’s Emergency Kit"),
     body: "<p>" + t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") + "</p>" +
       '<div class="w-kit">' + qr + kit.keyGroups(key) + "</div>" +
-      '<div class="w-inline"><button type="button" class="w-btn ghost" data-print>' + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" data-save>' + t("Download") + '</button><button type="button" class="w-btn ghost" data-copy>' + t("Copy") + "</button></div>" +
+      '<div class="w-inline"><button type="button" class="w-btn ghost" data-save>' + t("Download PDF") + '</button><button type="button" class="w-btn ghost" data-copy>' + t("Copy") + "</button></div>" +
       '<label class="w-scheck"><input type="checkbox" id="kit-saved"> ' + t("I saved it somewhere safe") + "</label>",
     ok: t("Done"),
     noCancel: true,
@@ -180,8 +180,7 @@ export async function showKit(key, then) {
       const ok = root.querySelector("[data-dlg-ok]");
       if (ok) ok.disabled = true;
       root.querySelector("#kit-saved").addEventListener("change", (ev) => { if (ok) ok.disabled = !ev.target.checked; });
-      root.querySelector("[data-print]").addEventListener("click", () => kit.printKit(key));
-      root.querySelector("[data-save]").addEventListener("click", () => download("wally-emergency-kit.txt", kit.kitText(key)));
+      root.querySelector("[data-save]").addEventListener("click", () => kit.downloadKitPdf(key));
       root.querySelector("[data-copy]").addEventListener("click", () => copyText(key, t("Recovery key copied")));
     },
     onOk: () => { if (then) then(); },

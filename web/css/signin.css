@@ -122,7 +122,6 @@
 .w-onbppl li{display:flex;align-items:center;gap:10px;font-weight:500}
 .w-onbppl .w-av{width:28px;height:28px;font-size:var(--fs-foot)}
 .w-onbwho{display:flex;align-items:center;gap:8px;color:var(--w-ink)!important;font-weight:500}
-.w-onbtag{display:grid;gap:4px}
 .w-gate .w-sichk{margin-top:4px}
 
 /* Phone: the whole screen, no card */
@@ -186,9 +185,39 @@
 .w-onblist li{display:grid;grid-template-columns:7.5em minmax(0,1fr) auto;gap:10px;color:var(--w-ink2)}
 .w-onblist li b{font-weight:600;color:var(--w-ink);font-variant-numeric:tabular-nums}
 .w-onblist li.w-hint{display:block}
-.w-onbtag{font-size:var(--fs-foot);font-weight:600;color:var(--w-ink2);margin-inline-start:10px}
 .w-onbfoot a.w-btn{text-decoration:none;gap:6px}
 .w-onbfoot a.w-btn svg.i{width:15px;height:15px}
+
+/* ---------- Setup and the upgrade: people and tags ---------- */
+/* A person: a face that fills in as the name is typed, the name, then You or remove */
+.w-onbpl{display:grid;gap:10px;margin-top:6px}
+.w-onbper{display:flex;align-items:center;gap:12px}
+.w-onbper .w-av{width:38px;height:38px;font-size:16px;flex:none;transition:background-color .2s var(--ease)}
+.w-onbper .w-av.none{background:var(--w-fill);color:var(--w-ink3)}
+.w-onbper .w-av.none svg.i{width:18px;height:18px}
+.w-onbpin{flex:1;min-width:0;height:44px;padding:0 14px;border:1px solid var(--w-line);border-radius:12px;background:var(--w-panel);color:var(--w-ink);font:inherit;font-size:var(--fs-sub);transition:border-color .15s,box-shadow .15s}
+.w-onbpin::placeholder{color:var(--w-ink3)}
+.w-onbpin:focus{outline:none;border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
+.w-onbpend{width:44px;flex:none;display:grid;place-items:center}
+.w-onbpend .w-x{width:36px;height:36px}
+.w-onbghost{width:38px;height:38px;flex:none;background:none!important}
+.w-onbadd{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:1.5px dashed var(--w-line);border-radius:12px;background:none;color:var(--w-accent-ink);font:inherit;font-size:var(--fs-sub);font-weight:600;cursor:pointer;transition:background-color .15s,border-color .15s}
+.w-onbadd:hover{background:var(--w-accent-soft);border-color:var(--w-accent-line)}
+.w-onbadd svg.i{width:16px;height:16px}
+.w-onbppl .w-badge{margin-inline-start:2px}
+/* A tag for each person: who, how many become theirs, and the tag */
+.w-onbtags{display:grid;margin-top:6px;border-top:1px solid var(--w-line2)}
+.w-onbtagrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--w-line2)}
+.w-onbtagwho{display:flex;align-items:center;gap:12px;min-width:0}
+.w-onbtagwho .w-av{width:38px;height:38px;font-size:16px;flex:none}
+.w-onbtagwho b{display:block;font-size:var(--fs-sub);font-weight:600}
+.w-onbtagwho small{display:block;font-size:var(--fs-foot);color:var(--w-ink2);min-height:1.3em}
+.w-onbtagrow select.w-mini{width:190px;flex:none;height:40px}
+.w-gate .w-onbb > .w-hint{margin-top:4px}
+@media (max-width:560px){
+  .w-onbtagrow{flex-wrap:wrap}
+  .w-onbtagrow select.w-mini{width:100%;height:44px}
+}
 
 /* ---------- Welcome to Wally 2.0 (js/welcome.js): once per person, after the upgrade from 1.x ----------
    Apple's "What's New" shape: the mark, one title, the reassurance, a plain list, one button that stays in view. */

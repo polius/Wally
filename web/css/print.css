@@ -134,13 +134,4 @@
   .pr-sheet:last-child{break-after:auto;page-break-after:auto}
 }
 
-/* The Emergency Kit (js/vault/kit.js): one page */
-.pr-kit .pr-body{display:grid;align-content:start;gap:7mm}
-.pr-kitbox{display:grid;grid-template-columns:minmax(0,1fr) 44mm;gap:8mm;align-items:center;background:var(--soft);border-radius:4mm;padding:7mm 8mm}
-.pr-kitbox .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:2.6mm 5mm;margin-top:3mm;font:600 14pt/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;color:var(--ink);direction:ltr}
-.pr-kitbox .w-qr{width:44mm;height:44mm;background:#fff;border-radius:2mm;padding:2mm;color:#000}
-.pr-kitsteps{padding-inline-start:5mm;display:grid;gap:2.4mm;font-size:10.5pt;color:var(--ink2)}
-.pr-kitsteps li::marker{color:var(--accent);font-weight:700}
-.pr-kitfacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;border-top:.6pt solid var(--line);padding-top:4mm}
-.pr-kitfacts dt{font-size:7.5pt;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.pr-kitfacts dd{font-size:10.5pt;margin-top:1mm;overflow-wrap:anywhere}
+

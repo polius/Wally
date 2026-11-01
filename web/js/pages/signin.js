@@ -269,23 +269,16 @@ async function startKit() {
 function renderKit() {
   paint(card(mark() + head(t("Save the household’s Emergency Kit"), t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) +
     '<div class="w-kit">' + kg.qr + keyGroups(kg.key) + "</div>" +
-    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="kg-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="kg-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="kg-copy">' + icon("copy") + t("Copy") + "</button></div>" +
+    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="kg-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="kg-copy">' + icon("copy") + t("Copy") + "</button></div>" +
     '<label class="w-sichk"><input type="checkbox" id="kg-saved"' + (kg.saved ? " checked" : "") + ">" + t("I saved it somewhere safe") + "</label>" +
-    '<button type="button" class="w-btn primary w-submit w-wide" id="kg-done"' + (kg.saved ? "" : " disabled") + ">" + t("Open Wally") + "</button>", "wide"), "#kg-print");
-  root.querySelector("#kg-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(kg.key));
+    '<button type="button" class="w-btn primary w-submit w-wide" id="kg-done"' + (kg.saved ? "" : " disabled") + ">" + t("Open Wally") + "</button>", "wide"), "#kg-dl");
   root.querySelector("#kg-dl").addEventListener("click", () => downloadKit(kg.key));
   root.querySelector("#kg-copy").addEventListener("click", (ev) => copy(kg.key, ev.currentTarget));
   root.querySelector("#kg-saved").addEventListener("change", (ev) => { kg.saved = ev.target.checked; root.querySelector("#kg-done").disabled = !kg.saved; });
   root.querySelector("#kg-done").addEventListener("click", () => finish());
 }
-async function downloadKit(key) {
-  const kit = await import("../vault/kit.js");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([kit.kitText(key)], { type: "text/plain" }));
-  a.download = "wally-emergency-kit.txt";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
+/* The kit as a designed PDF, made in this browser: the key never leaves it */
+async function downloadKit(key) { (await import("../vault/kit.js")).downloadKitPdf(key); }
 
 async function copy(text, btn) {
   try { await navigator.clipboard.writeText(text); } catch (e) { return; }
@@ -297,9 +290,11 @@ async function copy(text, btn) {
 /* ======================= first run, and the upgrade from 1.x ======================= */
 /* Both use the same three-step card: a header with the steps, a body, and Back / Continue. */
 function onbFrame(steps, at, body, foot, skip) {
-  return '<main class="w-onb" aria-labelledby="gate-h"><div class="w-onbh"><span class="w-mark" role="img" aria-label="Wally"></span><ol class="w-steps">' +
-    steps.map((x, i) => '<li class="' + (i === at ? "on" : i < at ? "done" : "") + '"' + (i === at ? ' aria-current="step"' : "") + "><span>" + (i < at ? icon("check") : i + 1) + '</span><em>' + x + "</em></li>").join("") + "</ol>" +
-    (skip ? '<button type="button" class="w-link w-onbskip" id="onb-skip">' + t("Skip") + "</button>" : "") + "</div>" +
+  const stepper = steps.length > 1 ? '<ol class="w-steps">' +
+    steps.map((x, i) => '<li class="' + (i === at ? "on" : i < at ? "done" : "") + '"' + (i === at ? ' aria-current="step"' : "") + "><span>" + (i < at ? icon("check") : i + 1) + '</span><em>' + x + "</em></li>").join("") + "</ol>" : "";
+  // Skip sits with the button it stands in for, not up in the header
+  if (skip) foot = foot.replace('<button type="button" class="w-btn primary" id="onb-next">', '<button type="button" class="w-link w-onbskip" id="onb-skip">' + t("Skip") + '</button><button type="button" class="w-btn primary" id="onb-next">');
+  return '<main class="w-onb" aria-labelledby="gate-h">' + (stepper ? '<div class="w-onbh"><span class="w-mark" role="img" aria-label="Wally"></span>' + stepper + "</div>" : "") +
     '<div class="w-onbb">' + body + '<p class="w-err" id="onb-err" role="alert" hidden></p></div><div class="w-onbfoot">' + foot + "</div></main>";
 }
 function onbError(msg) { const e = root.querySelector("#onb-err"); if (e) { e.innerHTML = msg || ""; e.hidden = !msg; } }
@@ -307,22 +302,31 @@ const backBtn = () => '<button type="button" class="w-btn ghost" id="onb-back">'
 const nextBtn = (label) => '<button type="button" class="w-btn primary" id="onb-next">' + label + "</button>";
 
 /* The people rows, shared by first run and the upgrade */
+function initialOf(name) { const c = [...String(name || "").trim()][0]; return c ? c.toLocaleUpperCase(LANG) : ""; }
+function faceOf(name, i) { const c = initialOf(name); return '<span class="w-av p' + (i % 6) + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
 function peopleRows(names, created) {
   if (created.length) {
-    return '<ul class="w-onbppl">' + created.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span></li>").join("") + "</ul>" +
+    return '<ul class="w-onbppl">' + created.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span>" + (p.id === created[0].id ? '<span class="w-badge">' + t("You") + "</span>" : "") + "</li>").join("") + "</ul>" +
       '<p class="w-hint">' + t("Names can be changed later in Settings › People.") + "</p>";
   }
-  return '<div class="w-onbf" id="onb-names">' + names.map((n, i) =>
-    '<label class="w-onbrow"><span>' + (i === 0 ? t("You") : t("Person {n}", { n: i + 1 })) + '</span><span class="w-onbname"><input class="w-mini" data-name="' + i + '" value="' + esc(n) + '" maxlength="40" autocomplete="' + (i === 0 ? "name" : "off") + '" aria-label="' + esc(i === 0 ? t("Your name") : t("Name of person {n}", { n: i + 1 })) + '">' +
-    (i > 0 ? '<button type="button" class="w-x" data-drop="' + i + '" aria-label="' + esc(t("Remove person {n}", { n: i + 1 })) + '">' + icon("x") + "</button>" : "") + "</span></label>").join("") +
-    '<div class="w-onbrow"><span></span><button type="button" class="w-link" id="onb-add">' + icon("plus") + t("Add someone") + "</button></div></div>";
+  return '<div class="w-onbpl" id="onb-names">' + names.map((n, i) =>
+    '<div class="w-onbper">' + faceOf(n, i) +
+    '<input class="w-onbpin" data-name="' + i + '" value="' + esc(n) + '" maxlength="40" placeholder="' + esc(i === 0 ? t("Your name") : t("Name")) + '" autocomplete="' + (i === 0 ? "name" : "off") + '" aria-label="' + esc(i === 0 ? t("Your name") : t("Name of person {n}", { n: i + 1 })) + '">' +
+    (i === 0 ? '<span class="w-onbpend"><span class="w-badge">' + t("You") + "</span></span>"
+      : '<span class="w-onbpend"><button type="button" class="w-x" data-drop="' + i + '" aria-label="' + esc(t("Remove person {n}", { n: i + 1 })) + '">' + icon("x") + "</button></span>") + "</div>").join("") +
+    // Lined up with the names: an empty face, the button where a name would go
+    '<div class="w-onbper"><span class="w-av w-onbghost" aria-hidden="true"></span><button type="button" class="w-onbadd" id="onb-add">' + icon("plus") + t("Add someone") + '</button><span class="w-onbpend"></span></div></div>';
 }
 function readNames(names) { root.querySelectorAll("[data-name]").forEach((i) => { names[+i.dataset.name] = i.value; }); }
 function wireNames(names, rerender) {
   const add = root.querySelector("#onb-add");
   if (add) add.addEventListener("click", () => { readNames(names); names.push(""); rerender(); const list = root.querySelectorAll("[data-name]"); list[list.length - 1].focus(); });
   root.querySelectorAll("[data-drop]").forEach((b) => b.addEventListener("click", () => { readNames(names); names.splice(+b.dataset.drop, 1); rerender(); }));
-  root.querySelectorAll("[data-name]").forEach((i) => i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); root.querySelector("#onb-next").click(); } }));
+  root.querySelectorAll("[data-name]").forEach((i) => {
+    i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); root.querySelector("#onb-next").click(); } });
+    // The face fills in as the name is typed
+    i.addEventListener("input", () => { const f = root.querySelector('[data-av="' + i.dataset.name + '"]'); if (f) f.outerHTML = faceOf(i.value, +i.dataset.name); });
+  });
 }
 /* Adds everyone typed; returns the people created, or null after showing why not */
 async function createPeople(names) {
@@ -409,7 +413,7 @@ function privacyStep() {
       (onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
         : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) + "</p>" +
       '<div class="w-kit">' + onb.qr + keyGroups(onb.kit) + "</div>" +
-      '<div class="w-silinks w-onbkit"><button type="button" class="w-btn ghost" id="onb-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
+      '<div class="w-silinks w-onbkit"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
       '<label class="w-sichk"><input type="checkbox" id="onb-saved"' + (onb.saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>";
     return { body, foot: "<span></span>" + nextBtn(t("Continue")) };
   }
@@ -514,7 +518,6 @@ function wireWelcome() {
   root.querySelectorAll("[data-onb-data]").forEach((b) => b.addEventListener("click", () => { onb.data = b.dataset.onbData; renderWelcome(); root.querySelector('[data-onb-data="' + onb.data + '"]').focus(); }));
   root.querySelectorAll("[data-who]:not([disabled])").forEach((b) => b.addEventListener("click", () => { onb.who = b.dataset.who; onbError(""); renderWelcome(); root.querySelector('[data-who="' + onb.who + '"]').focus(); }));
   if (onb.kit && k === "privacy") {
-    root.querySelector("#onb-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(onb.kit));
     root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(onb.kit));
     root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(onb.kit, ev.currentTarget));
     root.querySelector("#onb-saved").addEventListener("change", (ev) => { onb.saved = ev.target.checked; onbError(""); });
@@ -574,30 +577,26 @@ async function startReport() {
 function upgradeSteps() {
   const steps = [t("People")];
   if (up.tags.length || !up.people.length) steps.push(t("Tags"));
-  if (status.signin) steps.push(t("Sign in"));
   return steps;
 }
 function renderUpgrade() {
-  const steps = upgradeSteps(), s = up.step;
-  const kind = s === 0 ? "people" : steps[s] === t("Tags") ? "tags" : "signin";
+  const s = up.step, kind = s === 0 ? "people" : "tags";
   let body, foot;
   if (kind === "people") {
-    body = '<h1 id="gate-h">' + t("Who uses Wally?") + '</h1><p class="w-onbp">' + t("Wally now keeps track of who spent what. Add the people in your household. Everything already in Wally stays shared between them.") + "</p>" +
+    body = '<h1 id="gate-h">' + t("Who uses Wally?") + '</h1><p class="w-onbp">' + t("Wally now keeps track of who spent what. Everything already in Wally stays shared.") + "</p>" +
       peopleRows(up.names, up.people);
     foot = "<span></span>" + nextBtn(t("Continue"));
-  } else if (kind === "tags") {
-    body = '<h1 id="gate-h">' + t("Turn a tag into a person") + '</h1><p class="w-onbp">' + t("If you tagged transactions with someone’s name, they can become theirs. Everything else stays shared.") + "</p>" +
-      '<div class="w-onbf">' + up.people.map((p) => '<label class="w-onbrow"><span class="w-onbwho">' + av(String(p.id)) + esc(p.name) + '</span><span class="w-onbtag"><select class="w-mini" data-tagfor="' + p.id + '"><option value="">' + t("No tag") + "</option>" +
-        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + '</select><small class="w-hint" id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></label>").join("") +
-      '<p class="w-hint" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
-      '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label></div>";
-    foot = backBtn() + nextBtn(t("Continue"));
   } else {
-    body = '<h1 id="gate-h">' + t("Now sign in as yourself") + '</h1><p class="w-onbp">' + t("Pick your name, then type the household password, as before.") + "</p>" +
-      '<ul class="w-onbppl">' + up.people.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span></li>").join("") + "</ul>";
-    foot = backBtn() + nextBtn(t("Sign in"));
+    body = '<h1 id="gate-h">' + t("Tagged with someone’s name?") + '</h1><p class="w-onbp">' + t("Those transactions become theirs. Everything else stays shared.") + "</p>" +
+      '<div class="w-onbtags">' + up.people.map((p) => '<div class="w-onbtagrow"><span class="w-onbtagwho">' + av(String(p.id)) + "<span><b>" + esc(p.name) + '</b><small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></span>" +
+        '<select class="w-mini" data-tagfor="' + p.id + '" aria-label="' + esc(t("Tag for {name}", { name: p.name })) + '"><option value="">' + t("No tag") + "</option>" +
+        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></div>").join("") + "</div>" +
+      '<p class="w-hint" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
+      '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label>";
+    foot = backBtn() + nextBtn(t("Continue"));
   }
-  paint(onbFrame(steps, s, body, foot, kind === "tags"), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
+  // At most two short steps: no stepper
+  paint(onbFrame([], s, body, foot, kind === "tags"), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
   wireNames(up.names, () => renderUpgrade());
   root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
     if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
@@ -621,6 +620,7 @@ function renderUpgrade() {
           const people = await createPeople(up.names);
           if (!people) return busy(next, false);
           up.people = people;
+          await becomeYou(people[0]);
           try { up.tags = await GET("/tags"); } catch (e) { up.tags = []; }
           // A tag with someone's name is most likely theirs
           for (const p of people) {
@@ -628,16 +628,17 @@ function renderUpgrade() {
             if (tag) up.picks[p.id] = tag;
           }
         }
-      } else if (kind === "tags") {
-        if (s === steps.length - 1) await applyTags();
-      } else {
-        await applyTags();
-        try { await POST("/logout"); } catch (e) { /* signed out anyway */ }
-        return finish();
-      }
+      } else await applyTags();
       upgradeNext();
     } catch (e) { onbError(apiMessage(e)); busy(next, false); }
   });
+}
+/* This browser is whoever typed their name on the "You" row: with sign-in on, the sign-in made with
+   the 1.x password becomes theirs; with it off, the browser remembers them, as "Who's using Wally?" would */
+async function becomeYou(me) {
+  write("wally.person", String(me.id));
+  write(LAST, String(me.id));
+  if (status.signin) await POST("/me/claim", { person_id: me.id });
 }
 async function applyTags() {
   const tags = pickedTags();
