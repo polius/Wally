@@ -8,7 +8,6 @@
  "6-digit code": "Código de 6 dígitos",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "Um filho, um colega de casa, qualquer pessoa que partilhe despesas. Cada pessoa tem a sua própria vista.",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Um filho, um colega de casa, qualquer pessoa que partilhe despesas. Inicia sessão com a palavra-passe da casa.",
- "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "Há uma cópia dos teus dados antigos em {file}, na pasta de dados do Wally. Com ela, o Wally 1 abre os teus dados tal como estavam.",
  "A file left from turning encryption on.": "Um ficheiro que ficou da ativação da encriptação.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "Um atalho no ecrã principal ou no ecrã de bloqueio com a app gratuita HTTP Shortcuts. O Wally mostra o pedido a colar.",
  "A key is shown once, when it is created": "Uma chave só é mostrada uma vez, quando é criada",
@@ -132,12 +131,12 @@
  "Back to sign in": "Voltar ao início de sessão",
  "Bank file: check the columns": "Ficheiro do banco: verifica as colunas",
  "Basics": "Básico",
- "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Antes de ficar com o Wally 2.0, o Wally comparou cada transação, regra, categoria e configuração com os teus dados antigos. Nada se perdeu.",
  "Before the amount": "Antes do valor",
  "Biggest purchase": "Maior compra",
  "Biggest spender first. Each keeps its color.": "Primeiro a que mais gasta. Cada uma mantém a sua cor.",
  "Biggest: {name}, {amount} on {date}.": "Maior: {name}, {amount} a {date}.",
  "Bills": "Contas",
+ "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "As contas e os salários são adicionados quando vencem, e o Wally repara quando um preço sobe.",
  "Bills are recurring payments; everyday spending is everything else.": "Contas são os pagamentos recorrentes; gastos do dia a dia são todo o resto.",
  "Blue": "Azul",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "Desfoca todos os valores, para partilhares o ecrã. {key} ativa ou desativa.",
@@ -152,7 +151,6 @@
  "Cancel": "Cancelar",
  "Can’t scan it? Type the key above into the app instead.": "Não consegues ler? Escreve a chave acima na app.",
  "Categories": "Categorias",
- "Categories and tags": "Categorias e etiquetas",
  "Category": "Categoria",
  "Category of part {n}": "Categoria da parte {n}",
  "Category…": "Categoria…",
@@ -281,7 +279,6 @@
  "Don’t split": "Não dividir",
  "Down": "Desceram",
  "Download": "Transferir",
- "Download the report": "Transferir o relatório",
  "Drag, or type {name}’s part": "Arrasta, ou escreve a parte de {name}",
  "Drop a CSV here, or choose a file": "Larga aqui um CSV, ou escolhe um ficheiro",
  "Duplicate": "Duplicar",
@@ -289,6 +286,7 @@
  "Each part needs an amount more than zero.": "Cada parte precisa de um valor superior a zero.",
  "Each pays": "Cada um paga",
  "Each person gets their own view. Costs you share are split between you.": "Cada pessoa tem a sua própria vista. As despesas que partilham são divididas entre vocês.",
+ "Each person has their own view, and shared costs are split between you.": "Cada pessoa tem a sua própria vista, e as despesas partilhadas são divididas entre vocês.",
  "Each person types it once on their own phone or computer.": "Cada pessoa escreve-a uma vez no seu telemóvel ou computador.",
  "Each person’s spending includes their share of shared costs": "Os gastos de cada pessoa incluem a sua parte das despesas partilhadas",
  "Each sign-in lasts a year": "Cada sessão dura um ano",
@@ -303,6 +301,7 @@
  "Editing · {date}": "A editar · {date}",
  "Emergency Kit": "Kit de emergência",
  "Encrypt and continue": "Encriptar e continuar",
+ "Encrypt everything on your devices, so even the server can’t read it.": "Encripta tudo nos teus dispositivos, para que nem o servidor o consiga ler.",
  "Encrypt on your devices": "Encriptar nos teus dispositivos",
  "Encrypted": "Encriptado",
  "Encrypting {n} of {total}…": "A encriptar {n} de {total}…",
@@ -672,6 +671,7 @@
  "Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.": "Desativado: quem conseguir aceder a este servidor pode abrir o Wally. Ativa-o em Configurações › Início de sessão quando quiseres.",
  "On": "Ativado",
  "On a date": "Numa data",
+ "On the 1st: what you spent, what you earned and what you kept.": "No dia 1: o que gastaste, o que recebeste e o que poupaste.",
  "On the server": "No servidor",
  "On the sign-in page, choose Forgot password.": "Na página de início de sessão, escolhe Esqueci-me da palavra-passe.",
  "On the sign-in page, {forgot} takes its recovery key, then a new password. No two-step code is needed.": "Na página de início de sessão, {forgot} pede a chave de recuperação do Kit e depois uma palavra-passe nova. Não é preciso o código da verificação em dois passos.",
@@ -685,7 +685,6 @@
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "Ativada. Só os dispositivos da tua casa conseguem ler os teus dados. Quem gere o servidor não.",
  "One code for the household: everyone scans the same one, on their own phone.": "Um código para a casa: todos leem o mesmo, cada um no seu telemóvel.",
  "One for the household, to print or keep in a password manager. It gets you back in if you forget the password.": "Um para a casa, para imprimir ou guardar num gestor de palavras-passe. Permite-te voltar a entrar se te esqueceres da palavra-passe.",
- "One thing changed": "Uma coisa mudou",
  "Only this browser is signed in.": "Só este navegador tem sessão iniciada.",
  "Only this range": "Só este período",
  "Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.": "Só a tua palavra-passe ou a tua chave de recuperação podem abrir os dados desta casa. Mais ninguém, nem sequer quem gere o servidor, os pode abrir.",
@@ -773,6 +772,7 @@
  "Price went up": "O preço subiu",
  "Print or save as PDF": "Imprimir ou guardar como PDF",
  "Privacy": "Privacidade",
+ "Private if you want": "Privado, se quiseres",
  "Projected": "Previsto",
  "Projected: {amount}": "Previsto: {amount}",
  "QR code of your recovery key": "Código QR da tua chave de recuperação",
@@ -791,6 +791,7 @@
  "Recurring": "Recorrentes",
  "Recurring bill": "Conta recorrente",
  "Recurring income": "Receita recorrente",
+ "Recurring, on its day": "Recorrentes, no seu dia",
  "Red": "Vermelho",
  "Regular income only": "Só receitas habituais",
  "Remove": "Remover",
@@ -973,7 +974,7 @@
  "That code isn’t right. Codes change every 30 seconds, so use the newest one.": "Esse código não está certo. Os códigos mudam a cada 30 segundos, por isso usa o mais recente.",
  "That day": "Nesse dia",
  "That is more than Wally can keep. Use less than 100,000,000.": "É mais do que o Wally consegue guardar. Usa menos de 100 000 000.",
- "That password isn’t right. Try again, or use Forgot password.": "Essa palavra-passe não está certa. Tenta de novo, ou usa Esqueci-me da palavra-passe.",
+ "That password isn’t right.": "Essa palavra-passe não está certa.",
  "That recovery code isn’t right, or it was already used.": "Esse código de recuperação não está certo, ou já foi usado.",
  "That recovery key isn’t right.": "Essa chave de recuperação não está certa.",
  "That took too long. Sign in again.": "Demorou demasiado. Inicia sessão de novo.",
@@ -998,6 +999,7 @@
  "The total must be more than zero.": "O total tem de ser superior a zero.",
  "The two new passwords are not the same.": "As duas novas palavras-passe não são iguais.",
  "The two passwords are different.": "As duas palavras-passe são diferentes.",
+ "The whole household": "A casa toda",
  "The whole household, by category": "Toda a casa, por categoria",
  "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:": {
   "one": "{n} cópia de segurança no servidor está sem encriptação, por isso é eliminada. Transfere-a primeiro, se a quiseres:",
@@ -1123,11 +1125,6 @@
  "Views": "Vistas",
  "Violet": "Violeta",
  "Waiting to send": "À espera de envio",
- "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
-  "one": "O Wally 1 tinha adicionado {n} pagamento recorrente antecipadamente, para uma data depois de hoje. O Wally 2.0 adiciona cada um no seu dia, por isso foi retirado e volta nessa altura:",
-  "many": "O Wally 1 tinha adicionado {n} pagamentos recorrentes antecipadamente, para datas depois de hoje. O Wally 2.0 adiciona cada um no seu dia, por isso foram retirados e voltam nessa altura:",
-  "other": "O Wally 1 tinha adicionado {n} pagamentos recorrentes antecipadamente, para datas depois de hoje. O Wally 2.0 adiciona cada um no seu dia, por isso foram retirados e voltam nessa altura:"
- },
  "Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:": "O Wally 1 não tinha, por isso só quem gere o servidor pode ajudar. Pode desativar o início de sessão com este comando e depois tu ativas de novo com uma palavra-passe nova:",
  "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit": "Kit de emergência do Wally",
@@ -1157,6 +1154,7 @@
  "Week starts on": "Início da semana",
  "Weekly": "Semanalmente",
  "Welcome to Wally": "Bem-vindo ao Wally",
+ "Welcome to {app}": "Damos-te as boas-vindas ao {app}",
  "Went out": "Saiu",
  "What changed": "O que mudou",
  "What changes": "O que muda",
@@ -1201,17 +1199,12 @@
  "You spent {amount} more than came in.": "Gastaste mais {amount} do que entrou.",
  "Your currencies": "As tuas moedas",
  "Your data": "Os teus dados",
- "Your data came across": "Os teus dados chegaram bem",
+ "Your month in review": "O teu mês em resumo",
  "Your name": "O teu nome",
  "Your password is the key": "A tua palavra-passe é a chave",
  "Your password is the key.": "A tua palavra-passe é a chave.",
  "Your {month} recap": "O teu resumo de {month}",
  "about": "cerca de",
- "and {n} more, in the report": {
-  "one": "e mais {n}, no relatório",
-  "many": "e mais {n}, no relatório",
-  "other": "e mais {n}, no relatório"
- },
  "came in {amount}": "entraram {amount}",
  "created {date}": "criada a {date}",
  "day {d}": "dia {d}",
@@ -1375,25 +1368,10 @@
   "one": "{n} já adicionada",
   "other": "{n} já adicionadas"
  },
- "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
-  "one": "{n} valor tem mais de duas casas decimais. Fica guardado tal como foi escrito e é mostrado ao cêntimo.",
-  "many": "{n} valores têm mais de duas casas decimais. Ficam guardados tal como foram escritos e são mostrados ao cêntimo.",
-  "other": "{n} valores têm mais de duas casas decimais. Ficam guardados tal como foram escritos e são mostrados ao cêntimo."
- },
  "{n} backup from before.": {
   "one": "{n} cópia de segurança anterior.",
   "many": "{n} cópias de segurança anteriores.",
   "other": "{n} cópias de segurança anteriores."
- },
- "{n} category": {
-  "one": "{n} categoria",
-  "many": "{n} categorias",
-  "other": "{n} categorias"
- },
- "{n} category was used but missing from your list. It is listed now.": {
-  "one": "{n} categoria era usada mas faltava na tua lista. Agora já lá está.",
-  "many": "{n} categorias eram usadas mas faltavam na tua lista. Agora já lá estão.",
-  "other": "{n} categorias eram usadas mas faltavam na tua lista. Agora já lá estão."
  },
  "{n} change": {
   "many": "{n} alterações",
@@ -1487,11 +1465,6 @@
   "many": "{n} linhas na base de dados do Wally.",
   "other": "{n} linhas na base de dados do Wally."
  },
- "{n} rule": {
-  "one": "{n} regra",
-  "many": "{n} regras",
-  "other": "{n} regras"
- },
  "{n} selected": {
   "many": "{n} selecionadas",
   "one": "{n} selecionada",
@@ -1506,11 +1479,6 @@
   "many": "{n} fontes",
   "one": "{n} fonte",
   "other": "{n} fontes"
- },
- "{n} tag": {
-  "one": "{n} etiqueta",
-  "many": "{n} etiquetas",
-  "other": "{n} etiquetas"
  },
  "{n} time": {
   "many": "{n} vezes",
@@ -1531,6 +1499,11 @@
   "many": "{n} transações passam a ser de {name}",
   "one": "{n} transação passa a ser de {name}",
   "other": "{n} transações passam a ser de {name}"
+ },
+ "{n} transaction came across, checked one by one.": {
+  "many": "{n} transações mantidas, verificadas uma a uma.",
+  "one": "{n} transação mantida, verificada uma a uma.",
+  "other": "{n} transações mantidas, verificadas uma a uma."
  },
  "{n} transaction for {name}": {
   "many": "{n} transações para {name}",
@@ -1566,11 +1539,6 @@
   "many": "{n} transações, {total} no total",
   "one": "{n} transação, {total} no total",
   "other": "{n} transações, {total} no total"
- },
- "{n} try left.": {
-  "many": "Restam {n} tentativas.",
-  "one": "Resta {n} tentativa.",
-  "other": "Restam {n} tentativas."
  },
  "{n} waiting to send": {
   "many": "{n} à espera de envio",

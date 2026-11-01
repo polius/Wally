@@ -8,7 +8,6 @@
  "6-digit code": "6桁のコード",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "子ども、ルームメイトなど、費用を分け合う人です。メンバーごとに専用の画面があります。",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "子ども、ルームメイトなど、費用を分け合う人です。世帯のパスワードでログインします。",
- "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "以前のデータのコピーは、Wallyのデータフォルダ内の{file}にあります。これを使うと、Wally 1で以前のままのデータを開けます。",
  "A file left from turning encryption on.": "暗号化をオンにしたときに残ったファイルです。",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "無料のHTTP Shortcutsアプリで、ホーム画面やロック画面にショートカットを作ります。貼り付けるリクエストはWallyが表示します。",
  "A key is shown once, when it is created": "キーは作成時に一度だけ表示されます",
@@ -126,12 +125,12 @@
  "Back to sign in": "ログインに戻る",
  "Bank file: check the columns": "銀行のファイル：列を確認",
  "Basics": "基本設定",
- "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Wally 2.0に切り替える前に、Wallyはすべての取引、ルール、カテゴリ、設定を以前のデータと照合しました。失われたものはありません。",
  "Before the amount": "金額の前",
  "Biggest purchase": "最大の買い物",
  "Biggest spender first. Each keeps its color.": "支出の多い順。それぞれの色は変わりません。",
  "Biggest: {name}, {amount} on {date}.": "最大：{date}の{name}、{amount}。",
  "Bills": "固定費",
+ "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "固定費や給料は期日に追加され、値上がりするとWallyが気づきます。",
  "Bills are recurring payments; everyday spending is everything else.": "請求は定期的な支払い、日々の支出はそれ以外のすべてです。",
  "Blue": "青",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "画面共有のときに金額をすべてぼかします。{key}で切り替えます。",
@@ -146,7 +145,6 @@
  "Cancel": "キャンセル",
  "Can’t scan it? Type the key above into the app instead.": "スキャンできない場合は、上のキーをアプリに入力してください。",
  "Categories": "カテゴリ",
- "Categories and tags": "カテゴリとタグ",
  "Category": "カテゴリ",
  "Category of part {n}": "内訳{n}のカテゴリ",
  "Category…": "カテゴリ…",
@@ -265,7 +263,6 @@
  "Don’t split": "分割しない",
  "Down": "減少",
  "Download": "ダウンロード",
- "Download the report": "レポートをダウンロード",
  "Drag, or type {name}’s part": "ドラッグするか、{name}の分を入力",
  "Drop a CSV here, or choose a file": "ここにCSVをドロップするか、ファイルを選択",
  "Duplicate": "複製",
@@ -273,6 +270,7 @@
  "Each part needs an amount more than zero.": "各内訳にはゼロより大きい金額が必要です。",
  "Each pays": "各自の負担",
  "Each person gets their own view. Costs you share are split between you.": "メンバーごとに専用の画面があります。共有の支出はメンバー間で分けられます。",
+ "Each person has their own view, and shared costs are split between you.": "メンバーごとに自分の画面があり、共有の費用はみんなで分けられます。",
  "Each person types it once on their own phone or computer.": "各自が自分のスマホやパソコンで一度だけ入力します。",
  "Each person’s spending includes their share of shared costs": "各メンバーの支出には共有の支出の負担分が含まれます",
  "Each sign-in lasts a year": "ログインは1年間有効です",
@@ -287,6 +285,7 @@
  "Editing · {date}": "編集中 · {date}",
  "Emergency Kit": "緊急キット",
  "Encrypt and continue": "暗号化して続ける",
+ "Encrypt everything on your devices, so even the server can’t read it.": "デバイス上ですべてを暗号化。サーバーでさえ読めません。",
  "Encrypt on your devices": "デバイス上で暗号化",
  "Encrypted": "暗号化済み",
  "Encrypting {n} of {total}…": "{total}件中{n}件を暗号化中…",
@@ -628,6 +627,7 @@
  "Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.": "オフ：このサーバーにアクセスできる人は誰でもWallyを開けます。設定 › ログインからいつでもオンにできます。",
  "On": "オン",
  "On a date": "日付指定",
+ "On the 1st: what you spent, what you earned and what you kept.": "毎月1日に、支出・収入・黒字をまとめてお知らせします。",
  "On the server": "サーバー上",
  "On the sign-in page, choose Forgot password.": "ログインページで「パスワードを忘れた」を選びます。",
  "On the sign-in page, {forgot} takes its recovery key, then a new password. No two-step code is needed.": "ログインページの{forgot}で、キットのリカバリーキーと新しいパスワードを入力します。2段階認証のコードは不要です。",
@@ -641,7 +641,6 @@
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "オン。世帯のデバイスだけがデータを読めます。サーバーを管理している人も読めません。",
  "One code for the household: everyone scans the same one, on their own phone.": "世帯で1つのコードです。全員が自分のスマホで同じコードをスキャンします。",
  "One for the household, to print or keep in a password manager. It gets you back in if you forget the password.": "世帯で1つ。印刷するか、パスワードマネージャーに保管します。パスワードを忘れたときに再びログインできます。",
- "One thing changed": "変わったことが1つあります",
  "Only this browser is signed in.": "このブラウザだけがログインしています。",
  "Only this range": "この期間のみ",
  "Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.": "この世帯のデータを開けるのは、あなたのパスワードかリカバリーキーだけです。サーバーを管理している人を含め、ほかの誰も開けません。",
@@ -725,6 +724,7 @@
  "Price went up": "値上がり",
  "Print or save as PDF": "印刷またはPDFで保存",
  "Privacy": "プライバシー",
+ "Private if you want": "必要ならプライベートに",
  "Projected": "予測",
  "Projected: {amount}": "予測：{amount}",
  "QR code of your recovery key": "リカバリーキーのQRコード",
@@ -743,6 +743,7 @@
  "Recurring": "定期",
  "Recurring bill": "定期の支払い",
  "Recurring income": "定期収入",
+ "Recurring, on its day": "定期の支払いは、その日に",
  "Red": "赤",
  "Regular income only": "通常の収入のみ",
  "Remove": "削除",
@@ -915,7 +916,7 @@
  "That code isn’t right. Codes change every 30 seconds, so use the newest one.": "コードが正しくありません。コードは30秒ごとに変わるので、最新のものを使ってください。",
  "That day": "その日",
  "That is more than Wally can keep. Use less than 100,000,000.": "Wallyで扱える金額を超えています。100,000,000未満にしてください。",
- "That password isn’t right. Try again, or use Forgot password.": "パスワードが正しくありません。もう一度試すか、「パスワードを忘れた」を使ってください。",
+ "That password isn’t right.": "パスワードが正しくありません。",
  "That recovery code isn’t right, or it was already used.": "リカバリーコードが正しくないか、すでに使用されています。",
  "That recovery key isn’t right.": "リカバリーキーが正しくありません。",
  "That took too long. Sign in again.": "時間がかかりすぎました。もう一度ログインしてください。",
@@ -940,6 +941,7 @@
  "The total must be more than zero.": "合計はゼロより大きくしてください。",
  "The two new passwords are not the same.": "2つの新しいパスワードが一致しません。",
  "The two passwords are different.": "2つのパスワードが一致しません。",
+ "The whole household": "世帯みんなで",
  "The whole household, by category": "世帯全体（カテゴリ別）",
  "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:": {
   "other": "サーバー上の{n}件のバックアップは暗号化されていないため、削除されます。必要な場合は先にダウンロードしてください："
@@ -1051,9 +1053,6 @@
  "Views": "ビュー",
  "Violet": "紫",
  "Waiting to send": "送信待ち",
- "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
-  "other": "Wally 1は、今日より後の日付の定期の支払いを{n}件、前もって追加していました。Wally 2.0では各支払いをその日に追加するため、これらはいったん削除され、その日になると再び追加されます："
- },
  "Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:": "Wally 1にはキットがなかったため、助けられるのはサーバーを管理している人だけです。次のコマンドでログインをオフにしてもらい、そのあと新しいパスワードでオンにし直してください：",
  "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit": "Wally緊急キット",
@@ -1083,6 +1082,7 @@
  "Week starts on": "週の始まり",
  "Weekly": "毎週",
  "Welcome to Wally": "Wallyへようこそ",
+ "Welcome to {app}": "{app}へようこそ",
  "Went out": "支出",
  "What changed": "変化したこと",
  "What changes": "変わること",
@@ -1127,15 +1127,12 @@
  "You spent {amount} more than came in.": "収入より{amount}多く使いました。",
  "Your currencies": "使用する通貨",
  "Your data": "データ",
- "Your data came across": "データは無事に引き継がれました",
+ "Your month in review": "1か月の振り返り",
  "Your name": "あなたの名前",
  "Your password is the key": "パスワードが鍵です",
  "Your password is the key.": "パスワードが鍵になります。",
  "Your {month} recap": "{month}のふりかえり",
  "about": "約",
- "and {n} more, in the report": {
-  "other": "ほか{n}件はレポートに記載しています"
- },
  "came in {amount}": "収入{amount}",
  "created {date}": "{date}作成",
  "day {d}": "{d}日",
@@ -1281,17 +1278,8 @@
  "{n} already added": {
   "other": "{n}件追加済み"
  },
- "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
-  "other": "{n}件の金額は小数点以下が2桁を超えています。入力どおりに保存され、小数点以下2桁で表示されます。"
- },
  "{n} backup from before.": {
   "other": "以前のバックアップ{n}件。"
- },
- "{n} category": {
-  "other": "{n}個のカテゴリ"
- },
- "{n} category was used but missing from your list. It is listed now.": {
-  "other": "{n}個のカテゴリが使われていましたが、リストにありませんでした。今はリストに追加されています。"
  },
  "{n} change": {
   "other": "{n}件の変化"
@@ -1349,9 +1337,6 @@
  "{n} row in Wally’s database.": {
   "other": "Wallyのデータベースの{n}行。"
  },
- "{n} rule": {
-  "other": "{n}件のルール"
- },
  "{n} selected": {
   "other": "{n}件選択中"
  },
@@ -1360,9 +1345,6 @@
  },
  "{n} source": {
   "other": "{n}件の収入源"
- },
- "{n} tag": {
-  "other": "{n}個のタグ"
  },
  "{n} time": {
   "other": "{n}回"
@@ -1375,6 +1357,9 @@
  },
  "{n} transaction becomes {name}’s": {
   "other": "{n}件の取引が{name}のものになります"
+ },
+ "{n} transaction came across, checked one by one.": {
+  "other": "{n}件の取引を引き継ぎ、1件ずつ照合しました。"
  },
  "{n} transaction for {name}": {
   "other": "{name}の取引{n}件"
@@ -1396,9 +1381,6 @@
  },
  "{n} transaction, {total} in total": {
   "other": "{n}件の取引、合計{total}"
- },
- "{n} try left.": {
-  "other": "残り{n}回です。"
  },
  "{n} waiting to send": {
   "other": "{n}件が送信待ち"

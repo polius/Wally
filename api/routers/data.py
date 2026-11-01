@@ -315,8 +315,16 @@ def upgrade_report(
 @router.post("/upgrade/seen")
 def upgrade_seen(
     db: Annotated[Session, Depends(get_session)],
+    actor: Actor = Depends(check_login),
 ):
-    set_config(db, "UPGRADE_SEEN", True)
+    """The welcome to 2.0 was seen: by this person, or before anyone was added, by whoever upgraded."""
+    from ..models.people import Person
+    person = db.get(Person, actor.person_id) if actor.person_id is not None else None
+    if person:
+        person.prefs = {**(person.prefs or {}), "welcomed": True}
+        db.add(person)
+    else:
+        set_config(db, "UPGRADE_SEEN", True)
     db.commit()
     return {"ok": True}
 

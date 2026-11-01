@@ -189,3 +189,42 @@
 .w-onbtag{font-size:var(--fs-foot);font-weight:600;color:var(--w-ink2);margin-inline-start:10px}
 .w-onbfoot a.w-btn{text-decoration:none;gap:6px}
 .w-onbfoot a.w-btn svg.i{width:15px;height:15px}
+
+/* ---------- Welcome to Wally 2.0 (js/welcome.js): once per person, after the upgrade from 1.x ----------
+   Apple's "What's New" shape: the mark, one title, the reassurance, a plain list, one button that stays in view. */
+.w-welwrap{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(10,12,20,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .24s var(--ease)}
+.w-welwrap.on{opacity:1}
+.w-wel:focus,.w-wel:focus-visible,.w .w-wel:focus-visible{outline:none}
+.w-wel{width:min(460px,100%);max-height:calc(100dvh - 40px);display:flex;flex-direction:column;background:var(--w-panel);border:1px solid var(--w-line);border-radius:24px;box-shadow:var(--w-shadow);overflow:hidden;
+  background-image:radial-gradient(120% 60% at 50% -10%,var(--w-accent-soft),transparent 70%)}
+.w-welwrap .w-wel{transform:translateY(12px) scale(.98);transition:transform .3s var(--ease)}
+.w-welwrap.on .w-wel{transform:none}
+.w-welbody{overflow-y:auto;overscroll-behavior:contain;padding:36px 32px 20px;text-align:center}
+.w-welmark{width:56px;height:56px;animation:w-welpop .5s var(--ease) both}
+.w-welh{margin:14px 0 6px;font-size:30px;line-height:1.15;font-weight:750;letter-spacing:-.025em;color:var(--w-ink);text-wrap:balance}
+.w-welapp{color:var(--w-accent)}
+.w-welok{display:inline-flex;align-items:center;gap:6px;margin:16px 0 0;padding:6px 12px;border-radius:999px;background:var(--w-good-soft);color:var(--w-good);font-size:var(--fs-foot);font-weight:600;text-align:start}
+.w .w-welok svg.i,.w-welok svg.i{flex:none;width:15px;height:15px;stroke-width:2.2}
+.w-welfeat{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:20px;text-align:start}
+.w-welfeat li{display:flex;gap:14px;align-items:flex-start;animation:w-welrise .45s var(--ease) both;animation-delay:calc(var(--i) * 60ms + 120ms)}
+.w-welfeat b{display:block;font-size:var(--fs-sub);font-weight:650}
+.w-welfeat small{display:block;margin-top:2px;font-size:var(--fs-foot);line-height:1.4;color:var(--w-ink2)}
+.w-welico{flex:none;width:36px;height:36px;display:grid;place-items:center;color:var(--w-accent)}
+.w .w-welico svg.i,.w-welico svg.i{width:24px;height:24px;stroke-width:1.6}
+.w-welfoot{position:relative;display:grid;gap:12px;justify-items:center;padding:16px 32px 24px;background:var(--w-panel)}
+/* When the list scrolls under the button, it fades out instead of being cut */
+.w-welfoot::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:28px;background:linear-gradient(to bottom,transparent,var(--w-panel));pointer-events:none}
+.w-welgo{width:100%;height:46px;font-size:16px}
+.w-gate .w-wel{margin:auto}
+@keyframes w-welpop{from{opacity:0;transform:scale(.6)}}
+@keyframes w-welrise{from{opacity:0;transform:translateY(8px)}}
+@media (max-width:560px){
+  .w-welbody{padding:30px 22px 8px}
+  .w-welfoot{padding:14px 22px calc(20px + env(safe-area-inset-bottom,0px))}
+  .w-welh{font-size:27px}
+  .w-gate .w-wel{width:100%;height:100%;max-height:none;border:0;border-radius:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .w-welwrap,.w-welwrap .w-wel{transition:none}
+  .w-welmark,.w-welfeat li{animation:none}
+}

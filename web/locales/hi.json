@@ -8,7 +8,6 @@
  "6-digit code": "6 अंकों का कोड",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। हर व्यक्ति को अपना अलग व्यू मिलता है।",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। वे घर के पासवर्ड से साइन इन करते हैं।",
- "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "आपके पुराने डेटा की एक कॉपी Wally के डेटा फ़ोल्डर में {file} में है। इससे Wally 1 आपका डेटा वैसे ही खोलता है जैसा वह था।",
  "A file left from turning encryption on.": "एन्क्रिप्शन चालू करते समय बची एक फ़ाइल।",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "मुफ़्त HTTP Shortcuts ऐप से होम स्क्रीन या लॉक स्क्रीन शॉर्टकट। Wally पेस्ट करने के लिए रिक्वेस्ट दिखाता है।",
  "A key is shown once, when it is created": "कुंजी सिर्फ़ एक बार, बनाते समय दिखाई जाती है",
@@ -129,12 +128,12 @@
  "Back to sign in": "साइन इन पर वापस",
  "Bank file: check the columns": "बैंक फ़ाइल: कॉलम जाँचें",
  "Basics": "बुनियादी बातें",
- "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Wally 2.0 अपनाने से पहले, Wally ने हर लेन-देन, नियम, श्रेणी और सेटिंग की तुलना आपके पुराने डेटा से की। कुछ भी नहीं खोया।",
  "Before the amount": "राशि से पहले",
  "Biggest purchase": "सबसे बड़ी खरीदारी",
  "Biggest spender first. Each keeps its color.": "सबसे ज़्यादा खर्च वाली पहले। हर एक का रंग वही रहता है।",
  "Biggest: {name}, {amount} on {date}.": "सबसे बड़ा: {name}, {date} को {amount}।",
  "Bills": "बिल",
+ "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "बिल और वेतन अपनी तय तारीख पर जुड़ते हैं, और कीमत बढ़ने पर Wally ध्यान देता है।",
  "Bills are recurring payments; everyday spending is everything else.": "बिल नियमित भुगतान हैं; रोज़ का खर्च बाकी सब कुछ है।",
  "Blue": "नीला",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "स्क्रीन शेयर करते समय हर आँकड़ा धुंधला कर देता है। {key} से चालू/बंद करें।",
@@ -149,7 +148,6 @@
  "Cancel": "रद्द करें",
  "Can’t scan it? Type the key above into the app instead.": "स्कैन नहीं हो रहा? ऊपर दी कुंजी ऐप में टाइप करें।",
  "Categories": "श्रेणियाँ",
- "Categories and tags": "श्रेणियाँ और टैग",
  "Category": "श्रेणी",
  "Category of part {n}": "हिस्सा {n} की श्रेणी",
  "Category…": "श्रेणी…",
@@ -273,7 +271,6 @@
  "Don’t split": "न बाँटें",
  "Down": "घटा",
  "Download": "डाउनलोड करें",
- "Download the report": "रिपोर्ट डाउनलोड करें",
  "Drag, or type {name}’s part": "खींचें, या {name} का हिस्सा टाइप करें",
  "Drop a CSV here, or choose a file": "यहाँ CSV छोड़ें, या फ़ाइल चुनें",
  "Duplicate": "डुप्लिकेट",
@@ -281,6 +278,7 @@
  "Each part needs an amount more than zero.": "हर हिस्से की राशि शून्य से ज़्यादा होनी चाहिए।",
  "Each pays": "हर कोई देगा",
  "Each person gets their own view. Costs you share are split between you.": "हर व्यक्ति को अपना अलग व्यू मिलता है। साझा खर्च आपके बीच बाँटे जाते हैं।",
+ "Each person has their own view, and shared costs are split between you.": "हर व्यक्ति का अपना व्यू है, और साझा खर्च आपस में बँट जाते हैं।",
  "Each person types it once on their own phone or computer.": "हर व्यक्ति इसे अपने फ़ोन या कंप्यूटर पर एक बार डालता है।",
  "Each person’s spending includes their share of shared costs": "हर व्यक्ति के खर्च में साझा खर्चों का उसका हिस्सा शामिल है",
  "Each sign-in lasts a year": "हर साइन इन एक साल तक चलता है",
@@ -295,6 +293,7 @@
  "Editing · {date}": "बदलाव · {date}",
  "Emergency Kit": "आपातकालीन किट",
  "Encrypt and continue": "एन्क्रिप्ट करें और आगे बढ़ें",
+ "Encrypt everything on your devices, so even the server can’t read it.": "अपने डिवाइस पर सब कुछ एन्क्रिप्ट करें, ताकि सर्वर भी इसे न पढ़ सके।",
  "Encrypt on your devices": "अपने डिवाइस पर एन्क्रिप्ट करें",
  "Encrypted": "एन्क्रिप्टेड",
  "Encrypting {n} of {total}…": "{total} में से {n} एन्क्रिप्ट हो रहे हैं…",
@@ -650,6 +649,7 @@
  "Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.": "बंद: जो भी इस सर्वर तक पहुँच सकता है, वह Wally खोल सकता है। इसे कभी भी सेटिंग्स › साइन इन में चालू करें।",
  "On": "चालू",
  "On a date": "किसी तारीख पर",
+ "On the 1st: what you spent, what you earned and what you kept.": "हर महीने की 1 तारीख को: आपने कितना खर्च किया, कितना कमाया और कितना बचाया।",
  "On the server": "सर्वर पर",
  "On the sign-in page, choose Forgot password.": "साइन इन पेज पर “पासवर्ड भूल गए” चुनें।",
  "On the sign-in page, {forgot} takes its recovery key, then a new password. No two-step code is needed.": "साइन इन पेज पर, {forgot} किट की रिकवरी कुंजी और फिर नया पासवर्ड माँगता है। दो-चरणीय कोड की ज़रूरत नहीं है।",
@@ -663,7 +663,6 @@
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "चालू। सिर्फ़ आपके घर के डिवाइस आपका डेटा पढ़ सकते हैं। सर्वर चलाने वाला नहीं।",
  "One code for the household: everyone scans the same one, on their own phone.": "पूरे घर के लिए एक कोड: सभी अपने-अपने फ़ोन पर एक ही कोड स्कैन करते हैं।",
  "One for the household, to print or keep in a password manager. It gets you back in if you forget the password.": "पूरे घर के लिए एक, प्रिंट करने या पासवर्ड मैनेजर में रखने के लिए। पासवर्ड भूल जाने पर यह आपको वापस अंदर ले आती है।",
- "One thing changed": "एक चीज़ बदली है",
  "Only this browser is signed in.": "सिर्फ़ यही ब्राउज़र साइन इन है।",
  "Only this range": "सिर्फ़ यह अवधि",
  "Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.": "इस घर का डेटा सिर्फ़ आपका पासवर्ड या आपकी रिकवरी कुंजी खोल सकती है। कोई और इसे नहीं खोल सकता, सर्वर चलाने वाला भी नहीं।",
@@ -749,6 +748,7 @@
  "Price went up": "कीमत बढ़ी",
  "Print or save as PDF": "प्रिंट करें या PDF के रूप में सेव करें",
  "Privacy": "गोपनीयता",
+ "Private if you want": "चाहें तो निजी",
  "Projected": "अनुमानित",
  "Projected: {amount}": "अनुमानित: {amount}",
  "QR code of your recovery key": "आपकी रिकवरी कुंजी का QR कोड",
@@ -767,6 +767,7 @@
  "Recurring": "आवर्ती",
  "Recurring bill": "आवर्ती बिल",
  "Recurring income": "आवर्ती आय",
+ "Recurring, on its day": "आवर्ती, अपने दिन पर",
  "Red": "लाल",
  "Regular income only": "सिर्फ़ नियमित आय",
  "Remove": "हटाएँ",
@@ -944,7 +945,7 @@
  "That code isn’t right. Codes change every 30 seconds, so use the newest one.": "यह कोड सही नहीं है। कोड हर 30 सेकंड में बदलते हैं, इसलिए सबसे नया कोड डालें।",
  "That day": "उस दिन",
  "That is more than Wally can keep. Use less than 100,000,000.": "यह Wally की सीमा से ज़्यादा है। 100,000,000 से कम राशि डालें।",
- "That password isn’t right. Try again, or use Forgot password.": "यह पासवर्ड सही नहीं है। फिर से कोशिश करें, या «पासवर्ड भूल गए» इस्तेमाल करें।",
+ "That password isn’t right.": "यह पासवर्ड सही नहीं है।",
  "That recovery code isn’t right, or it was already used.": "यह रिकवरी कोड सही नहीं है, या पहले ही इस्तेमाल हो चुका है।",
  "That recovery key isn’t right.": "यह रिकवरी कुंजी सही नहीं है।",
  "That took too long. Sign in again.": "बहुत देर हो गई। फिर से साइन इन करें।",
@@ -969,6 +970,7 @@
  "The total must be more than zero.": "कुल राशि शून्य से ज़्यादा होनी चाहिए।",
  "The two new passwords are not the same.": "दोनों नए पासवर्ड एक जैसे नहीं हैं।",
  "The two passwords are different.": "दोनों पासवर्ड अलग-अलग हैं।",
+ "The whole household": "पूरा परिवार",
  "The whole household, by category": "पूरा घर, श्रेणी के हिसाब से",
  "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:": {
   "one": "सर्वर पर {n} बैकअप बिना एन्क्रिप्शन के है, इसलिए उसे हटाया जा रहा है। अगर आपको चाहिए, तो पहले उसे डाउनलोड कर लें:",
@@ -1087,10 +1089,6 @@
  "Views": "व्यू",
  "Violet": "बैंगनी",
  "Waiting to send": "भेजा जाना बाकी",
- "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
-  "one": "Wally 1 ने आज के बाद की तारीख के लिए {n} आवर्ती भुगतान पहले से जोड़ दिया था। Wally 2.0 हर भुगतान उसके अपने दिन जोड़ता है, इसलिए इसे हटा दिया गया है और यह अपने दिन वापस आएगा:",
-  "other": "Wally 1 ने आज के बाद की तारीखों के लिए {n} आवर्ती भुगतान पहले से जोड़ दिए थे। Wally 2.0 हर भुगतान उसके अपने दिन जोड़ता है, इसलिए इन्हें हटा दिया गया है और ये अपने दिन वापस आएँगे:"
- },
  "Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:": "Wally 1 में कोई किट नहीं थी, इसलिए सिर्फ़ सर्वर चलाने वाला ही मदद कर सकता है। वे इस कमांड से साइन इन बंद कर सकते हैं, फिर आप नए पासवर्ड के साथ इसे फिर से चालू करें:",
  "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit": "Wally आपातकालीन किट",
@@ -1120,6 +1118,7 @@
  "Week starts on": "हफ़्ता शुरू होता है",
  "Weekly": "हर हफ़्ते",
  "Welcome to Wally": "Wally में आपका स्वागत है",
+ "Welcome to {app}": "{app} में आपका स्वागत है",
  "Went out": "गया",
  "What changed": "क्या बदला",
  "What changes": "क्या बदलेगा",
@@ -1164,16 +1163,12 @@
  "You spent {amount} more than came in.": "आपने आमदनी से {amount} ज़्यादा खर्च किया।",
  "Your currencies": "आपकी मुद्राएँ",
  "Your data": "आपका डेटा",
- "Your data came across": "आपका डेटा सुरक्षित पहुँच गया",
+ "Your month in review": "आपके महीने का लेखा-जोखा",
  "Your name": "आपका नाम",
  "Your password is the key": "आपका पासवर्ड ही कुंजी है",
  "Your password is the key.": "आपका पासवर्ड ही चाबी है।",
  "Your {month} recap": "आपकी {month} की समीक्षा",
  "about": "लगभग",
- "and {n} more, in the report": {
-  "one": "और {n} अन्य, रिपोर्ट में",
-  "other": "और {n} अन्य, रिपोर्ट में"
- },
  "came in {amount}": "{amount} आया",
  "created {date}": "{date} को बनाई गई",
  "day {d}": "{d} तारीख",
@@ -1328,21 +1323,9 @@
   "one": "{n} पहले से जुड़ा",
   "other": "{n} पहले से जुड़े"
  },
- "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
-  "one": "{n} राशि में दो से ज़्यादा दशमलव अंक हैं। इसे वैसे ही रखा गया है जैसे लिखा गया था, और दो दशमलव अंकों तक दिखाया जाता है।",
-  "other": "{n} राशियों में दो से ज़्यादा दशमलव अंक हैं। इन्हें वैसे ही रखा गया है जैसे लिखा गया था, और दो दशमलव अंकों तक दिखाया जाता है।"
- },
  "{n} backup from before.": {
   "one": "पहले का {n} बैकअप।",
   "other": "पहले के {n} बैकअप।"
- },
- "{n} category": {
-  "one": "{n} श्रेणी",
-  "other": "{n} श्रेणियाँ"
- },
- "{n} category was used but missing from your list. It is listed now.": {
-  "one": "{n} श्रेणी इस्तेमाल हो रही थी पर आपकी सूची में नहीं थी। अब वह सूची में है।",
-  "other": "{n} श्रेणियाँ इस्तेमाल हो रही थीं पर आपकी सूची में नहीं थीं। अब वे सूची में हैं।"
  },
  "{n} change": {
   "one": "{n} बदलाव",
@@ -1418,10 +1401,6 @@
   "one": "Wally के डेटाबेस में {n} पंक्ति।",
   "other": "Wally के डेटाबेस में {n} पंक्तियाँ।"
  },
- "{n} rule": {
-  "one": "{n} नियम",
-  "other": "{n} नियम"
- },
  "{n} selected": {
   "one": "{n} चुना गया",
   "other": "{n} चुने गए"
@@ -1433,10 +1412,6 @@
  "{n} source": {
   "one": "{n} स्रोत",
   "other": "{n} स्रोत"
- },
- "{n} tag": {
-  "one": "{n} टैग",
-  "other": "{n} टैग"
  },
  "{n} time": {
   "one": "{n} बार",
@@ -1453,6 +1428,10 @@
  "{n} transaction becomes {name}’s": {
   "one": "{n} लेन-देन {name} का हो जाएगा",
   "other": "{n} लेन-देन {name} के हो जाएँगे"
+ },
+ "{n} transaction came across, checked one by one.": {
+  "one": "{n} लेन-देन आ गया, जाँच लिया गया।",
+  "other": "{n} लेन-देन आ गए, हर एक जाँचा गया।"
  },
  "{n} transaction for {name}": {
   "one": "{name} के लिए {n} लेन-देन",
@@ -1481,10 +1460,6 @@
  "{n} transaction, {total} in total": {
   "one": "{n} लेन-देन, कुल {total}",
   "other": "{n} लेन-देन, कुल {total}"
- },
- "{n} try left.": {
-  "one": "{n} कोशिश बाकी।",
-  "other": "{n} कोशिशें बाकी।"
  },
  "{n} waiting to send": {
   "one": "{n} भेजा जाना बाकी",

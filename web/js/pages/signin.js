@@ -184,12 +184,12 @@ function loginError(e, code) {
   const d = e.detail && typeof e.detail === "object" ? e.detail : {};
   if (e.status === 429) return startWait(d.retry_after || 30);
   if (e.status === 401 && d.tries_left !== undefined) {
-    const what = !code ? t("That password isn’t right. Try again, or use Forgot password.")
+    const what = !code ? t("That password isn’t right.")
       : si.rec ? t("That recovery code isn’t right, or it was already used.")
       : t("That code isn’t right. Codes change every 30 seconds, so use the newest one.");
-    // The last wrong try starts the wait straight away
+    // The last wrong try starts the wait straight away. The tries left aren't counted out loud.
     if (!d.tries_left) return startWait(30);
-    si.err = what + " " + tn(d.tries_left, "{n} try left.", "{n} tries left.");
+    si.err = what;
     return renderSignin();
   }
   if (code && e.status === 401) { si.step = "pw"; si.err = t("That took too long. Sign in again."); return renderSignin(); }
@@ -557,46 +557,16 @@ const up = { step: 0, names: [""], people: [], tags: [], picks: {}, preview: nul
 
 function startPeople() { if (status.upgrade) return startReport(); renderUpgrade(); }
 
-/* What the upgrade kept and changed, checked against the old data, before anything else */
-let money = (v) => v;
+/* Welcome to 2.0 first: what's new, and that the data came across */
 async function startReport() {
-  try {
-    const c = await GET("/currency");
-    const sel = c.currencies.find((x) => x.name === c.selected), sym = sel ? sel.symbol : c.selected;
-    const nf = new Intl.NumberFormat(LANG, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    money = (v) => (c.position === "left" ? sym + nf.format(Number(v)) : nf.format(Number(v)) + " " + sym);
-  } catch (e) { /* plain numbers */ }
-  renderReport();
-}
-function renderReport() {
-  const r = status.upgrade, k = r.kept;
-  const day = (d) => new Intl.DateTimeFormat(LANG, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)));
-  const row = (label, value) => '<div class="w-onbrow"><span>' + label + "</span><b>" + value + "</b></div>";
-  const list = (items) => '<ul class="w-onblist">' + items.slice(0, 8).map((x) => "<li><span>" + esc(day(x.date)) + "</span><span>" + esc(x.name || "—") + "</span><b>" + esc(money(x.amount)) + "</b></li>").join("") +
-    (items.length > 8 ? '<li class="w-hint">' + tn(items.length - 8, "and {n} more, in the report", "and {n} more, in the report") + "</li>" : "") + "</ul>";
-  let body = '<h1 id="gate-h">' + t("Your data came across") + '</h1><p class="w-onbp">' +
-    t("Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.") + "</p>" +
-    '<div class="w-onbf">' +
-    row(t("Transactions"), tn(k.transactions, "{n} transaction", "{n} transactions") + (k.first ? " · " + esc(day(k.first)) + " – " + esc(day(k.last)) : "")) +
-    row(t("Spent"), esc(money(k.expense))) + row(t("Earned"), esc(money(k.income))) +
-    row(t("Recurring"), tn(k.rules, "{n} rule", "{n} rules")) +
-    row(t("Categories and tags"), tn(k.categories, "{n} category", "{n} categories") + " · " + tn(k.tags, "{n} tag", "{n} tags")) + "</div>";
-  if (r.removed.length) {
-    body += '<h2 class="w-onbh2">' + t("One thing changed") + '</h2><p class="w-onbp">' +
-      tn(r.removed.length, "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:",
-        "Wally 1 added {n} recurring charges in advance, for dates after today. Wally 2.0 adds each one on its day, so they were taken out and come back then:") + "</p>" + list(r.removed);
-  }
-  for (const n of r.notes || []) {
-    if (n.kind === "decimals") body += '<p class="w-hint">' + tn(n.count, "{n} amount has more than two decimals. It is kept as typed and shown to the cent.", "{n} amounts have more than two decimals. They are kept as typed and shown to the cent.") + "</p>";
-    if (n.kind === "categories") body += '<p class="w-hint">' + tn(n.count, "{n} category was used but missing from your list. It is listed now.", "{n} categories were used but missing from your list. They are listed now.") + "</p>";
-  }
-  if (r.backup) body += '<p class="w-hint">' + t("A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.", { file: "<code>backups/" + esc(r.backup) + "</code>" }) + "</p>";
-  const foot = '<a class="w-btn ghost" href="/api/upgrade/report" download id="rep-dl">' + icon("download") + t("Download the report") + "</a>" + nextBtn(t("Continue"));
-  paint('<main class="w-onb" aria-labelledby="gate-h"><div class="w-onbh"><span class="w-mark" role="img" aria-label="Wally"></span><span class="w-onbtag">' + t("Wally 2.0") + "</span></div>" +
-    '<div class="w-onbb">' + body + '<p class="w-err" id="onb-err" role="alert" hidden></p></div><div class="w-onbfoot">' + foot + "</div></main>", "#onb-next");
-  root.querySelector("#onb-next").addEventListener("click", async (ev) => {
+  const w = await import("../welcome.js");
+  paint(w.welcomeCard(status.upgrade), ".w-wel");
+  w.wireCard(root.querySelector(".w-wel"));
+  root.querySelector("#wel-go").addEventListener("click", async (ev) => {
     busy(ev.currentTarget, true);
-    try { await POST("/upgrade/seen"); } catch (e) { /* shown again next time */ }
+    await w.markSeen();
+    // Whoever upgraded is about to pick themselves on this browser: not shown to them again
+    w.rememberHere();
     status.upgrade = null;
     renderUpgrade();
   });
@@ -836,9 +806,9 @@ async function submitVault() {
 function vaultError(e) {
   const d = e && e.detail && typeof e.detail === "object" ? e.detail : {};
   if (e.status === 429) vg.err = tn(d.retry_after || 30, "Too many tries. Wait {n} second, then try again.", "Too many tries. Wait {n} seconds, then try again.");
-  else if (e.status === 401 && vg.step === "unlock") vg.err = t("That password isn’t right. Try again, or use Forgot password.");
+  else if (e.status === 401 && vg.step === "unlock") vg.err = t("That password isn’t right.");
   else if (e.status === 401 && d.tries_left !== undefined) {
-    vg.err = t("That recovery key isn’t right.") + " " + tn(d.tries_left, "{n} try left.", "{n} tries left.");
+    vg.err = t("That recovery key isn’t right.");
   } else if (e.status === 401 && vg.step === "newpw") { vg.err = t("That took too long. Start again."); vg.step = "recover"; }
   else vg.err = apiMessage(e);
   renderVault();

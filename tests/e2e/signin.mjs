@@ -156,7 +156,7 @@ try {
     ok(st.people.every((p) => !("has_password" in p) && !("two_step" in p)), "API: people carry no password or two-step of their own");
   }
 
-  // Wrong passwords, tries left, the wait, then the right one
+  // Wrong passwords, not counted out loud, the wait after ten, then the right one
   const alex = await open(demo.base);
   {
     const page = alex;
@@ -176,25 +176,24 @@ try {
     ok(await page.getAttribute("#si-in", "type") === "text", "signin: show password");
     await page.press("#si-in", "Enter");
     await page.waitForSelector(".w-input.err");
-    ok((await page.textContent("#si-msg")).includes("4 tries left"), "signin: wrong password says 4 tries left");
+    ok((await page.textContent("#si-msg")).trim() === "That password isn’t right.", "signin: a wrong password says only that, with no tries counted");
     ok(await page.getAttribute("#si-in", "aria-invalid") === "true", "signin: field marked invalid");
     await shot(page, "signin-wrong");
-    for (const left of [3, 2, 1]) {
-      await page.fill("#si-in", "wrong-" + left);
-      await page.press("#si-in", "Enter");
-      await page.waitForFunction((n) => document.getElementById("si-msg").textContent.includes(n + (n === 1 ? " try left" : " tries left")), left);
+    for (let n = 2; n <= 9; n++) {
+      await page.fill("#si-in", "wrong-" + n);
+      await Promise.all([page.waitForResponse((r) => r.url().endsWith("/api/login") && r.status() === 401), page.press("#si-in", "Enter")]);
     }
-    ok(true, "signin: tries left counts down to 1");
-    await page.fill("#si-in", "wrong-5");
+    ok(!/Wait/.test(await page.textContent("#si-msg")), "signin: nine wrong tries, still no wait");
+    await page.fill("#si-in", "wrong-10");
     await page.press("#si-in", "Enter");
     await page.waitForFunction(() => /Wait \d+ seconds/.test(document.getElementById("si-msg").textContent));
     const first = await page.textContent("#si-msg");
-    ok(await page.isDisabled("#si-go"), "signin: fifth wrong try: Sign in waits");
+    ok(await page.isDisabled("#si-go"), "signin: tenth wrong try: Sign in waits");
     await page.waitForTimeout(2100);
     const later = await page.textContent("#si-msg");
     ok(+first.match(/(\d+) seconds/)[1] > +later.match(/(\d+) seconds?/)[1], "signin: the wait counts down live (" + first.match(/\d+/)[0] + " → " + later.match(/\d+/)[0] + ")");
     await shot(page, "signin-wait");
-    // A sixth try from a fresh page is refused by the server (429) with its own wait
+    // An eleventh try from a fresh page is refused by the server (429) with its own wait
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector("#gate .w-prof");
     await page.click('[data-prof="1"]');
@@ -408,7 +407,7 @@ try {
     await page.fill("#vg-in", otherKey());
     await page.click("#vg-go");
     await page.waitForFunction(() => !document.getElementById("vg-msg").hidden);
-    ok(/isn’t right/.test(await page.textContent("#vg-msg")) && /4 tries left/.test(await page.textContent("#vg-msg")), "kit: a wrong key is refused, with tries left (" + (await page.textContent("#vg-msg")) + ")");
+    ok((await page.textContent("#vg-msg")).trim() === "That recovery key isn’t right.", "kit: a wrong key is refused, with no tries counted (" + (await page.textContent("#vg-msg")) + ")");
     // One letter mistyped: caught by the check digit
     await page.fill("#vg-in", typo(kit));
     await page.click("#vg-go");
@@ -588,20 +587,21 @@ try {
     const household = "household";
     await page.fill("#si-in", household);
     await page.press("#si-in", "Enter");
-    // First, what the upgrade kept and changed, checked against the old data
-    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Your data came across"));
+    // First, the welcome to 2.0: what's new, and that the data came across
+    await page.waitForSelector("#gate .w-wel #wel-go");
     ok(true, "upgrade: the 1.x household password signs in");
-    const report = await gateText(page);
-    ok(report.includes("Nothing was lost.") && /\d+ transactions/.test(report) && report.includes("backups/pre-2.0-"), "upgrade: a report of what was kept, and where the old copy is");
-    ok(await page.getAttribute("#rep-dl", "href") === "/api/upgrade/report", "upgrade: the report can be downloaded");
+    const welcome = await gateText(page);
+    ok(welcome.includes("Wally 2.0") && /\d+ transactions came across, checked one by one/.test(welcome), "upgrade: welcome to 2.0, with the transactions that came across");
+    ok(await page.locator("#gate .w-welfeat li").count() === 4, "upgrade: four things that are new");
     const text = await page.evaluate(async () => (await fetch("/api/upgrade/report")).text());
     ok(text.includes("Kept, and checked one by one against the old database"), "upgrade: the downloaded report is plain text");
-    await shot(page, "upgrade-report");
-    await page.click("#onb-next");
+    await shot(page, "upgrade-welcome");
+    await page.click("#wel-go");
     await page.waitForSelector("[data-name]");
+    ok(await page.evaluate(() => localStorage.getItem("wally.welcomed")) === "1", "upgrade: this browser remembers the welcome was seen");
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector("[data-name]");
-    ok(!(await gateText(page)).includes("Your data came across"), "upgrade: the report is shown once");
+    ok(!(await page.locator("#gate .w-wel").count()), "upgrade: the welcome is shown once");
     ok((await gateText(page)).includes("Who uses Wally?"), "upgrade: asks who uses Wally");
     await page.fill('[data-name="0"]', "Alex");
     await page.click("#onb-add");

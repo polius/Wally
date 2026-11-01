@@ -102,7 +102,7 @@ Nothing to do: start the new image with the same data folder. Every 1.x release,
 
 - **Before**, Wally copies your database to `backups/pre-2.0-<date>.db` in the data folder.
 - **During**, before keeping anything, Wally compares the result with your old data, field by field: every transaction, recurring rule, category, tag, currency and setting. If anything differs that shouldn't, it puts your data back exactly as it was, opens read-only, and says why. The 1.x image opens the copy.
-- **After**, the first screen shows what was kept (transactions, totals, rules, categories) and what changed, and the same report is saved as `upgrade-report-<date>.txt` in the data folder.
+- **After**, each person is welcomed to 2.0 once, with how many transactions came across. The full report of what was kept (transactions, totals, rules, categories) and what changed is saved as `upgrade-report-<date>.txt` in the data folder.
 
 To see the report before upgrading, run the check on a copy. It changes nothing:
 

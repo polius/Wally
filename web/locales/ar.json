@@ -8,7 +8,6 @@
  "6-digit code": "رمز من 6 أرقام",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "طفل، أو شريك سكن، أو أي شخص يتقاسم التكاليف. لكل شخص عرضه الخاص.",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "طفل، أو شريك سكن، أو أي شخص يتقاسم التكاليف. يسجّل الدخول بكلمة مرور الأسرة.",
- "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "توجد نسخة من بياناتك القديمة في {file}، داخل مجلد بيانات Wally. بها يفتح Wally 1 بياناتك كما كانت.",
  "A file left from turning encryption on.": "ملف متبقٍّ من تشغيل التشفير.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "اختصار على الشاشة الرئيسية أو شاشة القفل باستخدام تطبيق HTTP Shortcuts المجاني. يعرض Wally الطلب لتلصقه.",
  "A key is shown once, when it is created": "يُعرض المفتاح مرة واحدة فقط، عند إنشائه",
@@ -141,12 +140,12 @@
  "Back to sign in": "العودة إلى تسجيل الدخول",
  "Bank file: check the columns": "ملف البنك: تحقق من الأعمدة",
  "Basics": "الأساسيات",
- "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "قبل اعتماد Wally 2.0، قارن Wally كل معاملة وقاعدة وفئة وإعداد ببياناتك القديمة. لم يُفقد أي شيء.",
  "Before the amount": "قبل المبلغ",
  "Biggest purchase": "أكبر عملية شراء",
  "Biggest spender first. Each keeps its color.": "الأكثر إنفاقًا أولًا. تحتفظ كل فئة بلونها.",
  "Biggest: {name}, {amount} on {date}.": "الأكبر: {name}، {amount} في {date}.",
  "Bills": "الفواتير",
+ "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "تُضاف الفواتير والرواتب في مواعيد استحقاقها، ويلاحظ Wally عندما يرتفع سعر.",
  "Bills are recurring payments; everyday spending is everything else.": "الفواتير هي المدفوعات المتكررة؛ والإنفاق اليومي هو كل ما عدا ذلك.",
  "Blue": "أزرق",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "يموّه كل الأرقام، لمشاركة شاشتك. {key} للتبديل.",
@@ -161,7 +160,6 @@
  "Cancel": "إلغاء",
  "Can’t scan it? Type the key above into the app instead.": "لا يمكنك مسح الرمز؟ اكتب المفتاح أعلاه في التطبيق بدلًا من ذلك.",
  "Categories": "الفئات",
- "Categories and tags": "الفئات والوسوم",
  "Category": "الفئة",
  "Category of part {n}": "فئة الجزء {n}",
  "Category…": "الفئة…",
@@ -305,7 +303,6 @@
  "Don’t split": "بدون تقسيم",
  "Down": "انخفضت",
  "Download": "تنزيل",
- "Download the report": "تنزيل التقرير",
  "Drag, or type {name}’s part": "اسحب، أو اكتب حصة {name}",
  "Drop a CSV here, or choose a file": "أفلت ملف CSV هنا، أو اختر ملفًا",
  "Duplicate": "تكرار",
@@ -313,6 +310,7 @@
  "Each part needs an amount more than zero.": "يحتاج كل جزء إلى مبلغ أكبر من صفر.",
  "Each pays": "يدفع كل شخص",
  "Each person gets their own view. Costs you share are split between you.": "لكل شخص عرضه الخاص. تُقسَّم التكاليف المشتركة بينكم.",
+ "Each person has their own view, and shared costs are split between you.": "لكل شخص عرضه الخاص، وتُقسَّم التكاليف المشتركة بينكم.",
  "Each person types it once on their own phone or computer.": "يكتبها كل شخص مرة واحدة على هاتفه أو حاسوبه.",
  "Each person’s spending includes their share of shared costs": "يشمل إنفاق كل شخص حصته من المصروفات المشتركة",
  "Each sign-in lasts a year": "يستمر كل تسجيل دخول لمدة عام",
@@ -327,6 +325,7 @@
  "Editing · {date}": "تعديل · {date}",
  "Emergency Kit": "حقيبة الطوارئ",
  "Encrypt and continue": "تشفير ومتابعة",
+ "Encrypt everything on your devices, so even the server can’t read it.": "شفّر كل شيء على أجهزتك، فلا يستطيع حتى الخادم قراءته.",
  "Encrypt on your devices": "التشفير على أجهزتك",
  "Encrypted": "مشفّر",
  "Encrypting {n} of {total}…": "جارٍ تشفير {n} من {total}…",
@@ -738,6 +737,7 @@
  "Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.": "متوقف: أي شخص يصل إلى هذا الخادم يمكنه فتح Wally. فعّله من الإعدادات › تسجيل الدخول في أي وقت.",
  "On": "مفعّل",
  "On a date": "في تاريخ",
+ "On the 1st: what you spent, what you earned and what you kept.": "في أول كل شهر: ما أنفقته وما كسبته وما ادّخرته.",
  "On the server": "على الخادم",
  "On the sign-in page, choose Forgot password.": "في صفحة تسجيل الدخول، اختر نسيت كلمة المرور.",
  "On the sign-in page, {forgot} takes its recovery key, then a new password. No two-step code is needed.": "في صفحة تسجيل الدخول، يطلب {forgot} مفتاح الاسترداد من الحقيبة، ثم كلمة مرور جديدة. لا حاجة إلى رمز التحقق بخطوتين.",
@@ -751,7 +751,6 @@
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "مفعّل. لا يقرأ بياناتك إلا أجهزة أسرتك، ولا يستطيع ذلك من يدير الخادم.",
  "One code for the household: everyone scans the same one, on their own phone.": "رمز واحد للأسرة: يمسح الجميع الرمز نفسه، كلٌّ على هاتفه.",
  "One for the household, to print or keep in a password manager. It gets you back in if you forget the password.": "حقيبة واحدة للأسرة، للطباعة أو للحفظ في مدير كلمات المرور. تعيدك إذا نسيت كلمة المرور.",
- "One thing changed": "تغيّر شيء واحد",
  "Only this browser is signed in.": "هذا المتصفح وحده مسجّل الدخول.",
  "Only this range": "هذه الفترة فقط",
  "Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.": "لا يفتح بيانات هذه الأسرة إلا كلمة مرورك أو مفتاح الاسترداد. لا أحد غيرك، ولا حتى من يدير الخادم، يستطيع فتحها.",
@@ -845,6 +844,7 @@
  "Price went up": "ارتفع السعر",
  "Print or save as PDF": "طباعة أو حفظ بصيغة PDF",
  "Privacy": "الخصوصية",
+ "Private if you want": "خاص إن أردت",
  "Projected": "المتوقع",
  "Projected: {amount}": "المتوقع: {amount}",
  "QR code of your recovery key": "رمز QR لمفتاح الاسترداد",
@@ -863,6 +863,7 @@
  "Recurring": "المتكررة",
  "Recurring bill": "فاتورة متكررة",
  "Recurring income": "دخل متكرر",
+ "Recurring, on its day": "المتكررة، في يومها",
  "Red": "أحمر",
  "Regular income only": "الدخل المنتظم فقط",
  "Remove": "إزالة",
@@ -1060,7 +1061,7 @@
  "That code isn’t right. Codes change every 30 seconds, so use the newest one.": "هذا الرمز غير صحيح. تتغير الرموز كل 30 ثانية، لذا استخدم أحدثها.",
  "That day": "ذلك اليوم",
  "That is more than Wally can keep. Use less than 100,000,000.": "هذا أكبر مما يمكن لـ Wally حفظه. استخدم أقل من 100,000,000.",
- "That password isn’t right. Try again, or use Forgot password.": "كلمة المرور غير صحيحة. حاول مجددًا، أو استخدم «نسيت كلمة المرور».",
+ "That password isn’t right.": "كلمة المرور غير صحيحة.",
  "That recovery code isn’t right, or it was already used.": "رمز الاسترداد هذا غير صحيح، أو سبق استخدامه.",
  "That recovery key isn’t right.": "مفتاح الاسترداد هذا غير صحيح.",
  "That took too long. Sign in again.": "استغرق ذلك وقتًا طويلًا. سجّل الدخول مجددًا.",
@@ -1085,6 +1086,7 @@
  "The total must be more than zero.": "يجب أن يكون الإجمالي أكبر من صفر.",
  "The two new passwords are not the same.": "كلمتا المرور الجديدتان غير متطابقتين.",
  "The two passwords are different.": "كلمتا المرور مختلفتان.",
+ "The whole household": "الأسرة كلها",
  "The whole household, by category": "الأسرة كلها، حسب الفئة",
  "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:": {
   "zero": "{n} نسخة احتياطية على الخادم غير مشفّرة، لذا ستُحذف. نزّلها أولًا إذا أردتها:",
@@ -1231,14 +1233,6 @@
  "Views": "العروض",
  "Violet": "بنفسجي",
  "Waiting to send": "بانتظار الإرسال",
- "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
-  "zero": "أضاف Wally 1 مسبقًا {n} دفعات متكررة لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلت وستعود حينها:",
-  "one": "أضاف Wally 1 مسبقًا {n} دفعة متكررة لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلت وستعود حينها:",
-  "two": "أضاف Wally 1 مسبقًا {n} دفعتين متكررتين لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلتا وستعودان حينها:",
-  "few": "أضاف Wally 1 مسبقًا {n} دفعات متكررة لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلت وستعود حينها:",
-  "many": "أضاف Wally 1 مسبقًا {n} دفعةً متكررةً لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلت وستعود حينها:",
-  "other": "أضاف Wally 1 مسبقًا {n} دفعة متكررة لما بعد اليوم. يضيف Wally 2.0 كل دفعة في يومها، لذا أُزيلت وستعود حينها:"
- },
  "Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:": "لم تكن في Wally 1 حقيبة، لذا لا يستطيع المساعدة إلا من يدير الخادم. يمكنه إيقاف تسجيل الدخول بهذا الأمر، ثم تعيد أنت تفعيله بكلمة مرور جديدة:",
  "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit": "حقيبة طوارئ Wally",
@@ -1268,6 +1262,7 @@
  "Week starts on": "يبدأ الأسبوع يوم",
  "Weekly": "أسبوعيًا",
  "Welcome to Wally": "مرحبًا بك في Wally",
+ "Welcome to {app}": "مرحبًا بك في {app}",
  "Went out": "الخارج",
  "What changed": "ما الذي تغيّر",
  "What changes": "ما الذي يتغير",
@@ -1312,20 +1307,12 @@
  "You spent {amount} more than came in.": "أنفقت {amount} أكثر مما دخل.",
  "Your currencies": "عملاتك",
  "Your data": "بياناتك",
- "Your data came across": "وصلت بياناتك كاملة",
+ "Your month in review": "ملخص شهرك",
  "Your name": "اسمك",
  "Your password is the key": "كلمة مرورك هي المفتاح",
  "Your password is the key.": "كلمة المرور هي المفتاح.",
  "Your {month} recap": "ملخص {month}",
  "about": "حوالي",
- "and {n} more, in the report": {
-  "zero": "و{n} أخرى في التقرير",
-  "one": "و{n} أخرى في التقرير",
-  "two": "و{n} أخرى في التقرير",
-  "few": "و{n} أخرى في التقرير",
-  "many": "و{n} أخرى في التقرير",
-  "other": "و{n} أخرى في التقرير"
- },
  "came in {amount}": "دخل {amount}",
  "created {date}": "أُنشئ في {date}",
  "day {d}": "يوم {d}",
@@ -1516,14 +1503,6 @@
   "two": "اثنتان مضافتان بالفعل",
   "zero": "{n} مضافة بالفعل"
  },
- "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
-  "zero": "{n} مبالغ فيها أكثر من منزلتين عشريتين. تُحفظ كما كُتبت وتُعرض بمنزلتين عشريتين.",
-  "one": "{n} مبلغ فيه أكثر من منزلتين عشريتين. يُحفظ كما كُتب ويُعرض بمنزلتين عشريتين.",
-  "two": "{n} مبلغان فيهما أكثر من منزلتين عشريتين. يُحفظان كما كُتبا ويُعرضان بمنزلتين عشريتين.",
-  "few": "{n} مبالغ فيها أكثر من منزلتين عشريتين. تُحفظ كما كُتبت وتُعرض بمنزلتين عشريتين.",
-  "many": "{n} مبلغًا فيها أكثر من منزلتين عشريتين. تُحفظ كما كُتبت وتُعرض بمنزلتين عشريتين.",
-  "other": "{n} مبلغ فيها أكثر من منزلتين عشريتين. تُحفظ كما كُتبت وتُعرض بمنزلتين عشريتين."
- },
  "{n} backup from before.": {
   "zero": "{n} نسخة احتياطية سابقة.",
   "one": "نسخة احتياطية واحدة سابقة.",
@@ -1531,22 +1510,6 @@
   "few": "{n} نسخ احتياطية سابقة.",
   "many": "{n} نسخة احتياطية سابقة.",
   "other": "{n} نسخة احتياطية سابقة."
- },
- "{n} category": {
-  "zero": "{n} فئات",
-  "one": "{n} فئة",
-  "two": "{n} فئتان",
-  "few": "{n} فئات",
-  "many": "{n} فئة",
-  "other": "{n} فئة"
- },
- "{n} category was used but missing from your list. It is listed now.": {
-  "zero": "{n} فئات كانت مستخدمة لكنها غير موجودة في قائمتك. أصبحت مدرجة الآن.",
-  "one": "{n} فئة كانت مستخدمة لكنها غير موجودة في قائمتك. أصبحت مدرجة الآن.",
-  "two": "{n} فئتان كانتا مستخدمتين لكنهما غير موجودتين في قائمتك. أصبحتا مدرجتين الآن.",
-  "few": "{n} فئات كانت مستخدمة لكنها غير موجودة في قائمتك. أصبحت مدرجة الآن.",
-  "many": "{n} فئة كانت مستخدمة لكنها غير موجودة في قائمتك. أصبحت مدرجة الآن.",
-  "other": "{n} فئة كانت مستخدمة لكنها غير موجودة في قائمتك. أصبحت مدرجة الآن."
  },
  "{n} change": {
   "few": "{n} تغييرات",
@@ -1694,14 +1657,6 @@
   "many": "{n} صفًا في قاعدة بيانات Wally.",
   "other": "{n} صف في قاعدة بيانات Wally."
  },
- "{n} rule": {
-  "zero": "{n} قواعد",
-  "one": "{n} قاعدة",
-  "two": "{n} قاعدتان",
-  "few": "{n} قواعد",
-  "many": "{n} قاعدة",
-  "other": "{n} قاعدة"
- },
  "{n} selected": {
   "few": "تم تحديد {n}",
   "many": "تم تحديد {n}",
@@ -1725,14 +1680,6 @@
   "other": "{n} مصدر",
   "two": "مصدران",
   "zero": "لا مصادر"
- },
- "{n} tag": {
-  "zero": "{n} وسوم",
-  "one": "{n} وسم",
-  "two": "{n} وسمان",
-  "few": "{n} وسوم",
-  "many": "{n} وسمًا",
-  "other": "{n} وسم"
  },
  "{n} time": {
   "few": "{n} مرات",
@@ -1765,6 +1712,14 @@
   "other": "{n} معاملة تصبح خاصة بـ {name}",
   "two": "معاملتان تصبحان خاصتين بـ {name}",
   "zero": "لا معاملات تنتقل إلى {name}"
+ },
+ "{n} transaction came across, checked one by one.": {
+  "few": "نُقلت {n} معاملات، وتم التحقق منها واحدةً واحدة.",
+  "many": "نُقلت {n} معاملةً، وتم التحقق منها واحدةً واحدة.",
+  "one": "نُقلت معاملة واحدة، وتم التحقق منها.",
+  "other": "نُقلت {n} معاملة، وتم التحقق منها واحدةً واحدة.",
+  "two": "نُقلت معاملتان، وتم التحقق من كل منهما.",
+  "zero": "لا توجد معاملات لنقلها."
  },
  "{n} transaction for {name}": {
   "few": "{n} معاملات لـ {name}",
@@ -1821,14 +1776,6 @@
   "other": "{n} معاملة، {total} إجمالًا",
   "two": "معاملتان، {total} إجمالًا",
   "zero": "لا معاملات، {total} إجمالًا"
- },
- "{n} try left.": {
-  "few": "تتبقى {n} محاولات.",
-  "many": "تتبقى {n} محاولة.",
-  "one": "تتبقى محاولة واحدة.",
-  "other": "تتبقى {n} محاولة.",
-  "two": "تتبقى محاولتان.",
-  "zero": "لم تتبقَّ أي محاولة."
  },
  "{n} waiting to send": {
   "few": "{n} بانتظار الإرسال",

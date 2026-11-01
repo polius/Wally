@@ -24,7 +24,7 @@ SESSION_COOKIE = "wally_session"
 PENDING_COOKIE = "wally_pending"
 SESSION_DAYS = 365
 PENDING_MINUTES = 5
-MAX_FAILURES = 5
+MAX_FAILURES = 10
 LOCK_SECONDS = 30
 MIN_PASSWORD = 8
 
@@ -81,7 +81,7 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 # ---------- wrong tries ----------
-# Five wrong passwords or codes: wait 30 seconds. One count for the household, since everyone types
+# Ten wrong passwords or codes: wait 30 seconds. One count for the household, since everyone types
 # the same password. Kept in memory on purpose: a restart clears it, and it never locks anyone out for long.
 _failures: list[float] = []
 # The last two-step counter used, so one code cannot be used twice
@@ -268,8 +268,8 @@ def auth_status(
         # whoever signs in next is asked to save one.
         "kit": _kit_made(db) if signin else None,
         "onboarded": flag(db, "ONBOARDED"),
-        # The upgrade from 1.x, until someone has read it
-        "upgrade": _upgrade_report(db) if actor is not None else None,
+        # The upgrade from 1.x: the welcome to 2.0, once for each person
+        "upgrade": _upgrade_report(db, actor) if actor is not None else None,
         "demo": os.getenv("DEMO", "false").lower() == "true",
         "read_only": STATE["read_only"],
         "version": VERSION,
@@ -280,9 +280,15 @@ def _kit_made(db: Session) -> str | None:
     from .kit import kit_made
     return kit_made(db)
 
-def _upgrade_report(db: Session) -> dict | None:
+def _upgrade_report(db: Session, actor: Actor) -> dict | None:
+    """What the upgrade from 1.x kept, for the welcome to 2.0, until this person has seen it.
+    Before anyone has been added, whoever upgraded sees it once for the household."""
     import json
-    if flag(db, "UPGRADE_SEEN"):
+    if actor.person_id is not None:
+        person = db.get(Person, actor.person_id)
+        if not person or (person.prefs or {}).get("welcomed"):
+            return None
+    elif flag(db, "UPGRADE_SEEN"):
         return None
     try:
         return json.loads(config(db, "UPGRADE_REPORT") or "null")

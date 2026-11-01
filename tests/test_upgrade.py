@@ -11,6 +11,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 from api import database, upgrade
 from tests.test_api import TODAY, make_client  # noqa: F401 (the fixture)
@@ -63,6 +64,16 @@ def test_every_1x_release_upgrades_and_keeps_everything(make_client, tmp_path, f
     assert "Kept, and checked one by one" in client.get("/upgrade/report").text
     client.post("/upgrade/seen")
     assert client.get("/auth/status").json()["upgrade"] is None
+    # Then once for each person: someone added later sees the welcome to 2.0 too, until they've seen it
+    ana = client.post("/people", json={"name": "Ana"}).json()["id"]
+    other = TestClient(client.app)
+    if old["config"].get("LOGIN_PAGE") in ("1", "True", "true") and old["config"].get("LOGIN_PASSWORD"):
+        other.post("/login", json={"person_id": ana, "password": "household" if fixture.name == "v1.db" else PASSWORD})
+    else:
+        other.headers["x-wally-person"] = str(ana)
+    assert other.get("/auth/status").json()["upgrade"]["kept"]["transactions"] == len(kept)
+    other.post("/upgrade/seen")
+    assert other.get("/auth/status").json()["upgrade"] is None
 
 def test_charges_taken_out_come_back_once_on_their_day(make_client, monkeypatch):
     from api.services.engine import run_all

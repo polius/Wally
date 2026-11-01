@@ -114,6 +114,8 @@ async function startApp() {
   $("app").hidden = false;
   const params = new URLSearchParams(location.search);
   await show();
+  // Upgraded from 1.x: the welcome to 2.0, once for each person
+  if (state.status && state.status.upgrade && state.status.me) (await import("./welcome.js")).welcomeOnce(state.status.upgrade);
   if (params.has("add")) { history.replaceState(null, "", location.pathname); add.openAdd(); }
 
   // A new day while Wally stays open: today moves, and the figures with it

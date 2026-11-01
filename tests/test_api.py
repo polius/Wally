@@ -206,7 +206,7 @@ def test_everyone_signs_in_with_the_household_password(couple):
     assert client.post("/login", json={"password": PW}).status_code == 400
 
     r = login(client, ana, "wrong")
-    assert r.status_code == 401 and r.json()["detail"]["tries_left"] == 4
+    assert r.status_code == 401 and r.json()["detail"]["tries_left"] == 9
     r = login(client, ana)
     assert r.json() == {"ok": True, "code_needed": False}
     cookie = r.headers["set-cookie"]
@@ -222,11 +222,11 @@ def test_everyone_signs_in_with_the_household_password(couple):
     other = TestClient(client.app)
     assert login(other, alex).status_code == 200 and other.get("/auth/status").json()["me"]["name"] == "Alex"
 
-def test_five_wrong_tries_wait_whoever_types_them(couple):
+def test_ten_wrong_tries_wait_whoever_types_them(couple):
     client, alex, ana = couple
     turn_on_signin(client, alex, ana)
     # One password, so one count: trying every name doesn't give more guesses
-    for who in (alex, ana, alex, ana, alex):
+    for who in (alex, ana) * 5:
         assert login(client, who, "nope").status_code == 401
     r = login(client, ana)
     assert r.status_code == 429 and 0 < r.json()["detail"]["retry_after"] <= 30
@@ -293,7 +293,7 @@ def test_the_emergency_kit_gets_in_without_the_password_or_two_step(couple):
     # Password forgotten and phone lost: the kit alone, typed any old way
     assert client.post("/kit/recover", json={"person_id": alex, "key": kit[:-1] + ("0" if kit[-1] != "0" else "1")}).status_code == 400
     wrong = __import__("api.services.kit", fromlist=["new_key"]).new_key()
-    assert client.post("/kit/recover", json={"person_id": alex, "key": wrong}).json()["detail"]["tries_left"] == 4
+    assert client.post("/kit/recover", json={"person_id": alex, "key": wrong}).json()["detail"]["tries_left"] == 9
     assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 401
     assert client.post("/kit/recover", json={"person_id": alex, "key": kit.lower().replace("-", " ")}).status_code == 200
     assert client.post("/kit/password", json={"new": "short"}).status_code == 400

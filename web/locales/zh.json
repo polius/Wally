@@ -8,7 +8,6 @@
  "6-digit code": "6位验证码",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "孩子、室友，任何分摊开销的人。每位成员都有自己的视图。",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "孩子、室友，任何分摊开销的人。他们用家庭密码登录。",
- "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "你的旧数据副本保存在 Wally 数据文件夹中的{file}。用它，Wally 1 可以按原样打开你的数据。",
  "A file left from turning encryption on.": "开启加密时留下的文件。",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "用免费的 HTTP Shortcuts 应用在主屏幕或锁屏添加快捷方式。Wally 会显示要粘贴的请求。",
  "A key is shown once, when it is created": "密钥仅在创建时显示一次",
@@ -126,12 +125,12 @@
  "Back to sign in": "返回登录",
  "Bank file: check the columns": "银行文件：检查各列",
  "Basics": "基本设置",
- "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "在保留 Wally 2.0 之前，Wally 已将每一笔交易、每条规则、每个分类和每项设置与你的旧数据逐一核对。没有丢失任何内容。",
  "Before the amount": "金额之前",
  "Biggest purchase": "最大一笔消费",
  "Biggest spender first. Each keeps its color.": "花得最多的排在前面。每个类别保留自己的颜色。",
  "Biggest: {name}, {amount} on {date}.": "最大一笔：{name}，{date} {amount}。",
  "Bills": "账单",
+ "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "账单和工资会在到期时添加，价格上涨时 Wally 也会注意到。",
  "Bills are recurring payments; everyday spending is everything else.": "账单是定期付款；日常支出是其余的一切。",
  "Blue": "蓝色",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "模糊所有数字，方便共享屏幕。按 {key} 切换。",
@@ -146,7 +145,6 @@
  "Cancel": "取消",
  "Can’t scan it? Type the key above into the app instead.": "无法扫描？请在应用中手动输入上面的密钥。",
  "Categories": "分类",
- "Categories and tags": "分类和标签",
  "Category": "分类",
  "Category of part {n}": "第{n}项分类",
  "Category…": "分类…",
@@ -265,7 +263,6 @@
  "Don’t split": "不拆分",
  "Down": "下降",
  "Download": "下载",
- "Download the report": "下载报告",
  "Drag, or type {name}’s part": "拖动，或输入{name}的份额",
  "Drop a CSV here, or choose a file": "将 CSV 文件拖到这里，或选择文件",
  "Duplicate": "复制一笔",
@@ -273,6 +270,7 @@
  "Each part needs an amount more than zero.": "每一项的金额都必须大于零。",
  "Each pays": "每人支付",
  "Each person gets their own view. Costs you share are split between you.": "每位成员都有自己的视图。共同支出会在你们之间分摊。",
+ "Each person has their own view, and shared costs are split between you.": "每个人都有自己的视图，共同开销会在你们之间分摊。",
  "Each person types it once on their own phone or computer.": "每个人在自己的手机或电脑上输入一次。",
  "Each person’s spending includes their share of shared costs": "每位成员的支出包含其在共同支出中的份额",
  "Each sign-in lasts a year": "每次登录有效期一年",
@@ -287,6 +285,7 @@
  "Editing · {date}": "编辑中 · {date}",
  "Emergency Kit": "应急包",
  "Encrypt and continue": "加密并继续",
+ "Encrypt everything on your devices, so even the server can’t read it.": "在你的设备上加密一切，连服务器也无法读取。",
  "Encrypt on your devices": "在你的设备上加密",
  "Encrypted": "已加密",
  "Encrypting {n} of {total}…": "正在加密第 {n} 项，共 {total} 项…",
@@ -628,6 +627,7 @@
  "Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.": "已关闭：任何能访问此服务器的人都能打开 Wally。可随时在 设置 › 登录 中开启。",
  "On": "开启",
  "On a date": "在某日",
+ "On the 1st: what you spent, what you earned and what you kept.": "每月 1 日：你的支出、收入和结余。",
  "On the server": "在服务器上",
  "On the sign-in page, choose Forgot password.": "在登录页面选择“忘记密码”。",
  "On the sign-in page, {forgot} takes its recovery key, then a new password. No two-step code is needed.": "在登录页面，{forgot} 会要求输入应急包上的恢复密钥，然后设置新密码。无需两步验证码。",
@@ -641,7 +641,6 @@
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "已开启。只有你家庭的设备能读取你的数据，服务器管理员也不能。",
  "One code for the household: everyone scans the same one, on their own phone.": "全家一个验证码：每个人在自己的手机上扫描同一个码。",
  "One for the household, to print or keep in a password manager. It gets you back in if you forget the password.": "全家一份，可打印或存入密码管理器。忘记密码时，它能让你重新进入。",
- "One thing changed": "有一处变化",
  "Only this browser is signed in.": "只有此浏览器已登录。",
  "Only this range": "仅此范围",
  "Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.": "只有你的密码或恢复密钥能打开这个家庭的数据。其他任何人，包括服务器管理员，都无法打开。",
@@ -725,6 +724,7 @@
  "Price went up": "涨价了",
  "Print or save as PDF": "打印或存储为 PDF",
  "Privacy": "隐私",
+ "Private if you want": "需要时保持私密",
  "Projected": "预计",
  "Projected: {amount}": "预计：{amount}",
  "QR code of your recovery key": "你的恢复密钥二维码",
@@ -743,6 +743,7 @@
  "Recurring": "定期",
  "Recurring bill": "定期账单",
  "Recurring income": "定期收入",
+ "Recurring, on its day": "定期收支，按时入账",
  "Red": "红色",
  "Regular income only": "仅固定收入",
  "Remove": "移除",
@@ -915,7 +916,7 @@
  "That code isn’t right. Codes change every 30 seconds, so use the newest one.": "验证码不正确。验证码每30秒更新一次，请使用最新的。",
  "That day": "当天",
  "That is more than Wally can keep. Use less than 100,000,000.": "超出了 Wally 能保存的范围。请使用小于 100,000,000 的数字。",
- "That password isn’t right. Try again, or use Forgot password.": "密码不正确。请重试，或使用“忘记密码”。",
+ "That password isn’t right.": "密码不正确。",
  "That recovery code isn’t right, or it was already used.": "恢复码不正确，或已被使用。",
  "That recovery key isn’t right.": "恢复密钥不正确。",
  "That took too long. Sign in again.": "等待时间过长，请重新登录。",
@@ -940,6 +941,7 @@
  "The total must be more than zero.": "总额必须大于零。",
  "The two new passwords are not the same.": "两次输入的新密码不一致。",
  "The two passwords are different.": "两次输入的密码不一致。",
+ "The whole household": "全家一起",
  "The whole household, by category": "全家，按分类",
  "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:": {
   "other": "服务器上的 {n} 个备份未加密，因此将被删除。如需保留，请先下载："
@@ -1051,9 +1053,6 @@
  "Views": "视图",
  "Violet": "紫色",
  "Waiting to send": "等待发送",
- "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
-  "other": "Wally 1 曾提前添加了{n}笔日期在今天之后的定期付款。Wally 2.0 会在每笔付款的当天才添加，因此这些付款已被移除，到时会再添加："
- },
  "Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:": "Wally 1 没有应急包，因此只有服务器管理员能帮忙。他们可以用此命令关闭登录，然后你再用新密码重新开启：",
  "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit": "Wally 应急包",
@@ -1083,6 +1082,7 @@
  "Week starts on": "每周起始日",
  "Weekly": "每周",
  "Welcome to Wally": "欢迎使用 Wally",
+ "Welcome to {app}": "欢迎使用 {app}",
  "Went out": "支出",
  "What changed": "变化",
  "What changes": "会有哪些变化",
@@ -1127,15 +1127,12 @@
  "You spent {amount} more than came in.": "你的支出比收入多 {amount}。",
  "Your currencies": "你的货币",
  "Your data": "你的数据",
- "Your data came across": "你的数据已完整迁移",
+ "Your month in review": "月度回顾",
  "Your name": "你的名字",
  "Your password is the key": "你的密码就是钥匙",
  "Your password is the key.": "你的密码就是钥匙。",
  "Your {month} recap": "你的{month}回顾",
  "about": "约",
- "and {n} more, in the report": {
-  "other": "另有{n}项，见报告"
- },
  "came in {amount}": "收入 {amount}",
  "created {date}": "创建于{date}",
  "day {d}": "{d}日",
@@ -1281,17 +1278,8 @@
  "{n} already added": {
   "other": "{n}笔已添加"
  },
- "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
-  "other": "有{n}个金额超过两位小数。它们按输入原样保存，显示时精确到分。"
- },
  "{n} backup from before.": {
   "other": "之前的 {n} 个备份。"
- },
- "{n} category": {
-  "other": "{n}个分类"
- },
- "{n} category was used but missing from your list. It is listed now.": {
-  "other": "有{n}个分类已被使用，但不在你的列表中。现在已加入列表。"
  },
  "{n} change": {
   "other": "{n}处变化"
@@ -1349,9 +1337,6 @@
  "{n} row in Wally’s database.": {
   "other": "Wally 数据库中的 {n} 行。"
  },
- "{n} rule": {
-  "other": "{n}条规则"
- },
  "{n} selected": {
   "other": "已选择{n}项"
  },
@@ -1360,9 +1345,6 @@
  },
  "{n} source": {
   "other": "{n}个来源"
- },
- "{n} tag": {
-  "other": "{n}个标签"
  },
  "{n} time": {
   "other": "{n}次"
@@ -1375,6 +1357,9 @@
  },
  "{n} transaction becomes {name}’s": {
   "other": "{n}笔交易将归{name}所有"
+ },
+ "{n} transaction came across, checked one by one.": {
+  "other": "已迁移{n}笔交易，并逐一核对。"
  },
  "{n} transaction for {name}": {
   "other": "{name}的{n}笔交易"
@@ -1396,9 +1381,6 @@
  },
  "{n} transaction, {total} in total": {
   "other": "{n}笔交易，共 {total}"
- },
- "{n} try left.": {
-  "other": "还剩{n}次机会。"
  },
  "{n} waiting to send": {
   "other": "{n}笔等待发送"
