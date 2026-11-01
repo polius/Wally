@@ -112,6 +112,7 @@ Wally supports the following environment variables:
 | --- | --- | --- |
 | DEMO | true | Pre-loads the app with sample data for a household of two. Nothing is kept. |
 | TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Appearance**. |
+| WALLY_ENCRYPTION | required | For running Wally for someone else: every household is end-to-end encrypted from setup, and encryption and sign-in can't be turned off, so you can't read their data. Needs HTTPS. Ignored with DEMO. |
 
 ## Forgot your password
 
@@ -121,7 +122,7 @@ With encryption on, whoever runs the server can't reset a password: see the next
 
 ## End-to-end encryption
 
-Turn it on in **Settings › Privacy** (sign-in must be on, and Wally must be opened over HTTPS: browsers only encrypt on secure pages). Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
+When you set Wally up with a password, it asks **who runs this server**. Answer *someone else* and Wally is encrypted right then, before anything is saved. You can also turn it on later in **Settings › Privacy** (sign-in must be on, and Wally must be opened over HTTPS: browsers only encrypt on secure pages). If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household without asking, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
 
 - **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
 - **Passwords**: your browser turns your password into keys (Argon2id) and never sends it. Each person gets an **Emergency Kit** with a recovery key to print and keep. If someone loses both, another person in the household can make them a one-use code in **Settings › People**. Their two-step sign-in still asks for its code; `password.txt` can still turn two-step off, but opens nothing.

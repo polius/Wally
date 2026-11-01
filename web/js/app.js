@@ -141,6 +141,9 @@ function banners(status) {
   if (status.demo) parts.push("<span><b>" + t("Demo.") + "</b> " + t("Sample data. Nothing you change is kept after the container stops.") + "</span>");
   const v = status.vault || {};
   if (v.paused) parts.push("<span><b>" + esc(v.paused.direction === "on" ? t("{name} is encrypting Wally.", { name: v.paused.by }) : t("{name} is turning off encryption.", { name: v.paused.by })) + "</b> " + t("Back in a minute.") + "</span>");
+  if (v.required && !v.on && status.signed_in && status.onboarded) {
+    parts.push("<span><b>" + t("This server keeps every household encrypted.") + "</b> " + t("Turn on encryption to add anything.") + ' <a class="w-link" href="/settings/privacy" data-link>' + t("Open Privacy") + "</a></span>");
+  }
   let seen = [];
   try { seen = JSON.parse(localStorage.getItem(SEEN) || "[]"); } catch (e) { seen = []; }
   const name = (id) => { const p = (status.people || []).find((x) => x.id === id); return p ? p.name : t("Someone"); };

@@ -50,7 +50,7 @@ function render() {
   const on = !!s.signin, req = !!s.require_two_step;
   let html = group(t("Sign-in"), [
     gi(ico("lock"), t("Ask for a password"), encrypted() ? t("On. Needed while encryption is on: each password opens the household’s data.") : on ? t("On. Each person signs in with their own password.") : t("Off. Anyone who can reach this address sees your finances. Wally asks who you are once on each browser."),
-      toggle("si-toggle", on, t("Ask for a password"), !m || encrypted())),
+      toggle("si-toggle", on, t("Ask for a password"), !m || encrypted() || (on && !!(S().vault && S().vault.required)))),
     gi(ico("key"), t("Require two-step for everyone"), on ? t("Recommended when Wally can be reached from outside your home") : t("Turn on sign-in first"),
       toggle("req2-toggle", on && req, t("Require two-step for everyone"), !on)),
   ]);

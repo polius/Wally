@@ -252,6 +252,9 @@ def update_signin(
             start_session(db, request, response, me.id)
             db.commit()
     else:
+        from ..services.vault import required
+        if required():
+            raise HTTPException(status_code=400, detail="This server keeps every household encrypted, so sign-in stays on.")
         if vault_on():
             raise HTTPException(status_code=400, detail="Sign-in stays on while encryption is on. Turn off encryption first, in Settings › Privacy.")
         if flag(db, "LOGIN_PAGE") and actor.person_id is not None:

@@ -164,3 +164,18 @@
 .w-kit .w-qr{width:148px;height:148px;margin:0}
 .w-gate .w-silinks .w-btn{gap:6px}
 .w-gate .w-silinks .w-btn svg.i{width:15px;height:15px}
+
+/* First run: what encrypting means, the kit and the codes */
+.w-onbmeans{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:12px}
+.w-onbmeans li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-align:start}
+.w-onbmeans li svg.i{width:18px;height:18px;margin-top:1px;color:var(--w-accent)}
+.w-onbmeans b{color:var(--w-ink);font-weight:600}
+.w-onbmeanh{margin-top:6px;font-weight:600;color:var(--w-ink)}
+.w-onbh2{font-size:var(--fs-sub);font-weight:600;margin-top:10px}
+.w-onbkit{justify-content:flex-start}
+.w-onbf .w-keybox{flex:1;min-width:0}
+.w-onbf .w-keybox code{letter-spacing:.06em;direction:ltr}
+.w-choice[disabled]{opacity:.55;cursor:not-allowed}
+.w-choice .w-badge{margin-inline-start:6px;vertical-align:1px}
+.w-sienc{display:flex;gap:6px;align-items:center;justify-content:center;font-size:var(--fs-cap);color:var(--w-ink3);margin:0}
+.w-sienc svg.i{width:13px;height:13px;flex:none}

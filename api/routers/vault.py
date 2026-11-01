@@ -101,7 +101,7 @@ def _purge_invites(db: Session):
 def vault_status(db: Session, me: Person | None) -> dict:
     """What /auth/status says about encryption."""
     vid = records.vault_id(db)
-    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail()}
+    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail(), "required": records.required()}
     if not vid:
         out["kdf"] = bool(me and db.get(Kdf, me.id))
         try:
@@ -476,6 +476,8 @@ def convert_start(
         raise HTTPException(status_code=409, detail="Encryption is already on.")
     if body.direction == "off" and not on:
         raise HTTPException(status_code=409, detail="Encryption is already off.")
+    if body.direction == "off" and records.required():
+        raise HTTPException(status_code=403, detail="This server keeps every household encrypted, so it can’t be turned off.")
     if not flag(db, "LOGIN_PAGE"):
         raise HTTPException(status_code=400, detail="Turn on sign-in first: encryption needs everyone to have their own password.")
     if body.direction == "off" and not db.get(VaultKey, me.id):

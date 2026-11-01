@@ -551,3 +551,31 @@ def test_turning_off_tells_everyone_for_a_month(encrypted):
     client.post("/login", json={"person_id": alex, "password": vc.from_password(PASS["Alex"], kdf["salt"])[0]})
     turn_on(client, alex, PASS["Alex"])
     assert "turned_off" not in client.get("/auth/status").json()["vault"]
+
+# ---------- WALLY_ENCRYPTION=required ----------
+def test_required_saves_nothing_in_the_clear_and_stays_on(make_client, monkeypatch):
+    monkeypatch.setenv("WALLY_ENCRYPTION", "required")
+    client = make_client()
+    alex = client.post("/people", json={"name": "Alex"}).json()["id"]
+    client.headers["x-wally-person"] = str(alex)
+    assert client.get("/auth/status").json()["vault"]["required"]
+    r = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "1", "date": TODAY})
+    assert r.status_code == 409 and "encrypted" in r.json()["detail"]
+    assert client.get("/transactions").status_code == 200
+    assert client.post("/api-keys", json={"name": "phone"}).status_code == 400
+    assert client.put("/signin", json={"enabled": True, "passwords": {str(alex): PASS["Alex"]}}).status_code == 200
+    client.headers.pop("x-wally-person")
+    assert client.put("/signin", json={"enabled": False, "current": PASS["Alex"]}).status_code == 400
+    result = turn_on(client, alex, PASS["Alex"])
+    assert result["count"] == 10  # the default categories, now sealed
+    b = Browser(client, alex, PASS["Alex"])
+    assert client.post("/vault/convert/start", json={"direction": "off", "current": b.proof()}).status_code == 403
+    assert client.put("/signin", json={"enabled": False, "current": b.proof()}).status_code == 400
+
+def test_required_does_not_apply_to_the_demo(monkeypatch):
+    from api.services.vault import required
+    monkeypatch.setenv("WALLY_ENCRYPTION", "required")
+    monkeypatch.setenv("DEMO", "true")
+    assert not required()
+    monkeypatch.setenv("DEMO", "false")
+    assert required()

@@ -13,7 +13,7 @@ from .database import create_db_and_tables, STATE
 from .demo import generate_demo
 from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault
 from .services import conversion
-from .services.vault import load_state, purge_tombstones
+from .services.vault import load_state, purge_tombstones, required
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
@@ -124,6 +124,9 @@ async def guards(request: Request, call_next):
         return JSONResponse({"detail": {"message": f"{paused['by']} is {doing}. Back in a minute.", "paused": paused}}, status_code=503)
     if STATE.get("vault") and PLAIN_DATA.match(path):
         return JSONResponse({"detail": "Wally is encrypted: this data is kept by your browser, not the server."}, status_code=409)
+    if required() and not STATE.get("vault") and PLAIN_DATA.match(path) and request.method not in ("GET", "HEAD", "OPTIONS"):
+        # Nothing is saved in the clear on a server that promises to encrypt everything
+        return JSONResponse({"detail": "This server keeps every household encrypted. Turn on encryption in Settings › Privacy first."}, status_code=409)
     STATE["inflight"] = STATE.get("inflight", 0) + 1
     try:
         return await call_next(request)

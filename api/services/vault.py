@@ -6,6 +6,7 @@ browser is told which records changed, so it can merge and try again. The server
 record: it only checks ids, versions and sizes.
 """
 import base64
+import os
 import re
 import threading
 from datetime import timedelta
@@ -46,6 +47,12 @@ def vault_id(db: Session) -> str | None:
 
 def is_on() -> bool:
     return bool(STATE.get("vault"))
+
+def required() -> bool:
+    """WALLY_ENCRYPTION=required: whoever runs the server promises it can't read anyone's data.
+    New households are encrypted at setup, and encryption can't be turned off. Not in demo mode,
+    which is sample data made in the clear."""
+    return os.getenv("WALLY_ENCRYPTION", "").strip().lower() == "required" and os.getenv("DEMO", "false").lower() != "true"
 
 def load_state(db: Session):
     """Remember whether encryption is on, so every request can check it without reading the database."""

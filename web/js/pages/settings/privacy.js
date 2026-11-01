@@ -39,12 +39,14 @@ function render() {
   const v = V(), s = state.status || {};
   const on = !!v.on, signin = !!s.signin;
   const secure = !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
+  const required = !!v.required;
   let html = group(t("End-to-end encryption"), [
     gi(ico("shield"), t("Encrypt on your devices"),
-      on ? t("On. Only your household’s devices can read your data. Whoever runs the server can’t.")
+      on ? (required ? t("On, and required on this server: whoever runs it chose that it can never read your data.") : t("On. Only your household’s devices can read your data. Whoever runs the server can’t."))
         : !secure ? t("Off. Browsers only encrypt on secure pages: open Wally at its https:// address to turn this on.")
-        : signin ? t("Off. Whoever runs this server can read your household’s data.") : t("Off. Turn on sign-in first: each person needs their own password."),
-      toggle("pv-toggle", on, t("Encrypt on your devices"), !on && (!signin || !secure))),
+        : !signin ? t("Off. Turn on sign-in first: each person needs their own password.")
+        : required ? t("Off, but required on this server: turn it on to add anything.") : t("Off. Whoever runs this server can read your household’s data."),
+      toggle("pv-toggle", on, t("Encrypt on your devices"), on ? required : (!signin || !secure))),
   ], "", "");
   if (!on && !signin) html += '<p class="w-hint w-spad">' + linkBtn(t("Open Sign-in"), ' data-act="signin"') + "</p>";
 

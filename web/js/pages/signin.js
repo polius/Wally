@@ -112,9 +112,11 @@ function renderSignin() {
       '<button type="button" class="w-link w-silink" id="si-forgot">' + t("Forgot password?") + "</button></div>";
   }
   const msg = si.wait ? waitText() : si.err;
+  // Said where the password is typed, so everyone knows who can read their data
+  const sealed = !code && status.vault && status.vault.on ? '<p class="w-hint w-sienc">' + icon("lock") + t("End-to-end encrypted: whoever runs this server can’t read your data.") + "</p>" : "";
   paint(card(top + '<form id="si-form" class="w-siform" novalidate>' + field +
     '<p class="w-err" id="si-msg" role="alert"' + (msg ? "" : " hidden") + ">" + msg + "</p>" +
-    '<button class="w-btn primary w-submit" type="submit" id="si-go"' + (si.wait ? " disabled" : "") + ">" + t("Sign in") + "</button></form>" + links), "#si-in");
+    '<button class="w-btn primary w-submit" type="submit" id="si-go"' + (si.wait ? " disabled" : "") + ">" + t("Sign in") + "</button></form>" + links + sealed), "#si-in");
   wireEyes();
   const input = root.querySelector("#si-in");
   root.querySelector("#si-form").addEventListener("submit", (ev) => { ev.preventDefault(); submitSignin(input.value); });
@@ -412,60 +414,150 @@ async function createPeople(names) {
   return out;
 }
 
-/* ---------- first run: Basics, People, Your data ---------- */
-const onb = { step: 0, names: [""], people: [], pw: false, data: "add", currency: null };
+/* ---------- first run: Basics, People, Privacy, Your data ---------- */
+/* Privacy asks who runs the server once sign-in is on: when it's someone else, Wally is encrypted
+   now, before there is anything to encrypt. With WALLY_ENCRYPTION=required it isn't a question. */
+const onb = { step: 0, names: [""], people: [], pw: false, data: "add", currency: null, who: "", secret: "", kit: "", qr: "", codes: [], saved: false };
+const mustEncrypt = () => !!(status.vault && status.vault.required);
+const canEncrypt = () => !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
+function onbSteps() { return ["basics", "people", ...(onb.pw || mustEncrypt() ? ["privacy"] : []), "data"]; }
 
 async function startWelcome() {
+  if (mustEncrypt()) onb.pw = true;
   try { onb.currency = await GET("/currency"); } catch (e) { onb.currency = null; }
   renderWelcome();
 }
 function renderWelcome() {
-  const steps = [t("Basics"), t("People"), t("Your data")], s = onb.step;
+  const keys = onbSteps(), k = keys[onb.step];
+  const labels = { basics: t("Basics"), people: t("People"), privacy: t("Privacy"), data: t("Your data") };
   let body, foot;
-  if (s === 0) {
+  if (k === "basics") {
     const c = onb.currency;
     const sample = new Intl.NumberFormat(LANG, { minimumFractionDigits: 2 }).format(12);
     const sel = c && c.currencies.find((x) => x.name === c.selected), sym = sel ? sel.symbol : "€";
     body = '<h1 id="gate-h">' + t("Welcome to Wally") + '</h1><p class="w-onbp">' + t("Wally keeps track of what your household spends and earns. Your data stays on this server.") + "</p>" +
       '<div class="w-onbf">' +
-      '<label class="w-onbrow"><span>' + t("Language") + '</span><select class="w-mini" id="onb-lang">' + LANGUAGES.map(([k, n]) => '<option value="' + k + '"' + (k === LANG ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></label>" +
+      '<label class="w-onbrow"><span>' + t("Language") + '</span><select class="w-mini" id="onb-lang">' + LANGUAGES.map(([code, n]) => '<option value="' + code + '"' + (code === LANG ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></label>" +
       (c ? '<label class="w-onbrow"><span>' + t("Currency") + '</span><select class="w-mini" id="onb-cur">' + c.currencies.map((x) => '<option value="' + esc(x.name) + '"' + (x.name === c.selected ? " selected" : "") + ">" + esc(x.name) + " · " + esc(x.symbol) + "</option>").join("") + "</select></label>" +
         '<div class="w-onbrow"><span id="onb-pos-l">' + t("Symbol") + '</span><div class="w-seg sm" id="onb-pos" role="group" aria-labelledby="onb-pos-l">' +
         [["left", sym + sample], ["right", sample + " " + sym]].map(([v, l]) => '<button type="button" data-v="' + v + '" aria-pressed="' + (c.position === v) + '">' + esc(l) + "</button>").join("") + "</div></div>" : "") +
       "</div>";
     foot = "<span></span>" + nextBtn(t("Continue"));
-  } else if (s === 1) {
+  } else if (k === "people") {
+    const locked = mustEncrypt();
     body = '<h1 id="gate-h">' + t("Who shares this household?") + '</h1><p class="w-onbp">' + t("Each person gets their own view. Costs you share are split between you.") + "</p>" +
       peopleRows(onb.names, onb.people) +
-      (onb.people.length ? "" : '<div class="w-onbf w-onbpw"><div class="w-onbrow"><span id="onb-pw-l">' + t("Password") + '</span><span class="w-inline w-nowrap"><button type="button" class="w-switch" role="switch" id="onb-pw" aria-checked="' + onb.pw + '" aria-labelledby="onb-pw-l"></button>' +
+      (onb.people.length ? "" : '<div class="w-onbf w-onbpw"><div class="w-onbrow"><span id="onb-pw-l">' + t("Password") + '</span><span class="w-inline w-nowrap"><button type="button" class="w-switch" role="switch" id="onb-pw" aria-checked="' + onb.pw + '" aria-labelledby="onb-pw-l"' + (locked ? " disabled" : "") + "></button>" +
         '<input class="w-mini" type="password" id="onb-pwd" placeholder="' + esc(t("Choose a password")) + '" aria-label="' + esc(t("Password")) + '" autocomplete="new-password"' + (onb.pw ? "" : " hidden") + "></span></div>" +
-        '<p class="w-hint">' + (onb.pw ? t("Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.") : t("Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.")) + "</p></div>") +
+        '<p class="w-hint">' + (locked ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
+          : onb.pw ? t("Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.") : t("Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.")) + "</p></div>") +
       '<p class="w-hint">' + t("Living alone? Keep just yourself. The person switch then stays hidden.") + "</p>";
     foot = backBtn() + nextBtn(t("Continue"));
+  } else if (k === "privacy") {
+    ({ body, foot } = privacyStep());
   } else {
     body = '<h1 id="gate-h">' + t("Bring your data") + '</h1><p class="w-onbp">' + t("You can always import more later from Settings.") + "</p>" +
       '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
       [["import", "io", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
-       ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([k, ic, b, sm]) =>
-        '<button type="button" class="w-choice" role="radio" data-onb-data="' + k + '" aria-checked="' + (onb.data === k) + '" aria-pressed="' + (onb.data === k) + '"><span class="w-ico">' + icon(ic) + "</span><b>" + b + "</b><small>" + sm + "</small></button>").join("") + "</div>";
-    foot = backBtn() + nextBtn(onb.data === "import" ? t("Choose a file") : t("Open Wally"));
+       ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([key, ic, b, sm]) =>
+        '<button type="button" class="w-choice" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '" aria-pressed="' + (onb.data === key) + '"><span class="w-ico">' + icon(ic) + "</span><b>" + b + "</b><small>" + sm + "</small></button>").join("") + "</div>";
+    foot = (onb.kit ? "<span></span>" : backBtn()) + nextBtn(onb.data === "import" ? t("Choose a file") : t("Open Wally"));
   }
-  paint(onbFrame(steps, s, body, foot, s !== 1), s === 1 && !onb.people.length ? "[data-name]" : "#onb-next");
+  paint(onbFrame(keys.map((x) => labels[x]), onb.step, body, foot, k === "basics" || k === "data"), k === "people" && !onb.people.length ? "[data-name]" : k === "privacy" && !onb.who && !onb.kit && !mustEncrypt() ? "[data-who]" : "#onb-next");
   wireWelcome();
 }
+
+/* What encrypting means, in everyday words: the same list whether it's chosen or required */
+function whatItMeans(others) {
+  return '<ul class="w-onbmeans">' +
+    "<li>" + icon("lock") + "<span><b>" + t("Your password is the key.") + "</b> " + t("Nobody can reset it for you, not even whoever runs the server.") + "</span></li>" +
+    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("A recovery key to print or keep in a password manager. It gets you back in if you forget your password.") + "</span></li>" +
+    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone else gets a code.") + "</b> " + t("A one-time code from you, to join on their own phone or computer. They choose their own password then.") + "</span></li>" : "") +
+    "<li>" + icon("phone") + "<span><b>" + t("Phone shortcuts and API keys are off.") + "</b> " + t("They talk to the server, and the server can’t read your data.") + "</span></li></ul>";
+}
+function privacyStep() {
+  const others = onb.people.length > 1;
+  // Encrypted: the Emergency Kit, then everyone's code
+  if (onb.kit) {
+    const body = '<h1 id="gate-h">' + t("Save your Emergency Kit") + '</h1><p class="w-onbp">' + t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") + "</p>" +
+      '<div class="w-kit">' + onb.qr + keyGroups(onb.kit) + "</div>" +
+      '<div class="w-silinks w-onbkit"><button type="button" class="w-btn ghost" id="onb-print">' + icon("file") + t("Print or save as PDF") + '</button><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
+      (onb.codes.length ? '<h2 class="w-onbh2">' + t("Codes for everyone else") + '</h2><p class="w-hint">' + t("Each person types theirs when they first open Wally. A code works once, for 48 hours. Lost one? Make a new one in Settings › People.") + "</p>" +
+        '<div class="w-onbf">' + onb.codes.map((c) => '<div class="w-onbrow"><span>' + esc(c.name) + '</span><span class="w-keybox"><code translate="no">' + esc(c.code) + '</code><button type="button" class="w-btn ghost" data-code="' + esc(c.code) + '">' + t("Copy") + "</button></span></div>").join("") + "</div>" : "") +
+      '<label class="w-sichk"><input type="checkbox" id="onb-saved"' + (onb.saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>";
+    return { body, foot: "<span></span>" + nextBtn(t("Continue")) };
+  }
+  const secure = canEncrypt();
+  if (mustEncrypt()) {
+    const body = '<h1 id="gate-h">' + t("This server encrypts your data") + '</h1><p class="w-onbp">' +
+      t("Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.") + "</p>" +
+      (secure ? whatItMeans(others) : '<p class="w-err">' + t("This needs a secure connection. Open Wally at its https:// address to finish setting up.") + "</p>") +
+      '<p class="w-hint" id="onb-prog" aria-live="polite" hidden></p>';
+    return { body, foot: backBtn() + (secure ? nextBtn(t("Encrypt and continue")) : "") };
+  }
+  const choice = (key, title, sub, extra) =>
+    '<button type="button" class="w-choice" role="radio" data-who="' + key + '" aria-checked="' + (onb.who === key) + '" aria-pressed="' + (onb.who === key) + '"' + (extra || "") + ">" +
+    '<span class="w-ico">' + icon(key === "else" ? "shield" : "users") + "</span><b>" + title + "</b><small>" + sub + "</small></button>";
+  const body = '<h1 id="gate-h">' + t("Who runs this server?") + '</h1><p class="w-onbp">' +
+    t("Wally keeps your household’s money on a server. Whoever runs it can open the files on it, so Wally can lock everything first.") + "</p>" +
+    '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
+    choice("me", t("Me, or someone here"), t("Wally works as usual. Whoever runs the server can read your data, and that’s you.")) +
+    choice("else", t("Someone else") + ' <span class="w-badge">' + t("Recommended") + "</span>",
+      secure ? t("Wally locks everything on your devices before it’s saved. The server stores only what it can’t read.") : t("Needs a secure connection: open Wally at its https:// address to choose this."), secure ? "" : " disabled") +
+    "</div>" +
+    (onb.who === "else" ? '<p class="w-onbp w-onbmeanh">' + t("What changes:") + "</p>" + whatItMeans(others) : "") +
+    '<p class="w-hint">' + t("You can change this later in Settings › Privacy.") + "</p>" +
+    '<p class="w-hint" id="onb-prog" aria-live="polite" hidden></p>';
+  return { body, foot: backBtn() + nextBtn(onb.who === "else" ? t("Encrypt and continue") : t("Continue")) };
+}
+/* Encrypt the new household now: there is almost nothing yet, so it takes a moment */
+async function savePrivacy() {
+  if (onb.kit) {
+    if (!onb.saved) { onbError(t("Save your Emergency Kit first, then tick the box.")); return false; }
+    onb.secret = "";
+    return true;
+  }
+  if (!mustEncrypt()) {
+    if (!onb.who) { onbError(t("Choose who runs this server.")); return false; }
+    if (onb.who === "me") { onb.secret = ""; return true; }
+  }
+  const prog = root.querySelector("#onb-prog");
+  const say = (step, n, total) => {
+    if (!prog) return;
+    prog.hidden = false;
+    prog.textContent = { keys: t("Making keys from your password…"), pause: t("Pausing Wally for everyone…"), seal: t("Encrypting {n} of {total}…"), check: t("Reading everything back to compare…"), switch: t("Switching to the new file…") }[step]
+      .replace("{n}", String(n || 0)).replace("{total}", String(total || 0));
+  };
+  const session = await vs();
+  state.me = String(onb.people[0].id);
+  const r = await session.turnOn(onb.secret, say);
+  onb.secret = "";
+  onb.kit = r.recoveryKey;
+  onb.codes = r.codes;
+  onb.qr = await (await import("../vault/kit.js")).qrSvg(r.recoveryKey);
+  renderWelcome();
+  return false;
+}
 function wireWelcome() {
+  const keys = onbSteps(), k = keys[onb.step];
   const next = root.querySelector("#onb-next"), back = root.querySelector("#onb-back"), skip = root.querySelector("#onb-skip");
-  if (back) back.addEventListener("click", () => { if (onb.step === 1) readNames(onb.names); onb.step--; renderWelcome(); });
-  if (skip) skip.addEventListener("click", () => (onb.step === 0 ? (onb.step = 1, renderWelcome()) : openWally("skip")));
-  next.addEventListener("click", async () => {
+  if (back) back.addEventListener("click", () => { if (k === "people") readNames(onb.names); onb.step--; renderWelcome(); });
+  if (skip) skip.addEventListener("click", () => (k === "basics" ? (onb.step = 1, renderWelcome()) : openWally("skip")));
+  if (next) next.addEventListener("click", async () => {
     busy(next, true);
     try {
-      if (onb.step === 0) await saveBasics();
-      else if (onb.step === 1) { if (!(await savePeople())) return busy(next, false); }
+      if (k === "basics") await saveBasics();
+      else if (k === "people") { if (!(await savePeople())) return busy(next, false); }
+      else if (k === "privacy") { if (!(await savePrivacy())) return busy(root.querySelector("#onb-next"), false); }
       else return openWally(onb.data);
       onb.step++;
       renderWelcome();
-    } catch (e) { onbError(apiMessage(e)); busy(next, false); }
+    } catch (e) {
+      const prog = root.querySelector("#onb-prog");
+      if (prog) prog.hidden = true;
+      onbError(apiMessage(e));
+      busy(next, false);
+    }
   });
   const lang = root.querySelector("#onb-lang");
   if (lang) lang.addEventListener("change", async () => {
@@ -480,10 +572,26 @@ function wireWelcome() {
     onb.currency.position = b.dataset.v;
     root.querySelectorAll("#onb-pos button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   }));
-  const pw = root.querySelector("#onb-pw");
+  const pw = root.querySelector("#onb-pw:not([disabled])");
   if (pw) pw.addEventListener("click", () => { readNames(onb.names); onb.pw = !onb.pw; renderWelcome(); root.querySelector(onb.pw ? "#onb-pwd" : "#onb-pw").focus(); });
   wireNames(onb.names, () => renderWelcome());
   root.querySelectorAll("[data-onb-data]").forEach((b) => b.addEventListener("click", () => { onb.data = b.dataset.onbData; renderWelcome(); root.querySelector('[data-onb-data="' + onb.data + '"]').focus(); }));
+  root.querySelectorAll("[data-who]:not([disabled])").forEach((b) => b.addEventListener("click", () => { onb.who = b.dataset.who; onbError(""); renderWelcome(); root.querySelector('[data-who="' + onb.who + '"]').focus(); }));
+  if (onb.kit && k === "privacy") {
+    const me = onb.people[0] ? onb.people[0].name : "";
+    root.querySelector("#onb-print").addEventListener("click", async () => (await import("../vault/kit.js")).printKit(me, onb.kit));
+    root.querySelector("#onb-dl").addEventListener("click", async () => {
+      const kit = await import("../vault/kit.js");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([kit.kitText(me, onb.kit)], { type: "text/plain" }));
+      a.download = "wally-emergency-kit.txt";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+    root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(onb.kit, ev.currentTarget));
+    root.querySelectorAll("[data-code]").forEach((b) => b.addEventListener("click", (ev) => copy(b.dataset.code, ev.currentTarget)));
+    root.querySelector("#onb-saved").addEventListener("change", (ev) => { onb.saved = ev.target.checked; onbError(""); });
+  }
 }
 async function saveBasics() {
   const c = onb.currency;
@@ -506,6 +614,8 @@ async function savePeople() {
     const passwords = Object.fromEntries(people.map((p) => [String(p.id), password]));
     await PUT("/signin", { enabled: true, passwords });
     state.status.signin = true;
+    // Kept in memory for the next step only, where it may become the household's key
+    onb.secret = password;
   }
   return true;
 }

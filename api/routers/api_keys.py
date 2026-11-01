@@ -24,7 +24,8 @@ def create_api_key(
     body: ApiKeyCreate | None = None,
     actor: Actor = Depends(check_login),
 ):
-    if STATE.get("vault"):
+    from ..services.vault import required
+    if STATE.get("vault") or required():
         raise HTTPException(status_code=400, detail="API keys are off while encryption is on: the server can’t read your data.")
     # Enforce max API keys limit, per person
     count = db.exec(select(func.count()).select_from(ApiKeys).where(ApiKeys.person_id == actor.person_id)).one()
