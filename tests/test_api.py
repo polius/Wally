@@ -396,6 +396,28 @@ def test_delete_category_moves_transactions(couple):
     assert client.delete("/categories/Snacks", params={"move_to": "Food"}).status_code == 200
     assert {t["category"] for t in client.get("/transactions").json()} == {"Food"}
 
+def test_category_colors_are_assigned_once_and_kept(couple):
+    client, *_ = couple
+    expense(client, category="Rent", amount="900.00")
+    expense(client, category="Food", amount="40.00")
+    client.post("/transactions", json={"name": "Salary", "category": "Income", "amount": "2000.00", "type": "income", "date": TODAY, "tags": []})
+    colors = client.get("/categories/colors").json()
+    # The biggest spender takes the first color, income has none
+    assert colors["Rent"] == 1 and colors["Food"] == 2 and colors["Income"] is None
+    # More spending later doesn't move a color
+    expense(client, category="Food", amount="5000.00")
+    assert client.get("/categories/colors").json()["Food"] == 2
+    # Settings can change it, and a rename keeps it
+    assert client.put("/categories/Food", json={"color": 6}).json()["color"] == 6
+    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "color": 6}
+    assert client.get("/categories/colors").json()["Eating out"] == 6
+    assert client.put("/categories/Rent", json={"color": 12}).status_code == 422
+    # Past eight colors, the rest are grey
+    for i in range(9):
+        expense(client, category=f"Extra {i}", amount="1.00")
+    assert sorted(client.get("/categories/colors").json().values(), key=lambda v: v or 0).count(9) >= 1
+    assert "Food" not in client.get("/categories").json()
+
 def test_rename_tag_into_existing_merges(couple):
     client, *_ = couple
     expense(client, tags=["cafe", "coffee"])
@@ -575,3 +597,9 @@ def test_reimporting_own_export_skips_matched_rows(couple):
     # Wally's export says what Wally kept: the typed name and date
     again = client.post("/import/preview", json=[{"date": "2026-10-20", "name": "Mercadona", "amount": "54.20", "category": "Groceries"}]).json()
     assert again["counts"]["skipped"] == 1
+
+def test_an_impossible_rule_change_is_refused_not_a_crash(client):
+    r = rule(client, name="Gym", startDate="2026-10-20", frequency="daily")
+    assert client.put(f"/recurring/{r['id']}", json={"endDate": "2026-10-21", "applyTo": "all"}).status_code == 200
+    bad = client.put(f"/recurring/{r['id']}", json={"startDate": "2026-10-23", "applyTo": "all"})
+    assert bad.status_code == 422 and "endDate" in bad.text

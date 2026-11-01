@@ -2,7 +2,7 @@
    Import: choose a CSV, map its columns (Wally v1 files and Wally exports are recognised), preview what
    happens to each row (new, matched with something typed by hand, possible match, or imported before),
    decide, then commit. Export: every transaction as a CSV that imports back into Wally. */
-import { t, tn, esc, state, f, num, dlab, pname, couple, parseAmt, POST, GET, reloadLedger, TODAY } from "../../core.js";
+import { t, tn, esc, state, f, num, dlab, pname, couple, parseAmt, POST, GET, reloadLedger, reloadCategories, TODAY } from "../../core.js";
 import { toast, errorToast, empty } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { group, gi, ico, linkBtn, loadScript, download, paint, segK as seg } from "./common.js";
@@ -314,8 +314,9 @@ async function commit() {
       };
     });
     result = await POST("/import/commit", { rows });
-    const [cats, tags, irules] = await Promise.all([GET("/categories"), GET("/tags"), GET("/rules"), reloadLedger()]);
-    state.categories = cats; state.tags = tags; state.irules = irules;
+    const [tags, irules] = await Promise.all([GET("/tags"), GET("/rules"), reloadLedger()]);
+    await reloadCategories();
+    state.tags = tags; state.irules = irules;
     step = "done";
     busy = false;
     refresh({ data: true });

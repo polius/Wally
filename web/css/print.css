@@ -1,0 +1,146 @@
+/* Month in review as a printed report (js/pages/review/pdf.js). A4 pages, always light.
+   On screen the pages are laid out out of sight, so they can be measured; in print they are all
+   there is. Sizes are in points and millimetres, as on paper. */
+
+#w-print{position:fixed;top:0;left:-10000px;z-index:-1;pointer-events:none}
+.pr{
+  --ink:#14161B;--ink2:#4F5461;--ink3:#7A7F8A;--line:#E3E5EA;--line2:#EEF0F3;--soft:#F6F7F9;
+  --good:#14804A;--bad:#C93338;--accent:#4F5BD5;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Geist,Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);font-size:9.5pt;line-height:1.42;font-variant-numeric:tabular-nums;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;text-rendering:geometricPrecision;
+  -webkit-font-smoothing:antialiased;background:#fff
+}
+.pr *{box-sizing:border-box;margin:0;padding:0}
+.pr-sheet{width:210mm;height:296.8mm;padding:13mm 17mm 0;display:flex;flex-direction:column;background:#fff;overflow:hidden;position:relative}
+
+/* Header and footer, every page */
+.pr-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:3.2mm;border-bottom:.6pt solid var(--line);font-size:8pt;color:var(--ink3)}
+.pr-brand{display:inline-flex;align-items:center;gap:2mm;font-size:9.5pt;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.pr-brand img{width:5.2mm;height:5.2mm;border-radius:1.3mm}
+.pr-body{flex:1;min-height:0;overflow:hidden;padding-top:6mm}
+.pr-pfoot{flex:none;height:13mm;display:flex;align-items:center;justify-content:space-between;border-top:.6pt solid var(--line);font-size:7.5pt;color:var(--ink3)}
+.pr-blk + .pr-blk{margin-top:6.4mm}
+
+/* Title */
+.pr-eye{display:block;font-size:7.5pt;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:1.6mm}
+.pr-title h1{font-size:24pt;font-weight:700;letter-spacing:-.025em;line-height:1.08}
+.pr-title p{margin-top:1.8mm;font-size:10pt;color:var(--ink2)}
+.pr-blk:has(.pr-title) + .pr-blk{margin-top:5mm}
+
+/* Hero: what was kept, and the last 12 months */
+.pr-hero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:9mm;align-items:center;background:var(--soft);border-radius:4mm;padding:5mm 6.5mm}
+.pr-k{font-size:8.5pt;font-weight:600;color:var(--ink2)}
+.pr-big{font-size:30pt;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-top:.6mm}
+.pr-big.good{color:var(--good)}
+.pr-big.bad{color:var(--bad)}
+.pr-heroL p{margin-top:3.2mm;font-size:9.5pt;color:var(--ink2);line-height:1.5;text-wrap:pretty}
+.pr-chart{display:block;width:100%;height:auto;direction:ltr;overflow:visible}
+.pr-chart text{font-size:6.6px;fill:var(--ink3);text-anchor:middle;font-family:inherit;stroke:var(--soft);stroke-width:2.4px;stroke-linejoin:round;paint-order:stroke}
+.pr-chart text.m{font-size:7px}
+.pr-chart text.on{fill:var(--ink);font-weight:700}
+.pr-cap{margin-top:2mm;font-size:7.3pt;color:var(--ink3)}
+
+/* The four figures */
+.pr-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pr-kpi > div{display:grid;gap:.7mm;align-content:start;padding:0 4mm;border-inline-start:.6pt solid var(--line)}
+.pr-kpi > div:first-child{border-inline-start:0;padding-inline-start:0}
+.pr-kpi span{font-size:8pt;color:var(--ink2);font-weight:500}
+.pr-kpi b{font-size:15pt;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.pr-kpi small{font-size:7.5pt;color:var(--ink3)}
+.pr-d{font-size:7.5pt;color:var(--ink3);font-weight:500}
+.pr-d.good{color:var(--good)}
+.pr-d.bad{color:var(--bad)}
+
+/* Sections */
+.pr-sec > h2{display:flex;align-items:baseline;gap:3mm;flex-wrap:wrap;font-size:12pt;font-weight:650;letter-spacing:-.015em;padding-bottom:2.2mm;margin-bottom:2.6mm;border-bottom:.6pt solid var(--line)}
+.pr-sec > h2 small{font-size:8pt;font-weight:400;color:var(--ink3);letter-spacing:0}
+.pr-note{font-size:8.5pt;color:var(--ink2);margin-top:3mm}
+.pr-note b{color:var(--ink);font-weight:600}
+.pr-sw{display:inline-block;width:2.6mm;height:2.6mm;border-radius:.8mm;flex:none}
+
+/* People */
+.pr-people{display:grid;gap:4mm;grid-template-columns:repeat(2,minmax(0,1fr))}
+.pr-people.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pr-person{border:.6pt solid var(--line);border-radius:3mm;padding:3.6mm 4.4mm}
+.pr-ph{display:flex;align-items:center;gap:2.4mm}
+.pr-ph b{font-size:10.5pt;font-weight:650;flex:1;min-width:0}
+.pr-av{width:6.5mm;height:6.5mm;border-radius:50%;display:grid;place-items:center;font-size:8pt;font-weight:650;flex:none}
+.pr-pill{font-size:7.3pt;font-weight:600;border-radius:5mm;padding:.6mm 2.2mm}
+.pr-pill.good{background:#E3F3EA;color:var(--good)}
+.pr-pill.bad{background:#FBE5E6;color:var(--bad)}
+.pr-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2mm;margin-top:3.4mm}
+.pr-trio span{display:block;font-size:7.5pt;color:var(--ink3)}
+.pr-trio b{font-size:11.5pt;font-weight:650;letter-spacing:-.015em}
+.pr-trio b.good{color:var(--good)}
+.pr-trio b.bad{color:var(--bad)}
+.pr-split{display:flex;height:1.4mm;border-radius:1mm;overflow:hidden;margin:2.6mm 0 3mm;background:var(--line2)}
+.pr-split span:first-child{background:#9AA0AC}
+.pr-split span:last-child{background:var(--good)}
+.pr-facts{list-style:none;display:grid;gap:1.3mm;font-size:8.3pt}
+.pr-facts li{display:flex;justify-content:space-between;gap:3mm;color:var(--ink2)}
+.pr-facts li b{color:var(--ink);font-weight:600;text-align:end}
+
+/* Where it went */
+.pr-cat{display:grid}
+.pr-cr{display:grid;grid-template-columns:2.6mm minmax(0,1fr) 44mm 22mm 11mm 25mm;gap:3.4mm;align-items:center;padding:1.75mm 0;border-bottom:.6pt solid var(--line2)}
+.pr-cr:last-child{border-bottom:0}
+.pr-cr.hd{padding:0 0 1.8mm;font-size:7.3pt;color:var(--ink3);font-weight:500;border-bottom:.6pt solid var(--line)}
+.pr-cr.hd span:nth-child(n+4){text-align:end}
+.pr-cr .n{font-weight:600;font-size:9.3pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pr-cr .bar{height:1.8mm;border-radius:1mm;background:var(--line2);overflow:hidden;display:flex}
+.pr-cr .bar span{border-radius:1mm}
+.pr-cr .v{text-align:end;font-weight:600;font-size:9.5pt}
+.pr-cr .sh{text-align:end;font-size:8pt;color:var(--ink3)}
+.pr-cr .vs{text-align:end}
+
+/* What changed, bills */
+.pr-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8mm}
+.pr-mv h3{font-size:7.5pt;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:1.6mm}
+.pr-li{display:flex;gap:2.6mm;align-items:flex-start;padding:1.4mm 0}
+.pr-li .pr-sw{margin-top:1.1mm}
+.pr-li b{display:block;font-weight:600;font-size:9.2pt}
+.pr-li p{font-size:8.2pt;color:var(--ink2);margin-top:.3mm}
+.pr-next{margin-top:2.6mm;padding:2.6mm 3.4mm;background:var(--soft);border-radius:2mm;font-size:8.5pt;color:var(--ink2)}
+.pr-next b{color:var(--ink);font-weight:600}
+
+/* Day by day */
+.pr-days{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9mm;align-items:start}
+.pr-grid{display:grid;grid-template-columns:repeat(7,8.6mm);gap:1.1mm;direction:inherit}
+.pr-grid span{height:6.8mm;border-radius:1.4mm;display:grid;place-items:center;font-size:7.3pt;color:var(--ink2)}
+.pr-grid .dow{height:auto;padding-bottom:.6mm;font-size:6.8pt;color:var(--ink3);font-weight:600}
+.pr-grid .c.hi{color:#fff;font-weight:600}
+.pr-dfacts .w-mrfacts{list-style:none;display:grid;gap:2.6mm;font-size:8.8pt}
+.pr-dfacts .w-mrfacts li{display:flex;justify-content:space-between;gap:4mm;padding-bottom:2.6mm;border-bottom:.6pt solid var(--line2);color:var(--ink2)}
+.pr-dfacts .w-mrfacts li:last-child{border-bottom:0;padding-bottom:0}
+.pr-dfacts .w-mrfacts b{color:var(--ink);font-weight:600;text-align:end}
+
+/* Worth knowing: one row of four */
+.pr-know{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3mm}
+.pr-know > div{background:var(--soft);border-radius:2.6mm;padding:3.2mm 3.6mm;display:grid;gap:.6mm;align-content:start}
+.pr-know span{font-size:7.3pt;color:var(--ink3);font-weight:500}
+.pr-know b{font-size:9.6pt;font-weight:650;letter-spacing:-.01em;line-height:1.3}
+.pr-know p{font-size:7.6pt;color:var(--ink2);line-height:1.4}
+.pr-foot{font-size:7.3pt;color:var(--ink3);line-height:1.5;margin-top:3.6mm}
+/* Amounts read left to right inside right-to-left text */
+.pr-big,.pr-kpi b,.pr-cr .v,.pr-trio b,.pr-facts b,.pr-know b,.pr-chart text{unicode-bidi:isolate}
+
+@media print{
+  @page{size:A4;margin:0}
+  html,body.pr-on{background:#fff!important;margin:0!important;padding:0!important;min-height:0!important;height:auto!important;overflow:visible!important}
+  body.pr-on > *:not(#w-print){display:none!important}
+  body.pr-on #w-print{position:static;left:auto;z-index:auto}
+  .pr-sheet{break-after:page;page-break-after:always}
+  .pr-sheet:last-child{break-after:auto;page-break-after:auto}
+}
+
+/* The Emergency Kit (js/vault/kit.js): one page */
+.pr-kit .pr-body{display:grid;align-content:start;gap:7mm}
+.pr-kitbox{display:grid;grid-template-columns:minmax(0,1fr) 44mm;gap:8mm;align-items:center;background:var(--soft);border-radius:4mm;padding:7mm 8mm}
+.pr-kitbox .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:2.6mm 5mm;margin-top:3mm;font:600 14pt/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;color:var(--ink);direction:ltr}
+.pr-kitbox .w-qr{width:44mm;height:44mm;background:#fff;border-radius:2mm;padding:2mm;color:#000}
+.pr-kitsteps{padding-inline-start:5mm;display:grid;gap:2.4mm;font-size:10.5pt;color:var(--ink2)}
+.pr-kitsteps li::marker{color:var(--accent);font-weight:700}
+.pr-kitfacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;border-top:.6pt solid var(--line);padding-top:4mm}
+.pr-kitfacts dt{font-size:7.5pt;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.pr-kitfacts dd{font-size:10.5pt;margin-top:1mm;overflow-wrap:anywhere}

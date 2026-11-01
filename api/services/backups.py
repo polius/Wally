@@ -22,7 +22,8 @@ def list_backups() -> list[dict]:
     out = []
     for path in folder.glob("*.db"):
         stat = path.stat()
-        kind = "auto" if path.name.startswith("auto-") else "upgrade" if path.name.startswith("pre-") else "restore" if path.name.startswith("before-restore-") else "manual"
+        kind = "auto" if path.name.startswith("auto-") else "upgrade" if path.name.startswith("pre-") else "restore" if path.name.startswith("before-restore-") \
+            else "encrypted" if path.name.startswith("before-turning-off-encryption-") else "manual"
         out.append({"name": path.name, "size": stat.st_size, "created": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"), "kind": kind})
     return sorted(out, key=lambda b: b["created"], reverse=True)
 
@@ -47,6 +48,23 @@ def backup_path(name: str) -> Path:
     if not path.exists():
         raise HTTPException(status_code=404, detail="This backup does not exist.")
     return path
+
+PLAIN_TABLES = ("transaction", "recurringtransaction", "category", "categorycolor", "tag", "importrule")
+
+def plain_rows(path: Path) -> int:
+    """How many rows of the household's data a database file holds in the clear."""
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        return sum(conn.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for t in PLAIN_TABLES if t in tables)
+    except sqlite3.DatabaseError:
+        return 0
+    finally:
+        conn.close()
+
+def plain_backups() -> list[Path]:
+    folder = database.BACKUP_DIR
+    return [p for p in folder.glob("*.db") if plain_rows(p)] if folder.exists() else []
 
 def check_wally_database(path: Path):
     try:

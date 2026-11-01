@@ -59,7 +59,15 @@ const listeners = { signedout: [], change: [] };
 export function on(name, fn) { (listeners[name] = listeners[name] || []).push(fn); }
 export function emit(name, data) { (listeners[name] || []).forEach((fn) => fn(data)); }
 
+/* With encryption on and this device unlocked, the household's data is answered from this
+   device's copy (js/vault/local.js), not the server, which can't read it */
+let VAULT = null;
+export function useVault(v) { VAULT = v; }
+export function vaultOn() { return !!VAULT; }
 export async function api(method, path, body, opts) {
+  if (VAULT && !(opts && opts.raw) && VAULT.isLocal(method, path)) {
+    return VAULT.handle(method, path, body === undefined ? undefined : JSON.parse(JSON.stringify(body)), (m, p, b) => api(m, p, b, Object.assign({}, opts || {}, { raw: true })));
+  }
   const headers = { Accept: "application/json" };
   const who = localStorage.getItem("wally.person");
   if (who && state.status && !state.status.signin) headers["X-Wally-Person"] = who;
@@ -76,6 +84,8 @@ export async function api(method, path, body, opts) {
   const text = await r.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+  // Encryption was turned on from another device: this one opens again, to unlock
+  if (r.status === 409 && !VAULT && data && typeof data.detail === "string" && data.detail.startsWith("Wally is encrypted")) emit("encrypted");
   if (!r.ok) throw new ApiError(r.status, data && data.detail !== undefined ? data.detail : data);
   return data;
 }
@@ -179,6 +189,15 @@ export function dlabY(s) { return F.fullYear.format(T(s)); }
 export function monthName(m) { return F.months[m - 1]; }
 /* A month inside a sentence */
 export function monthIn(m) { return F.monthsIn[m - 1]; }
+/* Today, Yesterday, Tomorrow, a weekday within the week, or the date */
+export function relDay(d) {
+  const n = span(TODAY, d) - 1;
+  if (n === 0) return t("Today");
+  if (n === -1) return t("Yesterday");
+  if (n === 1) return t("Tomorrow");
+  if (Math.abs(n) < 7) { const w = F.wd.long[wd(d)]; return w.charAt(0).toLocaleUpperCase(LANG) + w.slice(1); }
+  return dlab(d);
+}
 export function monthYear(y, m) { return F.monthYear.format(Date.UTC(y, m - 1, 15)); }
 
 /* Amount typed by hand: "12,40", "1.234,56", "12.40+8.15" → euros, or null */
@@ -223,6 +242,7 @@ export const state = {
   config: {},
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
+  colors: {},            // {category: 1 to 8, or null for income}: each category keeps its color
   tags: [],
   irules: [],
   prefs: {},
@@ -236,7 +256,8 @@ export function pindex(key) { const i = state.people.findIndex((p) => String(p.i
 export function initial(name) { return (name || "?").trim().charAt(0).toLocaleUpperCase(LANG); }
 export function av(key, cls) {
   if (key === null || key === undefined || key === "shared") return '<span class="w-av shared ' + (cls || "") + '" aria-hidden="true"></span>';
-  if (key === "all") return '<span class="w-av both ' + (cls || "") + '" aria-hidden="true"></span>';
+  // Everyone: the first two people's avatars, overlapping
+  if (key === "all") return '<span class="w-avpair ' + (cls || "") + '" aria-hidden="true">' + state.people.slice(0, 2).map((p) => av(String(p.id), cls)).join("") + "</span>";
   return '<span class="w-av p' + (pindex(key) % 6) + " " + (cls || "") + '" aria-hidden="true">' + esc(initial(pname(key))) + "</span>";
 }
 export function couple() { return state.people.length >= 2; }
@@ -297,8 +318,8 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"),
+  const [status, people, ledger, rules, config, currency, categories, tags, colors] = await Promise.all([
+    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/colors"),
   ]);
   state.status = status;
   state.people = people;
@@ -309,6 +330,8 @@ export async function loadAll() {
   const sel = currency.currencies.find((c) => c.name === currency.selected);
   state.currency = { symbol: sel ? sel.symbol : currency.selected, position: currency.position, selected: currency.selected, currencies: currency.currencies };
   state.categories = categories;
+  state.colors = colors || {};
+  paintColors();
   state.tags = tags;
   const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
   state.me = person(meKey) ? String(meKey) : null;
@@ -323,7 +346,27 @@ export async function loadExtras() {
     emit("change", { extras: true });
   } catch (e) { /* shown when opened */ }
 }
+/* Categories and their colors, after a change in Settings or an import */
+export async function reloadCategories() {
+  const [categories, colors] = await Promise.all([GET("/categories"), GET("/categories/colors")]);
+  state.categories = categories;
+  state.colors = colors || {};
+  paintColors();
+}
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
+/* Another device saved something: read it all again from this device's copy */
+export async function reloadAll() {
+  const [ledger, rules, categories, colors, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/colors"), GET("/tags"), GET("/rules")]);
+  state.tx = ledger.rows.map(fromRow);
+  setStart();
+  state.rules = rules.map(fromRule);
+  state.categories = categories;
+  state.colors = colors || {};
+  paintColors();
+  state.tags = tags;
+  state.irules = irules;
+  emit("remote", {});
+}
 export async function reloadLedger() { state.tx = (await GET("/ledger")).rows.map(fromRow); setStart(); }
 export async function savePrefs(changes) {
   Object.assign(state.prefs, changes);
@@ -369,7 +412,9 @@ export function daily(a, len, sc, type) {
 export function cum(arr) { const o = []; let s = 0; arr.forEach((v) => { s += v; o.push(s); }); return o; }
 export function extend(arr, len) { const o = []; for (let i = 0; i < len; i++) o.push(arr[Math.min(i, arr.length - 1)]); return o; }
 
-/* ---------- categories: v1's nine colors, given by rank in the range shown ---------- */
+/* ---------- categories: v1's nine colors, one per category for good ----------
+   Each category keeps the color it was given (the biggest spender first, set in Settings after
+   that). Income is always green; a category Wally hasn't colored yet is grey. */
 export const CAT = {};
 const ICONS = [
   ["income", /income|salary|salari|sueldo|n[oó]mina|wage|gehalt|salaire|stipendio|freelance|bonus|ingreso|ingr[eé]s|revenu|einkommen|reddito|renda|доход|зарплат|收入|工资|給料|収入|급여|수입|आय|वेतन|دخل|راتب/i],
@@ -394,17 +439,21 @@ export function catIcon(name) {
   return "misc";
 }
 export function cat(name) {
-  if (!CAT[name]) CAT[name] = { n: name, c: 9, i: catIcon(name) };
+  if (!CAT[name]) CAT[name] = { n: name, c: colorOf(name), i: catIcon(name) };
   return CAT[name];
 }
-/* Colors by rank in the range shown: the biggest category is red, then orange, yellow... grey for the rest */
+function colorOf(name) {
+  const c = state.colors[name];
+  if (c >= 1 && c <= 9) return c;
+  return isIncomeCat(name) ? 0 : 9;
+}
+export function paintColors() { Object.keys(CAT).forEach((k) => { CAT[k].c = colorOf(k); }); }
+/* Expense categories, biggest spender in the range first (colors don't follow the rank) */
 export function rerank(a, b, sc) {
   const totalsBy = byCat(a, b, sc);
   const names = new Set(state.categories.concat(Object.keys(totalsBy)));
-  const ranked = [...names].filter((n) => !isIncomeCat(n)).sort((x, y) => (totalsBy[y] || 0) - (totalsBy[x] || 0) || x.localeCompare(y));
-  ranked.forEach((n, i) => { cat(n).c = i < 8 ? i + 1 : 9; });
-  names.forEach((n) => { if (isIncomeCat(n)) cat(n).c = 0; });
-  return ranked;
+  paintColors();
+  return [...names].filter((n) => !isIncomeCat(n)).sort((x, y) => (totalsBy[y] || 0) - (totalsBy[x] || 0) || x.localeCompare(y));
 }
 export function isIncomeCat(name) {
   const inc = state.tx.some((t) => t.c === name && t.type === "income");

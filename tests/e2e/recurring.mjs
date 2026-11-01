@@ -24,6 +24,7 @@ const d0 = new Date();
 const TODAY = d0.getFullYear() + "-" + pad(d0.getMonth() + 1) + "-" + pad(d0.getDate());
 const addD = (s, n) => new Date(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8)) + n * 864e5).toISOString().slice(0, 10);
 const money = (n) => (n < 0 ? "−" : "") + new Intl.NumberFormat("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n)) + " €";
+const money0 = (n) => (Math.round(n) < 0 ? "−" : "") + new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(Math.abs(Math.round(n))) + " €";
 const PER = { daily: 365.25 / 12, weekly: 52.18 / 12, monthly: 1, yearly: 1 / 12 };
 
 async function startServer(port, demo) {
@@ -94,34 +95,34 @@ try {
 
   console.log("Recurring at 1440 px");
   let page = await open(base, "/recurring");
-  const k = (await page.locator(".rec-kpis .w-kpi").allInnerTexts()).map(sp);
-  ok(k[0].includes(money(billM)), "Bills per month is " + money(billM) + " (" + k[0].replace(/\n/g, " ") + ")");
-  ok(k[1].includes(money(incM)), "Recurring income per month is " + money(incM));
-  ok(k[2].includes(Math.round(billM / incM * 100) + "%"), "Bills take " + Math.round(billM / incM * 100) + "% of income");
-  ok(/\d+ charges until/.test(k[3]), "Next 30 days says how many charges");
+  const sum = await text(page, ".rec-sum");
+  ok((await text(page, ".rec-big")) === money0(billM), "Bills: one total, every month, " + money0(billM) + " (" + sum.replace(/\n/g, " ") + ")");
+  ok(sum.includes(Math.round(billM / incM * 100) + "% of what comes in"), "and the share of income: " + Math.round(billM / incM * 100) + "%");
+  ok(/in the next 30 days/.test(sum), "and what the next 30 days hold");
+  ok(await page.locator(".rec-kpis,.w-kpi").count() === 0, "no row of key figures");
+  ok((await page.locator("#rec-tab button").allInnerTexts()).join("|") === "Bills|Income", "Bills and Income, no All");
+  ok(await page.locator(".rec-cal").count() === 0, "the calendar waits behind its button");
+  await page.click("#rec-calb");
   ok(await page.locator(".rec-cal .w-rday").count() === 35, "the calendar has five weeks");
   ok(await page.locator(".rec-cal .w-rday.t").count() === 1, "today is marked once");
-  ok(await page.locator("#rec-list .w-rrow").count() >= 11, "the list shows the rules");
-  ok((await text(page, "#rec-list")).includes("Bills and subscriptions") && (await text(page, "#rec-list")).includes("Income"), "bills and income groups");
+  ok((await text(page, "#rec-day")).includes("Pick a day"), "beside it, a hint until a day is picked");
+  ok(await page.locator("#rec-list .w-rrow").count() >= 9, "the list shows the bills");
+  ok((await text(page, "#rec-list")).includes("Next 7 days") && !(await text(page, "#rec-list")).includes("salary"), "bills in time order, from the next 7 days; no income");
   ok(await page.locator(".rec-endh").count() === 0, "replaced versions (old Netflix, old Spotify) are not listed as ended");
-  const notice = await text(page, "#rec-notice");
-  ok(/Netflix went up 2\.00 €/.test(notice) && /From 11\.99 € to 13\.99 €/.test(notice), "Wally noticed the Netflix price change");
-  ok(/Holaluz looks monthly/.test(notice), "Wally noticed Holaluz repeats monthly");
-  ok(/Aigües de Barcelona looks like every 2 months/.test(notice), "Wally noticed the water bill every 2 months");
+  ok(await page.locator(".rec-nb,#rec-notice").count() === 0 && !(await text(page, "#rec-page")).includes("looks monthly"), "no Wally noticed banner");
   const netflixRow = page.locator(".w-rrow", { hasText: "Netflix" });
-  ok(sp(await netflixRow.innerText()).includes("2.00 €") && await netflixRow.locator(".w-pill.bad").count() === 1, "the Netflix row shows the price rise");
+  ok(sp(await netflixRow.innerText()).includes("2.00 €") && await netflixRow.locator(".amt .up-bad").count() === 1, "the Netflix row shows the price rise under its amount");
   ok(await page.locator(".w-rrow", { hasText: "Holaluz" }).count() === 0, "payees without a rule are not rules");
   ok(await page.locator(".w-rrow.sel").count() === 1, "the first rule is selected on wide screens");
   await shot(page, "rec-1440");
 
-  // Filters
-  await page.click('#rec-tab [data-v="expense"]');
-  ok(!(await text(page, "#rec-list")).includes("salary"), "Bills hides income");
+  // Bills and Income
   ok(await page.locator(".rec-cal .w-rday.in").count() === 0, "Bills: the calendar shows no money in");
   await page.click('#rec-tab [data-v="income"]');
   ok(await page.locator("#rec-list .w-rrow").count() === 2, "Income shows the two salaries");
-  ok(!(await text(page, "#rec-notice")).includes("Netflix"), "Income hides bill notices");
-  await page.click('#rec-tab [data-v="all"]');
+  ok((await text(page, ".rec-big")) === money0(incM), "Income: its own total, " + money0(incM));
+  ok(!(await text(page, "#rec-page")).includes("Netflix went up"), "Income hides bill notices");
+  await page.click('#rec-tab [data-v="expense"]');
 
   // Selecting from the calendar, the panel
   const netflix = byName("Netflix");
@@ -133,9 +134,9 @@ try {
     await page.click('#rec-day [data-sel="' + netflix.id + '"]');
     ok((await text(page, "#rec-insp")).includes("Netflix"), "an item of the day opens its rule");
     await page.click("#rec-day [data-day-close]");
-    ok(await page.locator("#rec-day").isHidden() && await cell.getAttribute("aria-pressed") === "false", "the day list closes");
+    ok((await text(page, "#rec-day")).includes("Pick a day") && await cell.getAttribute("aria-pressed") === "false", "the day list closes");
   }
-  await page.click('[data-sel="' + netflix.id + '"]');
+  await page.click('[data-rid="' + netflix.id + '"]');
   const insp = await text(page, "#rec-insp");
   ok(insp.includes("Every month on day 27"), "the panel describes the rule");
   ok(await page.locator("#rec-insp .w-next span").count() === 5, "the panel shows the next five dates");
@@ -146,16 +147,7 @@ try {
   await page.waitForTimeout(200);
   let calls = await addCalls(page);
   ok(calls.length === 1 && calls[0].rule && calls[0].rule.id === netflix.id, "Edit opens the add sheet with the rule");
-  await page.click("#rec-new");
-  await page.waitForTimeout(200);
-  calls = await addCalls(page);
-  ok(calls[1] && calls[1].repeat === true && !calls[1].rule, "New rule opens the add sheet with Repeat on");
-  await page.click('.w-li:has-text("Holaluz") [data-mk]');
-  await page.waitForTimeout(200);
-  calls = await addCalls(page);
-  const mk = calls[2] || {};
-  ok(mk.repeat && mk.name === "Holaluz" && mk.category === "Utilities" && mk.person === "1" && mk.date > TODAY && mk.date.slice(8) === "13" && mk.about === true && mk.amount > 40,
-    "Make it a rule prefills the add sheet (" + JSON.stringify(mk) + ")");
+  ok(await page.locator("#rec-new").count() === 0, "no New rule button: Add with Repeat makes one");
 
   // Keyboard: arrows move the selection, E edits
   await page.locator(".w-rrow").first().click();
@@ -165,29 +157,22 @@ try {
   await page.keyboard.press("e");
   await page.waitForTimeout(150);
   calls = await addCalls(page);
-  ok(calls[3] && calls[3].rule && calls[3].rule.id === second, "E edits the selected rule");
-
-  // Dismiss a notice; it stays dismissed after a reload (kept in the person's preferences)
-  await page.click('.w-li:has-text("Aigües") [data-dis]');
-  ok(!(await text(page, "#rec-notice")).includes("Aigües"), "a notice can be dismissed");
-  await page.waitForTimeout(300);
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForSelector("#rec-notice");
-  ok(!(await text(page, "#rec-notice")).includes("Aigües"), "the dismissal is remembered");
+  ok(calls[1] && calls[1].rule && calls[1].rule.id === second, "E edits the selected rule");
 
   // Pause and resume
   const gym = byName("DiR Gym");
   await page.click('[data-rid="' + gym.id + '"]');
   await page.click('#rec-insp [data-act="pause"]');
-  await page.waitForSelector('.w-rrow[data-rid="' + gym.id + '"] .w-badge');
+  await page.waitForSelector('.w-rrow.off[data-rid="' + gym.id + '"]');
   ok((await api("GET", "/recurring")).find((r) => r.id === gym.id).paused === true, "Pause pauses the rule on the server");
   ok((await text(page, "#toast")).includes("paused"), "a toast says it is paused");
-  ok((await text(page, ".rec-kpis .w-kpi")).includes(money(billM - 39)), "a paused rule leaves the monthly total");
+  ok((await text(page, ".rec-big")) === money0(billM - 39), "a paused rule leaves the monthly total");
+  ok((await text(page, "#rec-list")).includes("Paused"), "and waits in a Paused group");
   ok((await text(page, "#rec-insp")).includes("Paused, nothing scheduled"), "the panel shows nothing scheduled");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(400);
   ok((await api("GET", "/recurring")).find((r) => r.id === gym.id).paused === false, "Resume resumes it");
-  ok((await text(page, ".rec-kpis .w-kpi")).includes(money(billM)), "and it counts again");
+  ok((await text(page, ".rec-big")) === money0(billM), "and it counts again");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(300);
   await page.click("#toast-undo");
@@ -199,18 +184,19 @@ try {
   const m1 = addD(TODAY.slice(0, 8) + "01", -10), m2 = addD(TODAY.slice(0, 8) + "01", -9);
   sql(db, "UPDATE recurringtransaction SET missed=? WHERE name='Simyo'", [JSON.stringify([m1, m2])]);
   sql(db, "UPDATE recurringtransaction SET missed=? WHERE name='Pepephone'", [JSON.stringify([m1])]);
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForSelector("#rec-notice");
-  ok((await text(page, "#rec-notice")).includes("Simyo skipped 2 dates while paused"), "skipped dates are offered once");
+  await page.goto(base + "/recurring?id=" + simyo.id, { waitUntil: "networkidle" });
+  await page.waitForSelector("#rec-insp .rec-miss");
+  ok((await text(page, "#rec-insp .rec-miss")).includes("2 dates were skipped while paused"), "the rule offers its skipped dates");
   const simyoBefore = (await api("GET", "/transactions/search?text=Simyo")).length;
-  await page.click('#rec-notice [data-miss-add="' + simyo.id + '"]');
+  await page.click('#rec-insp [data-miss-add="' + simyo.id + '"]');
   await page.waitForTimeout(700);
   const simyoAfter = await api("GET", "/transactions/search?text=Simyo");
   ok(simyoAfter.length === simyoBefore + 2 && simyoAfter.some((x) => x.date === m1) && simyoAfter.some((x) => x.date === m2), "Add them adds the skipped dates");
   ok((await api("GET", "/recurring")).find((r) => r.id === simyo.id).missed === null, "and the offer is gone");
-  ok(!(await text(page, "#rec-notice")).includes("Simyo skipped"), "the notice goes away");
+  ok(await page.locator("#rec-insp .rec-miss").count() === 0, "the offer goes away");
   const pepeBefore = (await api("GET", "/transactions/search?text=Pepephone")).length;
-  await page.click('#rec-notice [data-miss-no="' + pepe.id + '"]');
+  await page.click('[data-rid="' + pepe.id + '"]');
+  await page.click('#rec-insp [data-miss-no="' + pepe.id + '"]');
   await page.waitForTimeout(500);
   ok((await api("GET", "/transactions/search?text=Pepephone")).length === pepeBefore && (await api("GET", "/recurring")).find((r) => r.id === pepe.id).missed === null, "Dismiss adds nothing and clears the offer");
 
@@ -245,7 +231,7 @@ try {
   await page.click(".rec-endh");
   ok(await page.locator('[data-rid="' + digi.id + '"]').count() === 0, "the Ended group collapses");
   await page.click(".rec-endh");
-  ok(await page.locator('[data-rid="' + digi.id + '"] .w-badge').innerText() === "Ended", "and opens to show it, marked Ended");
+  ok((await page.locator('[data-rid="' + digi.id + '"] .rec-rn p').innerText()).startsWith("Ended"), "and opens to show it, marked Ended");
 
   // Delete, keeping past transactions
   const pepeTx = await api("GET", "/transactions/search?text=Pepephone");
@@ -270,12 +256,14 @@ try {
   ok((await text(page, "#toast")).includes("Deleted DiR Gym and its"), "a toast says what went");
 
   // The person switch
-  await page.click('.w-side [data-scope="2"]');
+  await page.click(".rec-head .w-pswitch-b"); await page.click('.rec-head .w-pswitch-m [data-scope="2"]');
   await page.waitForTimeout(300);
+  ok(sp(await page.locator('.w-rrow', { hasText: "Rent" }).innerText()).includes("625.00 €"), "Ana: shared rent counts her half");
+  await page.click('#rec-tab [data-v="income"]');
   const ana = await text(page, "#rec-list");
   ok(!ana.includes("Alex salary") && ana.includes("Ana salary"), "Ana: Alex's salary is not hers");
-  ok(sp(await page.locator('.w-rrow', { hasText: "Rent" }).innerText()).includes("625.00 €"), "Ana: shared rent counts her half");
-  await page.click('.w-side [data-scope="all"]');
+  await page.click('#rec-tab [data-v="expense"]');
+  await page.click(".rec-head .w-pswitch-b"); await page.click('.rec-head .w-pswitch-m [data-scope="all"]');
   await done(page, "1440 px");
 
   console.log("Deep link and the slide-over panel at 1100 px");
@@ -294,6 +282,7 @@ try {
 
   console.log("900 px, dark");
   page = await open(base, "/recurring", { width: 900, theme: "dark" });
+  await page.click("#rec-calb");
   ok(await page.locator(".rec-top").evaluate((n) => getComputedStyle(n).gridTemplateColumns.split(" ").length) === 1, "one column under 1024 px");
   await page.locator(".w-rrow").first().click();
   ok(await page.locator("#rec-insp.open").isVisible(), "the panel slides over");
@@ -303,8 +292,8 @@ try {
   console.log("Phone, 390 px");
   page = await open(base, "/recurring", { width: 390, height: 844 });
   ok(await page.locator(".rec-head .w-pswitch").isVisible(), "the person switch at the top right");
-  ok(!(await page.locator(".w-rrow .rec-spark").first().isVisible()), "rows drop the sparkline");
-  ok(/in \d+ days|tomorrow|today/.test(await page.locator(".w-rrow .rec-nxm").first().innerText()), "rows say when the next one is");
+  ok(await page.locator(".rec-spark").count() === 0, "no sparklines: the history is in each rule");
+  ok(/Today|Tomorrow|day|[A-Z][a-z]{2} \d+/.test(await page.locator(".w-rrow .rec-rn p").first().innerText()), "rows say when the next one is: " + await page.locator(".w-rrow .rec-rn p").first().innerText());
   await page.locator(".w-rrow", { hasText: "Netflix" }).click();
   const sheet = page.locator("#rec-insp.open");
   ok(await sheet.isVisible() && (await sheet.boundingBox()).width === 390, "the rule opens as a full-screen sheet");
@@ -321,6 +310,7 @@ try {
   await page.click(".w-pswitch-b");
   await page.click('.w-pswitch-m [data-scope="1"]');
   await page.waitForTimeout(300);
+  await page.click('#rec-tab [data-v="income"]');
   ok(!(await text(page, "#rec-list")).includes("Ana salary"), "the switch changes the person");
   await shot(page, "rec-390");
   await done(page, "390 px");
@@ -347,7 +337,7 @@ try {
   for (const r of await api("GET", "/recurring")) await api("DELETE", "/recurring/" + r.id, { applyTo: "future" });
   page = await open(base, "/recurring");
   ok((await text(page, "#rec-page")).includes("Nothing repeats yet"), "the empty state explains rules");
-  ok((await text(page, "#rec-page")).includes("looks monthly"), "Wally still offers payees that repeat");
+  ok(await page.locator("#rec-calb").isHidden(), "no calendar button without rules");
   ok(await page.locator("#rec-tab").isHidden(), "no filter without rules");
   await page.click("#rec-page [data-new]");
   await page.waitForTimeout(150);
@@ -359,7 +349,7 @@ try {
   const H2 = { "Content-Type": "application/json" };
   const p1 = await (await fetch(empty.base + "/api/people", { method: "POST", headers: H2, body: JSON.stringify({ name: "Sam" }) })).json();
   page = await open(empty.base, "/recurring", { person: String(p1.id) });
-  ok((await text(page, "#rec-page")).includes("Nothing repeats yet") && await page.locator(".w-pswitch").count() === 0, "a new household of one: empty state, no person switch");
+  ok((await text(page, "#rec-page")).includes("Nothing repeats yet") && !(await page.locator(".w-pswitch").first().isVisible()), "a new household of one: empty state, no person switch");
   await done(page, "empty household");
 } catch (e) {
   failures++;

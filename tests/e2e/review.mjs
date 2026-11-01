@@ -143,28 +143,45 @@ try {
     await page.context().close();
   }
 
-  /* ---------- shown once a month ---------- */
+  /* ---------- never shown by itself: Summary offers last month's recap ---------- */
   {
     await api(base, "/me/prefs", "PUT", { reviewed: "2000-01" });
     const page = await open(base, "/");
-    await page.waitForFunction((l) => location.search === "?m=" + l, LAST, { timeout: 6000 }).catch(() => {});
-    ok(page.url().endsWith("/review?m=" + LAST), "first of month: opening Wally shows the month that closed");
-    ok((await api(base, "/me/prefs")).reviewed === LAST, "first of month: remembered for this person");
-    await page.goto(base + "/", { waitUntil: "networkidle" });
-    await page.waitForTimeout(500);
-    ok(new URL(page.url()).pathname === "/", "first of month: shown once, not again");
-    // Another person has not seen it yet
-    const ana = await open(base, "/", { person: "2" });
-    await ana.waitForTimeout(800);
-    ok(new URL(ana.url()).pathname === "/" && (await api(base, "/me/prefs")).reviewed === LAST, "first of month: a person using Wally for the first time is not shown it, only noted");
-    await ana.context().close();
-    // A link to somewhere else is not interrupted
-    await api(base, "/me/prefs", "PUT", { reviewed: "2000-01" });
-    await page.goto(base + "/transactions", { waitUntil: "networkidle" });
-    await page.waitForTimeout(500);
-    ok(new URL(page.url()).pathname === "/transactions", "first of month: a link to another page is not interrupted");
-    await api(base, "/me/prefs", "PUT", { reviewed: LAST });
-    noErrors(page, "first of month");
+    await page.waitForTimeout(800);
+    ok(new URL(page.url()).pathname === "/", "opening Wally is never interrupted by Month in review");
+    ok(await page.locator('#s-recapw a[href="/review?m=' + LAST + '"]').count() === 1, "Summary offers last month's recap instead");
+    await page.click("#s-recapw a");
+    await page.waitForFunction((l) => location.search === "?m=" + l, LAST);
+    ok(true, "the recap card opens that month");
+    noErrors(page, "recap card");
+    await page.context().close();
+  }
+
+  /* ---------- Export as PDF: the report in A4 pages, from the button or from ⌘P ---------- */
+  {
+    const page = await open(base, "/review?m=" + LAST);
+    await page.waitForSelector(".w-mrpdf");
+    await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
+    const head = await page.locator(".w-mrh > *").evaluateAll((n) => n.map((x) => x.className));
+    ok(head.findIndex((c) => c.includes("w-mrpdf")) === head.findIndex((c) => c.includes("w-seg")) - 1, "Export as PDF sits just before Household: " + head.join(" | "));
+    const title0 = await page.title();
+    await page.click(".w-mrpdf");
+    await page.waitForFunction(() => window.__printed === 1);
+    const sheets = await page.locator("#w-print .pr-sheet").count();
+    ok(sheets >= 1 && sheets <= 3, "the report is laid out in " + sheets + " A4 pages");
+    ok((await page.title()).startsWith("Wally – "), "the file is named after the month: " + await page.title());
+    ok((await page.locator("#w-print .pr-pn").allInnerTexts()).every((x, i) => x === "Page " + (i + 1) + " of " + sheets), "every page has its number");
+    ok(await page.locator("#w-print").evaluate((r) => [...r.querySelectorAll(".pr-body")].every((b) => b.scrollHeight <= b.clientHeight + 1)), "nothing runs off a page");
+    ok(await page.locator("#w-print h1").innerText() !== "" && await page.locator("#w-print .pr-cr:not(.hd)").count() > 0, "title, figures and categories are in it");
+    const pdf = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString("latin1");
+    const pages = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
+    ok(pages === sheets, "the PDF has as many pages as the report: " + pages);
+    await page.evaluate(() => dispatchEvent(new Event("afterprint")));
+    ok(await page.locator("#w-print").count() === 0 && await page.title() === title0 && !(await page.getAttribute("body", "class") || "").includes("pr-on"), "after printing, the page is as it was");
+    await page.evaluate(() => dispatchEvent(new Event("beforeprint")));
+    ok(await page.locator("#w-print .pr-sheet").count() === sheets, "⌘P prints the same report");
+    await page.evaluate(() => dispatchEvent(new Event("afterprint")));
+    noErrors(page, "export as PDF");
     await page.context().close();
   }
 
@@ -197,6 +214,7 @@ try {
     await shot(page, "review-phone-4");
     await page.click(".w-mrstory [data-mr-prev]");
     ok((await page.textContent(".w-mrstop .w-hint")).length > 0 && page.url().endsWith("?m=" + PREV) && await page.locator('[data-sp="0"]').isVisible(), "phone: the arrows step months, from page 1");
+    ok(await page.locator(".w-mrstop [data-mr-pdf]").isVisible(), "phone: Export as PDF beside close");
     await page.click(".w-mrstory [data-mr-close]");
     await page.waitForFunction(() => location.pathname === "/");
     ok(true, "phone: close goes to the Dashboard");

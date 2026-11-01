@@ -1,14 +1,28 @@
 /* Start Wally: who is here, which screen comes first, then the app. */
-import { $, t, state, GET, loadAll, loadLanguage, on, person, refreshToday, esc, TODAY } from "./core.js";
+import * as core from "./core.js";
+import { $, t, state, GET, loadAll, loadLanguage, on, person, refreshToday, esc, TODAY, F, T } from "./core.js";
 import { initToast, initDialogs } from "./ui.js";
 import { initShell, show, setHandlers, setHide, signOut, refresh } from "./shell.js";
+
+let vaultMod = null;   // js/vault/session.js, loaded only for an encrypted household
+async function vaultSession() {
+  if (!vaultMod) { vaultMod = await import("./vault/session.js"); vaultMod.bind(core); }
+  return vaultMod;
+}
+function hadVault() { try { return localStorage.getItem("wally.vault") === "1"; } catch (e) { return false; } }
 
 async function boot() {
   initToast();
   initDialogs();
   initShell();
   try { setHide(localStorage.getItem("wally.hide") === "1"); } catch (e) { /* fine */ }
+  await enter();
+}
 
+/* Everything after the first paint. Also run again, without reloading, once this browser has
+   unlocked an encrypted household, so keys kept only in memory are not lost. */
+async function enter(soft) {
+  if (soft) { $("gate").hidden = true; $("gate").innerHTML = ""; $("boot").hidden = false; }
   let status;
   try {
     status = await GET("/auth/status", { quiet401: true });
@@ -19,17 +33,45 @@ async function boot() {
   await loadLanguage(status.language || "en");
 
   if (status.read_only) return fatal(t("Wally is read-only"), esc(status.read_only));
-  if (status.demo) banner("<b>" + t("Demo.") + "</b> " + t("Sample data. Nothing you change is kept after the container stops."));
+  banners(status);
+
+  const v = status.vault || {};
+  // Encryption turned off elsewhere, or this browser's sign-in ended: nothing of it stays here
+  if (hadVault() && (!v.on || !status.signed_in)) await (await vaultSession()).forget();
 
   const gate = await import("./pages/signin.js");
-  const next = nextGate(status);
+  const done = (s) => (s ? enter(true) : location.reload());
+  let next = nextGate(status);
+  if (!next && v.on) {
+    const session = await vaultSession();
+    if (!v.mine) next = "invite";
+    else {
+      try {
+        if (!(await session.resume(status))) next = "unlock";
+      } catch (e) {
+        if (e.status === 401) return location.reload();
+        return fatal(t("Wally can’t be reached"), esc(e.message));
+      }
+    }
+    if (!next) { core.useVault(session); session.startSync(); }
+  }
   if (next) {
-    gate.mountGate($("gate"), next, status, () => location.reload());
+    gate.mountGate($("gate"), next, status, done);
     $("gate").hidden = false;
     $("boot").hidden = true;
     return;
   }
   await startApp();
+  if (v.on) catchUp();
+}
+
+/* With encryption on, this browser adds the recurring charges that are due, as the server does
+   for a household without it. Two devices doing it at once add each charge once. */
+async function catchUp() {
+  try {
+    const r = await (await vaultSession()).runEngine();
+    if (r && r.added) await core.reloadAll();
+  } catch (e) { /* tried again when the day changes */ }
 }
 
 /* Which full-screen step comes before the app, if any */
@@ -77,11 +119,8 @@ async function startApp() {
   await show();
   if (params.has("add")) { history.replaceState(null, "", location.pathname); add.openAdd(); }
 
-  const review = await import("./pages/review.js");
-  review.maybeShowOnFirstOfMonth && review.maybeShowOnFirstOfMonth();
-
   // A new day while Wally stays open: today moves, and the figures with it
-  setInterval(() => { const before = TODAY; refreshToday(); if (TODAY !== before) refresh({ day: true }); }, 60000);
+  setInterval(() => { const before = TODAY; refreshToday(); if (TODAY !== before) { refresh({ day: true }); if (core.vaultOn()) catchUp(); } }, 60000);
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("/sw.js").catch(() => { /* works without it */ });
@@ -95,6 +134,36 @@ async function switchPerson() {
   location.href = "/";
 }
 
+/* The banner along the top: the demo, a conversion under way, and "Sam helped Alex back in" */
+const SEEN = "wally.seenEvents";
+function banners(status) {
+  const parts = [];
+  if (status.demo) parts.push("<span><b>" + t("Demo.") + "</b> " + t("Sample data. Nothing you change is kept after the container stops.") + "</span>");
+  const v = status.vault || {};
+  if (v.paused) parts.push("<span><b>" + esc(v.paused.direction === "on" ? t("{name} is encrypting Wally.", { name: v.paused.by }) : t("{name} is turning off encryption.", { name: v.paused.by })) + "</b> " + t("Back in a minute.") + "</span>");
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(SEEN) || "[]"); } catch (e) { seen = []; }
+  const name = (id) => { const p = (status.people || []).find((x) => x.id === id); return p ? p.name : t("Someone"); };
+  const off = v.turned_off;
+  if (off && !seen.includes("off:" + off.at) && status.signed_in) {
+    parts.push('<span>' + esc(t("{name} turned off encryption on {date}. Whoever runs the server can read your data again.", { name: name(off.by), date: F.dayMonth ? F.dayMonth.format(T(off.at.slice(0, 10))) : off.at.slice(0, 10) })) +
+      ' <button type="button" class="w-link" data-seen="off:' + esc(off.at) + '">' + t("OK") + "</button></span>");
+  }
+  for (const e of v.events || []) {
+    if (e.kind !== "helped" || seen.includes(e.id)) continue;
+    const when = F.dayMonth ? F.dayMonth.format(T(e.at.slice(0, 10))) : e.at.slice(0, 10);
+    parts.push('<span data-event="' + e.id + '">' + esc(t("{helper} helped {name} back in on {date}.", { helper: name(e.by), name: name(e.person_id), date: when })) +
+      ' <button type="button" class="w-link" data-seen="' + e.id + '">' + t("OK") + "</button></span>");
+  }
+  if (!parts.length) { $("banner").hidden = true; return; }
+  banner(parts.join(" "));
+  $("banner").querySelectorAll("[data-seen]").forEach((b) => b.addEventListener("click", () => {
+    seen.push(/^\d+$/.test(b.dataset.seen) ? Number(b.dataset.seen) : b.dataset.seen);
+    try { localStorage.setItem(SEEN, JSON.stringify(seen.slice(-50))); } catch (e) { /* fine */ }
+    b.parentElement.remove();
+    if (!$("banner").textContent.trim()) $("banner").hidden = true;
+  }));
+}
 function banner(msg) {
   const b = $("banner");
   b.innerHTML = msg;
@@ -110,5 +179,11 @@ function fatal(title, body) {
   g.hidden = false;
 }
 
-on("signedout", () => { if (!$("app").hidden) location.reload(); });
+on("signedout", async () => {
+  // The session ended (a year, "Sign out others", a new password elsewhere): the key and the copy go too
+  if (hadVault()) { try { await (await vaultSession()).forget(); } catch (e) { /* reloading anyway */ } }
+  if (!$("app").hidden) location.reload();
+});
+on("remote", () => refresh({ data: true, remote: true }));
+on("encrypted", () => location.reload());
 boot();

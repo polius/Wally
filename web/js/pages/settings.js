@@ -11,13 +11,14 @@ const PANES = {
   import: { icon: "io", label: () => t("Import and export"), value: () => "", load: () => import("./settings/import.js") },
   keys: { icon: "key", label: () => t("API keys"), value: () => (counts.keys === null ? "" : num(counts.keys)), load: () => import("./settings/keys.js") },
   signin: { icon: "lock", label: () => t("Sign-in"), value: () => (state.status && state.status.signin ? t("On") : t("Off")), load: () => import("./settings/signin.js") },
+  privacy: { icon: "shield", label: () => t("Privacy"), value: () => (state.status && state.status.vault && state.status.vault.on ? t("Encrypted") : t("Off")), load: () => import("./settings/privacy.js") },
   language: { icon: "globe", label: () => t("Language"), value: () => esc((LANGUAGES.find((l) => l[0] === LANG) || ["", "English"])[1]), load: () => import("./settings/language.js") },
   appearance: { icon: "layout", label: () => t("Appearance"), value: () => "", load: () => import("./settings/appearance.js") },
 };
 const GROUPS = [
   [() => t("Household"), ["people", "categories", "tags", "currency"]],
   [() => t("Data"), ["import", "keys"]],
-  [() => t("App"), ["signin", "language", "appearance"]],
+  [() => t("App"), ["signin", "privacy", "language", "appearance"]],
 ];
 const FIRST = "people";
 

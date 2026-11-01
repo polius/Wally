@@ -89,6 +89,7 @@ Access Wally at: [http://localhost](http://localhost)
 - **People**: each person's money, and shared costs split evenly, by income or by hand.
 - **Month in review** on the 1st, and a command bar (⌘K).
 - **Your own password for each person**, with optional two-step sign-in. Optional for the whole household, as before.
+- **End-to-end encryption**, optional: your devices encrypt everything before it reaches the server, so whoever runs it can't read it. See [below](#end-to-end-encryption).
 - **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
 - **Backups** every night, in the data folder.
 - **Installs on your phone's home screen** and opens full screen. Light and dark, 13 languages.
@@ -115,6 +116,19 @@ Wally supports the following environment variables:
 ## Forgot your password
 
 On the sign-in screen, pick your name and choose **Forgot password**. Wally writes a one-time password for you to `password.txt` in the container's working folder (`docker exec wally cat /wally/password.txt`). Signing in with it turns your two-step sign-in off, so a lost phone never locks anyone out, and asks you to choose a new password.
+
+With encryption on, whoever runs the server can't reset a password: see the next section.
+
+## End-to-end encryption
+
+Turn it on in **Settings › Privacy** (sign-in must be on, and Wally must be opened over HTTPS: browsers only encrypt on secure pages). Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
+
+- **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
+- **Passwords**: your browser turns your password into keys (Argon2id) and never sends it. Each person gets an **Emergency Kit** with a recovery key to print and keep. If someone loses both, another person in the household can make them a one-use code in **Settings › People**. Their two-step sign-in still asks for its code; `password.txt` can still turn two-step off, but opens nothing.
+- **If nobody can get in**, the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
+- **Off while encrypted**: API keys and phone shortcuts (the server can't read or add to the data), and turning sign-in off.
+- **Turning it on or off** builds a new database file next to the old one, checks it, and only then switches. Wally is read-only for about a minute. If Wally or the browser stops half-way, the old file is used, untouched. Turning it on deletes backups made before, which are in the clear; download them first if you want them.
+- **Limits**: the server sends the web app, so someone who controls the server could change it to capture a password the next time it is typed. It can also delete records or bring back old ones. End-to-end encryption protects what is stored, not a server that is actively attacking you.
 
 ## Data Import / Export
 

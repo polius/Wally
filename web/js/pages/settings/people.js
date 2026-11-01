@@ -1,15 +1,35 @@
 /* Settings › People: who is in the household, turning tags into people, removing someone. */
+import * as core from "../../core.js";
 import { t, tn, esc, state, av, num, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym, LANG } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { group, gi, giButton, ico, linkBtn, iconBtn, field, textInput, passwordInput, val, paint } from "./common.js";
+import { group, gi, giButton, ico, linkBtn, iconBtn, field, textInput, passwordInput, val, paint, copyText, parseUtc, clock, dayLabel } from "./common.js";
 
 let box = null;
+let invites = [];       // with encryption on: the codes waiting to be used
+const encrypted = () => !!(state.status && state.status.vault && state.status.vault.on);
+let vmod = null;
+async function vs() { if (!vmod) { vmod = await import("../../vault/session.js"); vmod.bind(core); } return vmod; }
 
 export function mount(el) {
   box = el;
   box.addEventListener("click", onClick);
   render();
+  if (encrypted()) loadInvites();
+}
+async function loadInvites() {
+  try { invites = await GET("/vault/invites"); state.status = await GET("/auth/status"); } catch (e) { /* the rows say what they know */ }
+  if (box) render();
+}
+/* With encryption on: can they open Wally, and is a code waiting for them */
+function keyLine(p) {
+  const v = state.status.vault.people && state.status.vault.people[String(p.id)];
+  const inv = invites.find((i) => i.person_id === p.id);
+  if (inv) {
+    const until = parseUtc(inv.expires_at);
+    return t("Code waiting, until {when}", { when: until ? dayLabel(until) + " " + clock(until) : "" });
+  }
+  return v && v.key ? t("Opens Wally with their password") : t("Needs a code to open Wally");
 }
 export function update() { if (box) render(); }
 export function unmount() { box = null; }
@@ -27,16 +47,22 @@ function render() {
     const sub = !state.tx.length ? t("No transactions yet") : couple()
       ? tn(own[k] || 0, "{n} own transaction, plus {shared} shared since {since}", "{n} own transactions, plus {shared} shared since {since}", { shared: num(shared), since })
       : tn(own[k] || 0, "{n} transaction", "{n} transactions");
+    const enc = encrypted() && k !== state.me;
+    const inv = enc && invites.find((x) => x.person_id === p.id);
+    const hasKey = enc && state.status.vault.people && state.status.vault.people[k] && state.status.vault.people[k].key;
     const acts = '<span class="w-acts">' +
+      (enc ? (inv ? linkBtn(t("Cancel code"), ' data-act="cancel" data-id="' + k + '" data-k="cancel:' + k + '"') : "") +
+        linkBtn(hasKey ? t("Help back in") : t("New code"), ' data-act="' + (hasKey ? "help" : "code") + '" data-id="' + k + '" data-k="code:' + k + '"') : "") +
       (people.length > 1 ? iconBtn("arrowup", t("Move {name} up", { name: p.name }), ' data-act="up" data-id="' + k + '" data-k="up:' + k + '"' + (i === 0 ? " disabled" : "")) +
         iconBtn("arrowdown", t("Move {name} down", { name: p.name }), ' data-act="down" data-id="' + k + '" data-k="down:' + k + '"' + (i === people.length - 1 ? " disabled" : "")) : "") +
       linkBtn(t("Rename"), ' data-act="rename" data-id="' + k + '" data-k="rename:' + k + '"') +
       // Who is using this browser: switch person, or sign out when sign-in is on (the shell handles both)
       (k !== state.me ? "" : state.status && state.status.signin ? linkBtn(t("Sign out"), ' data-signout data-k="signout"') : people.length > 1 ? linkBtn(t("Switch"), ' data-switch data-k="switch"') : "") + "</span>";
-    return gi(av(k, "lg"), esc(p.name) + (k === state.me ? ' <span class="w-badge">' + t("You") + "</span>" : ""), sub, acts);
+    return gi(av(k, "lg"), esc(p.name) + (k === state.me ? ' <span class="w-badge">' + t("You") + "</span>" : ""), enc ? sub + " · " + keyLine(p) : sub, acts);
   });
   rows.push(giButton('<span class="w-ico w-round">' + '<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></span>', t("Add a person"),
-    state.status && state.status.signin
+    encrypted() ? t("A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.")
+    : state.status && state.status.signin
       ? t("A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.")
       : t("A child, a flatmate, anyone who shares costs. Each person gets their own view."), ' data-act="add" data-k="add"'));
 
@@ -79,7 +105,51 @@ async function onClick(ev) {
     case "up": case "down": return move(id, b.dataset.act === "up" ? -1 : 1);
     case "remove": return removePerson(id);
     case "fromtag": return fromTag();
+    case "code": return makeCode(id, false);
+    case "help": return makeCode(id, true);
+    case "cancel": return cancelCode(id);
   }
+}
+
+/* ---------- with encryption on: codes ---------- */
+/* A code locks a copy of the household key for one person, for 48 hours. Only a browser that has
+   the key can make one, and only after its owner types their password. */
+function makeCode(id, help) {
+  const p = person(id);
+  if (!p) return;
+  const name = esc(p.name);
+  openDialog({
+    title: help ? t("Help {name} back in?", { name }) : t("A new code for {name}", { name }),
+    body: (help
+      ? "<p>" + t("Only if {name} lost both their password and their Emergency Kit.", { name }) + "</p><p>" +
+        t("You get a code for {name} that works once, for 48 hours. Give it to them in person or on the phone. Their two-step sign-in still asks for its code.", { name }) + "</p><p>" +
+        t("Using it signs {name} out everywhere, and everyone sees that you helped.", { name }) + "</p>"
+      : "<p>" + t("{name} types it when they sign in, then chooses a password. It works once, for 48 hours, and replaces any code made before.", { name }) + "</p>") +
+      field(t("Your password"), passwordInput("pc-pw", "current-password"), t("It opens the household key on this browser, to lock a copy under the code.")),
+    ok: t("Make a code"),
+    onOk: async (root) => {
+      const r = await (await vs()).makeCode(id, root.querySelector("#pc-pw").value);
+      setTimeout(() => showCode(p.name, r.code, r.expires), 0);
+      loadInvites();
+    },
+  });
+}
+export function showCode(name, code, expires) {
+  const until = parseUtc(expires);
+  openDialog({
+    title: t("Code for {name}", { name: esc(name) }),
+    body: '<div class="w-kit"><code class="w-kitkey w-kitcode" translate="no">' + code.split("-").map((g) => "<span>" + esc(g) + "</span>").join("") + "</code></div>" +
+      "<p>" + t("It works once, until {when}. {name} types it on the sign-in page. Wally can’t show it again.", { when: until ? dayLabel(until) + " " + clock(until) : "", name: esc(name) }) + "</p>" +
+      '<div class="w-inline"><button type="button" class="w-btn ghost" data-copy>' + t("Copy") + "</button></div>",
+    ok: t("Done"),
+    noCancel: true,
+    sticky: true,
+    onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(code, t("Code copied"))),
+  });
+}
+async function cancelCode(id) {
+  try { await DEL("/vault/invites/" + id); toast(t("Code cancelled")); loadInvites(); }
+  catch (e) { errorToast(e); }
 }
 
 async function reloadPeople() {
@@ -88,6 +158,7 @@ async function reloadPeople() {
 }
 
 function addPerson() {
+  if (encrypted()) return addPersonEncrypted();
   const signin = state.status && state.status.signin;
   const household = state.status && state.status.household_password;
   openDialog({
@@ -105,6 +176,31 @@ function addPerson() {
       await reloadPeople();
       refresh({ people: true });
       toast(t("Added {name}", { name }));
+    },
+  });
+}
+
+function addPersonEncrypted() {
+  let made = null;
+  openDialog({
+    title: t("Add a person"),
+    body: field(t("Name"), textInput("np-name", "", ' maxlength="40" autofocus')) +
+      field(t("Your password"), passwordInput("np-pw", "current-password"), t("Wally is encrypted: you get a one-use code for them, and your password lets this browser make it.")),
+    ok: t("Add person"),
+    onOk: async (root) => {
+      const name = val(root, "np-name");
+      if (!name) throw new Error(t("Type their name."));
+      const pw = root.querySelector("#np-pw").value;
+      if (!pw) throw new Error(t("Enter your password first."));
+      if (!made || made.name !== name) {
+        made = await POST("/people", { name });
+        await reloadPeople();
+        refresh({ people: true });
+      }
+      const r = await (await vs()).makeCode(made.id, pw);
+      toast(t("Added {name}", { name }));
+      setTimeout(() => showCode(name, r.code, r.expires), 0);
+      loadInvites();
     },
   });
 }

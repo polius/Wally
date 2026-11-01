@@ -68,10 +68,15 @@ export function openFilterSheet(ctx) {
     '<button type="button" class="w-btn ghost tx-fexp" data-f="export">' + icon("download") + esc(t("Export these as CSV")) + "</button>";
   const okText = () => t("Show {n}", { n: ctx.list().length });
   let root;
-  const redraw = () => {
+  // Redrawn after each change; the button that was pressed keeps the focus, so Escape and Tab still work
+  const redraw = (b) => {
+    const key = b && ["data-fc", "data-fa", "data-f", "data-fv"].find((k) => b.hasAttribute(k));
+    const sel = b ? (b.closest("#tx-ftype") ? '#tx-ftype [data-v="' + b.dataset.v + '"]' : key ? "[" + key + '="' + CSS.escape(b.getAttribute(key)) + '"]' : null) : null;
     ctx.render();
     root.querySelector("#tx-fbody").innerHTML = body();
     root.querySelector("[data-dlg-ok]").textContent = okText();
+    const again = sel && root.querySelector(sel);
+    (again || root.querySelector("[data-dlg-ok]")).focus();
   };
   root = openDialog({
     title: t("Filters"),
@@ -97,7 +102,7 @@ export function openFilterSheet(ctx) {
         else if (b.dataset.f === "export") { exportCsv(ctx.list()); return; }
         else return;
         S.sel = null;
-        redraw();
+        redraw(b);
       });
     },
   });

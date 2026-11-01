@@ -40,7 +40,7 @@ function blank(type) {
     by: null, date: "today", cal: null, calF: "", tags: [], tagDraft: "", note: "",
     rep: false, fq: "monthly", every: "3", unit: "weekly", end: "never", until: "", count: "12", about: false,
     split: false, parts: [], sugg: [], hl: 0, catQ: null, copts: [], chl: 0, touched: {}, edit: null, group: null, rule: null,
-    step: "main", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false,
+    step: "main", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false, more: false,
   };
 }
 function reset(type) {
@@ -172,20 +172,22 @@ function deskHtml() {
       '<button type="button" class="w-x w-addx" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
     amountRow() +
     '<p class="w-err" id="add-aerr" hidden role="alert"></p>' +
-    '<div class="w-frow" id="add-namerow"><label for="add-name" id="lbl-name"></label>' +
+    '<div class="w-frow w-frow1" id="add-namerow"><label for="add-name" id="lbl-name" class="vh"></label>' +
       '<div class="w-input"><input id="add-name" autocomplete="off" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
       '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div></div>' +
-    '<p class="w-err w-indent" id="add-nerr" hidden role="alert"></p>' +
-    '<div class="w-frow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
+    '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
+    '<div class="w-frow w-catrow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
     '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
     '<div class="w-frow" id="add-whorow"><span id="lbl-who"></span><div class="w-chips" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
     '<div class="w-sub" id="add-split" hidden>' + splitInner(true) + "</div>" +
     '<div class="w-frow"><span id="lbl-date"></span><div class="w-chips" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>' +
     '<div class="w-sub w-dcal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
     '<p class="w-err w-indent" id="add-derr" hidden role="alert"></p>' +
-    '<div class="w-frow"><span id="lbl-tags">' + t("Tags") + '</span><div class="w-chips" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
-      '<input id="add-tag" class="w-mini w-tagin" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></div></div>' +
-    '<div class="w-frow"><label for="add-note">' + t("Note") + '</label><input id="add-note" class="w-mini w-note" autocomplete="off" placeholder="' + esc(t("Optional")) + '"></div>' +
+    // Tags and a note are rarely needed: one link opens them
+    '<div class="w-addextra" id="add-extra">' +
+      '<div class="w-frow"><span id="lbl-tags">' + t("Tags") + '</span><div class="w-chips" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
+        '<input id="add-tag" class="w-mini w-tagin" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></div></div>' +
+      '<div class="w-frow"><label for="add-note">' + t("Note") + '</label><input id="add-note" class="w-mini w-note" autocomplete="off" placeholder="' + esc(t("Optional")) + '"></div></div>' +
     '<div class="w-frow" id="add-reprow"><span id="lbl-rep">' + t("Repeat") + '</span><div class="w-inline"><button type="button" class="w-switch" id="add-rep" role="switch" aria-checked="false" aria-labelledby="lbl-rep"></button><span id="add-rep-l"></span></div></div>' +
     '<div class="w-sub" id="add-reppanel" hidden>' +
       '<div class="w-seg sm w-wrapseg" role="group" aria-label="' + esc(t("How often")) + '" id="add-freq">' + FQ_LABELS().map(([k, l]) => '<button type="button" data-fq="' + k + '">' + l + "</button>").join("") + "</div>" +
@@ -198,6 +200,7 @@ function deskHtml() {
       '<p class="w-err" id="add-rerr" hidden role="alert"></p>' +
       '<div class="w-rsum"><p id="add-rsum"></p><div class="w-next" id="add-next"></div></div>' +
     "</div>" +
+    '<button type="button" class="w-link w-addmore" id="add-more" aria-controls="add-extra" aria-expanded="false">' + t("Add tag or note") + "</button>" +
     '<p class="w-dup" id="add-dup" hidden></p>' +
     '<p class="w-err" id="add-serr" hidden role="alert"></p>' +
     '<div class="w-sheet-f">' +
@@ -273,6 +276,10 @@ function render() {
   }
   setHtml("add-taglist", cache.tags.filter((g) => !ad.tags.includes(g)).slice(0, 200).map((g) => '<option value="' + esc(g) + '">').join(""));
   setVal("add-note", ad.note);
+  // Tags and note show once asked for, or when they hold something
+  const extra = phone || ad.more || ad.tags.length > 0 || !!ad.note || !!ad.tagDraft;
+  show("add-extra", extra);
+  show("add-more", !extra);
 
   renderRepeat();
 
@@ -1137,6 +1144,7 @@ function onClick(ev) {
     if (b && !b.disabled) b.focus(); else focusDay();
     return;
   }
+  if (at("#add-more")) { ad.more = true; render(); const i = $("add-tag"); if (i) i.focus(); return; }
   if ((x = at("[data-tg]"))) { ad.tags = ad.tags.filter((g) => g !== x.dataset.tg); render(); const i = $("add-tag"); if (i) i.focus(); return; }
   if (at("#add-rep")) { ad.rep = !ad.rep; render(); return; }
   if ((x = at("[data-fq]"))) { ad.fq = x.dataset.fq; render(); if (ad.fq === "custom") $("add-every").focus(); return; }

@@ -99,7 +99,7 @@ async function shot(name, p = page) { if (SHOTS) await p.screenshot({ path: join
 /* ======================================================================= */
 section("Layout and moving between panes");
 await open("/settings");
-ok(await page.locator("#set-nav a").count() === 9, "nine panes in three groups");
+ok(await page.locator("#set-nav a").count() === 10, "ten panes in three groups");
 ok(await page.getAttribute('#set-nav a[data-pane="people"]', "aria-current") === "page", "/settings opens People on desktop");
 ok(/People in this household/.test(await paneText()), "People pane is drawn");
 ok(/Wally \d/.test(await page.textContent("#set-nav")), "version at the bottom of the panes");
@@ -177,12 +177,20 @@ ok(!tagsAfter.some((t) => t.name === "sport" && t.count > 0), "the tag is taken 
 // No settling up; your own row can switch who is using this browser
 ok(!/Settled payments|Settle up|owes/.test(await paneText()), "no settle up and no who-owes-whom");
 ok(await page.locator("#set-pane [data-switch]").count() === 1, "Switch sits on your own row");
-ok(await page.locator("#side [data-switch], #side .w-me").count() === 0, "and no longer in the sidebar");
+ok(await page.locator("#side .w-me .w-meb").count() === 1 && await page.locator("#side .w-me [data-switch]").count() === 1, "and at the foot of the sidebar, under your name");
 
 /* ======================================================================= */
 section("Categories");
 await pane("categories");
-ok(await page.locator("#set-pane .w-ramp span").count() === 9, "the rank ramp");
+ok(await page.locator("#set-pane .w-ramp").count() === 0 && await page.locator("#set-pane .w-swb").count() >= 8, "each expense category has its color, nothing ranks");
+const rentColor = (await api("GET", "/categories/colors")).data.Rent;
+await page.click('[data-act="color"][data-name="Rent"]');
+ok(await page.locator("#dlg .w-swpick [role=radio]").count() === 9 && (await page.getAttribute('#dlg .w-swpick [data-c="' + rentColor + '"]', "aria-checked")) === "true", "nine colors to pick from, the one in use ticked");
+const otherColor = rentColor === 6 ? 5 : 6;
+await page.click('#dlg .w-swpick [data-c="' + otherColor + '"]'); await dlgClosed();
+ok((await api("GET", "/categories/colors")).data.Rent === otherColor, "picking one keeps it for good");
+await page.click('[data-act="color"][data-name="Rent"]');
+await page.click('#dlg .w-swpick [data-c="' + rentColor + '"]'); await dlgClosed();
 await page.fill("#cat-new", "Pets");
 await page.keyboard.press("Enter");
 await toastText(/Added Pets/);
@@ -548,7 +556,7 @@ for (const [w, h] of [[1440, 900], [1100, 800], [900, 800]]) {
 const P = await newPage(BASE, { viewport: { width: 390, height: 844 }, dark: true });
 await P.page.goto(BASE + "/settings", { waitUntil: "networkidle" });
 await P.page.waitForSelector(".w-scell");
-ok(await P.page.locator(".w-scell").count() === 9, "phone: Settings is a list of panes");
+ok(await P.page.locator(".w-scell").count() === 10, "phone: Settings is a list of panes");
 await shot("phone-list", P.page);
 await P.page.click('.w-scell[data-pane="signin"]');
 await P.page.waitForSelector("#set-pane .w-group");

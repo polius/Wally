@@ -1,4 +1,4 @@
-/* The Dashboard's range: Month, Year or Custom, the period it is compared
+/* Summary's range: Month, Year or Custom, the period it is compared
    with, the two-month Custom picker, the phone's range sheet, and links into Transactions that
    keep the range. The last range is remembered on this browser. */
 import { t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, mmin, mmax, monthName, monthIn, monthYear, F, dlab, dows, wkOff, icon, num } from "../../core.js";
@@ -8,7 +8,7 @@ import { navigate } from "../../shell.js";
 export const MODES = ["month", "year", "custom"];
 const KEY = "wally.dash.range";
 
-/* What the Dashboard shows. Lives with the module, so it survives leaving and coming back. */
+/* What Summary shows. Lives with the module, so it survives leaving and coming back. */
 export const view = {
   mode: "month",
   ym: ym(TODAY),        // the month shown in Month mode

@@ -1,23 +1,21 @@
 /* Recurring: everything already promised, in one place.
-   What bills cost each month, when the next ones land, what changed, and each rule's story.
-   Rules come from /recurring; price changes and payees that look like they repeat are
-   worked out here, from past transactions. */
+   What bills cost each month, a list in time order (next 7 days, later this month, then by month),
+   a five-week calendar a button away, and each rule's story. Rules come from /recurring; price
+   changes are worked out here, from past transactions. */
 import {
-  state, t, tn, esc, f, fk, f0, pct, bigMoney, dlab, dlabW, dlabL, dlabY, monthYear, F, TODAY, addD, ds, ym, ymAdd, dim,
-  amt, tile, cc, av, pname, couple, icon, wkOff, dows, rerank, POST, DEL, fromRule, reloadRules, reloadLedger, savePrefs,
+  state, t, tn, esc, f, fk, f0, pct, bigMoney, dlab, dlabW, dlabL, dlabY, monthYear, F, TODAY, addD, ym, amt, tile, cc, av,
+  pname, couple, icon, wkOff, dows, rerank, POST, DEL, fromRule, reloadRules, reloadLedger, monthName, monthIn, relDay,
 } from "../core.js";
-import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, PER } from "../sched.js";
+import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, everyN } from "../sched.js";
 import { hover, hideTip, row, chart, el, txt, toast, errorToast, openDialog, seg, trapFocus } from "../ui.js";
-import { refresh, scopeSwitch } from "../shell.js";
+import { refresh, headActions } from "../shell.js";
 
 const RECENT = 548;          // a price change from the last 18 months is still news
-const DETECT_SINCE = 366;    // payees are checked over the last year
-const DETECT_MIN = 5;        // seen at least this many times
 
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 
-const ui = { tab: "all", sel: null, open: false, endedOpen: false, order: [], day: null };
+const ui = { tab: "expense", sel: null, open: false, endedOpen: false, order: [], day: null, cal: false };
 let root = null;
 let H = new Map();           // history per rule, worked out once per render
 
@@ -53,49 +51,11 @@ function latestVersion(r) {
   state.rules.forEach((x) => { if (x.type === r.type && norm(x.n) === norm(r.n) && x.start > best.start) best = x; });
   return best;
 }
-function dismissed() { return (state.prefs && state.prefs.recDismissed) || {}; }
-function dismiss(key) { const d = Object.assign({}, dismissed(), { [key]: 1 }); savePrefs({ recDismissed: d }); }
-function keep(r) { return ui.tab === "all" || (ui.tab === "income") === isIncome(r); }
+function keep(r) { return (ui.tab === "income") === isIncome(r); }
 function byNext(list) {
   return list.slice().sort((a, b) => { const x = nextOf(a) || "9", y = nextOf(b) || "9"; return x < y ? -1 : x > y ? 1 : a.n.localeCompare(b.n); });
 }
 function ruleById(id) { return state.rules.find((r) => r.id === id) || null; }
-
-/* ---------- payees with a steady pattern but no rule ---------- */
-export function detectRules() {
-  const names = new Set(state.rules.map((r) => norm(r.n)));
-  const since = addD(TODAY, -DETECT_SINCE);
-  const by = {};
-  for (const x of state.tx) {              // newest first
-    if (x.d < since) break;
-    if (x.d > TODAY || x.rid || x.gr) continue;
-    const k = norm(x.n);
-    if (!k || names.has(k)) continue;
-    (by[k] = by[k] || []).push(x);
-  }
-  const out = [];
-  Object.keys(by).forEach((k) => {
-    const l = by[k].slice().reverse();      // oldest first
-    if (l.length < DETECT_MIN || l.some((x) => x.type !== l[0].type)) return;
-    const days = l.map((x) => +x.d.slice(8));
-    if (Math.max(...days) - Math.min(...days) > 3) return;   // bank dates move a day or two
-    const gaps = new Set();
-    for (let i = 1; i < l.length; i++) { const a = ym(l[i - 1].d), b = ym(l[i].d); gaps.add((b[0] - a[0]) * 12 + b[1] - a[1]); }
-    if (gaps.size !== 1) return;
-    const every = [...gaps][0];
-    if (every < 1 || every > 6) return;
-    const last = l[l.length - 1];
-    if (last.d < addD(TODAY, -(every * 31 + 10))) return;   // it stopped
-    const counts = {};
-    days.forEach((d) => { counts[d] = (counts[d] || 0) + 1; });
-    const day = +Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a - b)[0];
-    const vals = l.map((x) => x.a), avg = sum(vals, (v) => v) / vals.length, mn = Math.min(...vals), mx = Math.max(...vals);
-    let q = ym(last.d), next;
-    do { q = ymAdd(q[0], q[1], every); next = ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))); } while (next <= TODAY);
-    out.push({ key: k, n: last.n, c: last.c, p: last.p, sh: last.sh, type: last.type, every, day, last: last.d, next, avg, varies: mx - mn > avg * 0.05, k: l.length, mn, mx });
-  });
-  return out.sort((a, b) => b.avg - a.avg);
-}
 
 /* ---------- page ---------- */
 export function mount(el, route) {
@@ -105,9 +65,9 @@ export function mount(el, route) {
   ui.open = !!id;
   ui.day = null;
   root.innerHTML =
-    '<header class="w-head rec-head"><div class="w-title"><h3>' + t("Recurring") + "</h3></div>" +
-      seg("rec-tab", [["all", t("All")], ["expense", t("Bills")], ["income", t("Income")]], ui.tab, t("Show")) +
-      '<div class="w-head-r"><div id="rec-chips"></div><button type="button" class="w-btn ghost" id="rec-new">' + icon("plus") + t("New rule") + "</button></div></header>" +
+    '<header class="w-head s-head rec-head"><div class="s-titlew"><h3 class="s-title">' + t("Recurring") + "</h3></div>" +
+      headActions('<button type="button" class="w-btn ghost rec-hb" id="rec-calb" aria-pressed="false" aria-label="' + esc(t("Calendar")) + '" title="' + esc(t("Calendar")) + '">' + icon("cal") + "</button>") + "</header>" +
+    seg("rec-tab", [["expense", t("Bills")], ["income", t("Income")]], ui.tab, t("Show"), "rec-tabs") +
     '<div id="rec-page"></div>';
   root.addEventListener("click", onClick);
   root.addEventListener("keydown", onKeydown);
@@ -151,18 +111,18 @@ export function key(ev) {
 function render() {
   if (!root) return;
   H = new Map();
-  rerank(TODAY.slice(0, 8) + "01", TODAY);   // category colors by rank this month, as on the Dashboard
+  rerank(TODAY.slice(0, 8) + "01", TODAY);
   const focus = rememberFocus();
   root.querySelectorAll("#rec-tab button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === ui.tab)));
-  root.querySelector("#rec-chips").innerHTML = scopeSwitch();
+  root.querySelector("#rec-calb").setAttribute("aria-pressed", String(ui.cal));
+  root.querySelector("#rec-calb").classList.toggle("on", ui.cal);
   const page = root.querySelector("#rec-page");
   const rules = state.rules.filter((r) => ruleAmt(r) > 0);
   root.querySelector("#rec-tab").hidden = !state.rules.length;
+  root.querySelector("#rec-calb").hidden = !state.rules.length;
 
   if (!state.rules.length) {
-    const notes = noticed([]);
-    page.innerHTML = '<section class="w-panel">' + emptyRules() + "</section>" +
-      (notes ? '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Wally noticed") + "</h4><p>" + t("Payees that look like they repeat") + '</p></div></div><div class="w-list">' + notes + "</div></section>" : "");
+    page.innerHTML = '<section class="w-panel">' + emptyRules() + "</section>";
     setOpen(false);
     return;
   }
@@ -181,23 +141,20 @@ function render() {
   if (!sel) ui.open = false;
 
   page.innerHTML =
-    '<section class="w-panel rec-kpis-p">' + kpis(rules) + "</section>" +
-    '<div class="w-grid2 rec-top">' +
+    '<section class="rec-sum" aria-label="' + esc(t("Every month")) + '">' + summary(rules) + "</section>" +
+    (ui.cal ? '<div class="w-grid2 rec-top">' +
       '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Next five weeks") + '</h4><p id="rec-cal-sub"></p></div>' +
         '<div class="w-legend"><span><s class="rec-lg-today"></s>' + t("Today") + '</span><span><s class="rec-lg-in"></s>' + t("Money in") + "</span></div></div>" +
         '<div class="w-rcal rec-cal" id="rec-cal"></div></section>' +
-      // Beside the calendar: the day picked in it, over what Wally noticed
-      '<div class="rec-side"><section class="w-panel rec-day" id="rec-day" hidden></section>' +
-      '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Wally noticed") + "</h4><p>" + t("Price changes, and payees that look like they repeat") + '</p></div></div><div class="w-list" id="rec-notice">' +
-        (noticed(rules) || '<div class="w-empty rec-nonew"><b>' + t("Nothing new") + "</b><p>" + t("No price changes or new patterns.") + "</p></div>") + "</div></section></div>" +
-    "</div>" +
+      '<div class="rec-side"><section class="w-panel rec-day" id="rec-day" hidden></section></div>' +
+    "</div>" : "") +
     '<div class="w-tx rec-body">' +
       '<section class="w-panel rec-list" id="rec-list" aria-label="' + esc(t("Rules")) + '">' + list(listed, shown) + "</section>" +
       '<aside class="w-panel w-insp rec-insp" id="rec-insp" tabindex="-1" aria-label="' + esc(sel ? sel.n : t("Rule")) + '"></aside>' +
     "</div>" +
     '<div class="rec-scrim" data-close hidden></div>';
 
-  calendar();
+  if (ui.cal) calendar();
   if (sel) inspector(sel); else root.querySelector("#rec-insp").innerHTML = '<div class="w-empty"><b>' + t("Nothing selected") + "</b><p>" + t("Pick a rule to see it here.") + "</p></div>";
   setOpen(ui.open && !!sel);
   restoreFocus(focus);
@@ -209,20 +166,19 @@ function emptyRules() {
     '</p><button type="button" class="w-btn primary" data-new>' + icon("plus") + t("New rule") + "</button></div>";
 }
 
-/* ---------- the figures at the top ---------- */
-function kpis(rules) {
+/* ---------- the figures at the top: one total, then what it means ---------- */
+function summary(rules) {
   const live = rules.filter((r) => nextOf(r));
   const bills = live.filter((r) => !isIncome(r)), incs = live.filter(isIncome);
   const billM = sum(bills, (r) => perMonth(r)), incM = sum(incs, (r) => perMonth(r));
-  const to30 = addD(TODAY, 30);
-  const o30 = occurrences(addD(TODAY, 1), to30).filter((x) => !isIncome(x.r) && ruleAmt(x.r) > 0);
+  const to30 = addD(TODAY, 30), inc = ui.tab === "income";
+  const o30 = occurrences(addD(TODAY, 1), to30).filter((x) => isIncome(x.r) === inc && ruleAmt(x.r) > 0);
   const sum30 = sum(o30, (x) => ruleAmt(x.r));
-  return '<div class="w-kpis solo rec-kpis">' +
-    '<div class="w-kpi"><span>' + t("Bills per month") + '</span><b class="amt">' + m(billM) + "</b><small>" + tn(bills.length, "{n} active rule", "{n} active rules") + "</small></div>" +
-    '<div class="w-kpi"><span>' + t("Recurring income per month") + '</span><b class="pos amt">' + m(incM) + "</b><small>" + tn(incs.length, "{n} source", "{n} sources") + "</small></div>" +
-    '<div class="w-kpi"><span>' + t("Bills take") + "</span><b>" + (incM ? esc(pct(billM / incM)) : "—") + "</b><small>" + (incM ? t("of recurring income") : t("No recurring income")) + "</small></div>" +
-    '<div class="w-kpi safe"><span>' + t("Next 30 days") + '</span><b class="amt">' + m(sum30) + "</b><small>" + tn(o30.length, "{n} charge until {date}", "{n} charges until {date}", { date: esc(dlab(to30)) }) + "</small></div>" +
-    "</div>";
+  const big = inc ? incM : billM, n = inc ? incs.length : bills.length;
+  let line = inc ? tn(n, "{n} source", "{n} sources") : incM ? t("{pct} of what comes in", { pct: pct(billM / incM) }) : tn(n, "{n} active rule", "{n} active rules");
+  const soon = o30.length ? t("{amount} in the next 30 days", { amount: f0(sum30) }) : t("Nothing in the next 30 days");
+  return '<span class="rec-eye">' + esc(t("Every month")) + '</span><b class="rec-big amt' + (inc ? " pos" : "") + '">' + bdi(esc(f0(big))) + "</b>" +
+    '<span class="rec-line">' + esc(line) + " · " + esc(soon) + "</span>";
 }
 
 /* ---------- five weeks: when money leaves and arrives ---------- */
@@ -258,8 +214,8 @@ function calendar() {
 /* The day picked in the calendar: what lands on it, each opening its rule */
 function dayList(items) {
   const box = root.querySelector("#rec-day");
-  box.hidden = !items;
-  if (!items) { box.innerHTML = ""; return; }
+  box.hidden = false;
+  if (!items) { box.innerHTML = '<div class="w-empty rec-dayhint"><span class="w-empty-i">' + icon("cal") + "</span><b>" + t("Pick a day") + "</b><p>" + t("See what lands on it, and open each rule.") + "</p></div>"; return; }
   box.innerHTML = '<div class="w-ph"><div><h4>' + esc(dlabL(ui.day)) + '</h4></div><button type="button" class="w-x" data-day-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
     '<div class="w-list">' + items.map(({ r }) => {
       const inc = isIncome(r), who = couple() ? '<span class="rec-who">' + av(r.p, "sm") + esc(pname(r.p)) + "</span> · " : "";
@@ -269,62 +225,30 @@ function dayList(items) {
     }).join("") + "</div>";
 }
 
-/* ---------- Wally noticed ---------- */
-function noticed(rules) {
-  const dis = dismissed(), out = [];
-  // Dates skipped while a rule was paused, offered once
-  state.rules.forEach((r) => {
-    if (!r.missed || !r.missed.length || ruleAmt(r) <= 0 || !keep(r)) return;
-    const n = r.missed.length;
-    out.push('<div class="w-li">' + tile(r.c) + "<div><h6>" + tn(n, "{name} skipped {n} date while paused", "{name} skipped {n} dates while paused", { name: esc(r.n) }) + "</h6><p>" +
-      esc(r.missed.slice(0, 4).map(dlab).join(", ") + (n > 4 ? ", …" : "")) + " · " + t("{amount} in all", { amount: m(ruleAmt(r) * n) }) +
-      '</p></div><span class="w-noticeb"><button type="button" class="w-btn ghost" data-miss-add="' + r.id + '">' + t("Add them") + '</button>' +
-      '<button type="button" class="w-x" data-miss-no="' + r.id + '" aria-label="' + esc(t("Dismiss")) + '">' + icon("x") + "</button></span></div>");
-  });
-  // Price changes
-  rules.forEach((r) => {
-    if (over(r) || superseded(r) || !keep(r)) return;
-    const pc = recentChange(r);
-    if (!pc) return;
-    const k = "p:" + norm(r.n) + ":" + pc.d;
-    if (dis[k]) return;
-    const up = pc.to > pc.from, diff = scaled(r, Math.abs(pc.to - pc.from));
-    const yearly = (diff * PER[r.freq] * 12) / (r.every || 1);
-    const [y, mo] = ym(pc.d);
-    out.push('<div class="w-li">' + tile(r.c) + "<div><h6>" + (up ? t("{name} went up {amount}", { name: esc(r.n), amount: m(diff) }) : t("{name} went down {amount}", { name: esc(r.n), amount: m(diff) })) +
-      "</h6><p>" + t("From {from} to {to} in {month}. That is {year} a year.", { from: m(scaled(r, pc.from)), to: m(scaled(r, pc.to)), month: esc(monthYear(y, mo)), year: m(yearly) }) +
-      '</p></div><span class="w-noticeb"><button type="button" class="w-link" data-sel="' + r.id + '">' + t("View") + "</button>" +
-      '<button type="button" class="w-x" data-dis="' + esc(k) + '" aria-label="' + esc(t("Dismiss")) + '">' + icon("x") + "</button></span></div>");
-  });
-  // Payees with a steady pattern but no rule
-  detectRules().forEach((x) => {
-    if (dis["d:" + x.key] || amt({ p: x.p, a: x.avg, sh: x.sh }) <= 0) return;
-    if (ui.tab !== "all" && (ui.tab === "income") !== (x.type === "income")) return;
-    const title = x.every === 1 ? t("{name} looks monthly", { name: esc(x.n) }) : t("{name} looks like every {n} months", { name: esc(x.n), n: x.every });
-    const body = x.varies ? t("{n} times on day {day}, between {min} and {max}.", { n: x.k, day: x.day, min: esc(f0(x.mn)), max: esc(f0(x.mx)) })
-      : t("{n} times on day {day}, {amount} each.", { n: x.k, day: x.day, amount: m(x.avg) });
-    out.push('<div class="w-li">' + tile(x.c) + "<div><h6>" + title + "</h6><p>" + body + '</p></div><span class="w-noticeb">' +
-      '<button type="button" class="w-btn ghost" data-mk="' + esc(x.key) + '">' + t("Make it a rule") + "</button>" +
-      '<button type="button" class="w-x" data-dis="' + esc("d:" + x.key) + '" aria-label="' + esc(t("Dismiss")) + '">' + icon("x") + "</button></span></div>");
-  });
-  return out.join("");
-}
-
-/* ---------- the list of rules ---------- */
+/* ---------- the list of rules, in time order ---------- */
 function list(listed, shown) {
   ui.order = [];
   if (!shown.length) {
     const who = state.scope === "all" ? "" : pname(state.scope);
-    return '<div class="w-empty"><b>' + t("No rules") + "</b><p>" + (ui.tab === "income" ? t("No recurring income here yet.") : ui.tab === "expense" ? t("No recurring bills here yet.") :
-      who ? t("Nothing repeats for {name} yet.", { name: esc(who) }) : t("Nothing repeats yet.")) + "</p></div>";
+    return '<div class="w-empty"><b>' + t("No rules") + "</b><p>" + (ui.tab === "income" ? t("No recurring income here yet.") : who ? t("Nothing repeats for {name} yet.", { name: esc(who) }) : t("No recurring bills here yet.")) + "</p></div>";
   }
   const running = shown.filter((r) => !over(r)), ended = shown.filter(over);
-  const groups = [[t("Bills and subscriptions"), running.filter((r) => !isIncome(r))], [t("Income"), running.filter(isIncome)]];
-  let html = groups.filter((g) => g[1].length).map(([label, l]) => {
-    const tot = sum(l.filter((r) => nextOf(r)), (r) => perMonth(r));
-    const rows = byNext(l);
-    rows.forEach((r) => ui.order.push(r.id));
-    return '<div class="w-dayh">' + label + '<span class="amt">' + t("{amount} a month", { amount: m(tot) }) + "</span></div>" + rows.map(ruleRow).join("");
+  // Next 7 days, then the rest of that month, then month by month; paused at the end
+  const week = addD(TODAY, 7), groups = [], at = {};
+  const put = (key, label, r) => { if (!at[key]) { at[key] = { label, rows: [] }; groups.push(at[key]); } at[key].rows.push(r); };
+  byNext(running).forEach((r) => {
+    const nx = nextOf(r);
+    if (!nx) return put("paused", t("Paused"), r);
+    if (nx <= week) return put("week", t("Next 7 days"), r);
+    const [y, mo] = ym(nx), weekMonth = week.slice(0, 7) === nx.slice(0, 7);
+    const yr = y !== +TODAY.slice(0, 4) ? " " + y : "";
+    put(nx.slice(0, 7), weekMonth ? t("Later in {month}", { month: monthIn(mo) + yr }) : monthName(mo) + yr, r);
+  });
+  if (at.paused) { groups.splice(groups.indexOf(at.paused), 1); groups.push(at.paused); }
+  let html = groups.map((g) => {
+    g.rows.forEach((r) => ui.order.push(r.id));
+    const tot = sum(g.rows, (r) => (nextOf(r) ? ruleAmt(r) : 0));
+    return '<div class="w-dayh">' + esc(g.label) + (tot ? '<span class="amt">' + bdi(esc((ui.tab === "income" ? "+" : "") + f0(tot))) + "</span>" : "") + "</div>" + g.rows.map(ruleRow).join("");
   }).join("");
   if (ended.length) {
     if (!ui.endedOpen && ended.some((r) => r.id === ui.sel)) ui.endedOpen = true;
@@ -338,30 +262,24 @@ function list(listed, shown) {
   return html;
 }
 
+/* A rule: when it lands next and who it's for; the amount, with a month's worth when it isn't monthly */
 function ruleRow(r) {
-  const nx = nextOf(r), inc = isIncome(r), h = hist(r).slice(-6).map((x) => amt(x)), pc = recentChange(r);
+  const nx = nextOf(r), inc = isIncome(r), pc = recentChange(r);
   const state_ = r.paused ? t("Paused") : nx ? "" : t("Ended");
-  const who = couple() ? '<span class="rec-who">' + av(r.p, "sm") + esc(pname(r.p)) + "</span> · " : "";
-  const pill = pc && !state_ ? ' <span class="w-pill ' + (pc.to > pc.from ? "bad" : "good") + '">' + (pc.to > pc.from ? "▲ " : "▼ ") +
-    '<span class="rec-sr">' + (pc.to > pc.from ? t("went up") : t("went down")) + " </span>" + m(scaled(r, Math.abs(pc.to - pc.from))) + "</span>" : "";
-  const nextTxt = nx ? esc(dlabW(nx)) + "<small>" + esc(inDays(nx)) + "</small>" : r.endDate && !r.paused ? esc(t("Ended {date}", { date: dlab(r.endDate) })) : "—";
-  const perM = r.freq !== "monthly" || (r.every || 1) !== 1 ? "<small>" + t("{amount} a month", { amount: m(perMonth(r)) }) + "</small>" : "";
+  const bits = [];
+  if (nx) bits.push(relDay(nx));
+  else if (r.endDate && !r.paused) bits.push(t("Ended {date}", { date: dlab(r.endDate) }));
+  else bits.push(state_);
+  if (couple()) bits.push(pname(r.p));
+  // How often, when it isn't monthly ("Every 2 weeks", "Yearly"); the day is already said
+  if (r.freq !== "monthly" || (r.every || 1) !== 1) bits.push((r.every || 1) === 1 ? { daily: t("Daily"), weekly: t("Weekly"), monthly: t("Monthly"), yearly: t("Yearly") }[r.freq] : everyN(r.freq, r.every));
+  const up = pc && !state_ ? '<small class="' + (pc.to > pc.from ? "up-bad" : "dn-good") + '">' + (pc.to > pc.from ? "↑ " : "↓ ") +
+    '<span class="rec-sr">' + (pc.to > pc.from ? t("went up") : t("went down")) + " </span>" + m(scaled(r, Math.abs(pc.to - pc.from))) + "</small>" : "";
+  const perM = !up && (r.freq !== "monthly" || (r.every || 1) !== 1) ? "<small>" + t("{amount} a month", { amount: m(perMonth(r)) }) + "</small>" : "";
   return '<button type="button" class="w-rrow' + (r.id === ui.sel ? " sel" : "") + (state_ ? " off" : "") + '" data-rid="' + r.id + '" aria-pressed="' + (r.id === ui.sel) + '">' +
     tile(r.c, 32) +
-    '<div class="rec-rn"><h6>' + esc(r.n) + (state_ ? ' <span class="w-badge">' + state_ + "</span>" : "") + pill + "</h6>" +
-      '<p><span class="rec-meta">' + who + esc(shortDesc(r)) + '</span><span class="rec-nxm">' + (nx ? esc(dlabW(nx)) + " · " + esc(inDays(nx)) : esc(state_ || shortDesc(r))) + "</span></p></div>" +
-    '<span class="nx">' + nextTxt + "</span>" +
-    spark(h.length ? h : [0], cc(r.c)) +
-    '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + perM + "</span></button>";
-}
-
-function spark(vals, col) {
-  const mx = Math.max(...vals, 1), bw = 9, off = 54 - vals.length * bw;
-  return '<svg class="rec-spark" viewBox="0 0 54 24" width="54" height="24" aria-hidden="true">' + vals.map((v, i) => {
-    const h = Math.max(2, (v / mx) * 22);
-    return '<rect x="' + (off + i * bw + bw * 0.18).toFixed(1) + '" y="' + (24 - h).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) +
-      '" rx="1.5" fill="' + col + '" fill-opacity="' + (i === vals.length - 1 ? 1 : 0.4) + '"/>';
-  }).join("") + "</svg>";
+    '<div class="rec-rn"><h6>' + esc(r.n) + "</h6><p>" + esc(bits.join(" · ")) + "</p></div>" +
+    '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + up + perM + "</span></button>";
 }
 
 /* ---------- the rule's side panel (a full-screen sheet on phones) ---------- */
@@ -482,7 +400,8 @@ async function onClick(ev) {
   const g = (sel) => ev.target.closest(sel);
   let b;
   if ((b = g("#rec-tab button"))) { ui.tab = b.dataset.v; render(); return; }
-  if (g("#rec-new") || g("[data-new]")) { openAddSheet({ repeat: true }); return; }
+  if (g("#rec-calb")) { ui.cal = !ui.cal; ui.day = null; render(); return; }
+  if (g("[data-new]")) { openAddSheet({ repeat: true }); return; }
   if ((b = g("[data-rid]"))) { select(b.dataset.rid); return; }
   if ((b = g("[data-sel]"))) {
     select(b.dataset.sel);
@@ -499,8 +418,6 @@ async function onClick(ev) {
   }
   if (g("[data-ended]")) { ui.endedOpen = !ui.endedOpen; render(); return; }
   if (g("[data-close]")) { closePanel(); return; }
-  if ((b = g("[data-dis]"))) { dismiss(b.dataset.dis); render(); return; }
-  if ((b = g("[data-mk]"))) { makeRule(b.dataset.mk); return; }
   if ((b = g("[data-miss-add]"))) { missed(b.dataset.missAdd, true); return; }
   if ((b = g("[data-miss-no]"))) { missed(b.dataset.missNo, false); return; }
   if ((b = g("[data-act]"))) {
@@ -520,12 +437,6 @@ async function openAddSheet(opts) {
 }
 function editRule(r) { openAddSheet({ rule: r }); }
 
-function makeRule(key) {
-  const x = detectRules().find((z) => z.key === key);
-  if (!x) return;
-  openAddSheet({ repeat: true, name: x.n, amount: Math.round(x.avg * 100) / 100, category: x.c, person: x.p, date: x.next, type: x.type, every: x.every, freq: "monthly", about: x.varies });
-}
-
 /* Put the API's answer in place of the rule in the browser */
 function replaceRule(apiRule) {
   const r = fromRule(apiRule);
@@ -542,7 +453,7 @@ async function togglePause(r, quiet) {
     if (nr.lastRun !== r.lastRun && !was) await reloadLedger();   // pausing first catches up anything due
     refresh({ rules: true });
     if (quiet) return;
-    if (was) toast(nr.missed && nr.missed.length ? tn(nr.missed.length, "{name} resumed. {n} skipped date is in Wally noticed.", "{name} resumed. {n} skipped dates are in Wally noticed.", { name: r.n }) : t("{name} resumed", { name: r.n }), () => togglePause(nr, true));
+    if (was) toast(nr.missed && nr.missed.length ? tn(nr.missed.length, "{name} resumed. It skipped {n} date: add it from the rule.", "{name} resumed. It skipped {n} dates: add them from the rule.", { name: r.n }) : t("{name} resumed", { name: r.n }), () => togglePause(nr, true));
     else toast(t("{name} paused. Nothing is added until you resume it.", { name: r.n }), () => togglePause(nr, true));
   } catch (e) { errorToast(e); if (quiet) throw e; }
 }

@@ -53,7 +53,7 @@ function build(q) {
   if (quick) out.push(quick);
   const go = (path) => () => navigate(path);
   const fixed = [
-    [t("Go to"), t("Dashboard"), "overview", go("/")],
+    [t("Go to"), t("Summary"), "overview", go("/")],
     [t("Go to"), t("Transactions"), "list", go("/transactions")],
     [t("Go to"), t("Recurring"), "repeat", go("/recurring")],
     [t("Go to"), t("Month in review"), "cal", go("/review")],

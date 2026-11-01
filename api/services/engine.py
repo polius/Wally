@@ -110,7 +110,13 @@ async def scheduler():
         await asyncio.sleep(min(wait_engine, wait_backup))
         try:
             with Session(database.engine) as db:
-                if wait_engine <= wait_backup:
+                if database.STATE.get("vault"):
+                    # Encrypted: the browsers add recurring charges; the server forgets old deletions
+                    if wait_engine > wait_backup:
+                        from .vault import purge_tombstones
+                        purge_tombstones(db)
+                        nightly_backup(db)
+                elif wait_engine <= wait_backup:
                     run_all(db)
                 else:
                     nightly_backup(db)

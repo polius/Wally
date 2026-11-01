@@ -35,13 +35,16 @@ def configure(data_dir: Path):
     BACKUP_DIR = DATA_DIR / "backups"
     engine = make_engine(DB_PATH)
     STATE["read_only"] = None
+    STATE["vault"] = None
+    STATE.pop("conversion", None)
 
-# Set when an upgrade step failed: Wally then opens read-only and says why
-STATE = {"read_only": None}
+# read_only: set when an upgrade step failed; Wally then opens read-only and says why.
+# vault: the household's vault id while encryption is on. conversion: while it is being turned on or off.
+STATE = {"read_only": None, "vault": None}
 
 def import_models():
     # Every table must be registered before create_all
-    from .models import app, people, api_keys, transactions, recurring_transactions, categories, tags, currency, money  # noqa: F401
+    from .models import app, people, api_keys, transactions, recurring_transactions, categories, tags, currency, money, vault  # noqa: F401
 
 def create_db_and_tables():
     DATA_DIR.mkdir(parents=True, exist_ok=True)

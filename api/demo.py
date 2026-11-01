@@ -40,7 +40,9 @@ def generate_demo():
     database.create_db_and_tables()
     rng = random.Random(20261024)
     today = household_today()
-    start = (today.replace(day=1) - relativedelta(months=21))
+    # About two years, and always all of last year, so "this year against the same days of last
+    # year" has something to compare with on any day
+    start = min(today.replace(day=1) - relativedelta(months=21), date(today.year - 1, 1, 1))
 
     with Session(database.engine) as db:
         alex, ana = Person(name="Alex", position=0), Person(name="Ana", position=1)

@@ -4,7 +4,7 @@
    On a phone it is four pages you tap or swipe through. Route: /review?m=YYYY-MM */
 import {
   t, tn, esc, state, f, f0, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
-  tile, cat, av, pname, couple, isIncomeCat, dows, wkOff, dlab, dlabL, dlabW, monthYear, F, savePrefs, icon,
+  tile, cat, cc, av, pname, couple, isIncomeCat, dows, wkOff, dlab, dlabL, dlabW, monthYear, F, icon,
 } from "../core.js";
 import { hover, row, chart, el, txt, hideTip } from "../ui.js";
 import { navigate, setScope, scopeChips } from "../shell.js";
@@ -13,6 +13,8 @@ import { occurrences, ruleAmt, ruleHist, shortDesc, isIncome } from "../sched.js
 let root = null;
 let shown = null;        // [year, month] on screen
 let story = 0;           // phone page, 0 to 3
+let current = null;      // the figures on screen, for the printed report
+let pdf = null;          // review/pdf.js, loaded with the page so ⌘P can use it at once
 const STORY = 4;
 
 /* ---------- months ---------- */
@@ -78,7 +80,7 @@ function cmp(cur, prev, goodUp, month, short) {
   return '<span class="w-mrd ' + cls + '">' + text + "</span>";
 }
 /* Heat levels for the day grid: quantiles of the days with spending */
-function levels(vals) {
+export function levels(vals) {
   const nz = vals.filter((v) => v > 0).sort((a, b) => a - b);
   const q = (p) => nz[Math.floor(p * (nz.length - 1))] || 0;
   const cuts = [q(0.2), q(0.45), q(0.7), q(0.9)];
@@ -101,12 +103,10 @@ function compute(q, sc) {
   for (let i = 11; i >= 0; i--) { const hq = ymAdd(q[0], q[1], -i); if (hasData(hq)) hist.push({ q: hq, s: stats(hq, sc) }); }
   const rank = 1 + hist.filter((h) => h.s.net > s.net + 0.005).length;
 
-  // Categories, coloured by their rank in this month
+  // Categories, biggest first, each in its own color
   const c = byCat(a, b, sc), cu = catUsual(q, sc), cp = hasPrev ? byCat(...bounds(pq), sc) : {};
   const keys = Object.keys(c).filter((k) => c[k] >= 0.5).sort((x, y) => c[y] - c[x]);
-  const col = {};
-  keys.forEach((k, i) => { col[k] = "var(--c" + (i < 8 ? i + 1 : 9) + ")"; });
-  const colOf = (k) => col[k] || "var(--c9)";
+  const colOf = (k) => cc(k);
   const moved = [...new Set(Object.keys(c).concat(Object.keys(cu)))].filter((k) => !isIncomeCat(k))
     .map((k) => ({ k, d: (c[k] || 0) - (cu[k] || 0) }))
     .filter((x) => u.n && Math.abs(x.d) >= 25 && Math.abs(x.d) >= (cu[x.k] || 0) * 0.15);
@@ -183,10 +183,19 @@ export function mount(el, route) {
   root = el;
   shown = clamp(parseMonth(route.query.get("m")));
   story = 0;
+  import("./review/pdf.js").then((x) => { pdf = x; });
+  addEventListener("beforeprint", onBeforePrint);
   render();
 }
 export function update() { render(); }
-export function unmount() { root = null; }
+export function unmount() { root = null; current = null; removeEventListener("beforeprint", onBeforePrint); }
+/* ⌘P / Ctrl+P prints the report, not the screen */
+function onBeforePrint() { if (current && pdf) pdf.beforePrint(current); }
+async function exportPdf() {
+  if (!current) return;
+  hideTip();
+  (pdf || (pdf = await import("./review/pdf.js"))).exportPdf(current);
+}
 export function key(ev) {
   if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
     const rtl = document.documentElement.dir === "rtl", back = (ev.key === "ArrowLeft") !== rtl;
@@ -200,14 +209,15 @@ function render() {
   hideTip();
   const last = lastClosed();
   if (!state.tx.length || !hasData(last)) {
+    current = null;
     root.innerHTML = '<div class="w-mrpage"><div class="w-mrev w-mrempty">' + header(null) +
       '<div class="w-empty"><span class="w-empty-i">' + icon("cal") + "</span><b>" + t("No month to review yet") + "</b><p>" +
-      t("Month in review looks back at a month once it is over. The first one opens on the 1st of next month.") + '</p><a class="w-btn ghost" href="/" data-link>' + t("Open the Dashboard") + "</a></div></div></div>";
+      t("Month in review looks back at a month once it is over. The first one is ready on the 1st of next month.") + "</p><a class=\"w-btn ghost\" href=\"/\" data-link>" + t("Open Summary") + "</a></div></div></div>";
     wireHeader(null);
     return;
   }
   shown = clamp(shown);
-  const m = compute(shown, state.scope);
+  const m = (current = compute(shown, state.scope));
   root.innerHTML = '<div class="w-mrpage"><article class="w-mrev" aria-labelledby="mr-title">' + desktop(m) + "</article>" + phoneStory(m) + "</div>";
   wireHeader(m);
   wireDesktop(m);
@@ -230,7 +240,8 @@ function header(m) {
       '<button type="button" data-mrsc="' + v + '" aria-pressed="' + (state.scope === v) + '">' + l + "</button>").join("") + "</div>" : "";
   const nextName = monthOnly(ymAdd(q[0], q[1], 1));
   return '<header class="w-mrh"><span class="w-mark" aria-hidden="true"></span><div class="t"><h1 id="mr-title">' + esc(monthYear(q[0], q[1])) + "</h1><p>" +
-    (m ? t("Month in review, {from} to {to}", { from: esc(dlab(m.a)), to: esc(dlab(m.b)) }) : t("Month in review")) + "</p></div>" + scopeSeg +
+    (m ? t("Month in review, {from} to {to}", { from: esc(dlab(m.a)), to: esc(dlab(m.b)) }) : t("Month in review")) + "</p></div>" +
+    (m ? '<button type="button" class="w-btn ghost w-mrpdf" data-mr-pdf>' + icon("download") + t("Export as PDF") + "</button>" : "") + scopeSeg +
     (m ? '<div class="w-mrstep"><button type="button" id="mr-prev" aria-label="' + esc(t("Previous month")) + '"' + (canPrev ? "" : " disabled") + ">" + icon("left") + "</button>" +
       '<button type="button" id="mr-next" aria-label="' + esc(t("Next month")) + '"' + (isLast ? ' disabled title="' + esc(t("{month} is not over yet", { month: nextName })) + '"' : "") + ">" + icon("right") + "</button></div>" : "") +
     '<button type="button" class="w-x" data-mr-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></header>";
@@ -239,6 +250,7 @@ function wireHeader(m) {
   root.querySelectorAll("[data-mr-close]").forEach((b) => b.addEventListener("click", () => navigate("/")));
   root.querySelectorAll("[data-mrsc]").forEach((b) => b.addEventListener("click", () => setScope(b.dataset.mrsc)));
   if (!m) return;
+  root.querySelectorAll("[data-mr-pdf]").forEach((b) => b.addEventListener("click", exportPdf));
   root.querySelectorAll("#mr-prev,[data-mr-prev]").forEach((b) => b.addEventListener("click", () => goMonth(m.pq)));
   root.querySelectorAll("#mr-next,[data-mr-next]").forEach((b) => b.addEventListener("click", () => goMonth(m.nq)));
 }
@@ -254,12 +266,12 @@ function desktop(m) {
     '<div class="w-mrk">' + kpi(t("Came in"), s.inc, prev && prev.inc, u.inc, true) + kpi(t("Went out"), s.exp, prev && prev.exp, u.exp, false) +
       kpi(t("Bills"), s.bills, prev && prev.bills, u.bills, false) + kpi(t("Everyday spending"), s.day, prev && prev.day, u.day, false) + "</div></section>";
   if (couple()) html += peopleSection(m);
-  html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-where"><h2 id="mr-where">' + t("Where it went") + "<small>" + t("Colours follow this month’s ranking") + "</small></h2>" + catTable(m) + "</section>" +
+  html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-where"><h2 id="mr-where">' + t("Where it went") + "</h2>" + catTable(m) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-chg"><h2 id="mr-chg">' + t("What changed") + "<small>" + (m.u.n ? t("Against the {n} months before", { n: m.u.n }) : t("Nothing to compare with yet")) + "</small></h2>" + movers(m) + "</section></div>";
   html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-days"><h2 id="mr-days">' + t("Day by day") + "<small>" + (m.sc === "all" ? t("Household, without bills") : t("{name}, without bills", { name: esc(pname(m.sc)) })) + "</small></h2>" + dayGrid(m, "mrd") + dayFacts(m) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-bills"><h2 id="mr-bills">' + t("Bills") + "<small>" + tn(m.billsN, "{n} payment, {amount}", "{n} payments, {amount}", { amount: f0(s.bills) }) + "</small></h2>" + bills(m) + "</section></div>";
   html += '<section class="w-mrs" aria-labelledby="mr-know"><h2 id="mr-know">' + t("Worth knowing") + '</h2><div class="w-mrhl">' + highlights(m).map((x) => "<div><span>" + x[0] + "</span><b>" + x[1] + "</b><p>" + x[2] + "</p></div>").join("") + "</div></section>";
-  html += '<footer class="w-mrf"><span class="w-hint">' + t("Shown once each month, to each person, when they first open Wally. Any month opens again from the Dashboard.") + '</span><div><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open on the Dashboard") + "</a></div></footer>";
+  html += '<footer class="w-mrf"><span class="w-hint">' + t("Any month opens again from Summary.") + '</span><div><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></div></footer>";
   return html;
 }
 
@@ -319,7 +331,7 @@ function peopleSection(m) {
     '<div class="w-mrshared">' + av(null) + '<span id="mr-shared">' + sharedText(m) + "</span></div></section>";
 }
 /* Shared costs this month, and who paid them */
-function sharedText(m) {
+export function sharedText(m) {
   const { a, b } = m, by = {};
   let n = 0, tot = 0;
   for (const x of state.tx) {
@@ -364,7 +376,7 @@ function dayGrid(m, cls) {
   });
   return '<div class="w-mrcal ' + cls + '">' + cells + "</div>";
 }
-function dayFacts(m) {
+export function dayFacts(m) {
   const fact = (k, v) => "<li><span>" + k + "</span><b>" + v + "</b></li>";
   const ratio = m.weekday > 0.005 ? t("{x}× a weekday", { x: (m.weekend / m.weekday).toLocaleString(document.documentElement.lang, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) }) : "–";
   return '<ul class="w-mrfacts">' + fact(t("No-spend days"), m.best > 1 ? t("{n}, longest run {run}", { n: m.ns, run: m.best }) : String(m.ns)) +
@@ -379,7 +391,7 @@ function bills(m) {
   const nextLine = nx.n ? tn(nx.n, "{amount} in {n} bill.", "{amount} in {n} bills.", { amount: f0(nx.sum) }) + (nx.first ? " " + t("First: {name} on {date}.", { name: esc(nx.first.n), date: esc(dlab(nx.first.d)) }) : "") : t("No bills.");
   return list + '<div class="w-mrshared w-mrnext">' + icon("cal") + "<span><b>" + esc(monthOnly(m.nq)) + ":</b> " + nextLine + "</span></div>";
 }
-function highlights(m) {
+export function highlights(m) {
   const { big, pay, topPay, tg, topTag, extra, sc } = m;
   return [
     [t("Biggest purchase"), big ? esc(big.n || cat(big.c).n) + ", " + f0(amt(big, sc)) : t("None"), big ? catName(big.c) + ", " + esc(dlabL(big.d)) + "." : ""],
@@ -454,11 +466,11 @@ function phoneStory(m) {
     '<h3 class="w-mrsh sm">' + t("Bills") + "</h3>" + mrow('<span class="w-ico">' + icon("repeat") + "</span>", tn(m.billsN, "{n} payment", "{n} payments"), m.changes.length ? tn(m.changes.length, "{n} change", "{n} changes") : t("No changes"), f0(s.bills)) +
     mrow('<span class="w-ico">' + icon("cal") + "</span>", esc(monthOnly(m.nq)), m.next.first ? t("First: {name} on {date}.", { name: esc(m.next.first.n), date: esc(dlab(m.next.first.d)) }) : t("No bills."), f0(m.next.sum));
   const p4 = '<h2 class="w-mrsh">' + t("Worth knowing") + "</h2>" + highlights(m).map((x) => '<div class="w-mrow w-mrkn"><div><small>' + x[0] + "</small><b>" + x[1] + "</b>" + (x[2] ? "<small>" + x[2] + "</small>" : "") + "</div></div>").join("") +
-    '<div class="w-mrsfoot"><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open on the Dashboard") + "</a></div>";
+    '<div class="w-mrsfoot"><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></div>";
   const bars = '<div class="w-story" aria-hidden="true">' + [0, 1, 2, 3].map((i) => '<i class="' + (i <= story ? "on" : "") + '"></i>').join("") + "</div>";
   return '<div class="w-mrstory" aria-roledescription="' + esc(t("story")) + '">' + bars +
     '<div class="w-mrstop"><button type="button" class="w-mrsnav" data-mr-prev' + (m.hasPrev ? "" : " disabled") + ' aria-label="' + esc(t("Previous month")) + '">' + icon("left") + '</button><span class="w-hint">' + esc(monthYear(m.q[0], m.q[1])) + "</span>" +
-    '<button type="button" class="w-mrsnav" data-mr-next' + (same(m.q, lastClosed()) ? " disabled" : "") + ' aria-label="' + esc(t("Next month")) + '">' + icon("right") + '</button><button type="button" class="w-x" data-mr-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
+    '<button type="button" class="w-mrsnav" data-mr-next' + (same(m.q, lastClosed()) ? " disabled" : "") + ' aria-label="' + esc(t("Next month")) + '">' + icon("right") + '</button><button type="button" class="w-mrsnav w-mrspdf" data-mr-pdf aria-label="' + esc(t("Export as PDF")) + '">' + icon("download") + '</button><button type="button" class="w-x" data-mr-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
     (couple() ? '<div class="w-mrschips">' + scopeChips() + "</div>" : "") +
     '<div class="w-mrspages" id="mr-pages">' + pageWrap(0, t("Kept"), p1) + pageWrap(1, t("Where it went"), p2) + pageWrap(2, t("Day by day"), p3) + pageWrap(3, t("Worth knowing"), p4) + "</div>" +
     '<div class="w-mrsctl"><button type="button" class="w-btn ghost" id="mr-sback"' + (story ? "" : " hidden") + ">" + t("Back") + '</button><span class="w-hint" aria-live="polite">' + t("{n} of {total}", { n: story + 1, total: STORY }) + "</span>" +
@@ -500,17 +512,3 @@ function wireStory() {
   });
 }
 
-/* ---------- shown once a month ----------
-   To each person, the first time they open Wally in a new month, if the month that closed has data.
-   The very first time someone uses Wally there is nothing to celebrate yet: it is noted, not shown. */
-export async function maybeShowOnFirstOfMonth() {
-  if (!state.me) return;
-  const last = lastClosed(), k = mkey(last), seen = state.prefs && state.prefs.reviewed;
-  if (seen && seen >= k) return;
-  if (!seen || !state.tx.length || !hasData(last)) { await savePrefs({ reviewed: k }); return; }
-  // Only when Wally opens on its first page, not from a link to something else
-  const addOpen = document.getElementById("add-modal") && !document.getElementById("add-modal").hidden;
-  if (location.pathname !== "/" || location.search || addOpen) return;
-  await savePrefs({ reviewed: k });
-  navigate("/review?m=" + k);
-}

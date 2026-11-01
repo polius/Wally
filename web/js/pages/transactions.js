@@ -1,13 +1,14 @@
 /* Transactions: search, filter and fix without leaving the list.
-   A range (Month, 3 months, Year, 12 months, All or Custom), a search that looks in every month,
-   filters, a calendar, Select mode for bulk changes, and a side panel with every field. */
-import { $, state, t, tn, esc, f, ym, ymAdd, ds, dim, addD, TODAY, on, amt, icon, couple, rerank, isIncomeCat, monthYear, dlabL, dlabW, F, pname, cc } from "../core.js";
-import { chart, el, txt, hover, row, hideTip, openDialog, seg, empty, trapFocus } from "../ui.js";
-import { scopeSwitch } from "../shell.js";
+   The title is the period ("October ▾": a month, the year, everything or a custom range); search,
+   Filter (type, categories, amount, shared), a ••• menu (calendar, Select, export), a calendar,
+   Select mode for bulk changes, and a side panel with every field. */
+import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, dim, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, monthName, dlabW, pname, couple } from "../core.js";
+import { hideTip, openDialog, empty, trapFocus } from "../ui.js";
+import { headActions } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
 import { S, RANGES, parseQ, withoutWords, txRange, txFiltered, onlyLabel, inLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering } from "./transactions/query.js";
 import { TxList, buildItems } from "./transactions/list.js";
-import { txPanel, drawHist, dayPanel } from "./transactions/panel.js";
+import { txPanel, dayPanel } from "./transactions/panel.js";
 import { deleteTx, bulkDelete, bulkCategory, bulkPerson, exportCsv, views, saveView, deleteView } from "./transactions/actions.js";
 import { openRangeSheet, openFilterSheet } from "./transactions/sheets.js";
 
@@ -35,7 +36,6 @@ export function mount(main, route) {
   $("tx-q").addEventListener("input", onSearch);
   $("tx-q").addEventListener("keydown", onSearchKey);
   $("tx-insp").addEventListener("keydown", (ev) => { if (S.open && layout() !== "wide") trapFocus($("tx-insp"), ev); });
-  document.addEventListener("click", closePopOutside);
   MQ.wide.addEventListener("change", render);
   MQ.phone.addEventListener("change", render);
   render();
@@ -53,7 +53,6 @@ export function mount(main, route) {
 export function unmount() {
   mounted = false;
   if (list) list.destroy();
-  document.removeEventListener("click", closePopOutside);
   MQ.wide.removeEventListener("change", render);
   MQ.phone.removeEventListener("change", render);
   document.documentElement.classList.remove("tx-lock");
@@ -71,29 +70,25 @@ export function update(reason) {
 function skeleton() {
   const first = state.people[0];
   const ph = couple() && first ? t("Search, or try >50 @{name} #holiday food", { name: first.name.split(/\s+/)[0].toLocaleLowerCase() }) : t("Search, or try >50 #holiday food");
+  const extra =
+    '<button type="button" class="w-btn ghost tx-hb" data-act="filters" aria-haspopup="dialog" id="tx-fbtn">' + icon("filter") + '<span class="tx-hbl">' + esc(t("Filter")) + '</span><b id="tx-nf" hidden></b></button>' +
+    '<button type="button" class="w-btn primary tx-hb" data-act="select" id="tx-done" hidden>' + esc(t("Done")) + "</button>" +
+    '<div class="tx-morew"><button type="button" class="w-btn ghost tx-hb tx-more" data-menu="more" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("More")) + '">' + icon("more") + "</button>" +
+      '<div class="w-menu" id="tx-more" role="menu" hidden></div></div>';
   return '<div class="tx-page">' +
-    '<div class="w-mh tx-phead"><h3>' + esc(t("Transactions")) + '</h3><div id="tx-pchips"></div></div>' +
+    '<header class="w-head s-head tx-head">' +
+      '<div class="s-titlew"><button type="button" class="s-title" data-menu="period" aria-haspopup="menu" aria-expanded="false"><span id="tx-title" aria-live="polite"></span>' + icon("down") + "</button>" +
+        '<div class="w-menu s-pmenu" id="tx-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' +
+      '<label class="w-search tx-search">' + icon("search") + '<input id="tx-q" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(ph) + '" aria-label="' + esc(t("Search transactions")) + '"><kbd aria-hidden="true">/</kbd></label>' +
+      headActions(extra) +
+    "</header>" +
     '<div id="tx-none" hidden></div>' +
     '<div class="tx-main" id="tx-main">' +
-      '<header class="w-head tx-head">' +
-        '<div class="w-title"><h3 id="tx-title" aria-live="polite"></h3></div>' +
-        '<div class="w-step tx-step" id="tx-step"><button type="button" data-act="prev" aria-label="' + esc(t("Previous month")) + '">' + icon("left") + '</button><button type="button" data-act="next" aria-label="' + esc(t("Next month")) + '">' + icon("right") + "</button></div>" +
-        '<div id="tx-rangew" class="tx-rangew"></div>' +
-        '<div class="w-head-r"><label class="w-search tx-search">' + icon("search") + '<input id="tx-q" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(ph) + '" aria-label="' + esc(t("Search transactions")) + '"><kbd aria-hidden="true">/</kbd></label></div>' +
-      "</header>" +
-      '<div class="tx-pbar" id="tx-pbar"></div>' +
       '<div class="w-tools tx-tools" id="tx-tools">' +
-        '<div id="tx-vieww" class="tx-vieww"></div><div id="tx-typew" class="tx-desk"></div>' +
-        '<div class="tx-catw tx-desk"><button type="button" class="w-chip" id="tx-catbtn" aria-haspopup="true" aria-expanded="false" aria-controls="tx-catpop">' + icon("tag") + '<span id="tx-catlbl"></span>' + icon("down") + "</button>" +
-          '<div class="w-pop tx-pop" id="tx-catpop" hidden></div></div>' +
-        (couple() ? '<button type="button" class="w-chip tx-desk" id="tx-shared" aria-pressed="false"><span class="w-av shared sm" aria-hidden="true"></span>' + esc(t("Shared only")) + "</button>" : "") +
+        '<span class="tx-count" id="tx-count" role="status"></span>' +
         '<span id="tx-daychip" class="tx-daychip"></span>' +
         '<div class="w-views" id="tx-views"></div>' +
-        '<span class="tx-count" id="tx-count" role="status"></span>' +
-        '<button type="button" class="w-chip tx-desk" data-act="export" id="tx-export">' + icon("download") + esc(t("Export")) + "</button>" +
-        '<button type="button" class="w-chip tx-desk" data-act="select" id="tx-selmode" aria-pressed="false"></button>' +
       "</div>" +
-      '<section class="w-panel tx-stripp"><div class="w-strip"><div class="w-sum" id="tx-sum"></div><div class="cv" id="tx-strip"></div></div></section>' +
       '<div class="w-tx tx-body" id="tx-body">' +
         '<section class="w-panel tx-calp" id="tx-calp" hidden><div class="w-ph"><div><h4 id="tx-cal-h"></h4><p id="tx-cal-sub"></p></div><div class="w-legend">' +
           '<span><s style="background:var(--w-accent-soft);box-shadow:inset 0 0 0 1px var(--w-accent-line)"></s>' + esc(t("Today")) + '</span><span><s style="background:var(--w-good-soft)"></s>' + esc(t("Money in")) + '</span><span><s style="box-shadow:inset 0 0 0 1px var(--w-ink3)"></s>' + esc(t("Still to come")) + "</span>" +
@@ -109,7 +104,6 @@ let rankKey = "";
 function render() {
   if (!mounted || !$("tx-main")) return;
   hideTip();
-  $("tx-pchips").innerHTML = scopeSwitch();
   const none = !state.tx.length;
   $("tx-none").hidden = !none;
   $("tx-main").hidden = none;
@@ -134,8 +128,6 @@ function render() {
 
   renderHead(R, P);
   renderTools(R, P, shown);
-  renderSum(shown);
-  renderStrip(R, noDay);
   $("tx-calp").hidden = !cal;
   $("tx-listp").hidden = cal;
   $("tx-body").classList.toggle("cal", cal);
@@ -145,39 +137,36 @@ function render() {
 }
 
 function renderHead(R, P) {
-  $("tx-title").innerHTML = esc(R.title) + (R.sub ? " <span" + (R.month ? "" : ' class="sm"') + ">" + esc(R.sub) + "</span>" : "");
-  const step = !!R.month && !R.fromQuery;
-  $("tx-step").style.visibility = step ? "visible" : "hidden";
-  const [fy, fm] = ym(firstDay()), [ly, lm] = ym(lastDay()), [y, m] = S.ym;
-  root.querySelectorAll('[data-act="prev"]').forEach((b) => { b.disabled = !step || y * 12 + m <= fy * 12 + fm; });
-  root.querySelectorAll('[data-act="next"]').forEach((b) => { b.disabled = !step || y * 12 + m >= ly * 12 + lm; });
-  const cal = S.view === "cal";
-  const items = [["month", t("Month")], ["year", t("Year")], ["all", t("All")]];
-  if (S.mode === "custom" && !cal) items.push(["custom", t("Custom")]);
-  const pressed = R.search || R.fromQuery ? "" : cal ? "month" : S.mode;
-  $("tx-rangew").innerHTML = seg("tx-range", items.map(([k, l]) => [k, esc(l)]), pressed, t("Range"), "tx-range");
-  $("tx-rangew").querySelectorAll("button").forEach((b, i) => { b.dataset.tr = b.dataset.v; if (i < 3) b.title = String(i + 1); });
+  // This year's months need no year
+  const sub = R.month && R.sub === TODAY.slice(0, 4) && !R.fromQuery ? "" : R.sub;
+  $("tx-title").innerHTML = esc(R.title) + (sub ? " <span>" + esc(sub) + "</span>" : "");
+  $("tx-title").parentNode.setAttribute("aria-label", t("Period: {range}", { range: $("tx-title").textContent }));
+  // The period menu: recent months, then the year, everything and a custom range
+  const [fy, fm] = ym(firstDay()), [ly, lm] = ym(lastDay()), months = [];
+  for (let k = 0; k < 13; k++) { const q = ymAdd(ly, lm, -k); if (q[0] * 12 + q[1] < fy * 12 + fm) break; months.push(q); }
+  const plain = !R.search && !R.fromQuery, now = +TODAY.slice(0, 4);
+  const item = (v, label, on) => '<button type="button" role="menuitemradio" data-pm="' + v + '" aria-checked="' + !!on + '"><span>' + esc(label) + "</span></button>";
+  $("tx-pmenu").innerHTML = item("year", t("{year} so far", { year: now }), plain && S.mode === "year") + item("all", t("All time"), plain && S.mode === "all") + item("custom", t("Custom range…"), plain && S.mode === "custom") +
+    '<div class="w-menusep" role="separator"></div>' +
+    months.map((q) => item(ds(q[0], q[1], 1).slice(0, 7), monthName(q[1]) + (q[0] !== now ? " " + q[0] : ""), plain && S.mode === "month" && S.ym[0] === q[0] && S.ym[1] === q[1])).join("");
   const q = $("tx-q");
   if (q.value !== S.q && document.activeElement !== q) q.value = S.q;
-  // Phones: the range and the filters open as sheets
+  // Filter shows how many are on; ••• holds the calendar, Select and export
   const nf = S.cats.size + (S.type !== "all") + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0);
-  $("tx-pbar").innerHTML =
-    '<button type="button" class="w-chip" data-act="range" aria-haspopup="dialog">' + icon("cal") + "<span>" + esc(R.title + (R.sub && R.month ? " " + R.sub : "")) + "</span>" + icon("down") + "</button>" +
-    (step ? '<div class="w-step"><button type="button" data-act="prev" aria-label="' + esc(t("Previous month")) + '"' + (y * 12 + m <= fy * 12 + fm ? " disabled" : "") + ">" + icon("left") + '</button><button type="button" data-act="next" aria-label="' + esc(t("Next month")) + '"' + (y * 12 + m >= ly * 12 + lm ? " disabled" : "") + ">" + icon("right") + "</button></div>" : "") +
-    '<button type="button" class="w-chip' + (nf ? " on" : "") + '" data-act="filters" aria-haspopup="dialog">' + icon("filter") + esc(t("Filters")) + (nf ? " <b>" + nf + "</b>" : "") + "</button>" +
-    (cal ? "" : '<button type="button" class="w-chip' + (S.selMode ? " on" : "") + '" data-act="select" aria-pressed="' + S.selMode + '">' + esc(S.selMode ? t("Done") : t("Select")) + "</button>");
+  const cal = S.view === "cal";
+  $("tx-nf").hidden = !nf;
+  $("tx-nf").textContent = nf;
+  $("tx-fbtn").classList.toggle("on", nf > 0);
+  $("tx-fbtn").hidden = S.selMode;
+  $("tx-done").hidden = !S.selMode;
+  $("tx-more").innerHTML =
+    '<button type="button" role="menuitem" data-act="' + (cal ? "view-list" : "view-cal") + '">' + icon(cal ? "list" : "cal") + "<span>" + esc(cal ? t("Show as a list") : t("Show as a calendar")) + "</span></button>" +
+    (cal ? "" : '<button type="button" role="menuitem" data-act="select">' + icon("check") + "<span>" + esc(S.selMode ? t("Done selecting") : t("Select")) + "</span></button>") +
+    '<button type="button" role="menuitem" data-act="export"' + (cur.list.length ? "" : " disabled") + ">" + icon("download") + "<span>" + esc(t("Export as CSV")) + "</span></button>";
 }
 
 function renderTools(R, P, shown) {
   const cal = S.view === "cal";
-  $("tx-vieww").innerHTML = seg("tx-view", [["list", esc(t("List"))], ["cal", esc(t("Calendar"))]], S.view, t("View"));
-  $("tx-typew").innerHTML = seg("tx-type", [["all", esc(t("All"))], ["expense", esc(t("Expenses"))], ["income", esc(t("Income"))]], S.type, t("Type"));
-  const ck = [...S.cats];
-  $("tx-catlbl").textContent = !ck.length ? t("All categories") : ck.length === 1 ? ck[0] : tn(ck.length, "{n} category", "{n} categories");
-  $("tx-catbtn").classList.toggle("on", ck.length > 0);
-  if (!$("tx-catpop").hidden) drawCatPop();
-  const sh = $("tx-shared");
-  if (sh) { sh.classList.toggle("on", S.shared); sh.setAttribute("aria-pressed", String(S.shared)); }
   $("tx-daychip").innerHTML = S.day && !cal
     ? '<button type="button" class="w-chip on" data-act="dayx" aria-label="' + esc(t("Show every day, not only {day}", { day: dlabW(S.day) })) + '">' + icon("cal") + esc(dlabW(S.day)) + icon("x", "x") + "</button>" : "";
   // What the search found, and saved views
@@ -196,66 +185,12 @@ function renderTools(R, P, shown) {
   }
   $("tx-views").innerHTML = h;
   $("tx-views").hidden = !h;
-  const n = shown.length;
-  $("tx-count").textContent = state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) });
-  $("tx-export").hidden = cal;
-  $("tx-export").disabled = !n;
-  const sm = $("tx-selmode");
-  sm.hidden = cal;
-  sm.textContent = S.selMode ? t("Done") : t("Select");
-  sm.classList.toggle("on", S.selMode);
-  sm.setAttribute("aria-pressed", String(S.selMode));
-}
-
-function renderSum(shown) {
+  // One line instead of a chart: how many, what came in, what went out
   let inc = 0, out = 0;
   for (const x of shown) { if (x.type === "income") inc += amt(x); else out += amt(x); }
-  $("tx-sum").innerHTML = '<div><span>' + esc(t("In")) + '</span><b class="pos">' + f(inc) + "</b></div><div><span>" + esc(t("Out")) + "</span><b>" + f(out) + "</b></div><div><span>" + esc(t("Net")) + "</span><b>" + f(inc - out) + "</b></div>";
-}
-
-/* The strip: one bar a day in a month, one bar a month across months. Click a bar to narrow. */
-function renderStrip(R, noDay) {
-  if (R.month) {
-    const [y, m] = R.month, D = dim(y, m), vals = new Array(D).fill(0);
-    for (const x of noDay) if (x.type === "expense") vals[+x.d.slice(8) - 1] += amt(x);
-    const pk = S.view === "cal" ? S.calDay : S.day;
-    chart("tx-strip", 70, (svg, w, h) => {
-      const sorted = vals.slice().sort((a, b) => a - b), cap = Math.max(sorted[Math.floor(D * 0.9)] * 1.25, 1), bw = w / D, mb = 16;
-      for (let i = 0; i < D; i++) {
-        const s = ds(y, m, i + 1), v = vals[i], x0 = bw * i + bw * 0.16, bwid = bw * 0.68;
-        if (s > TODAY && !v) { el("rect", { x: x0, y: h - mb - 2, width: bwid, height: 2, rx: 1, fill: "var(--w-line)" }, svg); continue; }
-        const hh = Math.max(2, (Math.min(v, cap) / cap) * (h - mb - 6)), lit = !pk || pk === s;
-        const rc = el("rect", { x: x0, y: h - mb - hh, width: bwid, height: hh, rx: Math.min(3, bwid / 2), fill: lit ? "var(--w-accent)" : "var(--h3)", "fill-opacity": lit ? (pk ? 1 : 0.85) : 0.7, class: "tx-bar" }, svg);
-        if (v > cap) el("path", { d: "M" + (x0 - 1) + " " + (h - mb - hh + 6) + "l" + (bwid + 2) + " -3", stroke: "var(--w-panel)", "stroke-width": 2 }, svg);
-        hover(rc, "<b>" + esc(dlabL(s)) + "</b>" + row(esc(t("Spent")), f(v)) + (v > cap ? row(esc(t("Bar")), esc(t("cut to fit"))) : ""));
-        rc.addEventListener("click", () => {
-          hideTip();
-          if (S.view === "cal") S.calDay = s; else { S.day = S.day === s ? null : s; S.sel = null; }
-          render();
-        });
-        if (i === 0 || (i + 1) % 5 === 0) txt(svg, x0 + bwid / 2, h - 3, String(i + 1), "ax", "middle");
-      }
-    }, t("Spending each day in {month}, {total} in all", { month: monthYear(y, m), total: f(vals.reduce((a, b) => a + b, 0)) }));
-    return;
-  }
-  // Months
-  const months = [];
-  let c = ym(R.a);
-  const e = ym(R.b < lastDay() ? R.b : lastDay());
-  while (c[0] * 12 + c[1] <= e[0] * 12 + e[1]) { months.push(c); c = ymAdd(c[0], c[1], 1); }
-  const idx = {}, vals = months.map(() => 0);
-  months.forEach((q, i) => { idx[q[0] + "-" + String(q[1]).padStart(2, "0")] = i; });
-  for (const x of noDay) if (x.type === "expense") { const i = idx[x.d.slice(0, 7)]; if (i !== undefined) vals[i] += amt(x); }
-  chart("tx-strip", 70, (svg, w, h) => {
-    const mx = Math.max(...vals, 1), bw = w / months.length, mb = 16, every = months.length > 13 ? Math.max(3, Math.ceil(months.length / 12)) : 1;
-    months.forEach((q, i) => {
-      const v = vals[i], hh = Math.max(2, (v / mx) * (h - mb - 6)), b = Math.min(bw * 0.64, 28), x0 = bw * i + (bw - b) / 2; // few months: slim bars, centred
-      const rc = el("rect", { x: x0, y: h - mb - hh, width: b, height: hh, rx: Math.min(3, b / 2), fill: "var(--w-accent)", "fill-opacity": 0.85, class: "tx-bar" }, svg);
-      hover(rc, "<b>" + esc(monthYear(q[0], q[1])) + "</b>" + row(esc(t("Spent")), f(v)) + '<div class="tx-tiphint">' + esc(t("Click to open the month")) + "</div>");
-      rc.addEventListener("click", () => { hideTip(); S.mode = "month"; S.ym = q; S.searchAll = false; S.day = null; S.sel = null; render(); });
-      if (i % every === 0) txt(svg, x0 + b / 2, h - 3, F.mon[q[1] - 1] + (q[1] === 1 || i === 0 ? " " + String(q[0]).slice(2) : ""), "ax", "middle");
-    });
-  }, t("Spending each month, {total} in all", { total: f(vals.reduce((a, b) => a + b, 0)) }));
+  const n = shown.length;
+  $("tx-count").innerHTML = esc(state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) })) +
+    (n ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f0(inc)) + '</b></span><span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f0(out)) + "</b></span>" : "");
 }
 
 /* On phones a row is only marked while its detail is open; elsewhere the selection always shows */
@@ -298,7 +233,6 @@ function renderInsp() {
   const x = selected(), lay = layout(), box = $("tx-insp");
   const open = S.open && !!x && lay !== "wide";
   box.innerHTML = txPanel(x, lay === "phone");
-  if (lay !== "phone") drawHist(x);
   $("tx-body").classList.toggle("open", open);
   box.setAttribute("role", open ? "dialog" : "complementary");
   if (open) box.setAttribute("aria-modal", "true"); else box.removeAttribute("aria-modal");
@@ -323,27 +257,6 @@ function renderCal(R, noDay) {
   document.documentElement.classList.remove("tx-lock");
 }
 
-/* ---------- the category picker ---------- */
-function drawCatPop() {
-  const cats = state.categories.filter((c) => !isIncomeCat(c)).concat(state.categories.filter(isIncomeCat));
-  $("tx-catpop").innerHTML = "<h6>" + esc(t("Categories")) + "</h6>" + cats.map((c, i) =>
-    '<label><input type="checkbox" data-tc="' + esc(c) + '"' + (S.cats.has(c) ? " checked" : "") + '><span class="w-cdot" style="background:' + cc(c) + '"></span>' + esc(c) + "</label>").join("") +
-    '<button type="button" class="w-btn ghost tx-popclear" data-act="cats-clear">' + esc(t("Clear")) + "</button>";
-}
-function toggleCatPop(show) {
-  const pop = $("tx-catpop"), btn = $("tx-catbtn");
-  if (!pop) return;
-  show = show === undefined ? pop.hidden : show;
-  if (show) drawCatPop();
-  pop.hidden = !show;
-  btn.setAttribute("aria-expanded", String(show));
-  if (show) { const first = pop.querySelector("input"); if (first) first.focus(); }
-}
-function closePopOutside(ev) {
-  const pop = $("tx-catpop");
-  if (pop && !pop.hidden && !ev.target.closest("#tx-catpop") && !ev.target.closest("#tx-catbtn")) toggleCatPop(false);
-}
-
 /* ---------- actions ---------- */
 function setQ(q, all) {
   const was = S.q.trim();
@@ -352,6 +265,12 @@ function setQ(q, all) {
   S.sel = null; S.open = false;
   const inp = $("tx-q");
   if (inp) inp.value = q;
+}
+function showCal() {
+  const R = txRange();
+  S.ym = R.month || ym(R.b < TODAY ? R.b : TODAY); S.mode = "month"; S.calDay = S.day; S.day = null; S.selMode = false; S.picked = new Set();
+  S.view = "cal"; S.open = false;
+  render();
 }
 function setRange(mode) {
   const was = S.mode;
@@ -427,10 +346,9 @@ function onClick(ev) {
   if (act && !act.disabled) {
     const a = act.dataset.act, x = selected();
     switch (a) {
-      case "prev": return step(-1);
-      case "next": return step(1);
-      case "range": return openRangeSheet((o) => { Object.assign(S, o, { searchAll: false, day: null, sel: null, open: false }); if (S.mode !== "month") S.view = "list"; render(); });
       case "filters": return openFilterSheet({ render, list: () => cur.list, setQ });
+      case "view-cal": return showCal();
+      case "view-list": S.view = "list"; S.open = false; return render();
       case "select": S.selMode = !S.selMode; S.picked = new Set(); S.open = false; lastPick = null; return render();
       case "export": return exportCsv(cur.list);
       case "only": S.searchAll = false; S.sel = null; return render();
@@ -439,7 +357,6 @@ function onClick(ev) {
       case "clear": setQ(""); S.cats = new Set(); S.type = "all"; S.shared = false; S.day = null; return render();
       case "dayx": S.day = null; return render();
       case "add": return openAdd();
-      case "cats-clear": S.cats = new Set(); toggleCatPop(false); $("tx-catbtn").focus(); return render();
       case "close": return closePanel();
       case "edit": return edit(x);
       case "dup": return duplicate(x);
@@ -448,18 +365,14 @@ function onClick(ev) {
     }
     return;
   }
-  const tr = tgt.closest("[data-tr]");
-  if (tr) return setRange(tr.dataset.tr);
-  const v = tgt.closest("#tx-view [data-v]");
-  if (v && v.dataset.v !== S.view) {
-    if (v.dataset.v === "cal") { const R = txRange(); S.ym = R.month || ym(R.b < TODAY ? R.b : TODAY); S.mode = "month"; S.calDay = S.day; S.day = null; S.selMode = false; S.picked = new Set(); }
-    S.view = v.dataset.v; S.open = false;
+  const pm = tgt.closest("[data-pm]");
+  if (pm) {
+    const v = pm.dataset.pm;
+    if (v === "custom") return setTimeout(() => openRangeSheet((o) => { Object.assign(S, o, { searchAll: false, day: null, sel: null, open: false }); if (S.mode !== "month") S.view = "list"; render(); }));
+    if (v === "year" || v === "all") return setRange(v);
+    S.mode = "month"; S.ym = [+v.slice(0, 4), +v.slice(5)]; S.searchAll = false; S.day = null; S.sel = null; S.open = false; S.calDay = null;
     return render();
   }
-  const ty = tgt.closest("#tx-type [data-v]");
-  if (ty) { S.type = ty.dataset.v; S.sel = null; return render(); }
-  if (tgt.closest("#tx-catbtn")) return toggleCatPop();
-  if (tgt.closest("#tx-shared")) { S.shared = !S.shared; S.sel = null; return render(); }
   const chip = tgt.closest("[data-chip]");
   if (chip) { const c = cur.P.chips[+chip.dataset.chip]; if (c) { setQ(withoutWords(S.q, c.idx)); render(); const next = $("tx-views").querySelector("[data-chip]") || $("tx-q"); next.focus(); } return; }
   const vw = tgt.closest("[data-view]");
@@ -506,12 +419,6 @@ function onClick(ev) {
 }
 function onChange(ev) {
   const tgt = ev.target;
-  if (tgt.dataset.tc !== undefined) {
-    if (tgt.checked) S.cats.add(tgt.dataset.tc); else S.cats.delete(tgt.dataset.tc);
-    S.sel = null;
-    render();
-    return;
-  }
   if (tgt.id === "bk-cat" && tgt.value) return bulkCategory(cur.list.filter((x) => S.picked.has(x.id)), tgt.value);
   if (tgt.id === "bk-who" && tgt.value) return bulkPerson(cur.list.filter((x) => S.picked.has(x.id)), tgt.value);
 }
@@ -539,13 +446,16 @@ export function key(ev) {
   const neutral = blank || inList || (a.closest && a.closest("#tx-insp"));
   if (/^[1-3]$/.test(k)) { ev.preventDefault(); return setRange(RANGES[+k - 1]); }
   if (k === "Escape") {
-    if (!$("tx-catpop").hidden) { toggleCatPop(false); $("tx-catbtn").focus(); return; }
     if (closePanel()) return;
     if (S.selMode) { S.selMode = false; S.picked = new Set(); return render(); }
     if (S.day) { S.day = null; return render(); }
     return;
   }
-  if (a && a.closest && a.closest("#tx-catpop")) return;
+  // ← → step months when nothing else uses them
+  if ((k === "ArrowLeft" || k === "ArrowRight") && (blank || inList) && S.mode === "month" && !S.q.trim()) {
+    ev.preventDefault();
+    return step((k === "ArrowLeft") !== (document.documentElement.dir === "rtl") ? -1 : 1);
+  }
   // The calendar: arrows move the day
   if (a && a.closest && a.closest("#tx-cal") && /^Arrow/.test(k)) {
     ev.preventDefault();

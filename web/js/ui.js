@@ -115,7 +115,8 @@ export function dialogOpen() { return !!current; }
 export function initDialogs() {
   const w = $("dlg");
   w.addEventListener("click", async (ev) => {
-    if (ev.target === w || ev.target.closest("[data-dlg-x]")) { closeDialog(); return; }
+    // A sticky dialog (the Emergency Kit) closes only with its own button
+    if ((ev.target === w && !(current && current.o.sticky)) || ev.target.closest("[data-dlg-x]")) { closeDialog(); return; }
     const ok = ev.target.closest("[data-dlg-ok]");
     if (ok && current) {
       const o = current.o;
@@ -129,7 +130,7 @@ export function initDialogs() {
     }
   });
   w.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") { ev.stopPropagation(); closeDialog(); }
+    if (ev.key === "Escape") { ev.stopPropagation(); if (!(current && current.o.sticky)) closeDialog(); }
     else if (ev.key === "Enter" && ev.target.matches("input:not([type=checkbox]):not([type=radio])")) { const ok = w.querySelector("[data-dlg-ok]"); if (ok) { ev.preventDefault(); ok.click(); } }
     else trapFocus(w.firstChild, ev);
   });

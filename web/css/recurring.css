@@ -1,21 +1,24 @@
-/* Recurring: KPIs, the five-week calendar, Wally noticed, the rule list and its side panel.
+/* Recurring: one total, Bills or Income, what Wally noticed as one banner, the five-week calendar
+   behind a button, the rule list in time order and its side panel.
    1280 px and wider: the panel stays open beside the list. Narrower: it slides over the list.
    Phones: it is a full-screen sheet. */
 [data-page="recurring"] .w-rrow{text-align:start}
 [data-page="recurring"] .w-rrow .amt{text-align:end}
 .rec-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.rec-kpis-p{padding:0}
-.rec-kpis .w-kpi{border-left:0;border-inline-start:1px solid var(--w-line)}
-.rec-kpis .w-kpi:first-child{border-inline-start:0}
-.rec-kpis .w-kpi.safe{border-radius:0 15px 15px 0}
-[dir="rtl"] .rec-kpis .w-kpi.safe{border-radius:15px 0 0 15px}
-.rec-lg-today{background:var(--w-accent-soft);box-shadow:inset 0 0 0 1px var(--w-accent-line)}
-.rec-lg-in{background:var(--w-good-soft)}
-.rec-cal .w-rday{text-align:start;color:inherit}
-.rec-cal .w-rday.rec-none:hover{border-color:var(--w-line2)!important}
-.rec-cal .w-rday .v{line-height:1.25}
-.rec-nonew{padding:28px 10px}
-.rec-tipw{font-size:inherit;color:var(--w-ink3)}
+/* The header: the title, then the calendar, the person menu and Add */
+.rec-head{flex-wrap:nowrap}
+.w-btn.rec-hb{height:34px;border-radius:999px;padding:0 13px;font-size:var(--fs-sub);background:var(--w-fill);color:var(--w-ink)}
+.w-btn.rec-hb svg.i{width:16px;height:16px}
+#rec-calb{width:34px;padding:0}
+#rec-calb.on{background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.rec-tabs{justify-self:start}
+.rec-tabs button{min-width:96px}
+/* One total, and what it means */
+.rec-sum{display:grid;gap:2px}
+.rec-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
+.rec-big{font-size:var(--fs-hero);font-weight:700;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums}
+.rec-big.pos{color:var(--w-ink)}
+.rec-line{font-size:var(--fs-sub);color:var(--w-ink2)}
 /* The day picked in the calendar */
 /* The right column: the picked day on top, what Wally noticed filling the rest */
 .rec-side{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -24,23 +27,19 @@
 .rec-day .w-rrow.rec-drow{grid-template-columns:32px minmax(0,1fr) auto}
 
 #rec-page{display:grid;gap:16px}
-/* Wally noticed: the buttons go under the text when the panel is narrow */
-#rec-notice{container-type:inline-size}
-#rec-notice .w-li p{display:block}
-@container (max-width:440px){
-  #rec-notice .w-li{grid-template-columns:auto minmax(0,1fr)}
-  #rec-notice .w-noticeb{grid-column:2}
-}
+[data-page="recurring"]{gap:16px}
 .rec-empty{padding:36px 16px}
 
 /* The list */
-.rec-list{padding:6px 18px 12px}
+.rec-list{padding:4px 14px 12px}
+.rec-list .w-rrow{grid-template-columns:32px minmax(0,1fr) auto;min-height:54px}
+.rec-list .w-rrow .amt small.up-bad{color:var(--w-bad)}
+.rec-list .w-rrow .amt small.dn-good{color:var(--w-good)}
+.rec-rn p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .rec-rn{min-width:0}
 .rec-rn h6{min-width:0}
 .rec-who{display:inline-flex;align-items:center;gap:5px}
 .rec-meta{display:inline-flex;align-items:center;gap:4px;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.rec-nxm{display:none}
-.rec-spark{display:block}
 .rec-endh{width:100%;color:var(--w-ink2);cursor:pointer;text-align:start}
 .rec-endh span{display:inline-flex;align-items:center;gap:6px}
 .rec-endh svg.i{width:14px;height:14px;transition:transform 180ms var(--ease)}
@@ -55,17 +54,17 @@
 .rec-close{display:none;margin-inline-start:auto}
 .rec-ih .w-badge + .rec-close{margin-inline-start:0}
 .rec-iamt{display:grid;gap:4px}
-.rec-about{font-size:18px;color:var(--w-ink3);font-weight:500;letter-spacing:0}
-.rec-iname{font-size:16px;font-weight:600}
-.rec-idesc,.rec-story{font-size:12.5px;color:var(--w-ink2)}
+.rec-about{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
+.rec-iname{font-size:var(--fs-body);font-weight:600}
+.rec-idesc,.rec-story{font-size:var(--fs-foot);color:var(--w-ink2)}
 .rec-story b{color:var(--w-ink);font-weight:600}
 .rec-sec{display:grid;gap:8px}
 .rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
 .rec-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rec-acts .w-btn{width:100%}
-.rec-miss{display:grid;gap:8px;padding:12px 14px;font-size:12.5px;color:var(--w-ink2);background:var(--w-panel2)}
+.rec-miss{display:grid;gap:8px;padding:12px 14px;font-size:var(--fs-foot);color:var(--w-ink2);background:var(--w-panel2)}
 .rec-miss b{color:var(--w-ink);font-weight:600}
-.rec-fld{display:grid;gap:6px;font-size:12.5px;color:var(--w-ink3)}
+.rec-fld{display:grid;gap:6px;font-size:var(--fs-foot);color:var(--w-ink3)}
 .rec-scrim{position:fixed;inset:0;z-index:49;background:var(--w-scrim)}
 .rec-scrim[hidden]{display:none}
 
@@ -74,11 +73,11 @@
 .rec-mh .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px}
 .rec-mh .w-plink svg.i{width:18px;height:18px}
 .rec-mhero{display:grid;justify-items:center;gap:4px;text-align:center;padding:4px 0 6px}
-.rec-mhero .w-ico{border-radius:14px;margin-bottom:4px}
-.rec-mhero b{font-size:17px;font-weight:600}
-.rec-mamt{font-size:32px;font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-.rec-mamt small{font-size:16px;color:var(--w-ink3);font-weight:500;letter-spacing:0}
-.rec-pc{font-size:12.5px;padding:12px 14px}
+.rec-mhero .w-ico{border-radius:var(--r-card);margin-bottom:4px}
+.rec-mhero b{font-size:var(--fs-body);font-weight:600}
+.rec-mamt{font-size:var(--fs-large);font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.rec-mamt small{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
+.rec-pc{font-size:var(--fs-foot);padding:12px 14px}
 .rec-pc b{font-weight:600}
 .rec-mact .w-cell{width:100%;justify-content:center;color:var(--w-accent-ink);font-weight:500;min-height:46px}
 .rec-mact .w-cell.danger{color:var(--w-bad)}
@@ -97,8 +96,6 @@
 /* ---------- under 1024 px: one column ---------- */
 @media (max-width:1023px){
   .rec-top{grid-template-columns:minmax(0,1fr)}
-  .rec-kpis .w-kpi{padding:12px 14px 14px}
-  .rec-kpis .w-kpi > b{font-size:18px}
 }
 
 /* ---------- phones ---------- */
@@ -106,24 +103,18 @@
   .rec-lock body{overflow:hidden}
   .rec-body{order:1}
   .rec-top{order:2}
-  .rec-head .w-seg{order:3;width:100%}
-  .rec-head .w-seg button{flex:1;min-height:36px}
-  .rec-head .w-head-r .w-btn{min-height:40px}
-  .rec-kpis.solo{--n:2}
-  .rec-kpis .w-kpi:nth-child(3){border-inline-start:0}
-  .rec-kpis .w-kpi:nth-child(n+3){border-top:1px solid var(--w-line)}
-  .rec-kpis .w-kpi.safe{border-radius:0 0 15px 0}
-  [dir="rtl"] .rec-kpis .w-kpi.safe{border-radius:0 0 0 15px}
+  .rec-tabs{display:flex;width:100%}
+  .rec-tabs button{flex:1;min-height:36px}
+  .w-btn.rec-hb{width:40px;height:40px;padding:0;justify-content:center}
   .rec-cal{gap:3px}
-  .rec-cal .w-rday{min-height:54px;padding:4px 4px!important;gap:2px;border-radius:8px}
+  .rec-cal .w-rday{min-height:54px;padding:4px 4px!important;gap:2px;border-radius:var(--r-ctl)}
   .rec-cal .w-rday .ics .w-ico{width:14px!important;height:14px!important}
   .rec-cal .w-rday .ics .w-ico svg.i{width:9px;height:9px}
-  .rec-cal .w-rday .v{font-size:10px}
+  .rec-cal .w-rday .v{font-size:var(--fs-cap)}
   .rec-list{padding:4px 12px 10px}
-  .rec-list .w-rrow{grid-template-columns:32px minmax(0,1fr) auto;min-height:56px;gap:10px;padding:9px 6px}
-  .rec-list .w-rrow .nx,.rec-list .rec-spark{display:none}
-  .rec-list .rec-meta{display:none}
-  .rec-list .rec-nxm{display:inline}
+  .rec-list .w-rrow{min-height:58px;gap:10px;padding:9px 6px}
+  .rec-list .w-rrow h6{font-size:var(--fs-body);font-weight:400}
+  .rec-list .w-rrow .amt{font-size:var(--fs-body);font-weight:400}
   .rec-insp.open{width:100%;inset:0;border:0;background:var(--w-canvas);box-shadow:none;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px));gap:12px;animation-name:w-up}
-  .rec-insp .w-panel{border-radius:14px}
+  .rec-insp .w-panel{border-radius:var(--r-card)}
 }

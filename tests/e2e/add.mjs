@@ -100,7 +100,7 @@ const page = await newPage();
 const TODAY = await today(page);
 
 section("Fast path: amount, Enter, three letters, Enter");
-await page.click(".w-addbtn").catch(() => page.keyboard.press("n"));
+await page.click(".w-hadd").catch(() => page.keyboard.press("n"));
 await page.waitForSelector("#add-form");
 check(await focused(page) === "add-amt", "amount has focus on open");
 check(await page.$eval("#add-form", (f) => f.getAttribute("role") === "dialog" && f.getAttribute("aria-modal") === "true"), "sheet is a modal dialog");
@@ -177,12 +177,12 @@ await page.keyboard.press("Escape");
 await page.click("#dlg [data-dlg-ok]");
 check(!(await isOpen(page)), "Discard closes it");
 // opening and closing without changes asks nothing; focus returns
-await page.focus(".w-addbtn");
+await page.focus(".w-hadd");
 await page.keyboard.press("Enter");
 await page.waitForSelector("#add-form");
 await page.click("[data-close]");
 check(!(await isOpen(page)) && !(await visible(page, "#dlg .w-dialog")), "× closes at once when nothing changed");
-check(await page.evaluate(() => document.activeElement.classList.contains("w-addbtn")), "focus returns where it was");
+check(await page.evaluate(() => document.activeElement.classList.contains("w-hadd")), "focus returns where it was");
 await open(page);
 await page.keyboard.type("9");
 await page.mouse.click(5, 450);
@@ -323,6 +323,9 @@ await page.keyboard.type("4.20");
 await page.fill("#add-name", "Road snack");
 await pickCat(page, "Food");
 await page.click('[data-ad="yesterday"]');
+check(!(await visible(page, "#add-tag")) && await visible(page, "#add-more"), "tags and note wait behind Add tag or note");
+await page.click("#add-more");
+check(await visible(page, "#add-tag") && await focused(page) === "add-tag", "Add tag or note opens them, on the tag field");
 await page.fill("#add-tag", "Road Trip");
 await page.press("#add-tag", "Enter");
 check(await page.$$eval("#add-tags [data-tg]", (l) => l.map((n) => n.dataset.tg).join()) === "#road-trip", "tag added as #road-trip");
@@ -848,7 +851,7 @@ section("One person: no Who, no Shared");
   const tx = await (await resp).json();
   check(tx.person_id === 1 && tx.shares === null, "saved as the one person's", tx.person_id);
   await toastText(p, /Added/);
-  await p.click(".w-addbtn").catch(() => {});
+  await p.click(".w-hadd").catch(() => {});
   await p.context().close();
 }
 

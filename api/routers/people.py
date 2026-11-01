@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete, func
 
-from ..database import get_session
+from ..database import get_session, STATE
 from ..models.people import Person, PersonCreate, PersonUpdate, PersonPublic, SessionToken, person_public
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
@@ -21,6 +21,9 @@ class NewPerson(PersonCreate):
 class RemovePerson(BaseModel):
     # Their own transactions move to this person, or become shared when None
     move_to: int | None = None
+    # With encryption on, the browser moves their transactions itself and sends the sealed
+    # changes here, saved together with the removal
+    ops: list[dict] | None = None
 
 class FromTag(BaseModel):
     tag: str
@@ -51,7 +54,8 @@ def create_person(
         check_new_password(body.password)
         person.password_hash = hash_password(body.password)
         person.must_change_password = True
-    elif flag(db, "LOGIN_PAGE") and not config(db, "LOGIN_PASSWORD"):
+    elif flag(db, "LOGIN_PAGE") and not config(db, "LOGIN_PASSWORD") and not STATE.get("vault"):
+        # With encryption on, they get a code instead, made by the browser of whoever adds them
         raise HTTPException(status_code=400, detail="Sign-in is on: give them a first password.")
     db.add(person)
     db.commit()
@@ -144,6 +148,21 @@ def delete_person(
     if body.move_to is not None and body.move_to not in ids_left:
         raise HTTPException(status_code=400, detail="Move their transactions to someone still here.")
 
+    if STATE.get("vault"):
+        from ..models.vault import Kdf, VaultKey, Invite
+        from ..services import vault as records
+        with records.WRITE_LOCK:
+            result = {"seq": 0, "versions": {}, "skipped": []}
+            if body.ops:
+                try:
+                    result = records.apply_batch(db, body.ops)
+                except records.Conflict as error:
+                    db.rollback()
+                    raise HTTPException(status_code=409, detail=records.conflict_response(error))
+            _remove_person(db, person, (Kdf, VaultKey, Invite))
+            db.commit()
+        return {"ok": True, **result}
+
     for item in list(db.exec(select(Transaction).where((Transaction.person_id == person_id) | (Transaction.person_id.is_(None)))).all()) + \
                 list(db.exec(select(RecurringTransaction)).all()):
         before = (item.person_id, item.shares, item.paid_by)
@@ -151,11 +170,20 @@ def delete_person(
         if (item.person_id, item.shares, item.paid_by) != before:
             db.add(item)
 
+    from ..models.vault import Kdf
+    _remove_person(db, person, (Kdf,))
+    db.commit()
+    return {"ok": True}
+
+def _remove_person(db: Session, person: Person, extra: tuple):
+    person_id = person.id
+    for model in extra:
+        row = db.get(model, person_id)
+        if row:
+            db.delete(row)
     db.exec(delete(SessionToken).where(SessionToken.person_id == person_id))
     db.exec(delete(ApiKeys).where(ApiKeys.person_id == person_id))
     db.delete(person)
-    db.commit()
-    return {"ok": True}
 
 @router.get("/people/from-tag/preview")
 def from_tag_preview(

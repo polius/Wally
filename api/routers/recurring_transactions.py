@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 from uuid import UUID
 from datetime import date, timedelta
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from sqlmodel import Session, select, desc
 from sqlalchemy import update, delete
 
@@ -91,7 +91,12 @@ def update_recurring_transaction(
     merged.update(changes)
     if ("amount" in changes or "person_id" in changes) and "shares" not in changes:
         merged["shares"] = None
-    merged = _prepare(db, RecurringTransactionCreate.model_validate(merged).model_dump(), actor)
+    try:
+        merged = RecurringTransactionCreate.model_validate(merged).model_dump()
+    except ValidationError as error:
+        # A change that makes the rule impossible, like an end before its start: a 422, as for a new rule
+        raise HTTPException(status_code=422, detail=error.errors(include_url=False, include_context=False, include_input=False))
+    merged = _prepare(db, merged, actor)
     today = household_today(db)
     rule_id = str(rule.id)
     made = db.exec(select(Transaction.id).where(Transaction.recurringID == rule_id).limit(1)).first()

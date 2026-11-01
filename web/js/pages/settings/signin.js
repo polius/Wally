@@ -1,5 +1,6 @@
 /* Settings › Sign-in: the household's sign-in, your own password, two-step sign-in with recovery codes,
    the browsers you are signed in on, and where everyone else stands. */
+import * as core from "../../core.js";
 import { t, tn, esc, state, av, api, GET, POST, PUT, DEL, person } from "../../core.js";
 import { openDialog, toast, errorToast, empty } from "../../ui.js";
 import { refresh, signOut } from "../../shell.js";
@@ -21,6 +22,12 @@ export function unmount() { box = null; }
 
 const S = () => state.status || {};
 const me = () => (state.me ? person(state.me) : null);
+/* With encryption on, or once a person has a salt, the browser sends a login key, never the password */
+const encrypted = () => !!(S().vault && S().vault.on);
+const keyed = () => !!(S().vault && (S().vault.on || S().vault.kdf));
+let vmod = null;
+async function vs() { if (!vmod) { vmod = await import("../../vault/session.js"); vmod.bind(core); } return vmod; }
+async function proofOf(password) { return keyed() ? (await vs()).proof(password) : password; }
 
 async function loadExtras() {
   const m = me();
@@ -42,15 +49,15 @@ function render() {
   const s = S(), m = me();
   const on = !!s.signin, req = !!s.require_two_step;
   let html = group(t("Sign-in"), [
-    gi(ico("lock"), t("Ask for a password"), on ? t("On. Each person signs in with their own password.") : t("Off. Anyone who can reach this address sees your finances. Wally asks who you are once on each browser."),
-      toggle("si-toggle", on, t("Ask for a password"), !m)),
+    gi(ico("lock"), t("Ask for a password"), encrypted() ? t("On. Needed while encryption is on: each password opens the household’s data.") : on ? t("On. Each person signs in with their own password.") : t("Off. Anyone who can reach this address sees your finances. Wally asks who you are once on each browser."),
+      toggle("si-toggle", on, t("Ask for a password"), !m || encrypted())),
     gi(ico("key"), t("Require two-step for everyone"), on ? t("Recommended when Wally can be reached from outside your home") : t("Turn on sign-in first"),
       toggle("req2-toggle", on && req, t("Require two-step for everyone"), !on)),
   ]);
 
   if (m) {
     const rows = [
-      gi(ico("key"), t("Password"), m.has_password ? t("Only you know it. Changing it signs out your other browsers.") : t("Not chosen yet. You choose it when you turn sign-in on, or now."),
+      gi(ico("key"), t("Password"), encrypted() ? t("Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.") : m.has_password ? t("Only you know it. Changing it signs out your other browsers.") : t("Not chosen yet. You choose it when you turn sign-in on, or now."),
         linkBtn(m.has_password ? t("Change") : t("Choose"), ' data-act="password" data-k="password"')),
       gi(ico("lock"), t("Two-step sign-in"),
         m.two_step ? (on && req ? t("On. Required for everyone in this household.") : t("On. Asks for a code from your authenticator app.")) : t("Off. Your password alone opens Wally."),
@@ -71,7 +78,13 @@ function render() {
     return gi(av(k, "lg"), esc(p.name) + (k === state.me ? ' <span class="w-badge">' + t("You") + "</span>" : ""), pw + " · " + (p.two_step ? t("Two-step on") : t("Two-step off")), badge);
   }), t("Each person manages their own sign-in"));
 
-  html += group(t("If someone forgets their password"), [gi(ico("file"), t("Recovery file"),
+  html += encrypted()
+    ? group(t("If someone forgets their password"), [
+      gi(ico("file"), t("Emergency Kit"), t("Wally is encrypted, so whoever runs the server can’t reset a password. Each person’s recovery key gets them back in, from {forgot} on the sign-in page.", { forgot: '<b class="w-sstrong2">' + t("Forgot password") + "</b>" })),
+      gi(ico("users"), t("Help from someone here"), t("If they lost their Emergency Kit too, someone else can let them back in from Settings › People.")),
+      gi(ico("key"), t("Two-step lost too"), t("{file} on the server can still turn off someone’s two-step sign-in. It opens the sign-in only, never the data.", { file: "<code>password.txt</code>" })),
+    ])
+    : group(t("If someone forgets their password"), [gi(ico("file"), t("Recovery file"),
     t("On the sign-in page, {forgot} writes a one-time password for that person to {file} in Wally’s data folder. It also turns off their two-step sign-in. Only someone with access to the server can read the file, and it is deleted after it is used.",
       { forgot: '<b class="w-sstrong2">' + t("Forgot password") + "</b>", file: "<code>password.txt</code>" }))]);
   paint(box, html);
@@ -151,7 +164,7 @@ function signinOff() {
     cancel: t("Keep it on"),
     danger: true,
     onOk: async (root) => {
-      await checked("PUT", "/signin", { enabled: false, current: root.querySelector("#sf-pw").value });
+      await checked("PUT", "/signin", { enabled: false, current: await proofOf(root.querySelector("#sf-pw").value) });
       // With sign-in off this browser says who it is, as it did before
       try { localStorage.setItem("wally.person", String(m.id)); } catch (e) { /* fine */ }
       state.status.signin = false;
@@ -184,7 +197,9 @@ function changePassword() {
       const pw = root.querySelector("#pw-new").value;
       checkNew(pw);
       if (pw !== root.querySelector("#pw-rep").value) throw new Error(t("The two new passwords are not the same."));
-      await checked("PUT", "/me/password", { current: askCurrent ? root.querySelector("#pw-cur").value : "", new: pw });
+      const cur = askCurrent ? root.querySelector("#pw-cur").value : "";
+      if (keyed() && m.has_password) await (await vs()).changePassword(cur, pw);
+      else await checked("PUT", "/me/password", { current: cur, new: pw });
       await reloadStatus();
       toast(m.has_password ? t("Password changed") : t("Password saved"));
     },
@@ -252,7 +267,7 @@ function showCodes(codes, done) {
 
 /* Turning two-step off and new codes ask for your password when sign-in is on */
 function passwordField() { return S().signin ? field(t("Your password"), passwordInput("ts-pw", "current-password")) : ""; }
-function typedPassword(root) { const n = root.querySelector("#ts-pw"); return n ? n.value : ""; }
+function typedPassword(root) { const n = root.querySelector("#ts-pw"); return proofOf(n ? n.value : ""); }
 
 function twoStepOff() {
   openDialog({
@@ -262,7 +277,7 @@ function twoStepOff() {
     cancel: t("Keep it on"),
     danger: true,
     onOk: async (root) => {
-      await checked("DELETE", "/me/two-step", { password: typedPassword(root) });
+      await checked("DELETE", "/me/two-step", { password: await typedPassword(root) });
       await reloadStatus();
       toast(t("Two-step sign-in is off"));
     },
@@ -275,7 +290,7 @@ function newCodes() {
     body: "<p>" + t("Your old codes stop working. You see the new ones once.") + "</p>" + passwordField(),
     ok: t("Make new codes"),
     onOk: async (root) => {
-      const r = await checked("POST", "/me/two-step/recovery-codes", { password: typedPassword(root) });
+      const r = await checked("POST", "/me/two-step/recovery-codes", { password: await typedPassword(root) });
       codesLeft = r.recovery_codes.length;
       showCodes(r.recovery_codes, t("New recovery codes saved"));
       render();

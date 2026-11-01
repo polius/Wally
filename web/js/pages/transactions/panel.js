@@ -1,8 +1,7 @@
 /* Transactions: the side panel. One transaction with every field, or one day of the calendar.
    On phones the same panel is a full-screen detail, laid out as the phone mock. */
-import { state, t, tn, esc, f, f0, amt, av, pname, person, tile, icon, bigMoney, dlab, dlabL, TODAY, F, monthYear, couple, cc } from "../../core.js";
+import { state, t, tn, esc, f, amt, av, pname, person, tile, icon, bigMoney, dlab, dlabL, TODAY, couple } from "../../core.js";
 import { describe, shortDesc } from "../../sched.js";
-import { chart, el, txt, hover, row } from "../../ui.js";
 import { txRow, owner } from "./list.js";
 
 const thisYear = () => +TODAY.slice(0, 4);
@@ -45,6 +44,14 @@ function audit(x) {
   if (x.rec) s = x.cb !== null ? t("Added by {name} on {date}, from the rule", { name: pname(x.cb), date: on }) : t("Added on {date}, from the rule", { date: on });
   return s;
 }
+/* Who added it and when, for the panel's last row: "Alex · Oct 30 · from the rule" */
+function added(x) {
+  const parts = [];
+  if (x.cb !== null && person(x.cb)) parts.push(pname(x.cb));
+  parts.push(dlab(x.ca ? x.ca.slice(0, 10) : x.d));
+  if (x.rec) parts.push(t("from the rule"));
+  return parts.join(" · ");
+}
 const muted = (s) => '<button type="button" class="tx-add" data-act="edit">' + esc(s) + "</button>";
 
 /* ---------- one transaction ---------- */
@@ -71,7 +78,6 @@ export function txPanel(x, phone) {
       sibs.map((y) => '<button type="button" class="w-li tx-sib" data-sib="' + esc(y.id) + '">' + tile(y.c) + '<div><h6>' + esc(y.n || y.c) + "</h6><p>" + esc(y.c) + '</p></div><span class="w-amt">' + f(y.a) + "</span></button>").join("") +
       "</div></div>"
     : "";
-  const histText = h.n ? esc(tn(h.n, "{n} time", "{n} times")) + ", <b>" + f(h.total) + "</b> " + esc(t("in total, about {amount} each.", { amount: f0(h.total / h.n) })) : "";
   const name = x.n || x.c;
 
   if (phone) {
@@ -82,31 +88,19 @@ export function txPanel(x, phone) {
       (h.n ? cellsOf([[t("This payee in {year}", { year: h.y }), esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total)]]) : "") +
       '<div class="w-cells"><button type="button" class="w-cell tx-cellbtn" data-act="dup">' + icon("copy") + esc(t("Duplicate")) + '</button><button type="button" class="w-cell tx-cellbtn danger" data-act="del">' + icon("trash") + esc(t("Delete transaction")) + "</button></div>";
   }
-  return '<div class="tx-ih"><span class="w-eyebrow">' + esc(inc ? t("Income") : t("Expense")) + '</span><span class="w-kbd"><span><kbd>E</kbd>' + esc(t("edit")) + '</span></span><button type="button" class="tx-close" data-act="close" aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    '<div class="tx-iamt"><span class="w-big' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + bigMoney(x.a) + '</span><span class="tx-iname">' + esc(name) + "</span></div>" +
-    '<div class="w-fields">' + fields.map(([k, v]) => '<div class="w-field"><span>' + esc(k) + '</span><span class="val">' + v + "</span></div>").join("") + "</div>" +
+  // Wide screens: the date, the amount and the name, then plain rows; nothing is lost, the
+  // year's history is one line and who added it is the last row
+  const rows = fields.filter(([k]) => k !== t("Date") && !((k === t("Tags") && !x.tags.length) || (k === t("Note") && !x.note)));
+  if (h.n > 1) rows.push([t("This year"), "<span>" + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span>"]);
+  rows.push([t("Added"), '<span class="tx-mut">' + esc(added(x)) + "</span>"]);
+  return '<div class="tx-ih"><span class="tx-idate">' + esc(cap(dateText(x.d))) + '</span><button type="button" class="tx-close" data-act="close" aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
+    '<div class="tx-iamt"><span class="w-big amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + bigMoney(x.a) + '</span><span class="tx-iname">' + esc(name) + "</span></div>" +
+    '<div class="tx-kv">' + rows.map(([k, v]) => '<div class="tx-kvr"><span>' + esc(k) + '</span><span class="val">' + v + "</span></div>").join("") + "</div>" +
     sibHtml +
-    (x.n ? '<div class="tx-hist"><span class="w-eyebrow">' + esc(t("{name} in {year}", { name: x.n, year: h.y })) + '</span><div class="cv" id="tx-hist"></div><span class="tx-histt">' + histText + "</span></div>" : "") +
-    '<p class="w-audit">' + esc(audit(x)) + "</p>" +
-    '<div class="w-actions"><button type="button" class="w-btn ghost" data-act="edit">' + esc(t("Edit")) + '</button><button type="button" class="w-btn ghost" data-act="dup">' + icon("copy") + esc(t("Duplicate")) + '</button><button type="button" class="w-btn ghost danger" data-act="del">' + icon("trash") + esc(t("Delete")) + "</button></div>" +
-    '<div class="w-kbd tx-keys"><span><kbd>↑</kbd><kbd>↓</kbd>' + esc(t("move")) + "</span><span><kbd>D</kbd>" + esc(t("duplicate")) + "</span><span><kbd>⌫</kbd>" + esc(t("delete")) + "</span></div>";
+    '<div class="tx-acts"><button type="button" class="w-btn ghost" data-act="edit" title="' + esc(t("Edit")) + ' (E)">' + esc(t("Edit")) + '</button><button type="button" class="w-btn ghost" data-act="dup" title="' + esc(t("Duplicate")) + ' (D)">' + esc(t("Duplicate")) +
+      '</button><button type="button" class="w-btn ghost danger" data-act="del" title="' + esc(t("Delete")) + ' (⌫)">' + esc(t("Delete")) + "</button></div>";
 }
-/* The payee's year, one bar a month */
-export function drawHist(x) {
-  if (!x || !x.n || !document.getElementById("tx-hist")) return;
-  const h = history(x), cur = +TODAY.slice(5, 7), sel = x.d.slice(0, 4) === String(h.y) ? +x.d.slice(5, 7) : 0;
-  const col = x.type === "income" ? "var(--w-good)" : cc(x.c);
-  chart("tx-hist", 58, (svg, w, hh) => {
-    const mx = Math.max(...h.months, 1), bw = w / 12;
-    for (let i = 0; i < 12; i++) {
-      const v = h.months[i], bh = v ? Math.max(3, (v / mx) * (hh - 18)) : 2, x0 = bw * i + bw * 0.2, b = bw * 0.6;
-      const rc = el("rect", { x: x0, y: hh - 14 - bh, width: b, height: bh, rx: 2, fill: v && i < cur ? col : "var(--w-line)", "fill-opacity": i + 1 === sel ? 1 : 0.45 }, svg);
-      if (i < cur) hover(rc, "<b>" + esc(monthYear(h.y, i + 1)) + "</b>" + row(esc(x.type === "income" ? t("Came in") : t("Spent")), f(v)));
-      txt(svg, x0 + b / 2, hh - 2, F.mon[i].slice(0, 1), "ax", "middle");
-    }
-  }, t("{name} each month in {year}", { name: x.n, year: h.y }));
-}
-
+const cap = (s) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
 /* ---------- one day of the calendar ---------- */
 export function dayPanel(d, list, sched, wide) {
   const fut = d > TODAY, items = fut ? [] : list.filter((x) => x.d === d), sc = fut ? sched[d] || [] : [];

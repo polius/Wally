@@ -1,4 +1,4 @@
-/* One month grid, shared by Transactions, Recurring and the Dashboard's Day by day.
+/* One month grid, shared by Transactions, Recurring and Month in review's Day by day.
    Past days show what was spent; days still to come show bills that will land (dashed). */
 import { state, t, tn, esc, ds, dim, addD, wkOff, dows, TODAY, amt, fk, f, cc, tile, dlabL } from "./core.js";
 import { occurrences, ruleAmt, isIncome } from "./sched.js";
@@ -48,7 +48,7 @@ export function gridHover(box, key, by, sched) {
     const s = b.getAttribute("data-" + key), items = (s > TODAY ? sched[s] : by[s]) || [];
     if (items.length) hover(b, () => "<b>" + esc(dlabL(s)) + (s > TODAY ? ", " + t("to come") : "") + "</b>" +
       items.slice().sort((a, c) => c.a - a.a).slice(0, 4).map((x) => row(esc(x.n || x.c), (x.inc ? "+" : "") + f(x.a), cc(x.c))).join("") +
-      (items.length > 4 ? row(t("And {n} more", { n: items.length - 4 }), "") : ""));
+      (items.length > 4 ? row(esc(tn(items.length - 4, "And {n} more", "And {n} more")), "") : ""));
   });
 }
 export function noSpendText(ns) { return tn(ns, "{n} no-spend day", "{n} no-spend days"); }

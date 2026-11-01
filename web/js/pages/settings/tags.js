@@ -39,7 +39,7 @@ function render() {
   });
   paint(box,
     group(t("Tags"), (names.length ? rows : [empty("tag", t("No tags yet"), t("Add #tags to transactions to follow things that cut across categories, like a holiday."))]).concat([addRow]), t("Deleting a tag removes it from its transactions, never the transactions")) +
-    '<p class="w-note2">' + t("Tags cut across categories: a holiday has food, travel and shopping. The dashboard’s Categories widget can switch to Tags.") + "</p>");
+    '<p class="w-note2">' + t("Tags cut across categories: a holiday has food, travel and shopping. Search for #holiday in Transactions to see all of it.") + "</p>");
 }
 
 async function onClick(ev) {

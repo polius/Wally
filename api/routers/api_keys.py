@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 from sqlmodel import Session, select, func
 
-from ..database import get_session
+from ..database import get_session, STATE
 from ..models.api_keys import ApiKeys, ApiKeyCreate, ApiKeyPublic
 from .auth import Actor, check_login
 
@@ -24,6 +24,8 @@ def create_api_key(
     body: ApiKeyCreate | None = None,
     actor: Actor = Depends(check_login),
 ):
+    if STATE.get("vault"):
+        raise HTTPException(status_code=400, detail="API keys are off while encryption is on: the server can’t read your data.")
     # Enforce max API keys limit, per person
     count = db.exec(select(func.count()).select_from(ApiKeys).where(ApiKeys.person_id == actor.person_id)).one()
     if count >= MAX_API_KEYS:

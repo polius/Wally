@@ -37,6 +37,12 @@ function request(placeholders) {
 }
 
 function render() {
+  if (state.status && state.status.vault && state.status.vault.on) {
+    // The server can't read an encrypted household, so a script with a key would have nothing to read or add to
+    paint(box, group(t("API keys"), [gi(ico("shield"), t("Off while Wally is encrypted"),
+      t("Scripts and phone shortcuts talk to the server, and the server can’t read or add to an encrypted household. Turn off encryption in Settings › Privacy to use them."))]));
+    return;
+  }
   const signin = state.status && state.status.signin;
   let rows;
   if (keys === null) rows = ['<div class="w-skel"><i></i><i style="width:60%"></i></div>'];

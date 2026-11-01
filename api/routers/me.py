@@ -8,7 +8,7 @@ from ..models.people import Person, SessionToken
 from ..services import totp
 from .auth import (
     Actor, check_login, require_person, flag, set_config, config, hash_password, check_password,
-    check_new_password, end_other_sessions, start_session, check_locked, record_failure, clear_failures,
+    check_new_password, end_other_sessions, start_session, check_locked, record_failure, clear_failures, vault_on,
 )
 
 router = APIRouter(tags=["Me"])
@@ -16,6 +16,10 @@ router = APIRouter(tags=["Me"])
 class PasswordChange(BaseModel):
     current: str = ""
     new: str
+    # Set when the browser makes keys from the password (Argon2id): the new salt, and with
+    # encryption on, the household key locked under the new password
+    salt: str | None = None
+    wrap: str | None = None
 
 class Confirm(BaseModel):
     code: str
@@ -48,6 +52,13 @@ def _check_current(db: Session, person: Person, password: str):
         raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": left})
     clear_failures(person.id)
 
+def _check_current_strict(db: Session, person: Person, password: str):
+    check_locked(person.id)
+    if not person.password_hash or not check_password(password, person.password_hash):
+        left = record_failure(person.id)
+        raise HTTPException(status_code=401, detail={"message": "That password is not right.", "tries_left": left})
+    clear_failures(person.id)
+
 @router.put("/me/password")
 def change_password(
     body: PasswordChange,
@@ -56,11 +67,28 @@ def change_password(
     db: Annotated[Session, Depends(get_session)],
     actor: Actor = Depends(check_login),
 ):
+    from ..models.vault import Kdf, VaultKey
+    from .vault import _salt, _wrap, _hex64, _set_kdf
     person = _me(db, actor)
+    encrypted = vault_on()
     # Someone asked to choose their own password at sign-in has just proved the old one
-    if not person.must_change_password:
+    if encrypted:
+        # The current password is always asked: it is what opens the household key
+        _check_current_strict(db, person, body.current)
+    elif not person.must_change_password:
         _check_current(db, person, body.current)
-    check_new_password(body.new)
+    if encrypted or db.get(Kdf, person.id) or body.salt:
+        # A login key, not a password: its length was checked in the browser
+        _hex64(body.new, "login key")
+        _set_kdf(db, person.id, _salt(body.salt))
+    else:
+        check_new_password(body.new)
+    if encrypted:
+        key = db.get(VaultKey, person.id)
+        if not key:
+            raise HTTPException(status_code=403, detail="You have no key yet.")
+        key.wrap = _wrap(body.wrap)
+        db.add(key)
     person.password_hash = hash_password(body.new)
     person.must_change_password = False
     db.add(person)
@@ -224,6 +252,8 @@ def update_signin(
             start_session(db, request, response, me.id)
             db.commit()
     else:
+        if vault_on():
+            raise HTTPException(status_code=400, detail="Sign-in stays on while encryption is on. Turn off encryption first, in Settings › Privacy.")
         if flag(db, "LOGIN_PAGE") and actor.person_id is not None:
             _check_current(db, _me(db, actor), body.current)
         set_config(db, "LOGIN_PAGE", False)

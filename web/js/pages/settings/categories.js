@@ -1,6 +1,6 @@
-/* Settings › Categories: colors by rank, counts, add, rename, and delete that asks where transactions go. */
-import { t, tn, esc, state, f0, num, GET, POST, PUT, DEL, rerank, byCat, cat, cc, tile, isIncomeCat, monthsIn, START, TODAY, icon, LANG } from "../../core.js";
-import { openDialog, toast, errorToast } from "../../ui.js";
+/* Settings › Categories: each one's color, counts, add, rename, and delete that asks where transactions go. */
+import { t, tn, esc, state, f0, PUT, POST, DEL, GET, rerank, cat, cc, tile, isIncomeCat, monthsIn, START, TODAY, icon, LANG, reloadCategories } from "../../core.js";
+import { openDialog, closeDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { group, gi, linkBtn, trashBtn, field, textInput, val, paint } from "./common.js";
 
@@ -20,32 +20,28 @@ function stats() {
   for (const tx of state.tx) { const s = out[tx.c] || (out[tx.c] = { n: 0, v: 0 }); s.n++; s.v += tx.a; }
   return out;
 }
+const COLOR_NAMES = () => [t("Red"), t("Orange"), t("Yellow"), t("Green"), t("Cyan"), t("Blue"), t("Violet"), t("Pink"), t("Grey")];
 function render() {
-  const monthStart = TODAY.slice(0, 8) + "01";
-  const ranked = rerank(monthStart, TODAY, "all");
-  const spent = byCat(monthStart, TODAY, "all");
+  const ranked = rerank(START, TODAY, "all");
   const s = stats();
   const months = Math.max(1, monthsIn(START, TODAY).length);
   const income = state.categories.filter((c) => isIncomeCat(c));
-  const row = (k, rank) => {
+  const row = (k, income) => {
     const st = s[k] || { n: 0, v: 0 };
     const sub = st.n ? tn(st.n, "{n} transaction, about {avg} a month", "{n} transactions, about {avg} a month", { avg: '<span class="amt">' + f0(st.v / months) + "</span>" }) : t("No transactions yet");
-    const name = esc(k);
+    const name = esc(k), c = cat(k).c;
     return gi(tile(k), name, sub, '<span class="w-acts">' +
-      (rank ? '<span class="w-rank" title="' + esc(t("Rank this month")) + '"><i style="background:' + cc(k) + '"></i>#' + num(rank) + "</span>" : "") +
+      (income ? "" : '<button type="button" class="w-swb" data-act="color" data-name="' + name + '" data-k="color:' + name + '" aria-label="' + esc(t("Color of {name}: {color}", { name: k, color: COLOR_NAMES()[(c >= 1 && c <= 9 ? c : 9) - 1] })) + '"><i style="background:' + cc(k) + '"></i></button>') +
       linkBtn(t("Rename"), ' data-act="rename" data-name="' + name + '" data-k="rename:' + name + '"') +
       trashBtn(t("Delete {name}", { name: k }), ' data-act="delete" data-name="' + name + '" data-k="delete:' + name + '"') + "</span>");
   };
-  const ramp = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((c) => '<span style="background:var(--c' + c + ')"><i>' + (c < 9 ? num(c) : num(9) + "+") + "</i></span>").join("");
   const addRow = '<div class="w-gi w-gadd">' + '<span class="w-ico">' + icon("plus") + '</span><div class="w-inline"><input class="w-mini w-addin" id="cat-new" placeholder="' + esc(t("New category name")) +
     '" aria-label="' + esc(t("New category name")) + '" maxlength="40" autocomplete="off"><span class="w-hint">' + t("Icon is picked from the name") + "</span></div>" +
     '<button type="button" class="w-btn ghost" data-act="add" data-k="add">' + t("Add") + "</button></div>";
 
   paint(box,
-    '<div class="w-explain"><div class="w-ramp" aria-hidden="true">' + ramp + "</div><p>" +
-    t("Colors follow rank. The biggest category in the range you are viewing is red, then orange, yellow, green, cyan, blue, violet and pink. The ninth and later are grey. There is nothing to pick: change the range and the colors follow.") + "</p></div>" +
-    group(t("Expense categories"), ranked.map((k, i) => row(k, spent[k] ? i + 1 : 0)).concat([addRow]), t("Ranked by this month’s spending")) +
-    (income.length ? group(t("Income"), income.map((k) => row(k, 0)), t("Salaries, freelance and refunds. Always green, never ranked.")) : ""));
+    group(t("Expense categories"), ranked.map((k) => row(k, false)).concat([addRow]), t("Biggest spender first. Each keeps its color.")) +
+    (income.length ? group(t("Income"), income.map((k) => row(k, true)), t("Salaries, freelance and refunds. Always green.")) : ""));
 }
 
 async function onClick(ev) {
@@ -54,9 +50,32 @@ async function onClick(ev) {
   if (b.dataset.act === "add") return addCategory();
   if (b.dataset.act === "rename") return rename(b.dataset.name);
   if (b.dataset.act === "delete") return remove(b.dataset.name);
+  if (b.dataset.act === "color") return pickColor(b.dataset.name);
 }
 
-async function reloadCategories() { state.categories = await GET("/categories"); }
+/* Eight colors to choose from; the one in use is ringed */
+function pickColor(name) {
+  const now = cat(name).c;
+  openDialog({
+    title: t("Color for {name}", { name: esc(name) }),
+    body: '<div class="w-swpick" role="radiogroup" aria-label="' + esc(t("Color")) + '">' + COLOR_NAMES().map((label, i) =>
+      '<button type="button" role="radio" data-c="' + (i + 1) + '" aria-checked="' + (now === i + 1) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '"><i style="background:var(--c' + (i + 1) + ')"></i></button>').join("") + "</div>",
+    onOpen(root) {
+      const on = root.querySelector('[aria-checked="true"]') || root.querySelector("[data-c]");
+      on.focus();
+      root.addEventListener("click", async (ev) => {
+        const b = ev.target.closest("[data-c]");
+        if (!b) return;
+        try {
+          await PUT("/categories/" + encodeURIComponent(name), { color: +b.dataset.c });
+          await reloadCategories();
+          closeDialog();
+          refresh({ categories: true });
+        } catch (e) { errorToast(e); }
+      });
+    },
+  });
+}
 
 async function addCategory() {
   const input = box.querySelector("#cat-new");
@@ -67,7 +86,7 @@ async function addCategory() {
     await POST("/categories", { name });
     await reloadCategories();
     refresh({ categories: true });
-    toast(t("Added {name}. It takes the next color once it has spending.", { name }));
+    toast(t("Added {name}", { name }));
     const again = box && box.querySelector("#cat-new");
     if (again) again.focus();
   } catch (e) { errorToast(e); }
