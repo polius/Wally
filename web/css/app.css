@@ -17,12 +17,27 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 
 /* ---------- app frame ---------- */
 .w-app{display:grid;grid-template-columns:212px minmax(0,1fr);min-height:calc(100dvh - var(--banner-h,0px));background:var(--w-canvas)}
-.w-app > .w-side{position:sticky;top:var(--banner-h,0px);height:calc(100vh - var(--banner-h,0px));height:calc(100dvh - var(--banner-h,0px));overflow-y:auto;overscroll-behavior:contain;gap:18px}
+.w-app > .w-side{position:sticky;z-index:20;top:var(--banner-h,0px);height:calc(100vh - var(--banner-h,0px));height:calc(100dvh - var(--banner-h,0px));overflow-y:auto;overscroll-behavior:contain;gap:18px}
 .w-app > .w-main{width:100%;max-width:1320px;margin-inline:auto;padding:22px 28px 40px;outline:0}
 .w-brand{text-decoration:none}
 .w-tabbar{display:none}
 .w-pchips{display:none}
 .w-ponly{display:none!important}
+
+/* The top of the sidebar: Wally, and the button that folds it to an icon rail */
+.w-sidehead{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.w-sidetog{width:30px;height:30px;display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--w-ink3);flex:none}
+.w-sidetog:hover{background:var(--w-fill);color:var(--w-ink)}
+.w-sidetog svg.i{width:18px;height:18px}
+
+/* The name of a place on the rail, in a small card beside it */
+.w-sidehint{position:fixed;z-index:60;pointer-events:none;transform:translate(-4px,-50%);opacity:0;display:grid;gap:1px;padding:7px 12px;background:var(--w-raised);color:var(--w-ink);border:1px solid var(--w-line);border-radius:var(--r-card);box-shadow:var(--w-shadow);font-family:var(--w-font);font-size:var(--fs-sub);white-space:nowrap;transition:opacity .12s,transform .12s var(--ease)}
+.w-sidehint.on{opacity:1;transform:translate(0,-50%)}
+.w-sidehint b{font-weight:600}
+.w-sidehint span{font-size:var(--fs-foot);color:var(--w-ink2)}
+[dir="rtl"] .w-sidehint{transform:translate(4px,-50%)}
+[dir="rtl"] .w-sidehint.on{transform:translate(0,-50%)}
+@media (prefers-reduced-motion:reduce){.w-sidehint,.w-sidehint.on{transition:opacity .12s;transform:translate(0,-50%)}}
 
 /* The foot of the sidebar: Settings, and who is signed in */
 .w-sidefoot{margin-top:auto;display:grid;gap:6px}
@@ -62,8 +77,24 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 .w-avpair > .w-av + .w-av{margin-inline-start:-8px}
 .w-menu .w-avpair > .w-av,.w-pchips .w-avpair > .w-av{box-shadow:0 0 0 2px var(--w-raised)}
 
+/* ---------- folded by the person, at 1024 px and wider: the same icon rail as on tablets ---------- */
+@media (min-width:1024px){
+  .w-rail .w-app{grid-template-columns:64px minmax(0,1fr)}
+  .w-rail .w-app > .w-side{padding:16px 8px;align-items:center}
+  .w-rail .w-side .w-lbl,.w-rail .w-side .w-brand-t{display:none}
+  .w-rail .w-sidehead{flex-direction:column;gap:12px}
+  .w-rail .w-side .w-brand{padding:4px}
+  .w-rail .w-sidetog{width:44px;height:44px}
+  .w-rail .w-side .w-nav a{width:44px;height:44px;justify-content:center;padding:0}
+  .w-rail .w-sidefoot{justify-items:center}
+  .w-rail .w-meb{width:44px;height:44px;justify-content:center;padding:0}
+  .w-rail .w-meb .w-av{width:28px;height:28px}
+  .w-rail .w-menu.w-memenu{position:fixed;inset-inline:72px auto;bottom:16px;min-width:200px}
+}
+
 /* ---------- 768 to 1023 px: an icon rail ---------- */
 @media (max-width:1023px){
+  .w-sidetog{display:none}
   .w-app{grid-template-columns:64px minmax(0,1fr)}
   .w-app > .w-side{padding:16px 8px;align-items:center}
   .w-side .w-lbl,.w-side .w-brand-t{display:none}

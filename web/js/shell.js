@@ -82,7 +82,7 @@ function scopeButtons() {
   }).join("");
 }
 const navLink = ([name, href, ic, label]) =>
-  '<a href="' + href + '" data-link class="' + (pageName === name ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ' title="' + esc(label()) + '">' + icon(ic) + '<span class="w-lbl">' + label() + "</span></a>";
+  '<a href="' + href + '" data-link class="' + (pageName === name ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ' aria-label="' + esc(label()) + '" data-hint="' + esc(label()) + '">' + icon(ic) + '<span class="w-lbl">' + label() + "</span></a>";
 
 /* What the signed-in person can do from the foot of the sidebar */
 function meActions() {
@@ -96,16 +96,60 @@ function meActions() {
 export function renderSide() {
   const side = $("side");
   if (!side) return;
-  const me = state.me, acts = meActions();
+  const me = state.me, signin = state.status && state.status.signin;
+  hideSideHint();
+  const label = esc(railed() ? t("Expand sidebar") : t("Collapse sidebar"));
+  // Your name at the foot: a click switches person straight away. Signing out keeps a menu,
+  // so one stray click doesn't end the session (and, encrypted, drop this browser's copy).
+  const meb = !me ? "" : signin
+    ? '<button type="button" class="w-meb" data-menu="me" aria-haspopup="menu" aria-expanded="false" data-hint="' + esc(pname(me)) + '">' + av(me) + '<span class="w-lbl">' + esc(pname(me)) + "</span></button>" +
+      '<div class="w-menu w-memenu" role="menu" hidden>' + meActions() + "</div>"
+    : couple()
+      ? '<button type="button" class="w-meb" data-switch aria-label="' + esc(t("Switch person") + ": " + pname(me)) + '" data-hint="' + esc(pname(me)) + '" data-hint-sub="' + esc(t("Switch person")) + '">' + av(me) + '<span class="w-lbl">' + esc(pname(me)) + "</span></button>"
+      : '<a class="w-meb" href="/settings/people" data-link data-hint="' + esc(pname(me)) + '">' + av(me) + '<span class="w-lbl">' + esc(pname(me)) + "</span></a>";
   side.innerHTML =
-    '<a class="w-brand" href="/" data-link><span class="w-mark"></span><span class="w-brand-t">Wally</span></a>' +
+    '<div class="w-sidehead"><a class="w-brand" href="/" data-link><span class="w-mark"></span><span class="w-brand-t">Wally</span></a>' +
+    '<button type="button" class="w-sidetog" data-side-toggle data-hint-always aria-controls="side" aria-expanded="' + !railed() + '" aria-label="' + label + '" data-hint="' + label + '">' + icon("sidebar") + "</button></div>" +
     '<nav class="w-nav" aria-label="' + esc(t("Pages")) + '">' + NAV.map(navLink).join("") + "</nav>" +
     '<div class="w-sidefoot"><nav class="w-nav">' + navLink(SETTINGS) + "</nav>" +
-    (me ? '<div class="w-me">' + (acts
-      ? '<button type="button" class="w-meb" data-menu="me" aria-haspopup="menu" aria-expanded="false">' + av(me) + '<span class="w-lbl">' + esc(pname(me)) + "</span></button>" +
-        '<div class="w-menu w-memenu" role="menu" hidden>' + acts + "</div>"
-      : '<a class="w-meb" href="/settings/people" data-link>' + av(me) + '<span class="w-lbl">' + esc(pname(me)) + "</span></a>") + "</div>" : "") + "</div>";
+    (meb ? '<div class="w-me">' + meb + "</div>" : "") + "</div>";
 }
+
+/* The sidebar folds to an icon rail on wide screens too, and this browser remembers it.
+   (Tablets always have the rail; phones the tab bar.) The class is also set before first paint, in index.html. */
+export function railed() { return document.documentElement.classList.contains("w-rail"); }
+export function setRail(on) {
+  closeMenus();
+  document.documentElement.classList.toggle("w-rail", on);
+  try { localStorage.setItem("wally.side", on ? "rail" : ""); } catch (e) { /* fine */ }
+  renderSide();
+  const b = document.querySelector("[data-side-toggle]");
+  if (b) b.focus();
+}
+
+/* On the rail, where labels are hidden, hovering or focusing a place names it in a small card
+   beside the rail (a title="" tooltip comes late and looks foreign). The fold button always does. */
+let hintFor = null;
+function hintEl() {
+  let el = document.getElementById("side-hint");
+  if (!el) { el = document.createElement("div"); el.id = "side-hint"; el.className = "w-sidehint"; el.setAttribute("aria-hidden", "true"); document.body.appendChild(el); }
+  return el;
+}
+const onRail = () => railed() || matchMedia("(min-width:768px) and (max-width:1023px)").matches;
+function sideHint(target) {
+  const n = target && target.closest && target.closest("#side [data-hint]");
+  if (n === hintFor) return;
+  hintFor = n;
+  const el = hintEl();
+  if (!n || (!onRail() && !n.hasAttribute("data-hint-always")) || document.querySelector("#side .w-menu:not([hidden])")) { el.classList.remove("on"); return; }
+  el.innerHTML = "<b>" + esc(n.dataset.hint) + "</b>" + (n.dataset.hintSub ? "<span>" + esc(n.dataset.hintSub) + "</span>" : "");
+  const r = n.getBoundingClientRect(), side = $("side").getBoundingClientRect(), rtl = document.dir === "rtl";
+  el.style.top = Math.round(r.top + r.height / 2) + "px";
+  el.style.left = rtl ? "" : Math.round(side.right + 8) + "px";
+  el.style.right = rtl ? Math.round(innerWidth - side.left + 8) + "px" : "";
+  el.classList.add("on");
+}
+export function hideSideHint() { hintFor = null; const el = document.getElementById("side-hint"); if (el) el.classList.remove("on"); }
 
 /* ---------- phone tab bar: the places and Settings, with Add in the middle, in thumb reach ---------- */
 function renderTabbar() {
@@ -152,6 +196,7 @@ export function closeMenus(focusBack) {
 export function toggleMenu(b) {
   const m = b.nextElementSibling, was = !m.hidden;
   closeMenus();
+  hideSideHint();
   if (was) return;
   m.hidden = false;
   b.setAttribute("aria-expanded", "true");
@@ -203,6 +248,7 @@ export function initShell() {
     if (a && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && a.origin === location.origin) { ev.preventDefault(); navigate(a.pathname + a.search); return; }
     if (ev.target.closest("[data-open-add]")) { handlers.openAdd && handlers.openAdd(); return; }
     if (ev.target.closest("[data-open-cmd]")) { handlers.openCmd && handlers.openCmd(); return; }
+    if (ev.target.closest("[data-side-toggle]")) { setRail(!railed()); return; }
     const mb = ev.target.closest("[data-menu]");
     if (mb) { toggleMenu(mb); return; }
     const inMenu = ev.target.closest(".w-menu");
@@ -212,6 +258,13 @@ export function initShell() {
     if (ev.target.closest("[data-signout]")) { handlers.signOut && handlers.signOut(); return; }
     if (ev.target.closest("[data-switch]")) { handlers.switchPerson && handlers.switchPerson(); return; }
   });
+  const side = $("side");
+  side.addEventListener("mouseover", (ev) => sideHint(ev.target));
+  side.addEventListener("mouseleave", hideSideHint);
+  side.addEventListener("focusin", (ev) => { if (ev.target.matches(":focus-visible")) sideHint(ev.target); });
+  side.addEventListener("focusout", hideSideHint);
+  side.addEventListener("scroll", hideSideHint, { passive: true });
+  side.addEventListener("pointerdown", hideSideHint);
   window.addEventListener("popstate", () => show());
   document.addEventListener("keydown", (ev) => {
     if (ev.defaultPrevented) return;
