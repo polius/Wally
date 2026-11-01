@@ -98,11 +98,23 @@ Wally never connects to a bank. You type what you spend, or import a file.
 
 ## Upgrading from 1.x
 
-Nothing to do: start the new image with the same data folder. Before changing anything, Wally copies your database to `backups/pre-2.0-<date>.db` in the data folder. If the upgrade fails, Wally puts your data back as it was and says why; the 1.x image opens the copy.
+Nothing to do: start the new image with the same data folder. Every 1.x release, from 1.0 to 1.16, upgrades.
+
+- **Before**, Wally copies your database to `backups/pre-2.0-<date>.db` in the data folder.
+- **During**, before keeping anything, Wally compares the result with your old data, field by field: every transaction, recurring rule, category, tag, currency and setting. If anything differs that shouldn't, it puts your data back exactly as it was, opens read-only, and says why. The 1.x image opens the copy.
+- **After**, the first screen shows what was kept (transactions, totals, rules, categories) and what changed, and the same report is saved as `upgrade-report-<date>.txt` in the data folder.
+
+To see the report before upgrading, run the check on a copy. It changes nothing:
+
+```bash
+docker run --rm -v /path/to/your/data:/wally/data poliuscorp/wally python3 -m api.upgrade --check
+```
+
+What changes on purpose:
 
 - The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person in **Settings › People**.
 - If you had a password, it becomes everyone's first password. Each person chooses their own at their next sign-in.
-- Recurring transactions are no longer created in advance: each one is added on its day.
+- Recurring transactions are no longer created in advance: each one is added on its day. Those 1.x had already added for dates after today are taken out, listed in the report, and come back on their day.
 
 ## Environment variables
 

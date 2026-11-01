@@ -245,11 +245,22 @@ def auth_status(
         "needs_two_step": bool(me and signin and flag(db, "REQUIRE_TWO_STEP") and not me.totp_enabled),
         "household_password": bool(config(db, "LOGIN_PASSWORD")),
         "onboarded": flag(db, "ONBOARDED"),
+        # The upgrade from 1.x, until someone has read it
+        "upgrade": _upgrade_report(db) if actor is not None else None,
         "demo": os.getenv("DEMO", "false").lower() == "true",
         "read_only": STATE["read_only"],
         "version": VERSION,
         "language": config(db, "LANGUAGE", "en"),
     }
+
+def _upgrade_report(db: Session) -> dict | None:
+    import json
+    if flag(db, "UPGRADE_SEEN"):
+        return None
+    try:
+        return json.loads(config(db, "UPGRADE_REPORT") or "null")
+    except ValueError:
+        return None
 
 @router.post("/login")
 def login(

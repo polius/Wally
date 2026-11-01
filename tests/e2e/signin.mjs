@@ -327,8 +327,13 @@ try {
     await page.fill("#onb-pwd", "household-pass");
     await shot(page, "welcome-2");
     await page.click("#onb-next");
+    // With a password: who runs the server (tests/e2e/vault-setup.mjs covers the other answer)
+    await page.waitForSelector("[data-who]");
+    ok((await gateText(page)).includes("Who runs this server?"), "welcome: step 3, who runs the server");
+    await page.click('[data-who="me"]');
+    await page.click("#onb-next");
     await page.waitForSelector("[data-onb-data]");
-    ok((await gateText(page)).includes("Bring your data"), "welcome: step 3, your data");
+    ok((await gateText(page)).includes("Bring your data"), "welcome: step 4, your data");
     await shot(page, "welcome-3");
     await page.click('[data-onb-data="import"]');
     ok((await page.textContent("#onb-next")).includes("Choose a file"), "welcome: Import a CSV says Choose a file");
@@ -367,8 +372,20 @@ try {
     ok((await gateText(page)).includes("Enter the household password"), "upgrade: back on the household password");
     await page.fill("#si-in", household);
     await page.press("#si-in", "Enter");
-    await page.waitForSelector("[data-name]");
+    // First, what the upgrade kept and changed, checked against the old data
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Your data came across"));
     ok(true, "upgrade: the new household password signs in");
+    const report = await gateText(page);
+    ok(report.includes("Nothing was lost.") && /\d+ transactions/.test(report) && report.includes("backups/pre-2.0-"), "upgrade: a report of what was kept, and where the old copy is");
+    ok(await page.getAttribute("#rep-dl", "href") === "/api/upgrade/report", "upgrade: the report can be downloaded");
+    const text = await page.evaluate(async () => (await fetch("/api/upgrade/report")).text());
+    ok(text.includes("Kept, and checked one by one against the old database"), "upgrade: the downloaded report is plain text");
+    await shot(page, "upgrade-report");
+    await page.click("#onb-next");
+    await page.waitForSelector("[data-name]");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector("[data-name]");
+    ok(!(await gateText(page)).includes("Your data came across"), "upgrade: the report is shown once");
     ok((await gateText(page)).includes("Who uses Wally?"), "upgrade: asks who uses Wally");
     await page.fill('[data-name="0"]', "Alex");
     await page.click("#onb-add");

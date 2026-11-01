@@ -179,3 +179,13 @@
 .w-choice .w-badge{margin-inline-start:6px;vertical-align:1px}
 .w-sienc{display:flex;gap:6px;align-items:center;justify-content:center;font-size:var(--fs-cap);color:var(--w-ink3);margin:0}
 .w-sienc svg.i{width:13px;height:13px;flex:none}
+
+/* After the upgrade from 1.x: what was kept */
+.w-onbf .w-onbrow > b{font-weight:600;color:var(--w-ink);text-align:end;font-variant-numeric:tabular-nums}
+.w-onblist{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:var(--fs-foot)}
+.w-onblist li{display:grid;grid-template-columns:7.5em minmax(0,1fr) auto;gap:10px;color:var(--w-ink2)}
+.w-onblist li b{font-weight:600;color:var(--w-ink);font-variant-numeric:tabular-nums}
+.w-onblist li.w-hint{display:block}
+.w-onbtag{font-size:var(--fs-foot);font-weight:600;color:var(--w-ink2);margin-inline-start:10px}
+.w-onbfoot a.w-btn{text-decoration:none;gap:6px}
+.w-onbfoot a.w-btn svg.i{width:15px;height:15px}

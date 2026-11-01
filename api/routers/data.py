@@ -298,6 +298,28 @@ def restore_upload(file: UploadFile):
             shutil.copyfileobj(file.file, out)
         return backup_service.restore(path)
 
+# ---------- the upgrade from 1.x ----------
+@router.get("/upgrade/report")
+def upgrade_report(
+    db: Annotated[Session, Depends(get_session)],
+):
+    """What the upgrade from 1.x kept and changed, as plain text to keep."""
+    from fastapi.responses import PlainTextResponse
+    from .. import upgrade
+    raw = config(db, "UPGRADE_REPORT")
+    if not raw:
+        raise HTTPException(status_code=404, detail="This household was not upgraded from 1.x.")
+    report = json.loads(raw)
+    return PlainTextResponse(upgrade.text(report), headers={"Content-Disposition": f'attachment; filename="wally-upgrade-report-{report["at"][:10]}.txt"'})
+
+@router.post("/upgrade/seen")
+def upgrade_seen(
+    db: Annotated[Session, Depends(get_session)],
+):
+    set_config(db, "UPGRADE_SEEN", True)
+    db.commit()
+    return {"ok": True}
+
 # ---------- settings ----------
 def _value(key: str, raw: str):
     if key == "SAVED_VIEWS":

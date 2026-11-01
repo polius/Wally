@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "Ребёнок, сосед по квартире — любой, с кем вы делите расходы. Вы получите одноразовый код, чтобы этот человек мог открыть Wally.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Ребёнок, сосед по квартире — любой, с кем вы делите расходы. Вы задаёте первый пароль, а при первом входе человек выберет свой.",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "Код срабатывает один раз и действует 48 часов. Нет кода? Попросите кого-нибудь из семьи создать его в разделе Настройки › Участники.",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "Копия ваших прежних данных лежит в {file}, в папке данных Wally. С ней Wally 1 откроет ваши данные такими, какими они были.",
  "A file left from turning encryption on.": "Файл, оставшийся после включения шифрования.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "Ярлык на главном экране или экране блокировки через бесплатное приложение HTTP Shortcuts. Wally покажет запрос, который нужно вставить.",
  "A key is shown once, when it is created": "Ключ показывается один раз, при создании",
@@ -143,6 +144,7 @@
  "Back to sign in": "Назад ко входу",
  "Bank file: check the columns": "Файл банка: проверьте столбцы",
  "Basics": "Основное",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Прежде чем оставить Wally 2.0, Wally сверил каждую транзакцию, правило, категорию и настройку с вашими прежними данными. Ничего не потерялось.",
  "Before the amount": "Перед суммой",
  "Biggest purchase": "Самая крупная покупка",
  "Biggest spender first. Each keeps its color.": "Сначала самые большие траты. Каждая категория сохраняет свой цвет.",
@@ -164,6 +166,7 @@
  "Can’t scan it? Type the key above into the app instead.": "Не получается отсканировать? Введите ключ выше в приложение.",
  "Can’t scan it? Type this key instead:": "Не получается отсканировать? Введите этот ключ:",
  "Categories": "Категории",
+ "Categories and tags": "Категории и теги",
  "Category": "Категория",
  "Category of part {n}": "Категория части {n}",
  "Category…": "Категория…",
@@ -303,6 +306,7 @@
  "Don’t split": "Не делить",
  "Down": "Снизились",
  "Download": "Скачать",
+ "Download the report": "Скачать отчёт",
  "Drag, or type {name}’s part": "Перетащите или введите долю: {name}",
  "Drop a CSV here, or choose a file": "Перетащите CSV сюда или выберите файл",
  "Duplicate": "Дублировать",
@@ -742,6 +746,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "Включён. Нужен, пока включено шифрование: каждый пароль открывает данные семьи.",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "Включено. Читать ваши данные могут только устройства вашей семьи. Администратор сервера — нет.",
  "On. Required for everyone in this household.": "Включён. Обязателен для всех в этой семье.",
+ "One thing changed": "Изменилось только одно",
  "Only if {name} lost both their password and their Emergency Kit.": "Только если участник {name} потерял и пароль, и аварийный комплект.",
  "Only this range": "Только этот период",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "Его знаете только вы, и он открывает шифрование Wally. При смене пароля в других браузерах будет выполнен выход.",
@@ -1203,6 +1208,13 @@
  "Views": "Виды",
  "Violet": "Фиолетовый",
  "Waiting to send": "Ожидает отправки",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "one": "Wally 1 заранее добавил {n} регулярный платёж на дату после сегодняшней. Wally 2.0 добавляет каждый платёж в его день, поэтому он убран и вернётся в свой день:",
+  "few": "Wally 1 заранее добавил {n} регулярных платежа на даты после сегодняшней. Wally 2.0 добавляет каждый платёж в его день, поэтому они убраны и вернутся в свой день:",
+  "many": "Wally 1 заранее добавил {n} регулярных платежей на даты после сегодняшней. Wally 2.0 добавляет каждый платёж в его день, поэтому они убраны и вернутся в свой день:",
+  "other": "Wally 1 заранее добавил {n} регулярного платежа на даты после сегодняшней. Wally 2.0 добавляет каждый платёж в его день, поэтому они убраны и вернутся в свой день:"
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "Аварийный комплект Wally для участника {name}",
  "Wally address": "Адрес Wally",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally запрашивает его при открытии. В первый раз все входят с ним, а потом задают свой.",
@@ -1285,6 +1297,7 @@
  "Your Emergency Kit": "Ваш аварийный комплект",
  "Your currencies": "Ваши валюты",
  "Your data": "Ваши данные",
+ "Your data came across": "Ваши данные перенесены в целости",
  "Your name": "Ваше имя",
  "Your old codes stop working. You see the new ones once.": "Старые коды перестанут работать. Новые будут показаны только один раз.",
  "Your old recovery key stops working. You see the new one once.": "Старый ключ восстановления перестанет работать. Новый вы увидите только один раз.",
@@ -1297,6 +1310,12 @@
  "Your sign-in · {name}": "Ваш вход · {name}",
  "Your {month} recap": "Ваши итоги: {month}",
  "about": "примерно",
+ "and {n} more, in the report": {
+  "one": "и ещё {n}, в отчёте",
+  "few": "и ещё {n}, в отчёте",
+  "many": "и ещё {n}, в отчёте",
+  "other": "и ещё {n}, в отчёте"
+ },
  "came in {amount}": "пришло {amount}",
  "created {date}": "создан {date}",
  "day {d}": "{d}-го числа",
@@ -1476,11 +1495,29 @@
   "one": "{n} уже есть",
   "other": "{n} уже есть"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "one": "{n} сумма содержит больше двух знаков после запятой. Она сохранена как введена и показана с точностью до сотых.",
+  "few": "{n} суммы содержат больше двух знаков после запятой. Они сохранены как введены и показаны с точностью до сотых.",
+  "many": "{n} сумм содержат больше двух знаков после запятой. Они сохранены как введены и показаны с точностью до сотых.",
+  "other": "{n} суммы содержат больше двух знаков после запятой. Они сохранены как введены и показаны с точностью до сотых."
+ },
  "{n} backup from before.": {
   "one": "{n} прежняя резервная копия.",
   "few": "{n} прежние резервные копии.",
   "many": "{n} прежних резервных копий.",
   "other": "{n} прежней резервной копии."
+ },
+ "{n} category": {
+  "one": "{n} категория",
+  "few": "{n} категории",
+  "many": "{n} категорий",
+  "other": "{n} категории"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "one": "{n} категория использовалась, но отсутствовала в вашем списке. Теперь она в нём есть.",
+  "few": "{n} категории использовались, но отсутствовали в вашем списке. Теперь они в нём есть.",
+  "many": "{n} категорий использовались, но отсутствовали в вашем списке. Теперь они в нём есть.",
+  "other": "{n} категории использовались, но отсутствовали в вашем списке. Теперь они в нём есть."
  },
  "{n} change": {
   "few": "{n} изменения",
@@ -1592,6 +1629,12 @@
   "many": "{n} строк в базе данных Wally.",
   "other": "{n} строки в базе данных Wally."
  },
+ "{n} rule": {
+  "one": "{n} правило",
+  "few": "{n} правила",
+  "many": "{n} правил",
+  "other": "{n} правила"
+ },
  "{n} selected": {
   "few": "Выбрано: {n}",
   "many": "Выбрано: {n}",
@@ -1609,6 +1652,12 @@
   "many": "{n} источников",
   "one": "{n} источник",
   "other": "{n} источника"
+ },
+ "{n} tag": {
+  "one": "{n} тег",
+  "few": "{n} тега",
+  "many": "{n} тегов",
+  "other": "{n} тега"
  },
  "{n} time": {
   "few": "{n} раза",

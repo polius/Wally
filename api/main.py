@@ -54,11 +54,13 @@ async def lifespan(app: FastAPI):
     else:
         create_db_and_tables()
 
-    with Session(database.engine) as db:
-        load_state(db)
-        if STATE["vault"]:
-            purge_tombstones(db)
-    init_defaults()
+    # After a failed upgrade the old database is back exactly as it was: nothing more is written to it
+    if not STATE["read_only"]:
+        with Session(database.engine) as db:
+            load_state(db)
+            if STATE["vault"]:
+                purge_tombstones(db)
+        init_defaults()
 
     # Catch up every recurring date since the last run, so a server that was off loses nothing.
     # With encryption on, the server can't read the rules: each browser does this when it opens.

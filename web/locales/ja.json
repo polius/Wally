@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "子ども、ルームメイトなど、費用を分け合う人です。その人がWallyを開くための1回限りのコードが発行されます。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "子ども、ルームメイトなど、費用を分け合う人です。初回のパスワードを設定すると、本人が最初のログイン時に自分のパスワードを決めます。",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "コードは1回限り、48時間有効です。コードがない場合は、世帯の誰かに設定 › メンバーで作成してもらってください。",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "以前のデータのコピーは、Wallyのデータフォルダ内の{file}にあります。これを使うと、Wally 1で以前のままのデータを開けます。",
  "A file left from turning encryption on.": "暗号化をオンにしたときに残ったファイルです。",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "無料のHTTP Shortcutsアプリで、ホーム画面やロック画面にショートカットを作ります。貼り付けるリクエストはWallyが表示します。",
  "A key is shown once, when it is created": "キーは作成時に一度だけ表示されます",
@@ -134,6 +135,7 @@
  "Back to sign in": "ログインに戻る",
  "Bank file: check the columns": "銀行のファイル：列を確認",
  "Basics": "基本設定",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Wally 2.0に切り替える前に、Wallyはすべての取引、ルール、カテゴリ、設定を以前のデータと照合しました。失われたものはありません。",
  "Before the amount": "金額の前",
  "Biggest purchase": "最大の買い物",
  "Biggest spender first. Each keeps its color.": "支出の多い順。それぞれの色は変わりません。",
@@ -155,6 +157,7 @@
  "Can’t scan it? Type the key above into the app instead.": "スキャンできない場合は、上のキーをアプリに入力してください。",
  "Can’t scan it? Type this key instead:": "スキャンできない場合は、このキーを入力してください：",
  "Categories": "カテゴリ",
+ "Categories and tags": "カテゴリとタグ",
  "Category": "カテゴリ",
  "Category of part {n}": "内訳{n}のカテゴリ",
  "Category…": "カテゴリ…",
@@ -279,6 +282,7 @@
  "Don’t split": "分割しない",
  "Down": "減少",
  "Download": "ダウンロード",
+ "Download the report": "レポートをダウンロード",
  "Drag, or type {name}’s part": "ドラッグするか、{name}の分を入力",
  "Drop a CSV here, or choose a file": "ここにCSVをドロップするか、ファイルを選択",
  "Duplicate": "複製",
@@ -676,6 +680,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "オン。暗号化がオンの間は必要です：各自のパスワードで世帯のデータを開きます。",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "オン。世帯のデバイスだけがデータを読めます。サーバーを管理している人も読めません。",
  "On. Required for everyone in this household.": "オン。この世帯の全員に必須です。",
+ "One thing changed": "変わったことが1つあります",
  "Only if {name} lost both their password and their Emergency Kit.": "{name}がパスワードと緊急キットの両方をなくした場合のみ。",
  "Only this range": "この期間のみ",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "あなただけが知っていて、Wallyの暗号化を開く鍵になります。変更すると、ほかのブラウザからログアウトします。",
@@ -1095,6 +1100,10 @@
  "Views": "ビュー",
  "Violet": "紫",
  "Waiting to send": "送信待ち",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "other": "Wally 1は、今日より後の日付の定期の支払いを{n}件、前もって追加していました。Wally 2.0では各支払いをその日に追加するため、これらはいったん削除され、その日になると再び追加されます："
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "{name}のWally緊急キット",
  "Wally address": "Wallyのアドレス",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wallyを開くときに求められます。初回は全員がこれを使い、その後各自のパスワードを決めます。",
@@ -1177,6 +1186,7 @@
  "Your Emergency Kit": "あなたの緊急キット",
  "Your currencies": "使用する通貨",
  "Your data": "データ",
+ "Your data came across": "データは無事に引き継がれました",
  "Your name": "あなたの名前",
  "Your old codes stop working. You see the new ones once.": "古いコードは使えなくなります。新しいコードは一度だけ表示されます。",
  "Your old recovery key stops working. You see the new one once.": "古いリカバリーキーは使えなくなります。新しいキーは一度だけ表示されます。",
@@ -1189,6 +1199,9 @@
  "Your sign-in · {name}": "ログイン · {name}",
  "Your {month} recap": "{month}のふりかえり",
  "about": "約",
+ "and {n} more, in the report": {
+  "other": "ほか{n}件はレポートに記載しています"
+ },
  "came in {amount}": "収入{amount}",
  "created {date}": "{date}作成",
  "day {d}": "{d}日",
@@ -1341,8 +1354,17 @@
  "{n} already added": {
   "other": "{n}件追加済み"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "other": "{n}件の金額は小数点以下が2桁を超えています。入力どおりに保存され、小数点以下2桁で表示されます。"
+ },
  "{n} backup from before.": {
   "other": "以前のバックアップ{n}件。"
+ },
+ "{n} category": {
+  "other": "{n}個のカテゴリ"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "other": "{n}個のカテゴリが使われていましたが、リストにありませんでした。今はリストに追加されています。"
  },
  "{n} change": {
   "other": "{n}件の変化"
@@ -1400,6 +1422,9 @@
  "{n} row in Wally’s database.": {
   "other": "Wallyのデータベースの{n}行。"
  },
+ "{n} rule": {
+  "other": "{n}件のルール"
+ },
  "{n} selected": {
   "other": "{n}件選択中"
  },
@@ -1408,6 +1433,9 @@
  },
  "{n} source": {
   "other": "{n}件の収入源"
+ },
+ "{n} tag": {
+  "other": "{n}個のタグ"
  },
  "{n} time": {
   "other": "{n}回"

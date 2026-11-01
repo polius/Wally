@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "Un figlio, un coinquilino, chiunque condivida le spese. Riceverai un codice monouso da dargli per aprire Wally.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Un figlio, un coinquilino, chiunque condivida le spese. Tu imposti una prima password; al primo accesso sceglierà la propria.",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "Un codice funziona una volta, per 48 ore. Non hai un codice? Chiedi a qualcuno della famiglia di crearne uno in Impostazioni › Persone.",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "Una copia dei tuoi vecchi dati è in {file}, nella cartella dei dati di Wally. Con questa, Wally 1 apre i tuoi dati com’erano.",
  "A file left from turning encryption on.": "Un file rimasto dall’attivazione della crittografia.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "Una scorciatoia nella schermata Home o di blocco con l’app gratuita HTTP Shortcuts. Wally mostra la richiesta da incollare.",
  "A key is shown once, when it is created": "Una chiave viene mostrata una sola volta, quando viene creata",
@@ -140,6 +141,7 @@
  "Back to sign in": "Torna all’accesso",
  "Bank file: check the columns": "File della banca: controlla le colonne",
  "Basics": "Base",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Prima di tenere Wally 2.0, Wally ha confrontato ogni transazione, regola, categoria e impostazione con i tuoi vecchi dati. Non si è perso nulla.",
  "Before the amount": "Prima dell’importo",
  "Biggest purchase": "Acquisto più grande",
  "Biggest spender first. Each keeps its color.": "Prima quella che spende di più. Ognuna mantiene il suo colore.",
@@ -161,6 +163,7 @@
  "Can’t scan it? Type the key above into the app instead.": "Non riesci a scansionarlo? Inserisci invece nell’app la chiave qui sopra.",
  "Can’t scan it? Type this key instead:": "Non riesci a scansionarlo? Inserisci invece questa chiave:",
  "Categories": "Categorie",
+ "Categories and tags": "Categorie e tag",
  "Category": "Categoria",
  "Category of part {n}": "Categoria della parte {n}",
  "Category…": "Categoria…",
@@ -295,6 +298,7 @@
  "Don’t split": "Non dividere",
  "Down": "In calo",
  "Download": "Scarica",
+ "Download the report": "Scarica il rapporto",
  "Drag, or type {name}’s part": "Trascina, o inserisci la parte di {name}",
  "Drop a CSV here, or choose a file": "Trascina qui un CSV, o scegli un file",
  "Duplicate": "Duplica",
@@ -720,6 +724,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "Attivato. Necessario finché la crittografia è attiva: ogni password apre i dati della famiglia.",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "Attivata. Solo i dispositivi della tua famiglia possono leggere i tuoi dati. Chi gestisce il server no.",
  "On. Required for everyone in this household.": "Attivo. Obbligatorio per tutti in questa famiglia.",
+ "One thing changed": "Una cosa è cambiata",
  "Only if {name} lost both their password and their Emergency Kit.": "Solo se {name} ha perso sia la password sia il Kit di emergenza.",
  "Only this range": "Solo questo periodo",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "La conosci solo tu e apre la crittografia di Wally. Se la cambi, gli altri tuoi browser vengono disconnessi.",
@@ -1167,6 +1172,12 @@
  "Views": "Viste",
  "Violet": "Viola",
  "Waiting to send": "In attesa di invio",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "one": "Wally 1 aveva aggiunto {n} addebito ricorrente in anticipo, per una data successiva a oggi. Wally 2.0 aggiunge ciascuno nel suo giorno, quindi è stato tolto e tornerà allora:",
+  "many": "Wally 1 aveva aggiunto {n} addebiti ricorrenti in anticipo, per date successive a oggi. Wally 2.0 aggiunge ciascuno nel suo giorno, quindi sono stati tolti e torneranno allora:",
+  "other": "Wally 1 aveva aggiunto {n} addebiti ricorrenti in anticipo, per date successive a oggi. Wally 2.0 aggiunge ciascuno nel suo giorno, quindi sono stati tolti e torneranno allora:"
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "Kit di emergenza di Wally per {name}",
  "Wally address": "Indirizzo di Wally",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally la chiede all’apertura. Tutti la usano la prima volta, poi scelgono la propria.",
@@ -1249,6 +1260,7 @@
  "Your Emergency Kit": "Il tuo Kit di emergenza",
  "Your currencies": "Le tue valute",
  "Your data": "I tuoi dati",
+ "Your data came across": "I tuoi dati sono arrivati sani e salvi",
  "Your name": "Il tuo nome",
  "Your old codes stop working. You see the new ones once.": "I vecchi codici smettono di funzionare. Vedrai i nuovi una sola volta.",
  "Your old recovery key stops working. You see the new one once.": "La vecchia chiave di recupero smette di funzionare. Vedrai quella nuova una sola volta.",
@@ -1261,6 +1273,11 @@
  "Your sign-in · {name}": "Il tuo accesso · {name}",
  "Your {month} recap": "Il tuo riepilogo di {month}",
  "about": "circa",
+ "and {n} more, in the report": {
+  "one": "e altri {n}, nel rapporto",
+  "many": "e altri {n}, nel rapporto",
+  "other": "e altri {n}, nel rapporto"
+ },
  "came in {amount}": "entrati {amount}",
  "created {date}": "creata il {date}",
  "day {d}": "giorno {d}",
@@ -1431,10 +1448,25 @@
   "many": "{n} già aggiunte",
   "other": "{n} già aggiunte"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "one": "{n} importo ha più di due decimali. Resta come è stato inserito e viene mostrato al centesimo.",
+  "many": "{n} importi hanno più di due decimali. Restano come sono stati inseriti e vengono mostrati al centesimo.",
+  "other": "{n} importi hanno più di due decimali. Restano come sono stati inseriti e vengono mostrati al centesimo."
+ },
  "{n} backup from before.": {
   "one": "{n} backup precedente.",
   "many": "{n} backup precedenti.",
   "other": "{n} backup precedenti."
+ },
+ "{n} category": {
+  "one": "{n} categoria",
+  "many": "{n} categorie",
+  "other": "{n} categorie"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "one": "{n} categoria era usata ma mancava dal tuo elenco. Ora è nell’elenco.",
+  "many": "{n} categorie erano usate ma mancavano dal tuo elenco. Ora sono nell’elenco.",
+  "other": "{n} categorie erano usate ma mancavano dal tuo elenco. Ora sono nell’elenco."
  },
  "{n} change": {
   "one": "{n} modifica",
@@ -1528,6 +1560,11 @@
   "many": "{n} righe nel database di Wally.",
   "other": "{n} righe nel database di Wally."
  },
+ "{n} rule": {
+  "one": "{n} regola",
+  "many": "{n} regole",
+  "other": "{n} regole"
+ },
  "{n} selected": {
   "one": "{n} selezionata",
   "many": "{n} selezionate",
@@ -1542,6 +1579,11 @@
   "one": "{n} fonte",
   "many": "{n} fonti",
   "other": "{n} fonti"
+ },
+ "{n} tag": {
+  "one": "{n} tag",
+  "many": "{n} tag",
+  "other": "{n} tag"
  },
  "{n} time": {
   "one": "{n} volta",

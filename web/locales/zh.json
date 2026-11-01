@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "孩子、室友，任何分摊开销的人。你会获得一个一次性代码，供对方打开 Wally。",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "孩子、室友，任何分摊开销的人。你设置初始密码，对方首次登录时再设置自己的密码。",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "代码只能使用一次，48 小时内有效。没有代码？请家庭中的其他人在 设置 › 成员 中生成一个。",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "你的旧数据副本保存在 Wally 数据文件夹中的{file}。用它，Wally 1 可以按原样打开你的数据。",
  "A file left from turning encryption on.": "开启加密时留下的文件。",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "用免费的 HTTP Shortcuts 应用在主屏幕或锁屏添加快捷方式。Wally 会显示要粘贴的请求。",
  "A key is shown once, when it is created": "密钥仅在创建时显示一次",
@@ -134,6 +135,7 @@
  "Back to sign in": "返回登录",
  "Bank file: check the columns": "银行文件：检查各列",
  "Basics": "基本设置",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "在保留 Wally 2.0 之前，Wally 已将每一笔交易、每条规则、每个分类和每项设置与你的旧数据逐一核对。没有丢失任何内容。",
  "Before the amount": "金额之前",
  "Biggest purchase": "最大一笔消费",
  "Biggest spender first. Each keeps its color.": "花得最多的排在前面。每个类别保留自己的颜色。",
@@ -155,6 +157,7 @@
  "Can’t scan it? Type the key above into the app instead.": "无法扫描？请在应用中手动输入上面的密钥。",
  "Can’t scan it? Type this key instead:": "无法扫描？请手动输入此密钥：",
  "Categories": "分类",
+ "Categories and tags": "分类和标签",
  "Category": "分类",
  "Category of part {n}": "第{n}项分类",
  "Category…": "分类…",
@@ -279,6 +282,7 @@
  "Don’t split": "不拆分",
  "Down": "下降",
  "Download": "下载",
+ "Download the report": "下载报告",
  "Drag, or type {name}’s part": "拖动，或输入{name}的份额",
  "Drop a CSV here, or choose a file": "将 CSV 文件拖到这里，或选择文件",
  "Duplicate": "复制一笔",
@@ -676,6 +680,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "已开启。加密开启期间必须开启：每个密码都能打开家庭数据。",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "已开启。只有你家庭的设备能读取你的数据，服务器管理员也不能。",
  "On. Required for everyone in this household.": "已开启。家庭中的每个人都必须使用。",
+ "One thing changed": "有一处变化",
  "Only if {name} lost both their password and their Emergency Kit.": "仅当{name}同时丢失了密码和应急包时。",
  "Only this range": "仅此范围",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "只有你知道它，它能打开 Wally 的加密。更改后，你的其他浏览器将退出登录。",
@@ -1095,6 +1100,10 @@
  "Views": "视图",
  "Violet": "紫色",
  "Waiting to send": "等待发送",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "other": "Wally 1 曾提前添加了{n}笔日期在今天之后的定期付款。Wally 2.0 会在每笔付款的当天才添加，因此这些付款已被移除，到时会再添加："
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "{name}的 Wally 应急包",
  "Wally address": "Wally 地址",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally 打开时会要求输入。每个人首次都使用它，之后设置自己的密码。",
@@ -1177,6 +1186,7 @@
  "Your Emergency Kit": "你的应急包",
  "Your currencies": "你的货币",
  "Your data": "你的数据",
+ "Your data came across": "你的数据已完整迁移",
  "Your name": "你的名字",
  "Your old codes stop working. You see the new ones once.": "旧恢复码将失效。新恢复码只显示一次。",
  "Your old recovery key stops working. You see the new one once.": "旧的恢复密钥将失效。新密钥只显示一次。",
@@ -1189,6 +1199,9 @@
  "Your sign-in · {name}": "你的登录 · {name}",
  "Your {month} recap": "你的{month}回顾",
  "about": "约",
+ "and {n} more, in the report": {
+  "other": "另有{n}项，见报告"
+ },
  "came in {amount}": "收入 {amount}",
  "created {date}": "创建于{date}",
  "day {d}": "{d}日",
@@ -1341,8 +1354,17 @@
  "{n} already added": {
   "other": "{n}笔已添加"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "other": "有{n}个金额超过两位小数。它们按输入原样保存，显示时精确到分。"
+ },
  "{n} backup from before.": {
   "other": "之前的 {n} 个备份。"
+ },
+ "{n} category": {
+  "other": "{n}个分类"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "other": "有{n}个分类已被使用，但不在你的列表中。现在已加入列表。"
  },
  "{n} change": {
   "other": "{n}处变化"
@@ -1400,6 +1422,9 @@
  "{n} row in Wally’s database.": {
   "other": "Wally 数据库中的 {n} 行。"
  },
+ "{n} rule": {
+  "other": "{n}条规则"
+ },
  "{n} selected": {
   "other": "已选择{n}项"
  },
@@ -1408,6 +1433,9 @@
  },
  "{n} source": {
   "other": "{n}个来源"
+ },
+ "{n} tag": {
+  "other": "{n}个标签"
  },
  "{n} time": {
   "other": "{n}次"

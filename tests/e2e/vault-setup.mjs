@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 import { spawn, execFileSync } from "node:child_process";
 import { mkdtempSync, existsSync, mkdirSync } from "node:fs";
 import { tmpdir, networkInterfaces } from "node:os";
+import { createServer } from "node:net";
 import { join } from "node:path";
 
 const REPO = process.env.REPO || process.cwd();
@@ -18,9 +19,17 @@ const ok = (cond, msg) => { if (cond) console.log("  ok  " + msg); else { failur
 const servers = [];
 let port = PORT;
 
+/* The next port nothing else is listening on */
+async function freePort() {
+  for (;;) {
+    const p = port++;
+    const free = await new Promise((resolve) => { const s = createServer(); s.once("error", () => resolve(false)); s.listen(p, "0.0.0.0", () => s.close(() => resolve(true))); });
+    if (free) return p;
+  }
+}
 async function startServer({ required = false, data = null, host = "127.0.0.1" } = {}) {
   data = data || mkdtempSync(join(tmpdir(), "wally-setup-"));
-  const p = port++;
+  const p = await freePort();
   const env = { ...process.env, WALLY_DATA: data, WALLY_RECOVERY_FILE: join(data, "password.txt") };
   delete env.DEMO;
   if (required) env.WALLY_ENCRYPTION = "required"; else delete env.WALLY_ENCRYPTION;

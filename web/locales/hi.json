@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। आपको उनके लिए एक बार इस्तेमाल होने वाला कोड मिलेगा, जिससे वे Wally खोल सकें।",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। आप पहला पासवर्ड सेट करें; पहली बार साइन इन करने पर वे अपना पासवर्ड चुनेंगे।",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "कोड एक बार, 48 घंटे के लिए काम करता है। कोड नहीं है? घर के किसी व्यक्ति से सेटिंग्स › लोग में एक कोड बनाने को कहें।",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "आपके पुराने डेटा की एक कॉपी Wally के डेटा फ़ोल्डर में {file} में है। इससे Wally 1 आपका डेटा वैसे ही खोलता है जैसा वह था।",
  "A file left from turning encryption on.": "एन्क्रिप्शन चालू करते समय बची एक फ़ाइल।",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "मुफ़्त HTTP Shortcuts ऐप से होम स्क्रीन या लॉक स्क्रीन शॉर्टकट। Wally पेस्ट करने के लिए रिक्वेस्ट दिखाता है।",
  "A key is shown once, when it is created": "कुंजी सिर्फ़ एक बार, बनाते समय दिखाई जाती है",
@@ -137,6 +138,7 @@
  "Back to sign in": "साइन इन पर वापस",
  "Bank file: check the columns": "बैंक फ़ाइल: कॉलम जाँचें",
  "Basics": "बुनियादी बातें",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Wally 2.0 अपनाने से पहले, Wally ने हर लेन-देन, नियम, श्रेणी और सेटिंग की तुलना आपके पुराने डेटा से की। कुछ भी नहीं खोया।",
  "Before the amount": "राशि से पहले",
  "Biggest purchase": "सबसे बड़ी खरीदारी",
  "Biggest spender first. Each keeps its color.": "सबसे ज़्यादा खर्च वाली पहले। हर एक का रंग वही रहता है।",
@@ -158,6 +160,7 @@
  "Can’t scan it? Type the key above into the app instead.": "स्कैन नहीं हो रहा? ऊपर दी कुंजी ऐप में टाइप करें।",
  "Can’t scan it? Type this key instead:": "स्कैन नहीं हो रहा? यह कुंजी टाइप करें:",
  "Categories": "श्रेणियाँ",
+ "Categories and tags": "श्रेणियाँ और टैग",
  "Category": "श्रेणी",
  "Category of part {n}": "हिस्सा {n} की श्रेणी",
  "Category…": "श्रेणी…",
@@ -287,6 +290,7 @@
  "Don’t split": "न बाँटें",
  "Down": "घटा",
  "Download": "डाउनलोड करें",
+ "Download the report": "रिपोर्ट डाउनलोड करें",
  "Drag, or type {name}’s part": "खींचें, या {name} का हिस्सा टाइप करें",
  "Drop a CSV here, or choose a file": "यहाँ CSV छोड़ें, या फ़ाइल चुनें",
  "Duplicate": "डुप्लिकेट",
@@ -698,6 +702,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "चालू। एन्क्रिप्शन चालू रहने तक ज़रूरी: हर पासवर्ड घर का डेटा खोलता है।",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "चालू। सिर्फ़ आपके घर के डिवाइस आपका डेटा पढ़ सकते हैं। सर्वर चलाने वाला नहीं।",
  "On. Required for everyone in this household.": "चालू। इस घर में सभी के लिए ज़रूरी है।",
+ "One thing changed": "एक चीज़ बदली है",
  "Only if {name} lost both their password and their Emergency Kit.": "सिर्फ़ तभी, जब {name} का पासवर्ड और आपातकालीन किट दोनों खो गए हों।",
  "Only this range": "सिर्फ़ यह अवधि",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "इसे सिर्फ़ आप जानते हैं, और यही Wally का एन्क्रिप्शन खोलता है। इसे बदलने पर आपके दूसरे ब्राउज़र से साइन आउट हो जाएगा।",
@@ -1131,6 +1136,11 @@
  "Views": "व्यू",
  "Violet": "बैंगनी",
  "Waiting to send": "भेजा जाना बाकी",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "one": "Wally 1 ने आज के बाद की तारीख के लिए {n} आवर्ती भुगतान पहले से जोड़ दिया था। Wally 2.0 हर भुगतान उसके अपने दिन जोड़ता है, इसलिए इसे हटा दिया गया है और यह अपने दिन वापस आएगा:",
+  "other": "Wally 1 ने आज के बाद की तारीखों के लिए {n} आवर्ती भुगतान पहले से जोड़ दिए थे। Wally 2.0 हर भुगतान उसके अपने दिन जोड़ता है, इसलिए इन्हें हटा दिया गया है और ये अपने दिन वापस आएँगे:"
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "{name} के लिए Wally आपातकालीन किट",
  "Wally address": "Wally का पता",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally खुलते समय इसे माँगता है। पहली बार सभी इसी से साइन इन करते हैं, फिर अपना खुद का पासवर्ड चुनते हैं।",
@@ -1213,6 +1223,7 @@
  "Your Emergency Kit": "आपकी आपातकालीन किट",
  "Your currencies": "आपकी मुद्राएँ",
  "Your data": "आपका डेटा",
+ "Your data came across": "आपका डेटा सुरक्षित पहुँच गया",
  "Your name": "आपका नाम",
  "Your old codes stop working. You see the new ones once.": "आपके पुराने कोड काम करना बंद कर देंगे। नए कोड सिर्फ़ एक बार दिखेंगे।",
  "Your old recovery key stops working. You see the new one once.": "आपकी पुरानी रिकवरी कुंजी काम करना बंद कर देगी। नई कुंजी आपको सिर्फ़ एक बार दिखेगी।",
@@ -1225,6 +1236,10 @@
  "Your sign-in · {name}": "आपका साइन इन · {name}",
  "Your {month} recap": "आपकी {month} की समीक्षा",
  "about": "लगभग",
+ "and {n} more, in the report": {
+  "one": "और {n} अन्य, रिपोर्ट में",
+  "other": "और {n} अन्य, रिपोर्ट में"
+ },
  "came in {amount}": "{amount} आया",
  "created {date}": "{date} को बनाई गई",
  "day {d}": "{d} तारीख",
@@ -1386,9 +1401,21 @@
   "one": "{n} पहले से जुड़ा",
   "other": "{n} पहले से जुड़े"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "one": "{n} राशि में दो से ज़्यादा दशमलव अंक हैं। इसे वैसे ही रखा गया है जैसे लिखा गया था, और दो दशमलव अंकों तक दिखाया जाता है।",
+  "other": "{n} राशियों में दो से ज़्यादा दशमलव अंक हैं। इन्हें वैसे ही रखा गया है जैसे लिखा गया था, और दो दशमलव अंकों तक दिखाया जाता है।"
+ },
  "{n} backup from before.": {
   "one": "पहले का {n} बैकअप।",
   "other": "पहले के {n} बैकअप।"
+ },
+ "{n} category": {
+  "one": "{n} श्रेणी",
+  "other": "{n} श्रेणियाँ"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "one": "{n} श्रेणी इस्तेमाल हो रही थी पर आपकी सूची में नहीं थी। अब वह सूची में है।",
+  "other": "{n} श्रेणियाँ इस्तेमाल हो रही थीं पर आपकी सूची में नहीं थीं। अब वे सूची में हैं।"
  },
  "{n} change": {
   "one": "{n} बदलाव",
@@ -1464,6 +1491,10 @@
   "one": "Wally के डेटाबेस में {n} पंक्ति।",
   "other": "Wally के डेटाबेस में {n} पंक्तियाँ।"
  },
+ "{n} rule": {
+  "one": "{n} नियम",
+  "other": "{n} नियम"
+ },
  "{n} selected": {
   "one": "{n} चुना गया",
   "other": "{n} चुने गए"
@@ -1475,6 +1506,10 @@
  "{n} source": {
   "one": "{n} स्रोत",
   "other": "{n} स्रोत"
+ },
+ "{n} tag": {
+  "one": "{n} टैग",
+  "other": "{n} टैग"
  },
  "{n} time": {
   "one": "{n} बार",

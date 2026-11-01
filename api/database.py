@@ -36,6 +36,7 @@ def configure(data_dir: Path):
     engine = make_engine(DB_PATH)
     STATE["read_only"] = None
     STATE["vault"] = None
+    STATE.pop("upgrade", None)
     STATE.pop("conversion", None)
 
 # read_only: set when an upgrade step failed; Wally then opens read-only and says why.
@@ -80,6 +81,9 @@ def _set_schema_version(conn, version: int):
     conn.exec_driver_sql("INSERT OR REPLACE INTO appconfig (key, value) VALUES ('SCHEMA_VERSION', ?)", (str(version),))
 
 def _add_column(conn, table: str, column: str, ddl: str):
+    # A table an older release never had (API keys came in 1.12) is made whole by create_all later
+    if table not in inspect(conn).get_table_names():
+        return
     columns = {c["name"] for c in inspect(conn).get_columns(table)}
     if column not in columns:
         conn.exec_driver_sql(f'ALTER TABLE "{table}" ADD COLUMN {ddl}')
@@ -130,6 +134,25 @@ def _step_1(conn, today: date):
 
 STEPS = {1: _step_1}
 
+def _version() -> str:
+    try:
+        from .main import VERSION
+        return VERSION
+    except Exception:
+        return "2.0"
+
+def _record_upgrade(report: dict):
+    """Keep the report: in the data folder, and in the database for the app to show once."""
+    import json
+    from . import upgrade
+    STATE["upgrade"] = report
+    try:
+        log.info("Upgrade report written to %s", upgrade.save(report, DATA_DIR))
+    except OSError:
+        log.exception("Could not write the upgrade report to the data folder")
+    with engine.begin() as conn:
+        conn.exec_driver_sql("INSERT OR REPLACE INTO appconfig (key, value) VALUES ('UPGRADE_REPORT', ?)", (json.dumps(report, ensure_ascii=False),))
+
 def migrate_db():
     """Bring the database up to SCHEMA_VERSION in small additive steps.
 
@@ -151,17 +174,27 @@ def migrate_db():
         return
 
     from .util import today as household_today
-    backup = BACKUP_DIR / f"pre-2.0-{household_today().isoformat()}.db"
+    from . import upgrade
+    today = household_today()
+    backup = BACKUP_DIR / f"pre-2.0-{today.isoformat()}.db"
     copy_database(DB_PATH, backup)
     log.info("Copied the database to %s before upgrading", backup)
 
     try:
+        with engine.connect() as conn:
+            before = upgrade.snapshot(conn)
         with engine.begin() as conn:
             for step in range(version + 1, SCHEMA_VERSION + 1):
-                STEPS[step](conn, household_today())
+                STEPS[step](conn, today)
             _set_schema_version(conn, SCHEMA_VERSION)
+            # Kept only if it holds what the old database held, less what 2.0 takes out on purpose
+            upgrade.verify(before, upgrade.snapshot(conn), today)
         # New tables (people, sessions, rules)
         SQLModel.metadata.create_all(engine)
+        with engine.connect() as conn:
+            if conn.exec_driver_sql("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise upgrade.UpgradeCheckFailed("SQLite's integrity check failed")
+        _record_upgrade(upgrade.report(before, today, _version(), backup.name))
     except Exception as error:
         log.exception("Upgrade failed, restoring %s", backup)
         engine.dispose()

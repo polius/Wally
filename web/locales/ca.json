@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "Un fill, un company de pis, qualsevol que comparteixi despeses. Rebràs un codi d’un sol ús perquè obri Wally.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "Un fill, un company de pis, qualsevol que comparteixi despeses. Tu poses una contrasenya inicial i la persona tria la seva quan entra per primer cop.",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "Un codi funciona un cop, durant 48 hores. No tens codi? Demana a algú de la llar que en creï un a Configuració › Persones.",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "Hi ha una còpia de les teves dades anteriors a {file}, a la carpeta de dades de Wally. Amb ella, Wally 1 obre les teves dades tal com eren.",
  "A file left from turning encryption on.": "Un fitxer que va quedar en activar el xifratge.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "Una drecera a la pantalla d’inici o de bloqueig amb l’app gratuïta HTTP Shortcuts. Wally et mostra la petició que has d’enganxar.",
  "A key is shown once, when it is created": "Una clau només es mostra un cop, quan es crea",
@@ -140,6 +141,7 @@
  "Back to sign in": "Torna a l’inici de sessió",
  "Bank file: check the columns": "Fitxer del banc: revisa les columnes",
  "Basics": "Primers passos",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Abans de quedar-se amb Wally 2.0, Wally ha comparat cada transacció, regla, categoria i configuració amb les teves dades anteriors. No s’ha perdut res.",
  "Before the amount": "Davant de l’import",
  "Biggest purchase": "La compra més gran",
  "Biggest spender first. Each keeps its color.": "Primer la que més gasta. Cadascuna manté el seu color.",
@@ -161,6 +163,7 @@
  "Can’t scan it? Type the key above into the app instead.": "No el pots escanejar? Escriu la clau de dalt a l’app.",
  "Can’t scan it? Type this key instead:": "No el pots escanejar? Escriu aquesta clau:",
  "Categories": "Categories",
+ "Categories and tags": "Categories i etiquetes",
  "Category": "Categoria",
  "Category of part {n}": "Categoria de la part {n}",
  "Category…": "Categoria…",
@@ -295,6 +298,7 @@
  "Don’t split": "No divideixis",
  "Down": "Baixen",
  "Download": "Baixa",
+ "Download the report": "Baixa l’informe",
  "Drag, or type {name}’s part": "Arrossega, o escriu la part de {name}",
  "Drop a CSV here, or choose a file": "Deixa anar un CSV aquí, o tria un fitxer",
  "Duplicate": "Duplica",
@@ -720,6 +724,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "Activat. Cal mentre el xifratge està activat: cada contrasenya obre les dades de la llar.",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "Activat. Només els dispositius de la teva llar poden llegir les teves dades. Qui gestiona el servidor, no.",
  "On. Required for everyone in this household.": "Activada. Obligatòria per a tota la llar.",
+ "One thing changed": "Una cosa ha canviat",
  "Only if {name} lost both their password and their Emergency Kit.": "Només si {name} ha perdut tant la contrasenya com el kit d’emergència.",
  "Only this range": "Només aquest període",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "Només la saps tu, i obre el xifratge de Wally. Si la canvies, es tanca la sessió als teus altres navegadors.",
@@ -1166,6 +1171,12 @@
  "Views": "Vistes",
  "Violet": "Violeta",
  "Waiting to send": "Pendent d’enviar",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "one": "Wally 1 havia afegit {n} càrrec recurrent per avançat, per a una data posterior a avui. Wally 2.0 afegeix cadascun el seu dia, així que s’ha tret i tornarà llavors:",
+  "many": "Wally 1 havia afegit {n} càrrecs recurrents per avançat, per a dates posteriors a avui. Wally 2.0 afegeix cadascun el seu dia, així que s’han tret i tornaran llavors:",
+  "other": "Wally 1 havia afegit {n} càrrecs recurrents per avançat, per a dates posteriors a avui. Wally 2.0 afegeix cadascun el seu dia, així que s’han tret i tornaran llavors:"
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "Kit d’emergència de Wally per a {name}",
  "Wally address": "Adreça de Wally",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally la demana quan s’obre. Tothom la fa servir el primer cop i després tria la seva.",
@@ -1248,6 +1259,7 @@
  "Your Emergency Kit": "El teu kit d’emergència",
  "Your currencies": "Les teves monedes",
  "Your data": "Les teves dades",
+ "Your data came across": "Les teves dades han arribat bé",
  "Your name": "El teu nom",
  "Your old codes stop working. You see the new ones once.": "Els teus codis antics deixaran de funcionar. Els nous només es mostren un cop.",
  "Your old recovery key stops working. You see the new one once.": "La teva clau de recuperació antiga deixarà de funcionar. Veuràs la nova un sol cop.",
@@ -1260,6 +1272,11 @@
  "Your sign-in · {name}": "El teu inici de sessió · {name}",
  "Your {month} recap": "El teu resum de {month}",
  "about": "aprox.",
+ "and {n} more, in the report": {
+  "one": "i {n} més, a l’informe",
+  "many": "i {n} més, a l’informe",
+  "other": "i {n} més, a l’informe"
+ },
  "came in {amount}": "van entrar {amount}",
  "created {date}": "creada el {date}",
  "day {d}": "dia {d}",
@@ -1430,10 +1447,25 @@
   "one": "{n} ja afegida",
   "other": "{n} ja afegides"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "one": "{n} import té més de dos decimals. Es desa tal com es va escriure i es mostra al cèntim.",
+  "many": "{n} imports tenen més de dos decimals. Es desen tal com es van escriure i es mostren al cèntim.",
+  "other": "{n} imports tenen més de dos decimals. Es desen tal com es van escriure i es mostren al cèntim."
+ },
  "{n} backup from before.": {
   "one": "{n} còpia d’abans.",
   "many": "{n} còpies d’abans.",
   "other": "{n} còpies d’abans."
+ },
+ "{n} category": {
+  "one": "{n} categoria",
+  "many": "{n} categories",
+  "other": "{n} categories"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "one": "{n} categoria s’utilitzava però faltava a la teva llista. Ara ja hi és.",
+  "many": "{n} categories s’utilitzaven però faltaven a la teva llista. Ara ja hi són.",
+  "other": "{n} categories s’utilitzaven però faltaven a la teva llista. Ara ja hi són."
  },
  "{n} change": {
   "many": "{n} canvis",
@@ -1527,6 +1559,11 @@
   "many": "{n} files a la base de dades de Wally.",
   "other": "{n} files a la base de dades de Wally."
  },
+ "{n} rule": {
+  "one": "{n} regla",
+  "many": "{n} regles",
+  "other": "{n} regles"
+ },
  "{n} selected": {
   "many": "{n} seleccionades",
   "one": "{n} seleccionada",
@@ -1541,6 +1578,11 @@
   "many": "{n} fonts",
   "one": "{n} font",
   "other": "{n} fonts"
+ },
+ "{n} tag": {
+  "one": "{n} etiqueta",
+  "many": "{n} etiquetes",
+  "other": "{n} etiquetes"
  },
  "{n} time": {
   "many": "{n} vegades",

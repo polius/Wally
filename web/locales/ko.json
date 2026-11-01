@@ -10,6 +10,7 @@
  "A child, a flatmate, anyone who shares costs. You get a one-use code for them to open Wally.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 그 사람이 Wally를 열 수 있는 일회용 코드를 받게 돼요.",
  "A child, a flatmate, anyone who shares costs. You set a first password; they choose their own when they first sign in.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 초기 비밀번호를 정해 주면 첫 로그인 때 본인이 새로 정해요.",
  "A code works once, for 48 hours. No code? Ask someone in the household to make one in Settings › People.": "코드는 48시간 동안 한 번만 쓸 수 있어요. 코드가 없나요? 가구 구성원에게 설정 › 구성원에서 만들어 달라고 하세요.",
+ "A copy of your old data is in {file}, in Wally’s data folder. With it, Wally 1 opens your data as it was.": "이전 데이터의 사본은 Wally 데이터 폴더의 {file}에 있어요. 이 사본으로 Wally 1에서 데이터를 예전 그대로 열 수 있어요.",
  "A file left from turning encryption on.": "암호화를 켤 때 남은 파일이에요.",
  "A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste.": "무료 앱 HTTP Shortcuts로 홈 화면이나 잠금 화면에 바로가기를 만들어요. 붙여 넣을 요청은 Wally가 보여 줘요.",
  "A key is shown once, when it is created": "키는 만들 때 한 번만 표시돼요",
@@ -134,6 +135,7 @@
  "Back to sign in": "로그인으로 돌아가기",
  "Bank file: check the columns": "은행 파일: 열을 확인하세요",
  "Basics": "기본",
+ "Before keeping Wally 2.0, Wally compared every transaction, rule, category and setting with your old data. Nothing was lost.": "Wally 2.0으로 바꾸기 전에 Wally가 모든 거래, 규칙, 카테고리, 설정을 이전 데이터와 비교했어요. 잃어버린 것은 없어요.",
  "Before the amount": "금액 앞",
  "Biggest purchase": "가장 큰 지출",
  "Biggest spender first. Each keeps its color.": "가장 많이 쓴 순서. 각 카테고리는 색을 그대로 유지합니다.",
@@ -155,6 +157,7 @@
  "Can’t scan it? Type the key above into the app instead.": "스캔이 안 되나요? 대신 위의 키를 앱에 입력하세요.",
  "Can’t scan it? Type this key instead:": "스캔이 안 되나요? 대신 이 키를 입력하세요:",
  "Categories": "카테고리",
+ "Categories and tags": "카테고리와 태그",
  "Category": "카테고리",
  "Category of part {n}": "항목 {n} 카테고리",
  "Category…": "카테고리…",
@@ -279,6 +282,7 @@
  "Don’t split": "나누지 않기",
  "Down": "감소",
  "Download": "다운로드",
+ "Download the report": "보고서 다운로드",
  "Drag, or type {name}’s part": "드래그하거나 {name}의 몫을 입력하세요",
  "Drop a CSV here, or choose a file": "CSV를 여기에 끌어다 놓거나 파일을 선택하세요",
  "Duplicate": "복제",
@@ -676,6 +680,7 @@
  "On. Needed while encryption is on: each password opens the household’s data.": "켜짐. 암호화가 켜져 있는 동안 필요해요: 각 비밀번호로 가구의 데이터를 열어요.",
  "On. Only your household’s devices can read your data. Whoever runs the server can’t.": "켜짐. 가구의 기기만 데이터를 읽을 수 있어요. 서버 관리자도 읽을 수 없어요.",
  "On. Required for everyone in this household.": "켜짐. 이 가구의 모든 구성원에게 필수예요.",
+ "One thing changed": "달라진 점이 하나 있어요",
  "Only if {name} lost both their password and their Emergency Kit.": "{name} 님이 비밀번호와 긴급 키트를 모두 잃어버린 경우에만 사용하세요.",
  "Only this range": "이 기간만",
  "Only you know it, and it opens Wally’s encryption. Changing it signs out your other browsers.": "나만 아는 비밀번호이며 Wally의 암호화를 열어요. 변경하면 다른 브라우저에서 로그아웃돼요.",
@@ -1095,6 +1100,10 @@
  "Views": "보기",
  "Violet": "보라",
  "Waiting to send": "전송 대기 중",
+ "Wally 1 added {n} recurring charge in advance, for a date after today. Wally 2.0 adds each one on its day, so it was taken out and comes back then:": {
+  "other": "Wally 1은 오늘 이후 날짜의 정기 결제 {n}건을 미리 추가해 두었어요. Wally 2.0은 각 결제를 해당 날짜에 추가하므로, 이 결제는 삭제되었고 그날이 되면 다시 추가돼요:"
+ },
+ "Wally 2.0": "Wally 2.0",
  "Wally Emergency Kit for {name}": "{name} 님의 Wally 긴급 키트",
  "Wally address": "Wally 주소",
  "Wally asks for it when it opens. Everyone uses it the first time, then chooses their own.": "Wally를 열 때 이 비밀번호를 물어봐요. 처음에는 모두 이 비밀번호를 쓰고, 이후 각자 비밀번호를 정해요.",
@@ -1177,6 +1186,7 @@
  "Your Emergency Kit": "내 긴급 키트",
  "Your currencies": "내 통화",
  "Your data": "내 데이터",
+ "Your data came across": "데이터를 그대로 옮겨 왔어요",
  "Your name": "내 이름",
  "Your old codes stop working. You see the new ones once.": "기존 코드는 더 이상 쓸 수 없어요. 새 코드는 한 번만 표시돼요.",
  "Your old recovery key stops working. You see the new one once.": "기존 복구 키는 더 이상 작동하지 않아요. 새 키는 한 번만 표시돼요.",
@@ -1189,6 +1199,9 @@
  "Your sign-in · {name}": "내 로그인 · {name}",
  "Your {month} recap": "{month} 리뷰",
  "about": "약",
+ "and {n} more, in the report": {
+  "other": "외 {n}건은 보고서에 있어요"
+ },
  "came in {amount}": "들어온 돈 {amount}",
  "created {date}": "{date} 생성",
  "day {d}": "{d}일",
@@ -1341,8 +1354,17 @@
  "{n} already added": {
   "other": "{n}건 이미 추가됨"
  },
+ "{n} amount has more than two decimals. It is kept as typed and shown to the cent.": {
+  "other": "금액 {n}건이 소수점 둘째 자리를 넘어요. 입력한 그대로 저장되며 화면에는 소수점 둘째 자리까지 표시돼요."
+ },
  "{n} backup from before.": {
   "other": "이전 백업 {n}개."
+ },
+ "{n} category": {
+  "other": "카테고리 {n}개"
+ },
+ "{n} category was used but missing from your list. It is listed now.": {
+  "other": "카테고리 {n}개가 사용되고 있었지만 목록에 없었어요. 이제 목록에 추가했어요."
  },
  "{n} change": {
   "other": "변경 {n}건"
@@ -1400,6 +1422,9 @@
  "{n} row in Wally’s database.": {
   "other": "Wally 데이터베이스의 행 {n}개."
  },
+ "{n} rule": {
+  "other": "규칙 {n}개"
+ },
  "{n} selected": {
   "other": "{n}개 선택됨"
  },
@@ -1408,6 +1433,9 @@
  },
  "{n} source": {
   "other": "수입원 {n}개"
+ },
+ "{n} tag": {
+  "other": "태그 {n}개"
  },
  "{n} time": {
   "other": "{n}회"
