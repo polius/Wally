@@ -74,12 +74,20 @@ async function clickSave(page, pathRe = /\/api\/transactions$/) {
   await page.click("#add-go");
   return (await resp).json();
 }
-// The category is a combobox: type and Enter
+// The category: on the desktop a combobox (type and Enter); on a phone a page with the list
 async function pickCat(p, name) {
+  if (!(await p.$("#add-cat"))) { await p.click("#add-catrow"); await p.click('[data-pcat="' + name + '"]'); return; }
   await p.click("#add-cat");
   await p.fill("#add-cat", name);
   await p.keyboard.press("Enter");
 }
+// Repeat is a page in the sheet, like Calendar's: open it, pick, come back
+async function setRepeat(p, fq) {
+  await p.click("#add-reprow");
+  await p.click('[data-pfq="' + fq + '"]');
+}
+const back = (p) => p.click('#add-form section:not([hidden]) .w-aback');
+const catValue = (p) => p.$("#add-cat").then((n) => (n ? p.inputValue("#add-cat") : text(p, "#add-catv")));
 // The date's calendar: open it, step to the month, pick the day
 async function pickDate(p, iso) {
   const trigger = (await p.$("#add-pickb")) ? "#add-pickb" : "#add-datecell";
@@ -214,9 +222,9 @@ await page.click("#add-pickb");
 const tomorrow = '#add-cal [data-cd="' + addDays(TODAY, 1) + '"]';
 const tomorrowOff = (await page.$(tomorrow)) ? await page.isDisabled(tomorrow) : await page.isDisabled('#add-cal [data-cm="1"]');
 check(tomorrowOff && !(await page.isDisabled('#add-cal [data-cd="' + TODAY + '"]')), "without Repeat, days after today cannot be picked");
-await page.click("#add-rep");
+await setRepeat(page, "monthly"); await back(page);
 await pickDate(page, addDays(TODAY, 3));
-await page.click("#add-rep");
+await setRepeat(page, "never"); await back(page);
 check(/turn on Repeat/.test(await text(page, "#add-derr")), "future date without Repeat: error under the date");
 await page.click('[data-ad="today"]');
 check(!(await visible(page, "#add-derr")), "error goes when fixed");
@@ -255,21 +263,21 @@ async function sharedSave(amount, setup) {
   if (setup) await setup();
   return clickSave(page);
 }
-saved = await sharedSave("10.01", async () => { await page.click('#add-by [data-by="1"]'); });
+saved = await sharedSave("10.01", async () => { await page.selectOption("#add-bysel", "1"); });
 check(JSON.stringify(saved.shares) === JSON.stringify({ 1: 501, 2: 500 }) && saved.paid_by === 1, "10.01 paid by Alex: 5.01 / 5.00", saved.shares);
 await toastText(page, /Added/);
-saved = await sharedSave("10.01", async () => { await page.click('#add-by [data-by="2"]'); });
+saved = await sharedSave("10.01", async () => { await page.selectOption("#add-bysel", "2"); });
 check(saved.shares["1"] === 500 && saved.shares["2"] === 501 && saved.paid_by === 2, "paid by Ana: the spare cent is Ana's", saved.shares);
 await toastText(page, /Added/);
-saved = await sharedSave("0.01", async () => { await page.click('#add-by [data-by="1"]'); });
+saved = await sharedSave("0.01", async () => { await page.selectOption("#add-bysel", "1"); });
 check(saved.shares["1"] === 1 && !saved.shares["2"], "0.01: the one cent is the payer's", saved.shares);
 await toastText(page, /Added/);
 // by income
 saved = await sharedSave("100", async () => {
-  await page.click('[data-sm="income"]');
-  const lab = await text(page, "#sm-income");
+  await page.selectOption("#add-smsel", "income");
+  const lab = await page.$eval('#add-smsel option[value="income"]', (n) => n.textContent);
   check(/By income \d+\/\d+/.test(lab), "By income shows the split", lab);
-  check(/last three months/.test(await text(page, "#sm-hint")), "hint: from the last three months of income");
+  check(/^By income: /.test(await text(page, "#add-splitnote")), "under the rows: each person's part by income", await text(page, "#add-splitnote"));
 });
 const [ia, ib] = [saved.shares["1"], saved.shares["2"]];
 const expectA = await core(page, (c) => {
@@ -279,17 +287,17 @@ const expectA = await core(page, (c) => {
 });
 check(ia + ib === 10000 && Math.abs(ia - expectA) <= 1, "By income: shares from income, adding up", { ia, ib, expectA });
 await toastText(page, /Added/);
-// custom: drag
+// custom: a row per person, the first typed, the other gets the rest
 saved = await sharedSave("50", async () => {
-  await page.click('[data-sm="custom"]');
-  check(await visible(page, "#add-split-r") && await visible(page, "#add-split-a"), "Custom: slider and typed part");
-  await page.$eval("#add-split-r", (n) => { n.value = "30"; n.dispatchEvent(new Event("input", { bubbles: true })); });
-  check(/15\.00/.test(await text(page, "#sp-v1").then(() => page.inputValue("#add-split-a"))), "drag sets the parts");
+  await page.selectOption("#add-smsel", "custom");
+  check(await visible(page, "#add-split-a") && await visible(page, "#sp-v1"), "Custom: a row per person");
+  await page.fill("#add-split-a", "15");
+  check(/35\.00/.test(await text(page, "#sp-v1")) && /30%/.test(await text(page, "#sp-p0")), "typing one part sets the other", await text(page, "#sp-v1"));
 });
-check(saved.shares["1"] === 1500 && saved.shares["2"] === 3500, "Custom 30%: 15.00 / 35.00", saved.shares);
+check(saved.shares["1"] === 1500 && saved.shares["2"] === 3500, "Custom: 15.00 / 35.00", saved.shares);
 await toastText(page, /Added/);
 saved = await sharedSave("50", async () => {
-  await page.click('[data-sm="custom"]');
+  await page.selectOption("#add-smsel", "custom");
   await page.fill("#add-split-a", "12.34");
   check(/37\.66/.test(await text(page, "#sp-v1")), "typed part: the other gets the rest", await text(page, "#sp-v1"));
 });
@@ -299,14 +307,14 @@ await toastText(page, /Added/);
 section("Income");
 await open(page, { type: "income" });
 check(!(await visible(page, "#add-catrow")), "income hides the Category row");
-check(await text(page, "#lbl-who") === "Whose", "Who becomes Whose");
+check(await text(page, "#lbl-who") === "Who", "income says Who too");
 await page.keyboard.type("2450");
 check(/Enter where it is from/.test(await text(page, "#add-go")), "income: button asks where it is from");
 check(await text(page, "#lbl-name") === "Source", "income: the name is labelled Source");
 await page.fill("#add-name", "Side job");
 await page.click('[data-aw="shared"]');
 check(!(await visible(page, "#add-byrow")), "income has no Paid by");
-check(/Add income · /.test(await text(page, "#add-go")), "button: Add income · amount");
+check(await text(page, "#add-go") === "Add Income", "button: Add Income");
 saved = await clickSave(page);
 check(saved.type === "income" && saved.category === "Income" && saved.paid_by === null, "saved as income", { t: saved.type, c: saved.category, b: saved.paid_by });
 await toastText(page, /Added/);
@@ -323,9 +331,7 @@ await page.keyboard.type("4.20");
 await page.fill("#add-name", "Road snack");
 await pickCat(page, "Food");
 await page.click('[data-ad="yesterday"]');
-check(!(await visible(page, "#add-tag")) && await visible(page, "#add-more"), "tags and note wait behind Add tag or note");
-await page.click("#add-more");
-check(await visible(page, "#add-tag") && await focused(page) === "add-tag", "Add tag or note opens them, on the tag field");
+check(await visible(page, "#add-tag") && await visible(page, "#add-note"), "with an amount, Tags and Note join the second group");
 await page.fill("#add-tag", "Road Trip");
 await page.press("#add-tag", "Enter");
 check(await page.$$eval("#add-tags [data-tg]", (l) => l.map((n) => n.dataset.tg).join()) === "#road-trip", "tag added as #road-trip");
@@ -395,11 +401,14 @@ let r = await ruleSave(async () => {
   await page.keyboard.type("15.99");
   await page.fill("#add-name", "Streamy");
   await pickCat(page, "Entertainment");
-  await page.click("#add-rep");
-  check(await visible(page, "#add-reppanel"), "Repeat opens its panel");
-  check(await page.getAttribute('[data-fq="monthly"]', "aria-pressed") === "true" && await page.getAttribute('[data-end="never"]', "aria-pressed") === "true", "starts at Monthly, never ending");
-  check(/^Every month on day \d+, starting/.test(await text(page, "#add-rsum")), "summary before saving", await text(page, "#add-rsum"));
-  check(await page.$$eval("#add-next span", (l) => l.length) === 3, "next three dates shown");
+  await page.click("#add-reprow");
+  check(await visible(page, '[data-pstep="repeat"]') && !(await visible(page, '[data-pstep="main"]')), "Repeat opens as a page in the sheet");
+  check(await page.getAttribute('[data-pfq="never"]', "aria-checked") === "true", "starts at Never");
+  await page.click('[data-pfq="monthly"]');
+  check(await page.getAttribute('[data-pfq="monthly"]', "aria-checked") === "true" && await page.inputValue("#add-endsel") === "never", "Every month, never ending");
+  check(/^Next: .+, .+, .+/.test(await text(page, "#add-next")), "the next three dates", await text(page, "#add-next"));
+  await back(page);
+  check(await focused(page) === "add-reprow" && await text(page, "#add-repv") === "Every month", "back at Repeat, showing the choice", await text(page, "#add-repv"));
   check(await text(page, "#lbl-date") === "Starts", "Date becomes Starts");
 });
 check(r.rule.frequency === "monthly" && r.rule.interval === 1 && r.rule.endDate === null && r.rule.startDate === TODAY, "monthly rule created", r.rule);
@@ -413,13 +422,14 @@ r = await ruleSave(async () => {
   await page.keyboard.type("32");
   await page.fill("#add-name", "Swim class");
   await pickCat(page, "Healthcare");
-  await page.click("#add-rep");
+  await setRepeat(page, "monthly"); await back(page);
   await pickDate(page, start2);
-  await page.click('[data-fq="biweekly"]');
-  await page.click('[data-end="count"]');
+  await setRepeat(page, "biweekly");
+  await page.selectOption("#add-endsel", "count");
   await page.fill("#add-count", "4");
   const sum = await text(page, "#add-rsum");
-  check(/Every 2 weeks on \w+, 4 times, starting .*, last one/.test(sum) && /2 more up to today are added too/.test(sum), "every 2 weeks, 4 times: summary with past dates", sum);
+  check(/2 more up to today are added too/.test(sum), "every 2 weeks, 4 times: the past dates are named", sum);
+  check(/Every 2 weeks, 4 times/.test(await page.evaluate(async () => { document.querySelector('#add-form section:not([hidden]) .w-aback').click(); return document.getElementById("add-repv").textContent; })), "the row says Every 2 weeks, 4 times");
 });
 check(r.rule.frequency === "weekly" && r.rule.interval === 2 && r.rule.startDate === start2 && r.rule.endDate === addDays(start2, 42), "after 4 times becomes an end date", [r.rule.startDate, r.rule.endDate]);
 check(JSON.stringify(r.made) === JSON.stringify([start2, addDays(start2, 14), addDays(start2, 28)]), "past dates added by the server", r.made);
@@ -429,55 +439,54 @@ r = await ruleSave(async () => {
   await page.keyboard.type("5");
   await page.fill("#add-name", "Plant food");
   await pickCat(page, "Shopping");
-  await page.click("#add-rep");
-  await page.click('[data-fq="custom"]');
+  await setRepeat(page, "custom");
   check(await focused(page) === "add-every", "Custom focuses Every");
   await page.fill("#add-every", "3");
   await page.selectOption("#add-unit", "daily");
-  await page.click('[data-end="until"]');
+  await page.selectOption("#add-endsel", "until");
   await page.fill("#add-until", TODAY);
   check(/after/.test(await text(page, "#add-rerr")), "last date must be after the start", await text(page, "#add-rerr"));
   check(/Fix the highlighted field/.test(await text(page, "#add-go")), "button names the problem");
   await page.fill("#add-until", addDays(TODAY, 30));
-  check(/^Every 3 days/.test(await text(page, "#add-rsum")), "every 3 days summary", await text(page, "#add-rsum"));
+  await back(page);
+  check(/^Every 3 days/.test(await text(page, "#add-repv")), "every 3 days on the row", await text(page, "#add-repv"));
 });
 check(r.rule.frequency === "daily" && r.rule.interval === 3 && r.rule.endDate === addDays(TODAY, 30), "every 3 days until a date", r.rule);
 r = await ruleSave(async () => {
   await page.keyboard.type("49");
   await page.fill("#add-name", "Domain name");
   await pickCat(page, "Utilities");
-  await page.click("#add-rep");
-  await page.click('[data-fq="yearly"]');
-  check(/^Every year on/.test(await text(page, "#add-rsum")), "yearly summary");
+  await setRepeat(page, "yearly");
+  check(await page.getAttribute('[data-pfq="yearly"]', "aria-checked") === "true", "Every year checked");
+  await back(page);
 });
 check(r.rule.frequency === "yearly" && r.rule.interval === 1, "yearly rule");
 r = await ruleSave(async () => {
   await page.keyboard.type("1.50");
   await page.fill("#add-name", "Bread");
   await pickCat(page, "Groceries");
-  await page.click("#add-rep");
-  await page.click('[data-fq="daily"]');
-  await page.click('[data-end="count"]');
+  await setRepeat(page, "daily");
+  await page.selectOption("#add-endsel", "count");
   await page.fill("#add-count", "5");
+  await back(page);
 });
 check(r.rule.frequency === "daily" && r.rule.endDate === addDays(TODAY, 4), "daily, 5 times", r.rule.endDate);
 r = await ruleSave(async () => {
   await page.keyboard.type("9");
   await page.fill("#add-name", "Weekly box");
   await pickCat(page, "Groceries");
-  await page.click("#add-rep");
-  await page.click('[data-fq="weekly"]');
+  await setRepeat(page, "weekly");
+  await back(page);
 });
 check(r.rule.frequency === "weekly" && r.rule.interval === 1, "weekly rule");
 // openAdd({repeat:true})
 await open(page, { repeat: true });
-check(await page.getAttribute("#add-rep", "aria-checked") === "true" && await visible(page, "#add-reppanel"), "openAdd({repeat:true}) opens with Repeat on");
+check(await text(page, "#add-repv") === "Every month", "openAdd({repeat:true}) opens with Repeat on", await text(page, "#add-repv"));
 await page.click("[data-close]");
 // "Make it a rule" from Recurring: everything prefilled
 await open(page, { repeat: true, name: "Power", amount: 61.5, category: "Utilities", person: null, date: addDays(TODAY, 5), type: "expense", freq: "monthly", every: 2, about: true });
 check(await page.inputValue("#add-name") === "Power" && await page.inputValue("#add-amt") === "61.50" && await page.inputValue("#add-cat") === "Utilities"
-  && await page.getAttribute('[data-aw="shared"]', "aria-checked") === "true" && await page.getAttribute('[data-fq="custom"]', "aria-pressed") === "true"
-  && await page.inputValue("#add-every") === "2" && await page.inputValue("#add-unit") === "monthly", "prefill: name, amount, category, person, every 2 months");
+  && await page.getAttribute('[data-aw="shared"]', "aria-checked") === "true" && /^Every 2 months/.test(await text(page, "#add-repv")), "prefill: name, amount, category, person, every 2 months", await text(page, "#add-repv"));
 await clearToast(page);
 let pre = page.waitForResponse((x) => x.url().endsWith("/api/recurring") && x.request().method() === "POST");
 await page.click("#add-go");
@@ -486,18 +495,19 @@ check(pre.about === true && pre.interval === 2 && pre.frequency === "monthly" &&
 check(!(await core(page, (c, id) => c.state.tx.some((x) => x.rid === id), pre.id)), "a future start adds nothing yet");
 await toastText(page, /Added Power/);
 await open(page, { name: "Corner shop", amount: "3,20", category: "Groceries", person: "2", date: addDays(TODAY, -2) });
-check(await page.inputValue("#add-name") === "Corner shop" && await page.getAttribute('[data-aw="2"]', "aria-checked") === "true" && await page.getAttribute("#add-pickb", "aria-pressed") === "true" && /3\.20/.test(await text(page, "#add-go")), "prefill for a plain transaction");
+check(await page.inputValue("#add-name") === "Corner shop" && await page.getAttribute('[data-aw="2"]', "aria-checked") === "true" && await page.getAttribute("#add-pickb", "aria-pressed") === "true" && /^3[.,]20$/.test(await page.inputValue("#add-amt")) && await text(page, "#add-go") === "Add Expense", "prefill for a plain transaction", [await page.inputValue("#add-amt"), await text(page, "#add-go")]);
 await page.keyboard.press("Escape");
 if (await visible(page, "#dlg .w-dialog")) await page.click("#dlg [data-dlg-ok]");
 
 section("Edit a transaction, delete and Undo");
 const victim = (await core(page, (c, d) => c.state.tx.find((x) => x.type === "expense" && !x.rec && !x.gr && x.p !== null && x.d < d), TODAY));
 await open(page, { txId: victim.id });
-check(/Edit expense/.test(await text(page, "#add-title")) && /Editing · /.test(await text(page, "#add-editing")), "edit title and Editing pill");
+check(/Edit expense/.test(await text(page, "#add-title")) && await text(page, "#add-htitle") === "Transaction" && !(await visible(page, "#add-editing")), "edit: Cancel · Transaction · Save, no Editing pill");
 check(await page.inputValue("#add-name") === victim.n, "fields filled");
-check(await visible(page, "#add-del"), "edit shows Delete");
+check(await visible(page, "#add-del") && await text(page, "#add-del") === "Delete transaction", "edit shows Delete transaction as the last row");
+check(await focused(page) === "add-form", "editing selects nothing");
 await page.fill("#add-amt", "77.70");
-check(/Save changes · /.test(await text(page, "#add-go")), "button: Save changes · amount");
+check(await text(page, "#add-go") === "Save" && await page.getAttribute("#add-go", "aria-disabled") === "false", "Save at the top");
 saved = await clickSave(page, /\/api\/transactions\/[0-9a-f-]+$/);
 check(saved.id === victim.id && saved.amount === "77.70", "PUT saved the change");
 await toastText(page, /Saved/);
@@ -505,6 +515,7 @@ await page.click("#toast-undo");
 await toastText(page, /Undone/);
 check((await api(page, "GET", "/transactions/id/" + victim.id)).data[0].amount === victim.a.toFixed(2), "Undo restores the previous values");
 await open(page, { txId: victim.id });
+await page.click("#add-amt");
 await page.keyboard.type("1");
 await page.keyboard.press("Escape");
 check(/Discard your changes/.test(await text(page, "#dlg h5")), "edit asks: Discard your changes?");
@@ -522,7 +533,7 @@ section("A transaction made by a rule, and the rule");
 const madeTx = await core(page, (c, id) => c.state.tx.find((x) => x.rid === id), swimRule.id);
 await open(page, { txId: madeTx.id });
 check(/Comes from a rule\. Saving changes only this one\./.test(await text(page, "#add-rep-l")), "says it changes only itself");
-check(!(await visible(page, "#add-rep")), "no Repeat switch on it");
+check(!(await visible(page, "#add-reprow")), "no Repeat row on it");
 await page.fill("#add-amt", "35");
 saved = await clickSave(page, /\/api\/transactions\/[0-9a-f-]+$/);
 check(saved.recurringID === swimRule.id && saved.amount === "35.00", "saved only this one, still linked to its rule");
@@ -549,7 +560,7 @@ const afterUndo = (await api(page, "GET", "/recurring")).data;
 check(!afterUndo.some((x) => x.id === put.id) && afterUndo.find((x) => x.id === swimRule.id).endDate === swimRule.endDate, "Undo brings the old rule back as it was");
 // all
 await open(page, { ruleId: swimRule.id });
-check(await page.inputValue("#add-amt") === "32.00" && await page.getAttribute('[data-end="until"]', "aria-pressed") === "true", "rule fields filled");
+check(await page.inputValue("#add-amt") === "32.00" && /until/.test(await text(page, "#add-repv")) && await text(page, "#add-htitle") === "Bill", "rule fields filled", await text(page, "#add-repv"));
 await page.fill("#add-amt", "33");
 await page.click("#add-go");
 await page.waitForSelector("#dlg .w-dialog");
@@ -660,7 +671,6 @@ for (const [w, h, theme] of [[1440, 900, "dark"], [900, 900, "light"], [1100, 80
   await open(p);
   await p.keyboard.type("90");
   await p.click('[data-aw="shared"]');
-  await p.click("#add-rep");
   const box = await p.$eval("#add-form", (n) => { const r = n.getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, sw: document.documentElement.scrollWidth }; });
   check(box.l >= 0 && box.r <= w && box.sw <= w, w + "px " + theme + ": sheet fits", box);
   const goBox = await p.$eval("#add-go", (n) => n.getBoundingClientRect().bottom);
@@ -674,9 +684,10 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   const p = await newPage({ width: 390, height: 844, theme: "dark", touch: true });
   await p.click(".w-tabadd");
   await p.waitForSelector("#add-form.w-addp");
+  await p.waitForTimeout(350);
   const sheet = await p.$eval("#add-form", (n) => n.getBoundingClientRect());
-  check(sheet.height > 800 && sheet.bottom >= 843, "phone: full height from the bottom", sheet);
-  check(await visible(p, "#add-keypad") && await visible(p, "#add-name") && await visible(p, "#add-cat") && !(await visible(p, "#add-go")),
+  check(sheet.height > 780 && sheet.bottom >= 843, "phone: full height from the bottom, the page peeking above", sheet);
+  check(await visible(p, "#add-keypad") && await visible(p, "#add-name") && await visible(p, "#add-catrow") && !(await visible(p, "#add-go")),
     "one page: the keypad in the main button’s place, with the name and categories above it");
   const pad = await p.$eval("#add-keypad", (n) => n.getBoundingClientRect());
   check(pad.bottom >= 843 && pad.top > 844 / 2, "the keypad sits at the bottom, in thumb reach", pad);
@@ -691,9 +702,10 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   check(await p.$eval("#add-amt", (i) => i.scrollWidth <= i.clientWidth), "phone: the whole amount shows");
   const keyH = await p.$eval('[data-k="5"]', (n) => n.getBoundingClientRect().height);
   check(keyH >= 44, "keys at least 44 px", keyH);
-  check(await p.$$eval("#add-form .w-chip", (l) => l.every((c) => c.closest("#add-who, #add-tags"))), "no chips but people and tags");
-  const catH = await p.$eval("#add-cat", (n) => [n.getBoundingClientRect().height, parseFloat(getComputedStyle(n).fontSize)]);
-  check(catH[0] >= 44 && catH[1] >= 16, "phone: the category field is touch size, with text iOS won't zoom", catH);
+  check(await p.$$eval("#add-form .w-chip", (l) => l.every((c) => c.closest("#add-tags"))), "no chips but tags");
+  check(await text(p, "#add-amt").then(() => p.getAttribute("#add-amt", "placeholder")) === "0.00", "phone: 0.00 like the desktop");
+  const catH = await p.$eval("#add-catrow", (n) => [n.getBoundingClientRect().height, parseFloat(getComputedStyle(n).fontSize)]);
+  check(catH[0] >= 44 && catH[1] >= 16, "phone: rows are touch size, with text iOS won't zoom", catH);
   await shot(p, "phone-1");
   check(await text(p, "#add-knext") === "Next", "the keypad’s last key: Next, with no name yet");
   await p.tap("#add-knext");
@@ -708,7 +720,7 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await shot(p, "phone-name");
   await p.tap("#add-amt");
   check(await visible(p, "#add-keypad") && !(await visible(p, "#add-go")), "a tap on the amount: the keypad again");
-  await p.tap("#lbl-cat");
+  await p.tap("#lbl-who");
   check(!(await visible(p, "#add-keypad")) && await visible(p, "#add-go"), "a tap anywhere else closes it");
   await p.tap("#add-amt");
   await p.keyboard.press("Escape");
@@ -721,25 +733,28 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   check(/Pick a category/.test(await text(p, "#add-go")), "main button names what is missing");
   await pickCat(p, "Food");
   await p.click('#add-who [data-aw="shared"]');
-  check(await visible(p, "#add-eachcell") && /6\.25/.test(await text(p, "#add-each")), "Each pays when even", await text(p, "#add-each"));
+  check(/^Half each: .*6\.25/.test(await text(p, "#add-splitnote")) && await text(p, "#add-smv") === "Evenly", "Split row says Evenly, each part under it", await text(p, "#add-splitnote"));
+  await p.click("#add-smrow");
+  check(await visible(p, '[data-pstep="split"]') && /Each pays 6\.25/.test(await text(p, "#add-each")) && /owes .* 6\.25\s.*for this\./.test(await text(p, "#add-owes")), "the Split page: each part and who owes whom", [await text(p, "#add-each"), await text(p, "#add-owes")]);
+  await back(p);
   const go = await p.$eval("#add-go", (n) => n.getBoundingClientRect());
   check(go.bottom <= 844 && go.top > 600 && go.height >= 44, "main button in thumb reach", go);
-  check(/Add expense · 12\.50/.test(await text(p, "#add-go")), "main button shows the amount");
+  check(await text(p, "#add-go") === "Add Expense", "main button: Add Expense");
   await shot(p, "phone-2");
-  await p.click("#add-repcell");
+  await p.click("#add-reprow");
   check(await visible(p, '[data-pstep="repeat"]') && !(await visible(p, '[data-pstep="main"]')), "Repeat opens over the page");
   await p.click('[data-pfq="biweekly"]');
-  check(await p.getAttribute('[data-pfq="biweekly"]', "aria-checked") === "true" && await visible(p, '[data-pfq="biweekly"] .ck'), "checkmark on the choice");
-  await p.click('[data-end="count"]');
+  check(await p.getAttribute('[data-pfq="biweekly"]', "aria-checked") === "true" && await visible(p, '[data-pfq="biweekly"] .w-ack'), "checkmark on the choice");
+  await p.selectOption("#add-endsel", "count");
   await p.fill("#add-count", "12");
-  check(/Every 2 weeks on \w+, 12 times/.test(await text(p, "#add-rsum")) && await p.$$eval("#add-next span", (l) => l.length) === 3, "summary and next dates");
+  check(/^Next: /.test(await text(p, "#add-next")), "the next dates", await text(p, "#add-next"));
   await shot(p, "phone-3");
-  await p.click(".w-pdone");
-  check(await focused(p) === "add-repcell" && /Every 2 weeks, 12 times/.test(await text(p, "#add-repv")), "back on the page, at Repeat, showing the choice", await text(p, "#add-repv"));
+  await back(p);
+  check(await focused(p) === "add-reprow" && /Every 2 weeks, 12 times/.test(await text(p, "#add-repv")), "back on the page, at Repeat, showing the choice", await text(p, "#add-repv"));
   check(await p.$eval("#add-amt", (i) => i.scrollWidth <= i.clientWidth && i.value === "12.50"), "the amount still shows whole");
-  await p.click("#add-repcell");
+  await p.click("#add-reprow");
   await p.click('[data-pfq="never"]');
-  await p.click(".w-pdone");
+  await back(p);
   check(await text(p, "#add-repv") === "Never", "Never turns it off");
   const resp = p.waitForResponse((x) => x.url().endsWith("/api/transactions") && x.request().method() === "POST");
   await p.click("#add-go");
@@ -753,14 +768,14 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await p.tap("#add-knext");
   const pickName = await p.$eval('[data-si="0"] b', (n) => n.textContent);
   await p.tap('[data-si="0"]');
-  check(await p.inputValue("#add-name") === pickName && !!(await p.inputValue("#add-cat")) && !(await visible(p, "#add-keypad")) && await focused(p) !== "add-name" && /Add expense · 7\.00/.test(await text(p, "#add-go")),
+  check(await p.inputValue("#add-name") === pickName && (await catValue(p)) !== "Pick" && !(await visible(p, "#add-keypad")) && await focused(p) !== "add-name" && await text(p, "#add-go") === "Add Expense" && /^7([.,]00)?$/.test(await p.inputValue("#add-amt")),
     "a pick fills the payee and category, keeps the amount, and it is ready to add", pickName);
   await p.click('#add-form section:not([hidden]) [data-close]');
   if (await visible(p, "#dlg .w-dialog")) await p.click("#dlg [data-dlg-ok]");
   // edit on the phone: everything shows, no keypad until the amount is tapped
   const one = await core(p, (c) => c.state.tx.find((x) => x.type === "expense" && !x.gr));
   await open(p, { txId: one.id });
-  check(!(await visible(p, "#add-keypad")) && await visible(p, "#add-name") && await visible(p, "#add-delcell") && await focused(p) === "add-form", "phone edit: the whole page with Delete, no keypad");
+  check(!(await visible(p, "#add-keypad")) && await visible(p, "#add-name") && await visible(p, "#add-del") && await focused(p) === "add-form" && await text(p, "#add-go") === "Save", "phone edit: Save at the top, Delete as the last row, no keypad");
   await shot(p, "phone-edit");
   await p.tap("#add-amt");
   check(await visible(p, "#add-keypad") && await text(p, "#add-knext") === "Done", "editing the amount: the keypad, with Done");
@@ -809,8 +824,8 @@ await api(page, "POST", "/people", { name: "Sam" });
   await pickCat(p, "Food");
   check(await p.$$eval("#add-who [data-aw]", (l) => l.length) === 4, "three people and Shared");
   await p.click('[data-aw="shared"]');
-  check(/Equal parts/.test(await text(p, "#sm-hint")), "hint for three: equal parts");
-  await p.click('#add-by [data-by="1"]');
+  check(/^Equal parts: /.test(await text(p, "#add-splitnote")), "for three: equal parts", await text(p, "#add-splitnote"));
+  await p.selectOption("#add-bysel", "1");
   let resp = p.waitForResponse((x) => x.url().endsWith("/api/transactions") && x.request().method() === "POST");
   await p.click("#add-go");
   let tx = await (await resp).json();
@@ -821,12 +836,12 @@ await api(page, "POST", "/people", { name: "Sam" });
   await p.fill("#add-name", "Dinner for three");
   await pickCat(p, "Food");
   await p.click('[data-aw="shared"]');
-  await p.click('[data-sm="custom"]');
+  await p.selectOption("#add-smsel", "custom");
   check(await p.$$eval("[data-cust]", (l) => l.length) === 3, "Custom: one field per person");
   await p.fill('[data-cust="1"]', "5");
   await p.fill('[data-cust="2"]', "3");
   await p.fill('[data-cust="3"]', "1");
-  check(/1\.00.*left to share/.test(await text(p, "#sp-left")) && /Share 1\.00.*more/.test(await text(p, "#add-go")), "remaining shown, button names it", [await text(p, "#sp-left"), await text(p, "#add-go")]);
+  check(/1\.00.*left to share/.test(await text(p, "#add-splitnote")) && /Share 1\.00.*more/.test(await text(p, "#add-go")), "remaining shown, button names it", [await text(p, "#add-splitnote"), await text(p, "#add-go")]);
   await p.fill('[data-cust="3"]', "2");
   resp = p.waitForResponse((x) => x.url().endsWith("/api/transactions") && x.request().method() === "POST");
   await p.click("#add-go");

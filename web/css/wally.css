@@ -217,8 +217,9 @@ h1,h2,h3,h4,h5,h6,p{margin:0}
 .w-side{display:flex;flex-direction:column;gap:22px;padding:20px 14px;border-right:1px solid var(--w-line);background:var(--w-side)}
 .w-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:var(--fs-body);letter-spacing:-.02em;padding:2px 8px}
 .w-brand .w-mark{width:30px;height:30px}
-.w-mark{width:26px;height:26px;background:url(/icons/mark-64.png) center/contain no-repeat;flex:none;display:inline-block}
+.w-mark{width:26px;height:26px;background:url(/icons/wally.svg) center/contain no-repeat;flex:none;display:inline-block}
 .w-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:var(--r-ctl);font-weight:600;font-size:var(--fs-sub)}
+a.w-btn{text-decoration:none}
 .w-btn.primary{background:var(--w-accent);color:var(--w-on-accent);box-shadow:0 1px 2px rgba(20,22,27,.12),inset 0 1px 0 rgba(255,255,255,.14)}
 .w-btn.primary:hover{filter:brightness(1.06)}
 .w-btn.primary[disabled]{background:var(--w-fill2);color:var(--w-ink3);box-shadow:none;cursor:not-allowed;filter:none}
@@ -230,7 +231,8 @@ h1,h2,h3,h4,h5,h6,p{margin:0}
 .w-nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-ctl);color:var(--w-ink2);text-decoration:none;font-weight:500;cursor:pointer}
 .w-nav a:hover{color:var(--w-ink)}
 .w-nav a.on{background:var(--w-fill);color:var(--w-ink);font-weight:600}
-.w-nav a.on svg{color:var(--w-accent)}
+/* Every sidebar icon in the accent, as in Finder and Mail (proposal 32) */
+.w-nav a svg{color:var(--w-accent)}
 .w-av{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:var(--fs-cap);font-weight:600;flex:none}
 .w-av.p0{background:var(--av0-bg);color:var(--av0)}
 .w-av.p1{background:var(--av1-bg);color:var(--av1)}
@@ -587,13 +589,73 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-bk-n{color:var(--w-ink2)}
 .w-bk-n b{color:var(--w-ink)}
 .w-btn[disabled]{opacity:.45;cursor:not-allowed}
-.w-dlgwrap{position:fixed;inset:0;z-index:65;background:var(--w-scrim);display:grid;place-items:center;padding:20px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-.w-dialog{width:100%;max-width:420px;background:var(--w-raised);border:1px solid var(--w-line);border-radius:var(--r-card);box-shadow:var(--w-shadow);padding:20px;display:grid;gap:12px;text-align:left}
-.w-dialog h5{font-size:var(--fs-body);font-weight:600;letter-spacing:-.01em}
+.w-dlgwrap{position:fixed;inset:0;z-index:65;background:var(--w-scrim);display:grid;place-items:center;padding:20px}
+.w-dialog{width:100%;max-width:460px;background:var(--w-raised);border-radius:16px;box-shadow:var(--w-shadow);text-align:start;max-height:calc(100vh - 40px);overflow:auto;overscroll-behavior:contain}
+.w-dialog.wide{max-width:560px}
+.w-dialog h5{font-size:var(--fs-sub);font-weight:600;letter-spacing:-.01em}
 .w-dialog p{font-size:var(--fs-foot);color:var(--w-ink2)}
-.w-dlgf{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
-/* In a modal's footer, Cancel stands as tall as the main button beside it */
-:is(.w-dlgf,.w-sheet-f,.w-mrf) .w-btn{height:36px;font-size:var(--fs-sub);padding:0 14px}
+.w-dlgerr{color:var(--w-bad);font-size:var(--fs-foot)}
+/* Alert: a question */
+.w-alert:focus{outline:0}
+.w-alert{max-width:300px;padding:20px 18px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.w-alert.wide{max-width:360px}
+.w-alg{display:contents}
+.w-alg > *{grid-column:1 / -1;order:1}
+.w-altop{display:grid;justify-items:center;margin-bottom:4px}
+.w-alert h5{font-size:var(--fs-sub);font-weight:700}
+.w-alert p{font-size:var(--fs-foot);line-height:1.4;margin-top:-2px}
+.w-alert > .w-dlgx,.w-alg > .w-dlgok{order:2;grid-column:auto;height:34px;border-radius:999px;font-size:14px;font-weight:600;margin-top:10px;padding:0 12px}
+.w-alg > .w-dlgok{order:3;background:var(--w-accent);color:var(--w-on-accent,#fff)}
+.w-alg > .w-dlgok.danger{background:var(--w-bad);color:#fff}
+.w-alert > .w-dlgx{background:var(--w-fill);color:var(--w-ink)}
+.w-alert:not(:has(.w-dlgx)) > .w-alg > .w-dlgok,.w-alert:not(:has(.w-dlgok)) > .w-dlgx{grid-column:1 / -1}
+.w-alert .w-gl,.w-alert .w-sinput{text-align:start}
+/* Sheet: a form */
+.w-sheetd{padding:16px 18px 20px}
+.w-shh{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:16px;min-height:28px}
+.w-shh h5{font-size:16px;font-weight:600;text-align:center}
+.w-shh > :first-child{justify-self:start}.w-shh > :last-child{justify-self:end}
+.w-dlgx,.w-dlgok{font-size:var(--fs-sub);color:var(--w-accent-ink);border-radius:8px;padding:4px 2px;white-space:nowrap}
+.w-shh .w-dlgok{font-weight:600}
+.w-shh .w-dlgok.danger{color:var(--w-bad)}
+.w-dlgok[disabled]{color:var(--w-ink3);cursor:default}
+.w-alg > .w-dlgok[disabled]{color:var(--w-on-accent);opacity:.45}
+.w-alg > .w-dlgok.danger[disabled]{color:#fff}
+.w-dlgx:hover,.w-dlgok:not([disabled]):hover{opacity:.75}
+.w-shtop{display:grid;justify-items:center;gap:6px;text-align:center;margin:-4px 0 16px}
+.w-shb{display:grid;gap:8px}
+.w-shb > p{padding:0 4px}
+.w-dialog .w-gl{background:var(--w-panel2)}
+.w-dialog .w-gr{min-height:46px}
+/* In dark mode, rows inside a sheet sit lighter than the sheet, as on iOS */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-dialog .w-gl{background:#292B33}}
+:root[data-theme="dark"] .w-dialog .w-gl{background:#292B33}
+/* Grouped rows (iOS Settings, Calendar): a container .w-gl of rows .w-gr, an optional header .w-glh and footer .w-glf */
+.w-gl{background:var(--w-panel);border-radius:var(--r-card);overflow:hidden}
+.w-gr{display:flex;align-items:center;gap:12px;min-height:44px;width:100%;padding:10px 16px;border-top:1px solid var(--w-line2);font-size:var(--fs-sub);text-align:start;color:inherit;background:none;position:relative}
+.w-gr:first-child{border-top:0}
+.w-gr > .k{flex:1;min-width:0}
+.w-gr > .k small{display:block;font-size:var(--fs-foot);color:var(--w-ink3);margin-top:1px}
+.w-gr > .v{color:var(--w-ink2);display:inline-flex;align-items:center;gap:6px;min-width:0;text-align:end}
+.w-gr svg.chev{width:16px;height:16px;color:var(--w-ink3);flex:none}
+.w-gr.red,.w-gr.acc{justify-content:center;font-weight:400}
+.w-gr.red{color:var(--w-bad)}.w-gr.acc{color:var(--w-accent-ink)}
+.w-gr.add{color:var(--w-accent-ink)}
+.w-gr input:not([type=checkbox]):not([type=radio]),.w-gr textarea{border:0;background:none;outline:0;font:inherit;flex:1;min-width:0;color:var(--w-ink);padding:0}
+.w-gr input::placeholder,.w-gr textarea::placeholder{color:var(--w-ink3)}
+.w-gr select{border:0;background:none;font:inherit;color:var(--w-ink2);text-align:end;outline:0;max-width:60%}
+button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(--w-fill)}
+.w-gr:focus-visible{outline:2px solid var(--w-accent);outline-offset:-2px}
+.w-glh{font-size:var(--fs-foot);color:var(--w-ink3);padding:0 16px 6px}
+.w-glf{font-size:var(--fs-foot);color:var(--w-ink3);padding:6px 16px 0;line-height:1.4}
+:is(.w-gl,.w-glf) + .w-glh{margin-top:18px}
+.w-gl + .w-gl{margin-top:14px}
+/* Actions on an item: rows at the bottom of a panel, the destructive one last in red */
+.w-pacts{margin-top:14px;border-radius:12px;background:var(--w-panel2);overflow:hidden;display:grid}
+.w-pacts > button,.w-pacts > a{padding:12px 16px;text-align:center;font-size:var(--fs-sub);font-weight:500;color:var(--w-accent-ink);border-top:1px solid var(--w-line2)}
+.w-pacts > :first-child{border-top:0}
+.w-pacts > .red{color:var(--w-bad)}
+.w-pacts > :hover{background:var(--w-fill)}
 .w-btn.primary.dangerbtn{background:var(--w-bad)}
 .w-opts{display:grid;gap:6px}
 .w-opts label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-card);border:1px solid var(--w-line);cursor:pointer}
@@ -741,10 +803,11 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-chips{display:flex;gap:6px;flex-wrap:wrap}
 .w-chips .w-chip{height:30px}
 .w-chip.cat.on{border-color:transparent}
-.w-switch{width:34px;height:20px;border-radius:var(--r-ctl);background:var(--w-fill2);position:relative;flex:none;transition:background .2s}
-.w-switch::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
-.w-switch[aria-checked="true"]{background:var(--w-accent)}
-.w-switch[aria-checked="true"]::after{transform:translateX(14px)}
+.w-switch{width:42px;height:25px;border-radius:13px;background:var(--w-fill2);position:relative;flex:none;transition:background .2s}
+.w-switch::after{content:"";position:absolute;left:2px;top:2px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.w-switch[aria-checked="true"]{background:#34C759}
+.w-switch[aria-checked="true"]::after{transform:translateX(17px)}
+[dir="rtl"] .w-switch[aria-checked="true"]::after{transform:translateX(-17px)}
 .w-sheet{width:100%;max-width:580px}
 .w-calc{margin-left:auto;font-size:var(--fs-sub);color:var(--w-accent-ink);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;align-self:center}
 .w-sub{display:grid;gap:12px;padding:14px;border-radius:var(--r-card);background:var(--w-panel2);border:1px solid var(--w-line2);margin-left:80px}

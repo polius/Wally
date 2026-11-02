@@ -1,16 +1,17 @@
 /* Transactions: search, filter and fix without leaving the list.
-   The title is the period ("October ▾": a month, the year, everything or a custom range); search,
-   Filter (type, categories, amount, shared), a ••• menu (calendar, Select, export), a calendar,
-   Select mode for bulk changes, and a side panel with every field. */
-import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, dim, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, monthName, dlabW, pname, couple } from "../core.js";
-import { hideTip, openDialog, empty, trapFocus } from "../ui.js";
+   The title is the period ("October ▾": a month, a year, everything or a custom range) with ‹ › to step
+   through it; a List | Calendar switch; search with a scope bar and recent searches; Filter (a popover
+   on wide screens, a sheet on phones); a ••• menu (Select, export); Select mode for bulk changes, and a
+   side panel with every field. */
+import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, couple } from "../core.js";
+import { hideTip, empty, trapFocus } from "../ui.js";
 import { headActions } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
-import { S, RANGES, parseQ, withoutWords, txRange, txFiltered, onlyLabel, inLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering } from "./transactions/query.js";
+import { S, RANGES, parseQ, txRange, txFiltered, scopeLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering, recent, addRecent, clearRecent } from "./transactions/query.js";
 import { TxList, buildItems } from "./transactions/list.js";
 import { txPanel, dayPanel } from "./transactions/panel.js";
-import { deleteTx, bulkDelete, bulkCategory, bulkPerson, exportCsv, views, saveView, deleteView } from "./transactions/actions.js";
-import { openRangeSheet, openFilterSheet } from "./transactions/sheets.js";
+import { deleteTx, bulkDelete, bulkCategory, bulkPerson, exportCsv } from "./transactions/actions.js";
+import { openRangeSheet, openFilter, closeFilter, filterCount } from "./transactions/sheets.js";
 
 let root = null;
 let list = null;
@@ -35,6 +36,10 @@ export function mount(main, route) {
   main.addEventListener("change", onChange);
   $("tx-q").addEventListener("input", onSearch);
   $("tx-q").addEventListener("keydown", onSearchKey);
+  $("tx-q").addEventListener("focus", onSearchFocus);
+  $("tx-q").addEventListener("blur", onSearchBlur);
+  $("tx-q").addEventListener("scroll", syncMirror);
+  document.addEventListener("pointerdown", onOutside, true);
   $("tx-insp").addEventListener("keydown", (ev) => { if (S.open && layout() !== "wide") trapFocus($("tx-insp"), ev); });
   MQ.wide.addEventListener("change", render);
   MQ.phone.addEventListener("change", render);
@@ -53,6 +58,8 @@ export function mount(main, route) {
 export function unmount() {
   mounted = false;
   if (list) list.destroy();
+  closeFilter();
+  document.removeEventListener("pointerdown", onOutside, true);
   MQ.wide.removeEventListener("change", render);
   MQ.phone.removeEventListener("change", render);
   document.documentElement.classList.remove("tx-lock");
@@ -66,33 +73,45 @@ export function update(reason) {
   if (typeof reason.restored === "string") list.reveal(reason.restored);
 }
 
-/* ---------- the page's frame, drawn once ---------- */
+/* ---------- the page's frame, drawn once ----------
+   Wide screens: title ‹ › … List | Calendar, Search, Filter, •••, person, Add.
+   Phones: title ‹ › person, then Search, Filter, List | Calendar, •••; while searching, Search and Cancel. */
 function skeleton() {
-  const first = state.people[0];
-  const ph = couple() && first ? t("Search, or try >50 @{name} #holiday food", { name: first.name.split(/\s+/)[0].toLocaleLowerCase() }) : t("Search, or try >50 #holiday food");
   const extra =
-    '<button type="button" class="w-btn ghost tx-hb" data-act="filters" aria-haspopup="dialog" id="tx-fbtn">' + icon("filter") + '<span class="tx-hbl">' + esc(t("Filter")) + '</span><b id="tx-nf" hidden></b></button>' +
+    '<div class="w-seg tx-vsw" id="tx-vsw" role="group" aria-label="' + esc(t("View")) + '">' +
+      '<button type="button" data-view="list" aria-pressed="true" aria-label="' + esc(t("List")) + '" title="' + esc(t("List")) + '">' + icon("list") + "</button>" +
+      '<button type="button" data-view="cal" aria-pressed="false" aria-label="' + esc(t("Calendar")) + '" title="' + esc(t("Calendar")) + '">' + icon("cal") + "</button></div>" +
+    '<div class="tx-searchw" id="tx-searchw"><label class="w-search tx-search" id="tx-sbox">' + icon("search") +
+      '<span class="tx-field"><span class="tx-mirror" id="tx-mirror" aria-hidden="true"></span><input id="tx-q" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(t("Search")) + '" aria-label="' + esc(t("Search transactions")) + '" title="' + esc(t("Search")) + ' (/)"></span>' +
+      '<button type="button" class="tx-qx" data-act="qx" aria-label="' + esc(t("Clear search")) + '" hidden>' + icon("x") + "</button></label>" +
+      '<div class="tx-recent" id="tx-recent" hidden></div></div>' +
+    '<button type="button" class="tx-cancel" data-act="cancel" hidden>' + esc(t("Cancel")) + "</button>" +
+    '<div class="tx-fw"><button type="button" class="w-btn ghost tx-hb" data-act="filters" aria-haspopup="dialog" aria-expanded="false" id="tx-fbtn">' + icon("filter") + '<span class="tx-hbl" id="tx-fl">' + esc(t("Filter")) + "</span></button>" +
+      '<div class="tx-fpop" id="tx-fpop" role="dialog" aria-label="' + esc(t("Filter")) + '" hidden></div></div>' +
     '<button type="button" class="w-btn primary tx-hb" data-act="select" id="tx-done" hidden>' + esc(t("Done")) + "</button>" +
     '<div class="tx-morew"><button type="button" class="w-btn ghost tx-hb tx-more" data-menu="more" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("More")) + '">' + icon("more") + "</button>" +
       '<div class="w-menu" id="tx-more" role="menu" hidden></div></div>';
   return '<div class="tx-page">' +
-    '<header class="w-head s-head tx-head">' +
+    '<header class="w-head s-head tx-head" id="tx-head">' +
       '<div class="s-titlew"><button type="button" class="s-title" data-menu="period" aria-haspopup="menu" aria-expanded="false"><span id="tx-title" aria-live="polite"></span>' + icon("down") + "</button>" +
         '<div class="w-menu s-pmenu" id="tx-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' +
-      '<label class="w-search tx-search">' + icon("search") + '<input id="tx-q" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(ph) + '" aria-label="' + esc(t("Search transactions")) + '"><kbd aria-hidden="true">/</kbd></label>' +
+      '<div class="tx-step" id="tx-step"><button type="button" data-act="prev" aria-label="' + esc(t("Previous")) + '">' + icon("left") + '</button><button type="button" data-act="next" aria-label="' + esc(t("Next")) + '">' + icon("right") + "</button></div>" +
+      '<span class="tx-brk" aria-hidden="true"></span>' +
       headActions(extra) +
     "</header>" +
     '<div id="tx-none" hidden></div>' +
+      '<div class="tx-qrec" id="tx-qrec" hidden></div>' +
     '<div class="tx-main" id="tx-main">' +
       '<div class="w-tools tx-tools" id="tx-tools">' +
+        '<div class="w-seg tx-scope" id="tx-scope" role="group" aria-label="' + esc(t("Search in")) + '" hidden></div>' +
         '<span class="tx-count" id="tx-count" role="status"></span>' +
         '<span id="tx-daychip" class="tx-daychip"></span>' +
-        '<div class="w-views" id="tx-views"></div>' +
       "</div>" +
       '<div class="w-tx tx-body" id="tx-body">' +
-        '<section class="w-panel tx-calp" id="tx-calp" hidden><div class="w-ph"><div><h4 id="tx-cal-h"></h4><p id="tx-cal-sub"></p></div><div class="w-legend">' +
-          '<span><s style="background:var(--w-accent-soft);box-shadow:inset 0 0 0 1px var(--w-accent-line)"></s>' + esc(t("Today")) + '</span><span><s style="background:var(--w-good-soft)"></s>' + esc(t("Money in")) + '</span><span><s style="box-shadow:inset 0 0 0 1px var(--w-ink3)"></s>' + esc(t("Still to come")) + "</span>" +
-          '</div></div><div class="w-rcal tx-cal" id="tx-cal" role="group" aria-label="' + esc(t("Calendar")) + '"></div></section>' +
+        '<section class="w-panel tx-calp" id="tx-calp" hidden><div class="tx-calh"><h4 id="tx-cal-h"></h4><div class="w-legend tx-leg">' +
+          '<span><s class="lt"></s>' + esc(t("Today")) + '</span><span><s class="li"></s>' + esc(t("Money in")) + '</span><span><s class="lf"></s>' + esc(t("Still to come")) + "</span>" +
+          '</div></div><div class="w-rcal tx-cal" id="tx-cal" role="group" aria-label="' + esc(t("Calendar")) + '"></div>' +
+          '<div class="tx-calleg tx-leg" aria-hidden="true"><span><s class="lt"></s>' + esc(t("Today")) + '</span><span><s class="li"></s>' + esc(t("Money in")) + '</span><span><s class="lf"></s>' + esc(t("Still to come")) + "</span></div></section>" +
         '<section class="w-panel tx-listp" id="tx-listp"><div class="w-txlist" id="tx-list" tabindex="-1" aria-label="' + esc(t("Transactions list")) + '"></div><div class="w-bulk" id="tx-bulk" hidden></div></section>' +
         '<aside class="w-panel w-insp tx-insp" id="tx-insp" aria-label="' + esc(t("Details")) + '"></aside>' +
       "</div>" +
@@ -111,6 +130,9 @@ function render() {
   if (none) {
     $("tx-none").innerHTML = '<section class="w-panel">' + empty("list", esc(t("No transactions yet")), esc(t("Add your first expense, or import a CSV from your bank in Settings.")),
       '<button type="button" class="w-btn primary" data-act="add">' + icon("plus") + esc(t("Add your first expense")) + "</button>") + "</section>";
+    // Nothing to step through, search or filter yet: the page is just titled, with Add
+    $("tx-title").textContent = t("Transactions");
+    $("tx-title").parentNode.removeAttribute("aria-label");
     document.title = t("Transactions") + " · Wally";
     syncUrl();
     return;
@@ -137,59 +159,99 @@ function render() {
 }
 
 function renderHead(R, P) {
-  // This year's months need no year
-  const sub = R.month && R.sub === TODAY.slice(0, 4) && !R.fromQuery ? "" : R.sub;
-  $("tx-title").innerHTML = esc(R.title) + (sub ? " <span>" + esc(sub) + "</span>" : "");
+  // The title names the period picked, even while a search looks in every month
+  const T = R.search ? txRange(P, true) : R;
+  const sub = T.month && T.sub === TODAY.slice(0, 4) && !T.fromQuery ? "" : T.sub;
+  $("tx-title").innerHTML = esc(T.title) + (sub ? " <span>" + esc(sub) + "</span>" : "");
   $("tx-title").parentNode.setAttribute("aria-label", t("Period: {range}", { range: $("tx-title").textContent }));
-  // The period menu: recent months, then the year, everything and a custom range
-  const [fy, fm] = ym(firstDay()), [ly, lm] = ym(lastDay()), months = [];
-  for (let k = 0; k < 13; k++) { const q = ymAdd(ly, lm, -k); if (q[0] * 12 + q[1] < fy * 12 + fm) break; months.push(q); }
-  const plain = !R.search && !R.fromQuery, now = +TODAY.slice(0, 4);
+  $("tx-title").parentNode.classList.toggle("tx-long", $("tx-title").textContent.length > 12);
+  // Five shortcuts; ‹ › step through the rest
+  const [ty, tm] = ym(TODAY), last = ymAdd(ty, tm, -1), plain = !R.fromQuery;
+  const isM = (q) => S.mode === "month" && S.ym[0] === q[0] && S.ym[1] === q[1];
   const item = (v, label, on) => '<button type="button" role="menuitemradio" data-pm="' + v + '" aria-checked="' + !!on + '"><span>' + esc(label) + "</span></button>";
-  $("tx-pmenu").innerHTML = item("year", t("{year} so far", { year: now }), plain && S.mode === "year") + item("all", t("All time"), plain && S.mode === "all") + item("custom", t("Custom range…"), plain && S.mode === "custom") +
-    '<div class="w-menusep" role="separator"></div>' +
-    months.map((q) => item(ds(q[0], q[1], 1).slice(0, 7), monthName(q[1]) + (q[0] !== now ? " " + q[0] : ""), plain && S.mode === "month" && S.ym[0] === q[0] && S.ym[1] === q[1])).join("");
+  $("tx-pmenu").innerHTML = item("this", t("This month"), plain && isM([ty, tm])) + item("last", t("Last month"), plain && isM(last)) +
+    item("year", t("This year"), plain && S.mode === "year" && S.y === ty) + item("all", t("All time"), plain && S.mode === "all") +
+    '<div class="w-menusep" role="separator"></div>' + item("custom", t("Custom range…"), plain && S.mode === "custom");
+  const cal = S.view === "cal", st = stepOk();
+  const [pb, nb] = $("tx-step").querySelectorAll("button");
+  pb.disabled = !st.prev; nb.disabled = !st.next;
+  $("tx-step").hidden = R.fromQuery;
+  $("tx-vsw").querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "cal") === cal)));
+  $("tx-vsw").hidden = S.selMode;
+  // Search: filter words show as tokens, × clears; on phones Cancel replaces the buttons while searching
   const q = $("tx-q");
   if (q.value !== S.q && document.activeElement !== q) q.value = S.q;
-  // Filter shows how many are on; ••• holds the calendar, Select and export
-  const nf = S.cats.size + (S.type !== "all") + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0);
-  const cal = S.view === "cal";
-  $("tx-nf").hidden = !nf;
-  $("tx-nf").textContent = nf;
+  syncMirror();
+  $("tx-head").querySelector(".tx-qx").hidden = !q.value;
+  searchState();
+  // Filter says how many are on; ••• holds Select and export
+  const nf = filterCount(P);
+  $("tx-fl").textContent = nf ? t("Filter · {n}", { n: nf }) : t("Filter");
   $("tx-fbtn").classList.toggle("on", nf > 0);
+  $("tx-fbtn").setAttribute("aria-label", nf ? t("Filter, {n} on", { n: nf }) : t("Filter"));
   $("tx-fbtn").hidden = S.selMode;
   $("tx-done").hidden = !S.selMode;
   $("tx-more").innerHTML =
-    '<button type="button" role="menuitem" data-act="' + (cal ? "view-list" : "view-cal") + '">' + icon(cal ? "list" : "cal") + "<span>" + esc(cal ? t("Show as a list") : t("Show as a calendar")) + "</span></button>" +
     (cal ? "" : '<button type="button" role="menuitem" data-act="select">' + icon("check") + "<span>" + esc(S.selMode ? t("Done selecting") : t("Select")) + "</span></button>") +
     '<button type="button" role="menuitem" data-act="export"' + (cur.list.length ? "" : " disabled") + ">" + icon("download") + "<span>" + esc(t("Export as CSV")) + "</span></button>";
+}
+/* Can ‹ › move? A month or a year, within the ledger's first and last day */
+function stepOk() {
+  const [fy, fm] = ym(firstDay()), [ly, lm] = ym(lastDay());
+  if (S.view === "cal" || S.mode === "month") { const k = S.ym[0] * 12 + S.ym[1]; return { prev: k > fy * 12 + fm, next: k < ly * 12 + lm }; }
+  if (S.mode === "year") return { prev: S.y > fy, next: S.y < +TODAY.slice(0, 4) };
+  return { prev: false, next: false };
+}
+/* The search box: filter words (#tag, @person, >50, a category, a month) drawn as tokens behind the text */
+function syncMirror() {
+  const q = $("tx-q"), m = $("tx-mirror");
+  if (!q || !m) return;
+  const v = q.value, P = parseQ(v), tok = new Set();
+  P.chips.forEach((c) => { if (c.label.charAt(0) !== "“") c.idx.forEach((i) => tok.add(i)); });
+  let i = -1;
+  m.innerHTML = v.replace(/(\s+)|(\S+)/g, (all, sp, w) => (sp ? esc(sp) : (i++, tok.has(i) ? '<span class="tok">' + esc(w) + "</span>" : esc(w))));
+  m.scrollLeft = q.scrollLeft;
+  q.classList.toggle("mirrored", tok.size > 0);
+}
+/* Searching: the head and the page change while the box is in use */
+function qActive() { const q = $("tx-q"); return !!q && (document.activeElement === q || !!S.q.trim()); }
+function searchState() {
+  const q = $("tx-q"), focused = document.activeElement === q, active = qActive(), blank = focused && !q.value.trim(), phone = layout() === "phone";
+  $("tx-head").classList.toggle("searching", active);
+  $("tx-head").querySelector(".tx-cancel").hidden = !(phone && active);
+  // Recent searches and hints: a popover under the box, or the page itself on a phone
+  const pop = $("tx-recent"), page = $("tx-qrec");
+  pop.hidden = !(blank && !phone);
+  page.hidden = !(blank && phone);
+  root.querySelector(".tx-page").classList.toggle("qblank", blank && phone);
+  if (blank) { pop.innerHTML = phone ? "" : recentHtml(false); page.innerHTML = phone ? recentHtml(true) : ""; }
+}
+function recentHtml(phone) {
+  const first = state.people[0], who = couple() && first ? "@" + first.name.split(/\s+/)[0].toLocaleLowerCase() : null;
+  const tries = [[">50", t("amount over {amount}", { amount: "50" }), ">"], who && [who, t("a person"), "@"], ["#tag", t("a tag"), "#"]].filter(Boolean);
+  const rec = recent();
+  if (phone) {
+    return (rec.length ? '<div class="w-glh">' + esc(t("Recent")) + '</div><div class="w-gl">' + rec.map((r) => '<button type="button" class="w-gr" data-rq="' + esc(r) + '">' + icon("history", "tx-rqi") + '<span class="k">' + esc(r) + "</span></button>").join("") +
+        '<button type="button" class="w-gr acc" data-act="rclear">' + esc(t("Clear Recent")) + "</button></div>" : "") +
+      '<div class="w-glh">' + esc(t("Try")) + '</div><div class="w-gl">' + tries.map(([k, d, ins]) => '<button type="button" class="w-gr" data-rins="' + esc(ins) + '"><span class="k"><span class="tok">' + esc(k) + '</span></span><span class="v">' + esc(d) + "</span></button>").join("") + "</div>";
+  }
+  return (rec.length ? '<div class="tx-rh">' + esc(t("Recent")) + "</div>" + rec.map((r) => '<button type="button" data-rq="' + esc(r) + '">' + icon("history", "tx-rqi") + "<span>" + esc(r) + "</span></button>").join("") + '<div class="w-menusep" role="separator"></div>' : "") +
+    '<div class="tx-rh">' + esc(t("Try")) + "</div>" + tries.map(([k, d, ins]) => '<button type="button" data-rins="' + esc(ins) + '"><span class="tok">' + esc(k) + "</span><small>" + esc(d) + "</small></button>").join("");
 }
 
 function renderTools(R, P, shown) {
   const cal = S.view === "cal";
   $("tx-daychip").innerHTML = S.day && !cal
     ? '<button type="button" class="w-chip on" data-act="dayx" aria-label="' + esc(t("Show every day, not only {day}", { day: dlabW(S.day) })) + '">' + icon("cal") + esc(dlabW(S.day)) + icon("x", "x") + "</button>" : "";
-  // What the search found, and saved views
-  let h = "";
-  if (P.chips.length) {
-    h += '<span class="w-parsed">' + esc(t("Showing")) + "</span>" + P.chips.map((c, i) => '<button type="button" class="w-chip on tx-qchip" data-chip="' + i + '" aria-label="' + esc(t("Remove {filter}", { filter: c.label })) + '">' + esc(c.label) + icon("x", "x") + "</button>").join("");
-    if (!views().some((v) => v.query === S.q.trim())) h += '<button type="button" class="w-link tx-lk" data-act="save-view">' + esc(t("Save view")) + "</button>";
-    if (!R.fromQuery && !cal && S.mode !== "all") {
-      h += R.search
-        ? '<span class="w-parsed">' + esc(t("in every month")) + '</span><button type="button" class="w-link tx-lk" data-act="only">' + esc(onlyLabel()) + "</button>"
-        : '<span class="w-parsed">' + esc(inLabel()) + '</span><button type="button" class="w-link tx-lk" data-act="everym">' + esc(t("Search every month")) + "</button>";
-    }
-  } else if (views().length) {
-    h += '<span class="w-parsed">' + esc(t("Views")) + "</span>" + views().map((v, i) =>
-      '<span class="tx-view"><button type="button" class="w-chip" data-view="' + i + '">' + esc(v.name) + '</button><button type="button" class="tx-viewx" data-viewx="' + i + '" aria-label="' + esc(t("Delete the view {name}", { name: v.name })) + '">' + icon("x") + "</button></span>").join("");
-  }
-  $("tx-views").innerHTML = h;
-  $("tx-views").hidden = !h;
+  // While searching, a scope bar: every month, or only the range picked (like Mail's All Mailboxes | Inbox)
+  const sc = $("tx-scope"), scoped = S.q.trim() && !R.fromQuery && !cal && S.mode !== "all";
+  sc.hidden = !scoped;
+  sc.innerHTML = scoped ? '<button type="button" data-sc="all" aria-pressed="' + !!R.search + '">' + esc(t("All months")) + '</button><button type="button" data-sc="range" aria-pressed="' + !R.search + '">' + esc(scopeLabel()) + "</button>" : "";
   // One line instead of a chart: how many, what came in, what went out
   let inc = 0, out = 0;
   for (const x of shown) { if (x.type === "income") inc += amt(x); else out += amt(x); }
   const n = shown.length;
-  $("tx-count").innerHTML = esc(state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) })) +
+  $("tx-count").innerHTML = '<span class="tx-n">' + esc(state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) })) + "</span>" +
     (n ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f0(inc)) + '</b></span><span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f0(out)) + "</b></span>" : "");
 }
 
@@ -245,13 +307,12 @@ function renderCal(R, noDay) {
   if (!S.calDay || S.calDay.slice(0, 7) !== mk) S.calDay = TODAY.slice(0, 7) === mk ? TODAY : noDay.length ? noDay[0].d : ds(y, m, 1);
   const by = dayMap(noDay);
   const sched = S.q.trim() ? {} : schedMap(y, m, (r, inc) => !((S.type !== "all" && (S.type === "income") !== inc) || (S.cats.size && !S.cats.has(r.c)) || (S.shared && r.p !== null)));
-  const g = monthGrid(y, m, by, sched, S.calDay, "cd");
+  const g = monthGrid(y, m, by, sched, S.calDay, "cd", layout() === "phone");
   $("tx-cal").innerHTML = g.html;
   gridHover($("tx-cal"), "cd", by, sched);
   $("tx-cal-h").textContent = monthYear(y, m);
-  const fut = ds(y, m, dim(y, m)) > TODAY;
-  $("tx-cal-sub").textContent = noSpendText(g.ns) + ". " + (fut ? t("Dashed days show bills still to come.") + " " : "") + (layout() === "wide" ? t("Pick a day to see it on the right.") : t("Pick a day to see it below."));
-  $("tx-insp").innerHTML = dayPanel(S.calDay, noDay, sched, layout() === "wide");
+  $("tx-cal").setAttribute("aria-description", noSpendText(g.ns));
+  $("tx-insp").innerHTML = dayPanel(S.calDay, noDay, sched, layout() === "wide", layout() === "phone");
   $("tx-insp").setAttribute("role", "complementary");
   $("tx-body").classList.remove("open");
   document.documentElement.classList.remove("tx-lock");
@@ -276,14 +337,18 @@ function setRange(mode) {
   const was = S.mode;
   S.mode = mode;
   if (mode === "month" && was !== "month") S.ym = ym(TODAY);
+  if (mode === "year") S.y = +TODAY.slice(0, 4);
   S.searchAll = false; S.day = null; S.sel = null; S.open = false;
   if (mode !== "month") S.view = "list";
   render();
 }
+/* ‹ ›: one month (or one year in year view) back or forward */
 function step(k) {
-  const [ny, nm] = ymAdd(S.ym[0], S.ym[1], k), [fy, fm] = ym(firstDay()), [ly, lm] = ym(lastDay());
-  if (ny * 12 + nm < fy * 12 + fm || ny * 12 + nm > ly * 12 + lm) return;
-  S.ym = [ny, nm]; S.mode = "month"; S.day = null; S.sel = null; S.open = false; S.calDay = null;
+  const ok = stepOk();
+  if ((k < 0 && !ok.prev) || (k > 0 && !ok.next)) return;
+  if (S.view !== "cal" && S.mode === "year") S.y += k;
+  else { S.ym = ymAdd(S.ym[0], S.ym[1], k); S.mode = "month"; S.calDay = null; }
+  S.day = null; S.sel = null; S.open = false;
   render();
 }
 function focusSearch() { const q = $("tx-q"); if (q) { q.focus(); q.select(); } }
@@ -325,20 +390,6 @@ function remove(x) {
   const hadFocus = $("tx-list").contains(document.activeElement);
   deleteTx(x).then(() => { if (hadFocus && S.sel && mounted) list.reveal(S.sel, true); });
 }
-function saveViewDialog() {
-  const name = cur.P.chips.map((c) => c.label).join(", ");
-  openDialog({
-    title: esc(t("Save this view")),
-    body: '<p>' + esc(t("Saved views appear under the search box, and in Filters on the phone.")) + '</p><div class="w-input"><input id="tx-vname" maxlength="40" aria-label="' + esc(t("Name")) + '" value="' + esc(name.charAt(0).toLocaleUpperCase() + name.slice(1)) + '"></div>',
-    ok: esc(t("Save view")),
-    async onOk(r) {
-      const nm = r.querySelector("#tx-vname").value.trim();
-      if (!nm) throw new Error(t("Give the view a name."));
-      await saveView(nm, S.q.trim());
-    },
-  });
-}
-
 /* ---------- events ---------- */
 function onClick(ev) {
   const tgt = ev.target;
@@ -346,14 +397,15 @@ function onClick(ev) {
   if (act && !act.disabled) {
     const a = act.dataset.act, x = selected();
     switch (a) {
-      case "filters": return openFilterSheet({ render, list: () => cur.list, setQ });
-      case "view-cal": return showCal();
-      case "view-list": S.view = "list"; S.open = false; return render();
+      case "filters": return openFilter({ render, list: () => cur.list, setQ, phone: layout() === "phone", button: act });
+      case "prev": return step(-1);
+      case "next": return step(1);
       case "select": S.selMode = !S.selMode; S.picked = new Set(); S.open = false; lastPick = null; return render();
       case "export": return exportCsv(cur.list);
-      case "only": S.searchAll = false; S.sel = null; return render();
       case "everym": S.searchAll = true; if (S.mode === "all") S.mode = "month"; S.sel = null; return render();
-      case "save-view": return saveViewDialog();
+      case "qx": setQ(""); render(); $("tx-q").focus(); return;
+      case "cancel": setQ(""); $("tx-q").blur(); return render();
+      case "rclear": clearRecent(); searchState(); $("tx-q").focus(); return;
       case "clear": setQ(""); S.cats = new Set(); S.type = "all"; S.shared = false; S.day = null; return render();
       case "dayx": S.day = null; return render();
       case "add": return openAdd();
@@ -370,15 +422,20 @@ function onClick(ev) {
     const v = pm.dataset.pm;
     if (v === "custom") return setTimeout(() => openRangeSheet((o) => { Object.assign(S, o, { searchAll: false, day: null, sel: null, open: false }); if (S.mode !== "month") S.view = "list"; render(); }));
     if (v === "year" || v === "all") return setRange(v);
-    S.mode = "month"; S.ym = [+v.slice(0, 4), +v.slice(5)]; S.searchAll = false; S.day = null; S.sel = null; S.open = false; S.calDay = null;
+    const [ty, tm] = ym(TODAY);
+    S.mode = "month"; S.ym = v === "last" ? ymAdd(ty, tm, -1) : [ty, tm]; S.searchAll = false; S.day = null; S.sel = null; S.open = false; S.calDay = null;
     return render();
   }
-  const chip = tgt.closest("[data-chip]");
-  if (chip) { const c = cur.P.chips[+chip.dataset.chip]; if (c) { setQ(withoutWords(S.q, c.idx)); render(); const next = $("tx-views").querySelector("[data-chip]") || $("tx-q"); next.focus(); } return; }
   const vw = tgt.closest("[data-view]");
-  if (vw) { const view = views()[+vw.dataset.view]; if (view) { setQ(view.query, true); render(); } return; }
-  const vx = tgt.closest("[data-viewx]");
-  if (vx) return deleteView(+vx.dataset.viewx);
+  if (vw) { if (vw.dataset.view === "cal") { if (S.view !== "cal") showCal(); } else if (S.view !== "list") { S.view = "list"; S.open = false; render(); } return; }
+  const scb = tgt.closest("[data-sc]");
+  if (scb) { S.searchAll = scb.dataset.sc === "all"; S.sel = null; return render(); }
+  const rq = tgt.closest("[data-rq],[data-rins]");
+  if (rq) {
+    const q = $("tx-q");
+    if (rq.dataset.rq !== undefined) { setQ(rq.dataset.rq, true); addRecent(rq.dataset.rq); render(); q.blur(); return; }
+    q.value = rq.dataset.rins; q.focus(); q.setSelectionRange(q.value.length, q.value.length); setQ(q.value); render(); return;
+  }
   const sib = tgt.closest("[data-sib]");
   if (sib) {
     const y = state.tx.find((z) => z.id === sib.dataset.sib);
@@ -425,15 +482,31 @@ function onChange(ev) {
 let searchFrame = 0;
 function onSearch(ev) {
   setQ(ev.target.value);
+  syncMirror();
+  $("tx-head").querySelector(".tx-qx").hidden = !ev.target.value;
+  searchState();
   cancelAnimationFrame(searchFrame);
   searchFrame = requestAnimationFrame(render);
+}
+function onSearchFocus() { closeFilter(); searchState(); }
+function onSearchBlur() {
+  if (S.q.trim()) addRecent(S.q);
+  // Let a click on a recent search land before the popover goes
+  setTimeout(() => { if (mounted && document.activeElement !== $("tx-q")) searchState(); }, 0);
+}
+/* A press outside the search box or the filter popover closes them */
+function onOutside(ev) {
+  if (!mounted) return;
+  const tg = ev.target;
+  if (tg.closest && (tg.closest("#tx-recent") || tg.closest("#tx-qrec"))) { ev.preventDefault(); return; } // keep the box focused
+  if (tg.closest && !tg.closest(".tx-fw") && !tg.closest("#dlg")) closeFilter();
 }
 function onSearchKey(ev) {
   if (ev.key === "Escape") {
     ev.stopPropagation();
     if (ev.target.value) { setQ(""); render(); } else ev.target.blur();
   } else if (ev.key === "ArrowDown" || ev.key === "Enter") {
-    if (ev.key === "Enter") ev.preventDefault();
+    if (ev.key === "Enter") { ev.preventDefault(); addRecent(S.q); if (layout() === "phone") ev.target.blur(); }
     if (cur.list.length && S.view === "list") { ev.preventDefault(); select(S.sel || cur.list[0].id, { focus: true }); }
   }
 }
@@ -446,6 +519,7 @@ export function key(ev) {
   const neutral = blank || inList || (a.closest && a.closest("#tx-insp"));
   if (/^[1-3]$/.test(k)) { ev.preventDefault(); return setRange(RANGES[+k - 1]); }
   if (k === "Escape") {
+    if (!$("tx-fpop").hidden) return closeFilter(true);
     if (closePanel()) return;
     if (S.selMode) { S.selMode = false; S.picked = new Set(); return render(); }
     if (S.day) { S.day = null; return render(); }

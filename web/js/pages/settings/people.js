@@ -1,71 +1,132 @@
-/* Settings › People: who is in the household, turning tags into people, removing someone. */
-import { t, tn, esc, state, av, num, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym, LANG } from "../../core.js";
+/* Settings › People: who is in the household. Each person opens their own page (name, switch, remove);
+   Edit reorders. Turning a tag into a person lives on the tag's page. */
+import { t, tn, esc, state, av, num, icon, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { group, gi, giButton, ico, linkBtn, iconBtn, field, textInput, val, paint } from "./common.js";
+import { gl, gr, addRow, hero, fieldRow, gate, phone, val, paint } from "./common.js";
+import { setAction, openPane } from "../settings.js";
 
 let box = null;
+let sub = "";          // "" for the list, or a person's id for their page
+let editing = false;   // Edit: drag to reorder
 
-export function mount(el) {
+export function mount(el, s) {
   box = el;
+  sub = s || "";
+  editing = false;
   box.addEventListener("click", onClick);
+  box.addEventListener("pointerdown", onGrip);
+  box.addEventListener("keydown", onGripKey);
   render();
 }
+export function show(s) { sub = s || ""; editing = false; render(); }
 export function update() { if (box) render(); }
 export function unmount() { box = null; }
+export function onAction(act) { if (act === "edit" || act === "done") { editing = act === "edit"; render(); } }
 
-function render() {
-  const people = state.people;
+function counts() {
   const own = {};
   let shared = 0;
   for (const tx of state.tx) { if (tx.p === null) shared++; else own[tx.p] = (own[tx.p] || 0) + 1; }
-  const first = state.tx.length ? state.tx[state.tx.length - 1].d : null;
-  const since = first ? monthYear(...ym(first)) : "";
+  return { own, shared };
+}
+function since() { const first = state.tx.length ? state.tx[state.tx.length - 1].d : null; return first ? monthYear(...ym(first)) : ""; }
 
-  const rows = people.map((p, i) => {
+function render() {
+  if (!box) return;
+  if (sub) return renderPerson();
+  const people = state.people;
+  const { own, shared } = counts();
+  const when = since();
+  const rows = people.map((p) => {
     const k = String(p.id);
-    const sub = !state.tx.length ? t("No transactions yet") : couple()
-      ? tn(own[k] || 0, "{n} own transaction, plus {shared} shared since {since}", "{n} own transactions, plus {shared} shared since {since}", { shared: num(shared), since })
+    const line = !state.tx.length ? t("No transactions yet") : couple()
+      ? tn(own[k] || 0, "{n} own · {shared} shared since {since}", "{n} own · {shared} shared since {since}", { shared: num(shared), since: when })
       : tn(own[k] || 0, "{n} transaction", "{n} transactions");
-    const acts = '<span class="w-acts">' +
-      (people.length > 1 ? iconBtn("arrowup", t("Move {name} up", { name: p.name }), ' data-act="up" data-id="' + k + '" data-k="up:' + k + '"' + (i === 0 ? " disabled" : "")) +
-        iconBtn("arrowdown", t("Move {name} down", { name: p.name }), ' data-act="down" data-id="' + k + '" data-k="down:' + k + '"' + (i === people.length - 1 ? " disabled" : "")) : "") +
-      linkBtn(t("Rename"), ' data-act="rename" data-id="' + k + '" data-k="rename:' + k + '"') +
-      // Who is using this browser: switch person, or sign out when sign-in is on (the shell handles both)
-      (k !== state.me ? "" : state.status && state.status.signin ? linkBtn(t("Sign out"), ' data-signout data-k="signout"') : people.length > 1 ? linkBtn(t("Switch"), ' data-switch data-k="switch"') : "") + "</span>";
-    return gi(av(k, "lg"), esc(p.name) + (k === state.me ? ' <span class="w-badge">' + t("You") + "</span>" : ""), sub, acts);
+    const name = esc(p.name) + (k === state.me ? '<span class="w-badge">' + t("You") + "</span>" : "");
+    if (editing) return gr({ lead: av(k, "lg"), k: name, sub: line, attrs: ' data-id="' + k + '"', right: people.length > 1 ? '<button type="button" class="w-ggrip" data-grip="' + k + '" data-k="grip:' + k + '" aria-label="' + esc(t("Move {name}", { name: p.name })) + '" title="' + esc(t("Drag, or use the arrow keys")) + '">' + icon("grip") + "</button>" : "" });
+    return gr({ tag: "a", href: "/settings/people/" + k, attrs: ' data-pane="people/' + k + '" data-k="person:' + k + '"', lead: av(k, "lg"), k: name, sub: line, chev: true });
   });
-  rows.push(giButton('<span class="w-ico w-round">' + '<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></span>', t("Add a person"),
-    state.status && state.status.signin
-      ? t("A child, a flatmate, anyone who shares costs. They sign in with the household password.")
-      : t("A child, a flatmate, anyone who shares costs. Each person gets their own view."), ' data-act="add" data-k="add"'));
-
-  let html = group(t("People in this household"), rows);
-  html += sharingGroup();
-  const others = people.filter((p) => String(p.id) !== state.me);
-  if (people.length > 1 && others.length) {
-    html += group(t("Removing a person"), others.map((p) => gi(ico("trash", "w-ico-bad"), '<span class="w-bad">' + t("Remove {name} from this household", { name: esc(p.name) }) + "</span>",
-      t("Their transactions stay. You choose who they go to."), linkBtn(t("Remove"), ' data-act="remove" data-id="' + p.id + '" data-k="remove:' + p.id + '"', "w-bad"))));
-  }
-  paint(box, html);
+  if (!editing) rows.push(addRow(t("Add a person"), "add", ' data-k="add"').replace('class="w-gr add"', 'class="w-gr add w36"'));
+  setAction(people.length > 1 ? '<button type="button" data-act="' + (editing ? "done" : "edit") + '"' + (editing ? ' class="on"' : "") + ">" + (editing ? t("Done") : t("Edit")) + "</button>" : "");
+  paint(box, (phone() ? '<div class="w-glh">' + t("In this household") + "</div>" : "") + gl(rows, "", editing ? t("Drag a person to change the order.") : ""));
 }
 
-/* Tags named like people, e.g. #ana, from before Wally knew about people */
-function nameTags() {
-  const names = new Set(state.people.map((p) => p.name.toLocaleLowerCase()));
-  return state.tags.filter((g) => names.has(g.toLocaleLowerCase()));
+/* A person's own page: their name, switching to them, removing them */
+function renderPerson() {
+  const p = person(sub);
+  if (!p) { openPane("people"); return; }
+  const k = String(p.id), me = k === state.me;
+  const { own, shared } = counts();
+  const signin = state.status && state.status.signin;
+  const line = !state.tx.length ? t("No transactions yet") : couple()
+    ? tn(own[k] || 0, "{n} own transaction, plus {shared} shared", "{n} own transactions, plus {shared} shared", { shared: num(shared) })
+    : tn(own[k] || 0, "{n} transaction", "{n} transactions");
+  const first = [gr({ k: t("Name"), v: esc(p.name), chev: true, act: "rename", attrs: ' data-id="' + k + '" data-k="rename"' })];
+  if (!me && !signin) first.push(gr({ k: t("Switch to {name}", { name: esc(p.name) }), cls: "acc", act: "switch", attrs: ' data-id="' + k + '" data-k="switch"' }));
+  if (me && signin) first.push(gr({ k: t("Sign out"), cls: "acc", tag: "button", attrs: ' data-signout data-k="signout"' }));
+  setAction("");
+  paint(box, hero(av(k), esc(p.name), line) + gl(first) +
+    (!me && state.people.length > 1 ? gl([gr({ k: t("Remove from household"), cls: "red", act: "remove", attrs: ' data-id="' + k + '" data-k="remove"' })]) : ""));
 }
-function sharingGroup() {
-  if (!state.tags.length || !state.people.length) return "";
-  const found = nameTags();
-  let sub;
-  if (found.length) {
-    const set = new Set(found.map((g) => "#" + g));
-    const n = state.tx.filter((tx) => tx.tags.some((g) => set.has(g))).length;
-    sub = tn(n, "Found {tags} on {n} transaction. Move it to its owner.", "Found {tags} on {n} transactions. Move them to their owners.",
-      { tags: new Intl.ListFormat(LANG, { type: "conjunction" }).format(found.map((g) => "#" + g)).replace(/#[^\s,،、]+/g, (m) => "<b>" + esc(m) + "</b>") });
-  } else sub = t("Every transaction with a tag, like #holiday, becomes one person’s own.");
-  return group(t("Sharing"), [giButton(ico("tag"), t("Turn a tag into a person"), sub, ' data-act="fromtag" data-k="fromtag"')]);
+export function meta(s) { return s ? { title: "" } : {}; }
+
+/* ---------- Edit: drag a row by its handle, or move it with the arrow keys ---------- */
+let drag = null;
+function onGrip(ev) {
+  const g = ev.target.closest("[data-grip]");
+  if (!g || !editing) return;
+  ev.preventDefault();
+  const row = g.closest(".w-gr"), list = row.parentElement;
+  drag = { row, list, id: g.dataset.grip, y: ev.clientY, moved: false };
+  row.classList.add("dragging");
+  g.setPointerCapture(ev.pointerId);
+  const move = (e) => {
+    if (!drag) return;
+    const dy = e.clientY - drag.y;
+    drag.row.style.transform = "translateY(" + dy + "px)";
+    const rows = [...drag.list.querySelectorAll(".w-gr")].filter((r) => r !== drag.row);
+    const mid = drag.row.getBoundingClientRect().top + drag.row.offsetHeight / 2;
+    const before = rows.find((r) => { const b = r.getBoundingClientRect(); return mid < b.top + b.height / 2; });
+    const next = before || null;
+    if (next !== drag.row.nextElementSibling) {
+      const top0 = drag.row.getBoundingClientRect().top;
+      drag.list.insertBefore(drag.row, next);
+      drag.y += drag.row.getBoundingClientRect().top - top0;
+      drag.row.style.transform = "translateY(" + (e.clientY - drag.y) + "px)";
+      drag.moved = true;
+    }
+  };
+  const up = () => {
+    g.removeEventListener("pointermove", move);
+    g.removeEventListener("pointerup", up);
+    g.removeEventListener("pointercancel", up);
+    if (!drag) return;
+    drag.row.style.transform = ""; drag.row.classList.remove("dragging");
+    const ids = [...drag.list.querySelectorAll("[data-id]")].map((r) => Number(r.dataset.id));
+    const moved = drag.moved; drag = null;
+    if (moved) saveOrder(ids);
+  };
+  g.addEventListener("pointermove", move);
+  g.addEventListener("pointerup", up);
+  g.addEventListener("pointercancel", up);
+}
+function onGripKey(ev) {
+  const g = ev.target.closest("[data-grip]");
+  if (!g || (ev.key !== "ArrowUp" && ev.key !== "ArrowDown")) return;
+  ev.preventDefault();
+  const ids = state.people.map((p) => p.id);
+  const i = ids.indexOf(Number(g.dataset.grip)), j = i + (ev.key === "ArrowUp" ? -1 : 1);
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  saveOrder(ids);
+}
+async function saveOrder(ids) {
+  try {
+    state.people = await PUT("/people/order", ids);
+    if (state.status) state.status.people = state.people;
+    refresh({ people: true });
+  } catch (e) { errorToast(e); render(); }
 }
 
 /* ---------- actions ---------- */
@@ -76,10 +137,14 @@ async function onClick(ev) {
   switch (b.dataset.act) {
     case "add": return addPerson();
     case "rename": return renamePerson(id);
-    case "up": case "down": return move(id, b.dataset.act === "up" ? -1 : 1);
+    case "switch": return switchTo(id);
     case "remove": return removePerson(id);
-    case "fromtag": return fromTag();
   }
+}
+/* Sign-in is off: this browser takes Wally on trust, so it can simply be someone else */
+function switchTo(id) {
+  try { localStorage.setItem("wally.person", String(id)); } catch (e) { /* fine */ }
+  location.href = "/";
 }
 
 async function reloadPeople() {
@@ -88,10 +153,14 @@ async function reloadPeople() {
 }
 
 function addPerson() {
+  const signin = state.status && state.status.signin;
   openDialog({
-    title: t("Add a person"),
-    body: field(t("Name"), textInput("np-name", "", ' maxlength="40" autofocus')),
-    ok: t("Add person"),
+    kind: "sheet",
+    title: t("Add a Person"),
+    body: fieldRow("np-name", "", t("Name"), ' maxlength="40" autofocus') +
+      '<p class="w-glf">' + (signin ? t("A child, a flatmate, anyone who shares costs. They sign in with the household password.") : t("A child, a flatmate, anyone who shares costs. Each person gets their own view.")) + "</p>",
+    ok: t("Add"),
+    onOpen: (root) => { root.classList.add("w-sh420"); gate(root, (r) => !!val(r, "np-name")); },
     onOk: async (root) => {
       const name = val(root, "np-name");
       if (!name) throw new Error(t("Type their name."));
@@ -107,10 +176,11 @@ function renamePerson(id) {
   const p = person(id);
   if (!p) return;
   openDialog({
+    kind: "sheet",
     title: t("Rename {name}", { name: esc(p.name) }),
-    body: field(t("Name"), textInput("rp-name", p.name, ' maxlength="40"')),
-    ok: t("Rename"),
-    onOpen: (root) => root.querySelector("#rp-name").select(),
+    body: fieldRow("rp-name", p.name, t("Name"), ' maxlength="40"') + '<p class="w-glf">' + t("Everyone in the household sees the new name.") + "</p>",
+    ok: t("Done"),
+    onOpen: (root) => { root.classList.add("w-sh420"); root.querySelector("#rp-name").select(); gate(root, (r) => !!val(r, "rp-name")); },
     onOk: async (root) => {
       const name = val(root, "rp-name");
       if (!name) throw new Error(t("Type their name."));
@@ -123,18 +193,6 @@ function renamePerson(id) {
   });
 }
 
-async function move(id, step) {
-  const ids = state.people.map((p) => p.id);
-  const i = ids.indexOf(Number(id)), j = i + step;
-  if (i < 0 || j < 0 || j >= ids.length) return;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
-  try {
-    state.people = await PUT("/people/order", ids);
-    if (state.status) state.status.people = state.people;
-    refresh({ people: true });
-  } catch (e) { errorToast(e); }
-}
-
 async function removePerson(id) {
   const p = person(id);
   if (!p) return;
@@ -142,72 +200,39 @@ async function removePerson(id) {
   try { usage = await GET("/people/" + id + "/usage"); } catch (e) { return errorToast(e); }
   const left = state.people.filter((x) => String(x.id) !== String(id));
   const heir = left.find((x) => String(x.id) === state.me) || left[0];
-  const options = left.map((x) => [String(x.id), esc(x.name), t("They become {name}’s own.", { name: esc(x.name) })]);
-  if (left.length >= 2) options.push(["shared", t("Shared"), t("Split between everyone still here.")]);
-  const radios = '<div class="w-opts" role="radiogroup" aria-label="' + esc(t("Move their transactions to")) + '">' + options.map(([v, label, small]) =>
-    '<label><input type="radio" name="rp-to" value="' + v + '"' + (v === String(heir.id) ? " checked" : "") + "><span><b>" + label + "</b><small>" + small + "</small></span></label>").join("") + "</div>";
-  const parts = [tn(usage.own, "{n} transaction of their own", "{n} transactions of their own")];
-  if (usage.shared) parts.push(tn(usage.shared, "{n} shared one", "{n} shared ones"));
-  if (usage.rules) parts.push(tn(usage.rules, "{n} recurring rule", "{n} recurring rules"));
+  const many = left.length >= 2 && (usage.own || usage.rules);
+  const name = esc(p.name);
+  // Whole sentences, so every language can word each one its own way
+  const parts = [];
+  if (!usage.own && !usage.rules) parts.push(t("Their part of shared costs goes to whoever paid."));
+  else if (many) parts.push(t("Their transactions and recurring rules move to the person you pick."));
+  else {
+    parts.push(tn(usage.own, "{name}’s {n} transaction moves to {to}.", "{name}’s {n} transactions move to {to}.", { name, to: esc(heir.name) }));
+    if (usage.rules) parts.push(tn(usage.rules, "So does {n} recurring rule.", "So do {n} recurring rules."));
+  }
+  if (usage.shared) parts.push(t("Shared costs stay shared."));
+  parts.push(t("Nothing is deleted."));
+  if (state.status && state.status.signin) parts.push(t("They still know the household password."));
+  const text = parts.join(" ");
+  const pick = many ? '<label class="w-pop2"><span>' + t("Move them to") + '</span><select id="rp-to">' + left.map((x) => '<option value="' + x.id + '"' + (x.id === heir.id ? " selected" : "") + ">" + esc(x.name) + "</option>").join("") +
+    '<option value="shared">' + t("Shared") + "</option></select></label>" : "";
   openDialog({
-    title: t("Remove {name}?", { name: esc(p.name) }),
-    body: "<p>" + t("{name} has {list}. Nothing is deleted.", { name: esc(p.name), list: new Intl.ListFormat(LANG, { type: "conjunction" }).format(parts) }) + "</p>" +
-      (usage.own || usage.rules ? "<p>" + t("Move their transactions and rules to:") + "</p>" + radios : "") +
-      "<p>" + t("Their part of shared costs goes to whoever you choose, or to whoever paid. Their sign-ins and API keys are deleted.") + "</p>" +
-      (state.status && state.status.signin ? "<p>" + t("They still know the household password. If they shouldn’t come back, change it in Settings › Sign-in.") + "</p>" : ""),
-    ok: t("Remove {name}", { name: esc(p.name) }),
+    kind: "alert",
+    top: av(String(p.id), "lg w-av48"),
+    title: t("Remove {name}?", { name }),
+    body: "<p>" + text + "</p>" + pick,
+    onOpen: (root) => setTimeout(() => root.focus(), 0),
+    ok: phone() ? t("Remove {name}", { name }) : t("Remove"),
     danger: true,
     onOk: async (root) => {
-      const pick = root.querySelector('input[name="rp-to"]:checked');
-      const to = pick ? pick.value : String(heir.id);
+      const sel = root.querySelector("#rp-to");
+      const to = sel ? sel.value : String(heir.id);
       await DEL("/people/" + id, { move_to: to === "shared" ? null : Number(to) });
       if (state.scope === String(id)) { state.scope = "all"; try { localStorage.setItem("wally.scope", "all"); } catch (e) { /* fine */ } }
       await Promise.all([reloadPeople(), reloadLedger(), reloadRules()]);
       refresh({ people: true, data: true });
       toast(t("Removed {name}", { name: p.name }));
-    },
-  });
-}
-
-function fromTag() {
-  const found = nameTags();
-  const counts = {};
-  state.tx.forEach((tx) => tx.tags.forEach((g) => { counts[g] = (counts[g] || 0) + 1; }));
-  const start = found[0] || state.tags[0];
-  const owner = state.people.find((p) => p.name.toLocaleLowerCase() === String(start).toLocaleLowerCase()) || person(state.me) || state.people[0];
-  let count = 0;
-  openDialog({
-    title: t("Turn a tag into a person"),
-    body: "<p>" + t("Every transaction with the tag becomes that person’s own, and stops being shared.") + "</p>" +
-      field(t("Tag"), '<select class="w-mini w-sselect" id="ft-tag">' + state.tags.map((g) => '<option value="' + esc(g) + '"' + (g === start ? " selected" : "") + ">#" + esc(g) + " · " + num(counts["#" + g] || 0) + "</option>").join("") + "</select>") +
-      field(t("Person"), '<select class="w-mini w-sselect" id="ft-person">' + state.people.map((p) => '<option value="' + p.id + '"' + (p.id === owner.id ? " selected" : "") + ">" + esc(p.name) + "</option>").join("") + "</select>") +
-      '<label class="w-scheck"><input type="checkbox" id="ft-remove" checked> ' + t("Remove the tag from them afterwards") + "</label>" +
-      '<p class="w-spreview" id="ft-preview" aria-live="polite"></p>',
-    ok: t("Move transactions"),
-    onOpen: (root) => {
-      const preview = async () => {
-        const tag = root.querySelector("#ft-tag").value;
-        const who = person(root.querySelector("#ft-person").value);
-        const out = root.querySelector("#ft-preview");
-        try {
-          const r = await GET("/people/from-tag/preview?tag=" + encodeURIComponent(tag));
-          count = r.count;
-          if (out.isConnected) out.innerHTML = tn(r.count, "{n} transaction has #{tag}. It becomes {name}’s.", "{n} transactions have #{tag}. They become {name}’s.", { tag: esc(tag), name: esc(who ? who.name : "") });
-        } catch (e) { if (out.isConnected) out.textContent = e.message; }
-      };
-      root.querySelector("#ft-tag").addEventListener("change", preview);
-      root.querySelector("#ft-person").addEventListener("change", preview);
-      preview();
-    },
-    onOk: async (root) => {
-      const tag = root.querySelector("#ft-tag").value;
-      const who = person(root.querySelector("#ft-person").value);
-      if (!count) throw new Error(t("No transactions have this tag."));
-      const r = await POST("/people/" + who.id + "/from-tag", { tag, remove_tag: root.querySelector("#ft-remove").checked });
-      await reloadLedger();
-      state.tags = await GET("/tags");
-      refresh({ data: true });
-      toast(tn(r.count, "Moved {n} transaction to {name}", "Moved {n} transactions to {name}", { name: who.name }));
+      openPane("people");
     },
   });
 }

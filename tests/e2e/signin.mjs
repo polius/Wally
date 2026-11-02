@@ -105,8 +105,8 @@ async function open(base, { width = 1440, height = 900, person, theme = "light" 
 const shot = async (page, name) => { if (SHOTS) await page.waitForTimeout(350), await page.screenshot({ path: join(SHOTS, name + ".png") }); };
 const gateText = (page) => page.locator("#gate").innerText();
 const appShown = (page) => page.waitForSelector("#app:not([hidden])", { timeout: 8000 }).then(() => true, () => false);
-/* Sign out lives in Settings › People, on your own row */
-const signOutVia = async (page) => { await page.goto(new URL("/settings/people", page.url()).href, { waitUntil: "networkidle" }); await page.click("#set-pane [data-signout]"); };
+/* Sign out: the app's own Sign out (in the person menu, and in Settings on your own page) */
+const signOutVia = async (page) => { await page.goto(new URL("/settings", page.url()).href, { waitUntil: "networkidle" }); await page.evaluate(() => import("/js/shell.js").then((m) => m.signOut())); };
 /* Wrong passwords and codes are answered 400, 401 or 429 on purpose here; the browser logs those
    responses. Anything else in the console is a failure. */
 const EXPECTED = /^Failed to load resource: the server responded with a status of (400|401|429)/;
@@ -126,6 +126,7 @@ try {
     await page.waitForSelector("#gate .w-whop");
     ok((await gateText(page)).includes("Who’s using Wally?"), "who: asks who is using Wally");
     ok(await page.locator("#gate .w-whop").count() === 2, "who: lists both people");
+    ok(!(await gateText(page)).includes("Wally remembers") && !(await gateText(page)).includes("No password needed"), "who: the title and the faces only, like the sign-in picker");
     await page.waitForTimeout(700);
     await shot(page, "who");
     await page.keyboard.press("Tab");
@@ -237,11 +238,14 @@ try {
     const sessions = await page.evaluate(() => fetch("/api/sessions").then((r) => r.json()));
     // (the API call that turned sign-in on is a third one, as Alex)
     ok(sessions.length === 3 && sessions.every((s) => s.person_id === 1 || s.person_id === 2) && sessions.some((s) => s.person_id === 1 && s.current) && sessions.some((s) => s.person_id === 2 && !s.current), "sessions: every browser listed, each with who is on it");
-    await page.goto(demo.base + "/settings/signin", { waitUntil: "networkidle" });
+    await page.goto(demo.base + "/settings/security/browsers", { waitUntil: "networkidle" });
     await page.waitForFunction(() => /Last seen/.test(document.getElementById("set-pane").textContent));
     const pane = await page.textContent("#set-pane");
-    ok(/Ana · Last seen/.test(pane) && /Alex · Last seen/.test(pane), "Settings › Sign-in: Signed-in browsers shows who is on each");
-    ok(pane.includes("Household password") && pane.includes("Two-step sign-in") && !pane.includes("Recovery codes"), "Settings › Sign-in: the household password and two-step rows, no recovery codes while two-step is off");
+    ok(/Ana · Last seen/.test(pane) && /Alex · Last seen/.test(pane), "Settings › Sign-in & Privacy › Signed-in browsers shows who is on each");
+    await page.goto(demo.base + "/settings/security", { waitUntil: "networkidle" });
+    await page.waitForSelector("#set-pane .w-sec");
+    const main = await page.textContent("#set-pane");
+    ok(main.includes("Change household password") && main.includes("Two-step sign-in") && !main.includes("Recovery codes"), "Settings › Sign-in & Privacy: the household password and two-step rows, no recovery codes while two-step is off");
     await shot(page, "settings-signin-browsers");
   }
 
@@ -303,10 +307,10 @@ try {
   // Add a phone: the password, then the same secret again
   {
     const page = alex;
-    await page.goto(demo.base + "/settings/signin", { waitUntil: "networkidle" });
-    await page.waitForFunction(() => /10 of 10 left/.test(document.getElementById("set-pane").textContent));
-    ok(true, "Settings › Sign-in: 10 of 10 recovery codes left");
-    ok(await page.locator('[data-act="2off"]').count() === 1, "Settings › Sign-in: two-step can be turned off");
+    await page.goto(demo.base + "/settings/security/two-step", { waitUntil: "networkidle" });
+    await page.waitForFunction(() => /Codes left\s*10 of 10/.test(document.getElementById("set-pane").textContent));
+    ok(true, "Settings › Two-step sign-in: 10 of 10 recovery codes left");
+    ok(await page.locator("#ts-toggle").count() === 1, "Settings › Two-step sign-in: two-step can be turned off");
     await page.click('[data-act="2show"]');
     await page.waitForSelector("#ts-pw");
     ok(await page.locator("#ts-secret").count() === 0, "Add a phone: asks for the password before showing anything");
@@ -357,7 +361,7 @@ try {
   // Alex changes the household password: Ana's browsers are signed out, and she signs in with the new one
   {
     const page = alex;
-    await page.goto(demo.base + "/settings/signin", { waitUntil: "networkidle" });
+    await page.goto(demo.base + "/settings/security", { waitUntil: "networkidle" });
     await page.waitForSelector('[data-act="password"]');
     await page.click('[data-act="password"]');
     await page.fill("#pw-cur", "household1");
@@ -365,7 +369,7 @@ try {
     await page.fill("#pw-rep", "household2");
     await page.click("#dlg [data-dlg-ok]");
     await page.waitForFunction(() => document.getElementById("toast").classList.contains("on") && /Password changed/.test(document.getElementById("toast-t").textContent), null, { timeout: 15000 });
-    ok(true, "change password: changed in Settings › Sign-in");
+    ok(true, "change password: changed in Settings › Sign-in & Privacy");
     const sessions = await page.evaluate(() => fetch("/api/sessions").then((r) => r.json()));
     ok(sessions.length === 1 && sessions[0].current, "change password: only this browser is still signed in");
     await ana.reload({ waitUntil: "networkidle" });
@@ -401,14 +405,14 @@ try {
     await page.click("#vg-help");
     await page.waitForSelector("#vg-rec");
     const help = await gateText(page);
-    ok(help.includes("Ask Ana") && help.includes("docker exec wally python3 -m api.signin_off"), "Lost it too?: ask Ana, or whoever runs the server, with the command");
+    ok(help.includes("Ask Ana") && !help.includes("signin_off"), "Lost it too?: one sentence, ask Ana; the server command is in the README");
     await shot(page, "lost-kit-too");
     await page.click("#vg-rec");
     await page.waitForSelector("textarea#vg-in");
     // A key from another kit: not this household's
     await page.fill("#vg-in", otherKey());
     await page.click("#vg-go");
-    await page.waitForFunction(() => !document.getElementById("vg-msg").hidden);
+    await page.waitForFunction(() => document.getElementById("vg-msg").textContent.trim().length > 0);
     ok((await page.textContent("#vg-msg")).trim() === "That recovery key isn’t right.", "kit: a wrong key is refused, with no tries counted (" + (await page.textContent("#vg-msg")) + ")");
     // One letter mistyped: caught by the check digit
     await page.fill("#vg-in", typo(kit));
@@ -544,7 +548,7 @@ try {
     ok(await page.locator("#onb-back").count() === 0, "welcome: no Back from the kit");
     await shot(page, "welcome-kit");
     ok(await page.isDisabled("#onb-next"), "welcome: Continue waits for the tick");
-    await page.check("#onb-saved");
+    await page.click("#onb-saved");
     await page.click("#onb-next");
     await page.waitForSelector("[data-onb-data]");
     ok((await gateText(page)).includes("Bring your data"), "welcome: step 6, your data");
@@ -594,8 +598,8 @@ try {
     // Forgot it: Wally 1 had no Emergency Kit, so only whoever runs the server can help
     ok((await (await fetch(v1.base + "/api/auth/status")).json()).kit === null, "upgrade: no kit yet");
     await page.click("#si-forgot");
-    await page.waitForSelector(".w-sifile");
-    ok((await gateText(page)).includes("There is no Emergency Kit yet") && (await page.textContent(".w-sifile code")) === "docker exec wally python3 -m api.signin_off", "upgrade: forgot says there is no kit yet, with the command for whoever runs the server");
+    await page.waitForSelector("#si-back");
+    ok((await gateText(page)).includes("There is no Emergency Kit yet") && (await gateText(page)).includes("only whoever runs the server can help") && !(await gateText(page)).includes("signin_off"), "upgrade: forgot says there is no kit yet and who can help; the command is in the README");
     await shot(page, "upgrade-forgot");
     await page.click("#si-back");
     await page.waitForSelector("#si-forgot");
@@ -643,7 +647,7 @@ try {
     ok((await counts()) === "Nothing changes for Alex / 4 transactions become theirs / ", "upgrade: without Alex’s tag, it becomes Ana’s (" + (await counts()) + ")");
     await page.selectOption(`[data-tagfor="${ids[0]}"]`, "alex");
     await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
-    ok(await page.locator(".w-onbdots li").count() === 4 && await page.locator(".w-onbfoot #onb-skip").innerText() === "Skip", "upgrade: four dots (people, tags, encrypting, the kit), and Skip under Continue");
+    ok(await page.locator(".w-onbdots li").count() === 4 && await page.locator(".w-onbfoot #onb-skip").innerText() === "Not now", "upgrade: four dots (people, tags, encrypting, the kit), and Not now under Continue");
     // The "You" row is this browser now: no signing out and in again
     const mid = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(mid.me && mid.me.name === "Alex", "upgrade: this browser became Alex, on the You row, without a second sign-in");
@@ -672,7 +676,7 @@ try {
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#onb-dl")]);
     const upPdf = readFileSync(await dl.path(), "latin1");
     ok(dl.suggestedFilename() === "wally-emergency-kit.pdf" && upPdf.startsWith("%PDF-") && upKit.split("-").every((g) => upPdf.includes(g)), "upgrade: the kit downloads as a PDF, with its key");
-    await page.check("#onb-saved");
+    await page.click("#onb-saved");
     await page.click("#onb-next");
     ok(await appShown(page), "upgrade: then the app, with no second sign-in and no password of their own to choose");
     const kst2 = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
@@ -724,7 +728,7 @@ try {
     await page.waitForSelector(".w-kitkey", { timeout: 30000 });
     ok((await gateText(page)).includes("Wally is encrypted."), "upgrade, encrypting: encrypted, then the Emergency Kit");
     ok(await page.isDisabled("#onb-next"), "upgrade, encrypting: Open Wally waits for the tick");
-    await page.check("#onb-saved");
+    await page.click("#onb-saved");
     await page.click("#onb-next");
     ok(await appShown(page), "upgrade, encrypting: then the app, unlocked, with no kit to save again");
     const est = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));

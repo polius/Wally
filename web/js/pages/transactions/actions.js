@@ -1,4 +1,4 @@
-/* Transactions: changing them. Delete with Undo, bulk changes with Undo, CSV export and saved views.
+/* Transactions: changing them. Delete with Undo, bulk changes with Undo and CSV export.
    Every change updates the ledger held in the browser and then calls refresh(). */
 import { state, t, tn, esc, f, GET, PUT, POST, DEL, toApi, upsertTx, removeTx, reloadLedger, pname, person, TODAY } from "../../core.js";
 import { toast, errorToast, confirmDialog } from "../../ui.js";
@@ -140,24 +140,4 @@ export function exportCsv(list) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   toast(tn(list.length, "Exported {n} transaction as CSV", "Exported {n} transactions as CSV"));
-}
-
-/* ---------- saved views ---------- */
-export function views() { return Array.isArray(state.config.saved_views) ? state.config.saved_views : []; }
-async function putViews(list) { state.config = await PUT("/config", { saved_views: list }); refresh({ views: true }); }
-export async function saveView(name, query) {
-  await putViews(views().filter((v) => v.name !== name).concat([{ name, query }]));
-  toast(t("Saved the view “{name}”", { name }));
-}
-export async function deleteView(i) {
-  const list = views().slice(), gone = list.splice(i, 1)[0];
-  if (!gone) return;
-  try {
-    await putViews(list);
-    toast(t("Deleted the view “{name}”", { name: gone.name }), async () => {
-      const now = views().slice();
-      now.splice(Math.min(i, now.length), 0, gone);
-      await putViews(now);
-    });
-  } catch (e) { errorToast(e); }
 }

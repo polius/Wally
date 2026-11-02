@@ -82,7 +82,8 @@ function scopeButtons() {
   }).join("");
 }
 const navLink = ([name, href, ic, label]) =>
-  '<a href="' + href + '" data-link class="' + (pageName === name ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ' aria-label="' + esc(label()) + '" data-hint="' + esc(label()) + '">' + icon(ic) + '<span class="w-lbl">' + label() + "</span></a>";
+  // Month in review opens from Summary, so Summary stays lit under it
+  '<a href="' + href + '" data-link class="' + (pageName === name || (name === "dashboard" && pageName === "review") ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ' aria-label="' + esc(label()) + '" data-hint="' + esc(label()) + '">' + icon(ic) + '<span class="w-lbl">' + label() + "</span></a>";
 
 /* What the signed-in person can do from the foot of the sidebar */
 function meActions() {

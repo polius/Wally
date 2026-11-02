@@ -6,6 +6,7 @@ import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt
 export const S = {
   mode: "month",        // month | year | custom | all
   ym: [0, 0],           // the month shown in month mode and in the calendar
+  y: 0,                 // the year shown in year mode
   custom: null,         // [from, to] in custom mode
   searchAll: true,      // a search looks in every month, until "Only this range"
   q: "",                // what is typed in the search box
@@ -22,7 +23,7 @@ export const S = {
 };
 export function resetView() {
   Object.assign(S, {
-    mode: "month", ym: ym(TODAY), custom: null, searchAll: true, q: "", type: "all", cats: new Set(), shared: false,
+    mode: "month", ym: ym(TODAY), y: +TODAY.slice(0, 4), custom: null, searchAll: true, q: "", type: "all", cats: new Set(), shared: false,
     day: null, view: "list", calDay: null, sel: null, open: false, selMode: false, picked: new Set(),
   });
 }
@@ -81,8 +82,9 @@ export function withoutWords(q, idx) {
   return String(q || "").trim().split(/\s+/).filter((w, i) => w && !drop.has(i)).join(" ");
 }
 
-/* ---------- the range shown: a month, a longer range, or every month while searching ---------- */
-export function txRange(P) {
+/* ---------- the range shown: a month, a longer range, or every month while searching ----------
+   noSearch: the range the title names, even while a search looks in every month */
+export function txRange(P, noSearch) {
   P = P || parseQ(S.q);
   const cal = S.view === "cal", last = lastDay(), [ty, tm] = ym(TODAY);
   if (P.month) {
@@ -90,34 +92,44 @@ export function txRange(P) {
     return { a: ds(y, P.month, 1), b: monthEnd(y, P.month), month: [y, P.month], title: F.months[P.month - 1], sub: String(y), fromQuery: true };
   }
   if (P.year && !cal) return { a: ds(P.year, 1, 1), b: ds(P.year, 12, 31), title: String(P.year), sub: P.year === ty ? t("so far") : "", fromQuery: true };
-  if (!cal && S.q.trim() && S.searchAll && S.mode !== "all") return { a: firstDay(), b: last, search: true, title: t("Search"), sub: t("every month") };
+  if (!noSearch && !cal && S.q.trim() && S.searchAll && S.mode !== "all") return { a: firstDay(), b: last, search: true, title: t("Search"), sub: t("every month") };
   if (cal || S.mode === "month") {
     const [y, m] = S.ym;
     return { a: ds(y, m, 1), b: monthEnd(y, m), month: [y, m], title: F.months[m - 1], sub: String(y) };
   }
-  if (S.mode === "year") return { a: ds(ty, 1, 1), b: last, title: String(ty), sub: t("so far") };
+  if (S.mode === "year") { const y = S.y || ty; return { a: ds(y, 1, 1), b: y === ty ? last : ds(y, 12, 31), year: y, title: String(y), sub: "" }; }
   if (S.mode === "custom" && S.custom) {
     const [a, b] = S.custom;
-    return { a, b, title: dlab(a) + " – " + dlab(b), sub: a.slice(0, 4) === b.slice(0, 4) ? a.slice(0, 4) : a.slice(0, 4) + " – " + b.slice(0, 4) };
+    return { a, b, title: rangeText(a, b), sub: "" };
   }
   const a = firstDay();
   return { a, b: last, title: t("All time"), sub: t("since {month}", { month: monthYear(...ym(a)) }) };
 }
-/* "Only October 2026", for narrowing a search to the range picked */
-export function onlyLabel() {
-  const [y, m] = S.ym;
-  return {
-    month: t("Only {range}", { range: monthYear(y, m) }), year: t("Only {range}", { range: TODAY.slice(0, 4) }),
-    custom: t("Only this range"),
-  }[S.mode] || "";
+/* "Sep 1 – Nov 2, 2026", in the language's own way of writing a range */
+export function rangeText(a, b) {
+  const da = new Date(a + "T12:00:00"), db = new Date(b + "T12:00:00");
+  try { return new Intl.DateTimeFormat(LANG, { month: "short", day: "numeric", year: "numeric" }).formatRange(da, db); }
+  catch (e) { return dlab(a) + " – " + dlab(b) + ", " + b.slice(0, 4); }
 }
-export function inLabel() {
-  const [y, m] = S.ym;
-  return {
-    month: t("in {range}", { range: monthYear(y, m) }), year: t("in {range}", { range: TODAY.slice(0, 4) }),
-    custom: t("in this range"),
-  }[S.mode] || "";
+/* The scope bar's second half while searching: the range picked ("November", "2025", "This range") */
+export function scopeLabel() {
+  const [y, m] = S.ym, ty = +TODAY.slice(0, 4);
+  if (S.mode === "month") return y === ty ? F.months[m - 1] : monthYear(y, m);
+  if (S.mode === "year") return String(S.y || ty);
+  if (S.mode === "custom") return t("This range");
+  return "";
 }
+
+/* ---------- recent searches, kept on this device ---------- */
+const RECENT = "wally.recentq";
+export function recent() { try { const v = JSON.parse(localStorage.getItem(RECENT) || "[]"); return Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, 5) : []; } catch (e) { return []; } }
+export function addRecent(q) {
+  q = String(q || "").trim();
+  if (!q) return;
+  const list = [q].concat(recent().filter((x) => x !== q)).slice(0, 5);
+  try { localStorage.setItem(RECENT, JSON.stringify(list)); } catch (e) { /* private mode */ }
+}
+export function clearRecent() { try { localStorage.removeItem(RECENT); } catch (e) { /* fine */ } }
 
 /* ---------- the filter ---------- */
 /* What a word is looked for in, worked out once per transaction */
@@ -168,6 +180,7 @@ export function fromQuery(q) {
   // Links from before 3 months and 12 months were retired open as Month and Year
   const mode = { "3m": "month", "12m": "year" }[q.get("mode")] || q.get("mode");
   if (RANGES.includes(mode) || mode === "custom") S.mode = mode;
+  if (S.mode === "year" && /^(19|20)\d\d$/.test(q.get("y") || "") && +q.get("y") <= +TODAY.slice(0, 4)) S.y = +q.get("y");
   if (/^\d{4}-\d\d$/.test(q.get("ym") || "")) { const [y, m] = q.get("ym").split("-").map(Number); if (m >= 1 && m <= 12) S.ym = [y, m]; }
   if (S.mode === "custom") {
     const a = q.get("from"), b = q.get("to");
@@ -204,6 +217,7 @@ export function toQuery() {
     if (S.day) q.set("day", S.day);
     else if (keepMode && S.mode !== "month") {
       q.set("mode", S.mode);
+      if (S.mode === "year" && S.y !== +TODAY.slice(0, 4)) q.set("y", S.y);
       if (S.mode === "custom" && S.custom) { q.set("from", S.custom[0]); q.set("to", S.custom[1]); }
     } else if (keepMode && (S.ym[0] !== thisMonth[0] || S.ym[1] !== thisMonth[1] || S.q.trim())) {
       if (S.q.trim()) q.set("mode", "month");

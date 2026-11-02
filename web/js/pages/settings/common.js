@@ -15,6 +15,44 @@ export function gi(iconHtml, title, sub, right, attrs) {
 export function giButton(iconHtml, title, sub, attrs) {
   return '<button type="button" class="w-gi w-gbtn"' + (attrs || "") + ">" + iconHtml + "<div><h6>" + title + "</h6>" + (sub ? "<p>" + sub + "</p>" : "") + "</div>" + icon("right", "w-gchev") + "</button>";
 }
+/* ---------- grouped rows, as in iOS Settings (.w-gl / .w-gr from wally.css) ---------- */
+/* A group: an optional header above, rows, an optional footnote below */
+export function gl(rows, head, foot, attrs) {
+  return (head ? '<div class="w-glh">' + head + "</div>" : "") + '<div class="w-gl"' + (attrs || "") + ">" + rows.join("") + "</div>" + (foot ? '<p class="w-glf">' + foot + "</p>" : "");
+}
+/* One row. o: {k: label, sub, v: value, lead: html before, chev: opens something, act, attrs, cls, tag, right: html after} */
+export function gr(o) {
+  const tag = o.tag || (o.act || o.href ? (o.href ? "a" : "button") : "div");
+  const attrs = (tag === "button" ? ' type="button"' : "") + (o.href ? ' href="' + o.href + '"' : "") + (o.act ? ' data-act="' + o.act + '"' : "") + (o.attrs || "");
+  if (o.cls === "red" || o.cls === "acc") return "<" + tag + ' class="w-gr ' + o.cls + '"' + attrs + ">" + o.k + "</" + tag + ">";
+  return "<" + tag + ' class="w-gr' + (o.cls ? " " + o.cls : "") + '"' + attrs + ">" + (o.lead || "") + '<span class="k">' + o.k + (o.sub ? "<small>" + o.sub + "</small>" : "") + "</span>" +
+    (o.v !== undefined && o.v !== null ? '<span class="v">' + o.v + "</span>" : "") + (o.right || "") + (o.chev ? icon("right", "chev") : "") + "</" + tag + ">";
+}
+/* A row that adds something: a plus in the accent colour */
+export function addRow(label, act, attrs) { return '<button type="button" class="w-gr add" data-act="' + act + '"' + (attrs || "") + '><span class="w-glead">' + icon("plus") + '</span><span class="k">' + label + "</span></button>"; }
+/* A small tinted tile for a row's icon */
+export function sico(name) { return '<span class="w-sico">' + icon(name) + "</span>"; }
+/* The top of an item's own page: its picture, its name, one line */
+export function hero(pic, title, sub) { return '<div class="w-shero">' + pic + "<h4>" + title + "</h4>" + (sub ? "<p>" + sub + "</p>" : "") + "</div>"; }
+/* A check mark for the picked row */
+export function check(on) { return on ? icon("check", "w-gck") : '<span class="w-gck"></span>'; }
+/* Edit mode's red minus */
+export function minus(label, attrs) { return '<button type="button" class="w-gminus" aria-label="' + esc(label) + '"' + (attrs || "") + "></button>"; }
+/* A text field as a grouped row, for sheets */
+export function fieldRow(id, value, placeholder, attrs) {
+  return '<div class="w-gl"><label class="w-gr"><input id="' + id + '" value="' + esc(value || "") + '" placeholder="' + esc(placeholder || "") + '" aria-label="' + esc(placeholder || "") + '" autocomplete="off"' + (attrs || "") + "></label></div>";
+}
+/* Keep a sheet's action grey until the form can be sent */
+export function gate(root, ready) {
+  const ok = root.querySelector("[data-dlg-ok]");
+  const check2 = () => { ok.disabled = !ready(root); };
+  root.addEventListener("input", check2);
+  root.addEventListener("click", () => setTimeout(check2, 0));
+  check2();
+}
+const PHONE = matchMedia("(max-width:767px)");
+export function phone() { return PHONE.matches; }
+
 export function ico(name, cls) { return '<span class="w-ico' + (cls ? " " + cls : "") + '">' + icon(name) + "</span>"; }
 /* An on/off switch. The label is what it turns on. */
 export function toggle(id, on, label, disabled) {

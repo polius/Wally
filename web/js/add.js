@@ -12,15 +12,15 @@
 import {
   $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName,
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
-  rerank, MOD,
+  rerank, LANG,
 } from "./core.js";
 import { toast, openDialog, trapFocus, hideTip, dialogOpen } from "./ui.js";
 import { refresh } from "./shell.js";
 import { describe, nextOf } from "./sched.js";
 import * as C from "./add/calc.js";
 import * as Q from "./add/queue.js";
-import { FQ_LABELS, UNITS, fqOf, formRule, summaryHtml, nextHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
-import { isPhone, phoneHtml, typeSeg, splitInner, catBox, press, pickList, freqCells } from "./add/phone.js";
+import { fqOf, formRule, nextText, notesHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
+import { isPhone, typeSeg, catBox, press, pickList, freqCells, KEYPAD, chev, phoneAmount, repeatPage, catPage, splitPage } from "./add/phone.js";
 import { calHtml, calKey, monthStep } from "./add/datepick.js";
 
 export { flushQueue } from "./add/queue.js";
@@ -40,7 +40,7 @@ function blank(type) {
     by: null, date: "today", cal: null, calF: "", tags: [], tagDraft: "", note: "",
     rep: false, fq: "monthly", every: "3", unit: "weekly", end: "never", until: "", count: "12", about: false,
     split: false, parts: [], sugg: [], hl: 0, catQ: null, copts: [], chl: 0, touched: {}, edit: null, group: null, rule: null,
-    step: "main", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false, more: false,
+    step: "main", from: "", scroll: 0, busy: false, serr: "", amtTried: false, nameTried: false, snap: "", repeatOpen: false, more: false,
   };
 }
 function reset(type) {
@@ -158,7 +158,10 @@ const named = () => !!ad.name.trim();
 const needName = () => (ad.type === "income" ? t("Enter where it is from") : t("Enter what it was for"));
 function ready() { return amount() > 0 && named() && (ad.split || ad.cat) && ad.who && !problem(); }
 
-/* ---------- markup: the desktop sheet ---------- */
+/* ---------- markup: one sheet of grouped rows, like Calendar's event sheet ----------
+   Adding: the type and Close (desktop) or Cancel and the type (phone) on top, the amount, then two groups:
+   what and who, then when; the main button at the bottom names what is missing. Editing: Cancel · title · Save
+   on top, and Delete as the last row, in red. Repeat (and, on a phone, Category and Split) open as pages. */
 function amountRow() {
   const left = state.currency.position !== "right";
   const cur = '<span class="cur" aria-hidden="true">' + esc(symbol()) + "</span>";
@@ -166,46 +169,60 @@ function amountRow() {
     '<input id="add-amt" inputmode="decimal" autocomplete="off" placeholder="0' + esc(decSep()) + '00" aria-label="' + esc(t("Amount")) + '" aria-describedby="add-calc add-aerr">' +
     (left ? "" : cur) + '<span class="w-calc" id="add-calc" aria-live="polite"></span></label>';
 }
-function deskHtml() {
-  return '<h2 class="vh" id="add-title"></h2>' +
-    '<div class="w-sheet-h">' + typeSeg().replace("w-seg sm", "w-seg") + '<span class="w-pill" id="add-editing" hidden></span>' +
-      '<button type="button" class="w-x w-addx" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    amountRow() +
-    '<p class="w-err" id="add-aerr" hidden role="alert"></p>' +
-    '<div class="w-frow w-frow1" id="add-namerow"><label for="add-name" id="lbl-name" class="vh"></label>' +
-      '<div class="w-input"><input id="add-name" autocomplete="off" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false">' +
-      '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div></div>' +
-    '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
-    '<div class="w-frow w-catrow" id="add-catrow"><label for="add-cat" id="lbl-cat">' + t("Category") + "</label>" + catBox() + "</div>" +
-    '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
-    '<div class="w-frow" id="add-whorow"><span id="lbl-who"></span><div class="w-chips" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
-    '<div class="w-sub" id="add-split" hidden>' + splitInner(true) + "</div>" +
-    '<div class="w-frow"><span id="lbl-date"></span><div class="w-chips" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>' +
-    '<div class="w-sub w-dcal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
-    '<p class="w-err w-indent" id="add-derr" hidden role="alert"></p>' +
-    // Tags and a note are rarely needed: one link opens them
-    '<div class="w-addextra" id="add-extra">' +
-      '<div class="w-frow"><span id="lbl-tags">' + t("Tags") + '</span><div class="w-chips" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
-        '<input id="add-tag" class="w-mini w-tagin" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></div></div>' +
-      '<div class="w-frow"><label for="add-note">' + t("Note") + '</label><input id="add-note" class="w-mini w-note" autocomplete="off" placeholder="' + esc(t("Optional")) + '"></div></div>' +
-    '<div class="w-frow" id="add-reprow"><span id="lbl-rep">' + t("Repeat") + '</span><div class="w-inline"><button type="button" class="w-switch" id="add-rep" role="switch" aria-checked="false" aria-labelledby="lbl-rep"></button><span id="add-rep-l"></span></div></div>' +
-    '<div class="w-sub" id="add-reppanel" hidden>' +
-      '<div class="w-seg sm w-wrapseg" role="group" aria-label="' + esc(t("How often")) + '" id="add-freq">' + FQ_LABELS().map(([k, l]) => '<button type="button" data-fq="' + k + '">' + l + "</button>").join("") + "</div>" +
-      '<div class="w-inline" id="add-custom" hidden><span class="lbl">' + t("Every") + '</span><input id="add-every" type="number" min="1" max="99" class="w-mini w-num" aria-label="' + esc(t("Interval")) + '">' +
-        '<select id="add-unit" class="w-mini" aria-label="' + esc(t("Unit")) + '">' + UNITS().map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select></div>" +
-      '<div class="w-inline"><span class="lbl">' + t("Ends") + '</span><div class="w-seg sm" role="group" aria-label="' + esc(t("Ends")) + '" id="add-end">' +
-        '<button type="button" data-end="never">' + t("Never") + '</button><button type="button" data-end="until">' + t("On a date") + '</button><button type="button" data-end="count">' + t("After") + "</button></div>" +
-        '<input type="date" id="add-until" class="w-mini" aria-label="' + esc(t("Last date")) + '" hidden>' +
-        '<span id="add-countw" class="w-inline w-countw" hidden><input id="add-count" type="number" min="2" max="999" class="w-mini w-num" aria-label="' + esc(t("Number of times")) + '">' + t("times") + "</span></div>" +
-      '<p class="w-err" id="add-rerr" hidden role="alert"></p>' +
-      '<div class="w-rsum"><p id="add-rsum"></p><div class="w-next" id="add-next"></div></div>' +
+function headHtml() {
+  const phone = layout === "phone";
+  if (isEdit()) return '<div class="w-ah"><button type="button" class="w-alink" data-close>' + t("Cancel") + '</button><b class="w-atitle" id="add-htitle"></b>' +
+    '<button class="w-alink w-asave" type="submit" id="add-go">' + t("Save") + "</button></div>" + '<div class="w-atype">' + typeSeg() + "</div>";
+  if (phone) return '<div class="w-ah"><button type="button" class="w-alink" data-close>' + t("Cancel") + "</button>" + typeSeg() + "</div>";
+  return '<div class="w-ah">' + typeSeg() + '<button type="button" class="w-x w-addx" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>";
+}
+function sheetHtml() {
+  const phone = layout === "phone", edit = isEdit(), dateSeg = !phone && !edit;
+  const catRow = phone
+    ? '<button type="button" class="w-gr" id="add-catrow" data-step="cat"><span class="k" id="lbl-cat">' + t("Category") + '</span><span class="v" id="add-catv"></span>' + chev() + "</button>"
+    : '<div class="w-gr w-acatrow" id="add-catrow"><span class="k" id="lbl-cat">' + t("Category") + "</span>" + catBox() + "</div>";
+  const splitRows = phone
+    ? '<button type="button" class="w-gr" data-step="split" id="add-smrow"><span class="k">' + t("Split") + '</span><span class="v" id="add-smv"></span>' + chev() + "</button>" +
+      '<button type="button" class="w-gr" data-step="split" id="add-byrow"><span class="k">' + t("Paid by") + '</span><span class="v" id="add-byv"></span>' + chev() + "</button>"
+    : '<div class="w-gr"><span class="k" id="lbl-sm">' + t("Split") + '</span><span class="v w-apop"><select id="add-smsel" aria-labelledby="lbl-sm"></select>' + chev(true) + "</span></div>" +
+      '<div class="w-gr" id="add-byrow"><span class="k" id="lbl-by">' + t("Paid by") + '</span><span class="v w-apop"><select id="add-bysel" aria-labelledby="lbl-by"></select>' + chev(true) + "</span></div>" +
+      '<div id="add-custrows" class="w-acust" hidden></div>';
+  const dateRow = dateSeg
+    ? '<div class="w-gr" id="add-daterow"><span class="k" id="lbl-date"></span><div class="w-seg w-aseg" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>'
+    : '<button type="button" class="w-gr" id="add-datecell" aria-expanded="false" aria-controls="add-cal"><span class="k" id="lbl-date"></span><span class="v" id="add-datev"></span>' + chev() + "</button>";
+  const main = '<section class="w-apage" data-pstep="main">' + (phone ? '<div class="w-grab" aria-hidden="true"></div>' : "") + headHtml() +
+    (phone ? phoneAmount() : amountRow()) +
+    '<p class="w-acap" id="add-editing" hidden></p>' +
+    '<p class="w-err w-acenter" id="add-aerr" hidden role="alert"></p>' +
+    '<div class="w-gl w-ag" id="add-g1">' +
+      '<div class="w-gr w-aname" id="add-namerow"><label for="add-name" id="lbl-name" class="vh"></label>' +
+        '<input id="add-name" autocomplete="off" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done">' +
+        '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
+      catRow +
+      '<div class="w-aparts" id="add-parts" hidden></div>' +
+      '<div class="w-gr" id="add-whorow"><span class="k" id="lbl-who">' + t("Who") + '</span><div class="w-seg w-aseg" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
+      '<div class="w-asplit" id="add-split" hidden>' + splitRows + "</div>" +
     "</div>" +
-    '<button type="button" class="w-link w-addmore" id="add-more" aria-controls="add-extra" aria-expanded="false">' + t("Add tag or note") + "</button>" +
+    '<p class="w-glf" id="add-splitnote" hidden></p>' +
+    (phone ? "" : '<p class="w-err w-glf" id="add-cerr" hidden role="alert"></p>') +
+    '<p class="w-err w-glf" id="add-nerr" hidden role="alert"></p>' +
+    '<div class="w-gl w-ag" id="add-g2">' +
+      dateRow +
+      '<div class="w-dcal w-acal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
+      '<button type="button" class="w-gr" id="add-reprow" data-step="repeat"><span class="k">' + t("Repeat") + '</span><span class="v" id="add-repv"></span>' + chev(dateSeg) + "</button>" +
+      '<div class="w-gr" id="add-tagrow"><span class="k" id="lbl-tags">' + t("Tags") + '</span><span class="v w-atags" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
+        '<input id="add-tag" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></span></div>' +
+      '<label class="w-gr" id="add-noterow"><input id="add-note" autocomplete="off" placeholder="' + esc(t("Note")) + '" aria-label="' + esc(t("Note")) + '"></label>' +
+    "</div>" +
+    '<p class="w-glf" id="add-rep-l" hidden></p>' +
+    '<p class="w-err w-glf" id="add-derr" hidden role="alert"></p>' +
     '<p class="w-dup" id="add-dup" hidden></p>' +
-    '<p class="w-err" id="add-serr" hidden role="alert"></p>' +
-    '<div class="w-sheet-f">' +
-      '<button type="button" class="w-btn ghost danger" id="add-del" hidden>' + icon("trash") + t("Delete") + "</button>" +
-      '<button class="w-btn primary w-submit" type="submit" id="add-go"></button></div>';
+    '<p class="w-err w-glf" id="add-serr" hidden role="alert"></p>' +
+    (edit ? '<div class="w-gl" id="add-delgrp" hidden><button type="button" class="w-gr red" id="add-del"></button></div>' : "") +
+    (edit ? "" : '<div class="' + (phone ? "w-pfoot" : "w-afoot") + '"><button class="w-btn primary w-submit" type="submit" id="add-go"></button></div>') +
+    (phone ? KEYPAD() : "") +
+    "</section>";
+  return '<h2 class="vh" id="add-title"></h2>' + main + repeatPage() + (phone ? catPage() + splitPage() : "");
 }
 
 /* ---------- drawing ---------- */
@@ -223,26 +240,28 @@ function pressed(box, attr, val) {
 function radioChip(attr, val, on, stop, inner) {
   return '<button type="button" class="w-chip' + (on ? " on" : "") + '" role="radio" data-' + attr + '="' + esc(val) + '" aria-checked="' + on + '" tabindex="' + (on || stop ? 0 : -1) + '">' + inner + "</button>";
 }
-function catSvg(k) { return '<svg class="i" aria-hidden="true" style="color:' + cc(k) + '"><use href="#i-' + cat(k).i + '"/></svg>'; }
 
 function render() {
   if (!form()) return;
   const inc = ad.type === "income", rule = ad.mode === "rule", ed = ad.edit || (ad.group && ad.group[0]);
-  const a = amount(), phone = layout === "phone";
+  const a = amount(), phone = layout === "phone", edit = isEdit();
   // The page first, so the amount below is measured where it shows
-  if (phone) document.querySelectorAll("#add-form [data-pstep]").forEach((s) => { s.hidden = s.dataset.pstep !== ad.step; });
+  document.querySelectorAll("#add-form [data-pstep]").forEach((s) => { s.hidden = s.dataset.pstep !== ad.step; });
   const title = rule ? (inc ? t("Edit recurring income") : t("Edit recurring expense")) : ed ? (inc ? t("Edit income") : t("Edit expense")) : inc ? t("New income") : t("New expense");
   setText("add-title", title);
+  setText("add-htitle", rule ? (inc ? t("Income") : t("Bill")) : t("Transaction"));
   pressed("add-type", "data-at", ad.type);
-  const pill = pending() ? t("Waiting to send") : ed ? t("Editing · {date}", { date: dlab(ed.d) }) : rule ? t("Since {date}", { date: dShort(ad.rule.start) }) : "";
-  setText("add-editing", pill);
-  show("add-editing", !!pill);
+  const cap = pending() ? t("Waiting to send") : "";
+  setText("add-editing", cap);
+  show("add-editing", !!cap);
 
   // amount
   setVal("add-amt", ad.amt);
   const r = C.readAmount(ad.amt);
   setText("add-calc", r.ok && r.expr && r.v > 0 ? "= " + f(r.v) : "");
   sizeAmount();
+  const amtRow = $("add-amtrow");
+  if (amtRow) amtRow.classList.toggle("empty", !ad.amt);
 
   // name
   setVal("add-name", ad.name);
@@ -258,16 +277,15 @@ function render() {
 
   // who and how it is shared
   show("add-whorow", couple());
-  setText("lbl-who", inc ? t("Whose") : t("Who"));
   if (couple()) setHtml("add-who", whoHtml());
   show("add-split", shared());
-  if (shared()) renderSplit();
+  renderSplit();
 
   // date
   setText("lbl-date", ad.rep || rule ? t("Starts") : t("Date"));
   renderDate();
 
-  // tags and note
+  // tags and note: once there is an amount, or when they hold something; always when editing
   setHtml("add-tags", ad.tags.map((g) => '<button type="button" class="w-chip on" data-tg="' + esc(g) + '" aria-label="' + esc(t("Remove tag {tag}", { tag: g })) + '">' + esc(g) + icon("x", "x") + "</button>").join(""));
   const tagIn = $("add-tag");
   if (tagIn) {
@@ -276,10 +294,10 @@ function render() {
   }
   setHtml("add-taglist", cache.tags.filter((g) => !ad.tags.includes(g)).slice(0, 200).map((g) => '<option value="' + esc(g) + '">').join(""));
   setVal("add-note", ad.note);
-  // Tags and note show once asked for, or when they hold something
-  const extra = phone || ad.more || ad.tags.length > 0 || !!ad.note || !!ad.tagDraft;
-  show("add-extra", extra);
-  show("add-more", !extra);
+  // Tags and a note join the second group once there is an amount (or when editing, or already filled)
+  const extra = edit || a > 0 || ad.more || ad.tags.length > 0 || !!ad.note || !!ad.tagDraft;
+  show("add-tagrow", extra);
+  show("add-noterow", extra);
 
   renderRepeat();
 
@@ -288,8 +306,7 @@ function render() {
   const showAmt = er && er.f === "amt";
   const amtMsg = showAmt ? er.m : ad.amtTried && !a ? t("Enter an amount") : "";
   setText("add-aerr", amtMsg); show("add-aerr", !!amtMsg);
-  const row = $("add-amtrow");
-  if (row) row.classList.toggle("err", !!amtMsg);
+  if (amtRow) amtRow.classList.toggle("err", !!amtMsg);
   const ai = $("add-amt");
   if (ai) ai.setAttribute("aria-invalid", String(!!amtMsg));
   const nameMsg = ad.nameTried && !named() ? needName() : "";
@@ -303,21 +320,20 @@ function render() {
 
   renderDup(a);
 
-  // the main button names what is missing
+  // The main button names what is missing; editing, Save sits at the top and greys until it can save
   const ok = ready();
   const go = $("add-go");
   if (go) {
     go.setAttribute("aria-disabled", String(!ok || ad.busy));
-    const label = ok ? (isEdit() ? t("Save changes · {amount}", { amount: f(a) }) : inc ? t("Add income · {amount}", { amount: f(a) }) : t("Add expense · {amount}", { amount: f(a) }))
-      : !a ? t("Enter an amount") : !named() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field");
-    // On a keyboard, the button carries its shortcut
-    setHtml("add-go", esc(label) + (ok && !phone ? "<kbd>" + MOD + " ↵</kbd>" : ""));
+    if (!edit) setText("add-go", ok ? (inc ? t("Add Income") : t("Add Expense"))
+      : !a ? t("Enter an amount") : !named() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field"));
   }
   const canDelete = !!(ad.edit || ad.group);
-  show("add-del", canDelete);
-  show("add-delcell", canDelete);
+  show("add-delgrp", canDelete);
+  setText("add-del", t("Delete transaction"));
 
   if (phone) renderPhone(a);
+  renderPages();
 }
 
 /* The amount field is as wide as what is typed, so the currency sign sits next to it */
@@ -331,64 +347,102 @@ function sizeAmount() {
   i.style.width = i.scrollWidth + 2 + "px";
   if (empty) i.value = "";
 }
+/* Who: a segmented control, Alex | Ana | Shared */
 function whoHtml() {
-  const list = keys().map((k) => [k, av(k, "sm") + esc(pname(k)) + (k === state.me ? ' <span class="w-you">' + t("you") + "</span>" : "")]);
-  list.push(["shared", '<span class="w-av shared sm" aria-hidden="true"></span>' + t("Shared")]);
+  const list = keys().map((k) => [k, esc(pname(k))]);
+  list.push(["shared", t("Shared")]);
   const anyOn = list.some((x) => x[0] === ad.who);
-  return list.map((x, i) => radioChip("aw", x[0], ad.who === x[0], !anyOn && i === 0, x[1])).join("");
+  return list.map((x, i) => '<button type="button" role="radio" data-aw="' + esc(x[0]) + '" aria-checked="' + (ad.who === x[0]) + '" aria-pressed="' + (ad.who === x[0]) + '" tabindex="' + (ad.who === x[0] || (!anyOn && i === 0) ? 0 : -1) + '">' + x[1] + "</button>").join("");
 }
 
+/* ---------- shares: Split and Paid by ---------- */
+function smLabel(k) {
+  const ks = keys(), pc = C.percents(cache.incomeW), anyIncome = ks.some((x) => cache.incomeW[x] > 0);
+  if (k === "even") return t("Evenly");
+  if (k === "income") return ks.length === 2 && anyIncome ? t("By income {a}/{b}", { a: pc[ks[0]], b: pc[ks[1]] }) : t("By income");
+  return t("Custom");
+}
+function payerLabel(k) { return esc(pname(k)) + (k === state.me ? " (" + esc(t("you")) + ")" : ""); }
+/* "Half each: Alex 21.25 €, Ana 21.25 €" */
+function sharesLine(sh) {
+  const ks = keys();
+  if (!sh) return ad.sm === "income" ? (ks.some((k) => cache.incomeW[k] > 0) ? t("From the last three months of income") : t("No income in the last three months, so evenly")) : "";
+  const parts = ks.map((k) => t("{name} {amount}", { name: pname(k), amount: f((sh[k] || 0) / 100) }));
+  const list = new Intl.ListFormat(LANG, { type: "unit", style: "short" }).format(parts);
+  if (ad.sm === "even") return ks.length === 2 ? t("Half each: {list}", { list }) : t("Equal parts: {list}", { list });
+  if (ad.sm === "income") return t("By income: {list}", { list });
+  return list;
+}
 function renderSplit() {
-  const ks = keys(), two = ks.length === 2, a = amount(), total = C.cents(a), cust = ad.sm === "custom";
-  pressed("add-splitmode", "data-sm", ad.sm);
-  const pc = C.percents(cache.incomeW), anyIncome = ks.some((k) => cache.incomeW[k] > 0);
-  setText("sm-income", two && anyIncome ? t("By income {a}/{b}", { a: pc[ks[0]], b: pc[ks[1]] }) : t("By income"));
-  setText("sm-hint", ad.sm === "income" ? (anyIncome ? t("From the last three months of income") : t("No income in the last three months, so evenly"))
-    : cust ? (two ? t("Drag, or type {name}’s part", { name: pname(ks[0]) }) : t("Type each person’s part")) : two ? t("Half each") : t("Equal parts"));
-  const range = $("add-split-r");
-  if (range) {
-    range.hidden = !(cust && two);
-    range.setAttribute("aria-label", t("{name}’s share in percent", { name: pname(ks[0]) }));
-    if (document.activeElement !== range) range.value = String(Math.round(pct2()));
+  const ks = keys(), two = ks.length === 2, total = C.cents(amount()), cust = ad.sm === "custom", on = shared();
+  const sh = on && total ? sharesFor(total) : null;
+  const exp = ad.type === "expense";
+  // Desktop: two pop-up rows
+  const smSel = $("add-smsel");
+  if (smSel) {
+    const opts = ["even", "income", "custom"].map((k) => '<option value="' + k + '">' + esc(smLabel(k)) + "</option>").join("");
+    if (smSel.dataset.k !== opts) { smSel.innerHTML = opts; smSel.dataset.k = opts; }
+    smSel.value = ad.sm;
   }
-  const sh = total ? sharesFor(total) : null;
-  const key = ks.join(",") + "|" + (cust ? "c" : "v") + "|" + layout;
-  const box = $("add-splitv");
-  if (box && built.split !== key) {
-    built.split = key;
-    box.innerHTML = two ? splitTwoHtml(ks, cust) : splitManyHtml(ks, cust);
+  const by = $("add-bysel");
+  if (by) {
+    const opts = ks.map((k) => '<option value="' + esc(k) + '">' + (layout === "phone" ? payerLabel(k) : esc(pname(k))) + "</option>").join("");
+    if (by.dataset.k !== opts) { by.innerHTML = opts; by.dataset.k = opts; }
+    by.value = payer();
   }
-  const pctOf = (k) => (total && sh ? Math.round(((sh[k] || 0) / total) * 100) : ad.sm === "custom" && two ? Math.round(k === ks[0] ? ad.pct : 100 - ad.pct) : ad.sm === "income" ? pc[k] : Math.round(100 / ks.length));
-  ks.forEach((k, i) => {
-    setText("sp-v" + i, sh ? f((sh[k] || 0) / 100) : "—");
-    setText("sp-p" + i, pctOf(k) + "%");
-    if (!two && cust) { const inp = $("sp-in" + i); if (inp && document.activeElement !== inp && inp.value !== (ad.cust[k] || "")) inp.value = ad.cust[k] || ""; }
-  });
-  if (two) {
-    const inp = $("add-split-a");
-    if (inp) {
-      inp.hidden = !cust;
-      $("sp-v0").hidden = cust;
-      if (document.activeElement !== inp) inp.value = total && sh ? inAmount((sh[ks[0]] || 0) / 100) : "";
+  show("add-byrow", exp);
+  show("add-bygrp", exp);
+  // Phone: the rows say what the Split page holds
+  setText("add-smv", smLabel(ad.sm).replace(/ \d+\/\d+$/, ""));
+  setHtml("add-byv", esc(pname(payer())));
+  // Custom: each person's part
+  const box = $("add-custrows");
+  if (box) {
+    box.hidden = !(on && cust);
+    const key = ks.join(",") + "|" + layout + "|" + cust;
+    if (on && cust && built.split !== key) { built.split = key; box.innerHTML = custRowsHtml(ks, two); }
+    if (on && cust) {
+      ks.forEach((k, i) => {
+        if (two) {
+          if (i === 0) { const inp = $("add-split-a"); if (inp && document.activeElement !== inp) inp.value = total && sh ? inAmount((sh[k] || 0) / 100) : ""; }
+          else setText("sp-v1", sh ? inAmount((sh[k] || 0) / 100) : "—");
+        } else { const inp = $("sp-in" + i); if (inp && document.activeElement !== inp && inp.value !== (ad.cust[k] || "")) inp.value = ad.cust[k] || ""; }
+        setText("sp-p" + i, total && sh ? Math.round(((sh[k] || 0) / total) * 100) + "%" : "");
+      });
     }
   }
-  if (!two && cust) {
-    const typed = custTyped(), left = total - ks.reduce((s, k) => s + (typed[k] || 0), 0);
-    setText("sp-left", left > 0 ? t("{amount} left to share", { amount: f(left / 100) }) : left < 0 ? t("{amount} more than the total", { amount: f(-left / 100) }) : t("All shared"));
-  }
-  // Paid by: income has none
-  show("add-byrow", ad.type === "expense");
-  setHtml("add-by", ks.map((k) => '<button type="button" data-by="' + esc(k) + '" aria-pressed="' + (payer() === k) + '">' + esc(pname(k)) + "</button>").join(""));
+  // Under the rows: each person's part, and on a phone's Split page who owes whom
+  const line = on ? (cust && !two ? custLeftLine(total) : sharesLine(sh)) : "";
+  setText("add-splitnote", line);
+  // With Custom, the rows themselves say each part; only what is left to share stays under them
+  show("add-splitnote", !!line && !(cust && two) && !(cust && layout === "phone"));
+  const vals = sh ? Object.values(sh) : [];
+  const equal = sh && ad.sm === "even" && vals.every((v) => v === vals[0]);
+  setText("add-each", equal ? t("Each pays {amount}.", { amount: f(vals[0] / 100) }) : cust ? (two ? "" : custLeftLine(total)) : sharesLine(sh));
+  show("add-each", !!$("add-each") && !!$("add-each").textContent);
+  setText("add-owes", exp && sh ? owesLine(sh, total) : "");
+  // The phone's Split page lists the ways, with a checkmark
+  const list = $("add-smlist");
+  if (list) setHtml("add-smlist", ["even", "income", "custom"].map((k) => '<button type="button" class="w-gr" role="radio" data-sm="' + k + '" aria-checked="' + (ad.sm === k) + '" tabindex="' + (ad.sm === k ? 0 : -1) + '"><span class="k">' + esc(k === "income" ? t("By income") : smLabel(k)) + "</span>" +
+    (k === "income" && smLabel(k) !== t("By income") ? '<span class="v">' + esc(smLabel(k).replace(t("By income"), "").trim()) + "</span>" : "") + (ad.sm === k ? icon("check", "w-ack") : k === "custom" ? icon("right", "chev w-ack") : "") + "</button>").join(""));
 }
-function splitTwoHtml(ks, cust) {
-  return '<div class="w-splitv"><span>' + av(ks[0], "sm") + esc(pname(ks[0])) + ' <b id="sp-v0"></b>' +
-    (cust ? '<input id="add-split-a" class="w-mini w-num" inputmode="decimal" autocomplete="off" aria-label="' + esc(t("{name}’s part", { name: pname(ks[0]) })) + '">' : "") +
-    ' <small id="sp-p0"></small></span><span><small id="sp-p1"></small> <b id="sp-v1"></b> ' + esc(pname(ks[1])) + av(ks[1], "sm") + "</span></div>";
+function custRowsHtml(ks, two) {
+  return ks.map((k, i) => '<div class="w-gr"><span class="k">' + esc(pname(k)) + '</span><small class="w-apct" id="sp-p' + i + '"></small>' +
+    (two && i === 1 ? '<b class="w-aval" id="sp-v1"></b>'
+      : '<input ' + (two ? 'id="add-split-a"' : 'id="sp-in' + i + '" data-cust="' + esc(k) + '"') + ' class="w-anum w-aamt" inputmode="decimal" autocomplete="off" placeholder="0' + esc(decSep()) + '00" aria-label="' + esc(t("{name}’s part", { name: pname(k) })) + '">') +
+    "</div>").join("");
 }
-function splitManyHtml(ks, cust) {
-  return '<div class="w-splitn">' + ks.map((k, i) => '<div class="w-splitp">' + av(k, "sm") + "<span>" + esc(pname(k)) + "</span>" +
-    (cust ? '<input id="sp-in' + i + '" data-cust="' + esc(k) + '" class="w-mini w-num" inputmode="decimal" autocomplete="off" aria-label="' + esc(t("{name}’s part", { name: pname(k) })) + '">' : '<b id="sp-v' + i + '"></b>') +
-    '<small id="sp-p' + i + '"></small></div>').join("") + (cust ? '<div class="w-splitleft" id="sp-left" aria-live="polite"></div>' : "") + "</div>";
+function custLeftLine(total) {
+  const ks = keys(), typed = custTyped(), left = total - ks.reduce((s, k) => s + (typed[k] || 0), 0);
+  if (!total) return "";
+  return left > 0 ? t("{amount} left to share", { amount: f(left / 100) }) : left < 0 ? t("{amount} more than the total", { amount: f(-left / 100) }) : t("All shared");
+}
+/* "Ana owes Alex 21.25 € for this." */
+function owesLine(sh, total) {
+  const by = payer(), others = keys().filter((k) => k !== by && (sh[k] || 0) > 0);
+  if (!others.length || !total) return "";
+  if (others.length === 1) return t("{name} owes {payer} {amount} for this.", { name: pname(others[0]), payer: pname(by), amount: f((sh[others[0]] || 0) / 100) });
+  return t("The others owe {payer} {amount} for this.", { payer: pname(by), amount: f(others.reduce((s, k) => s + (sh[k] || 0), 0) / 100) });
 }
 
 function renderParts() {
@@ -398,15 +452,15 @@ function renderParts() {
   const key = ad.parts.length + "|" + options.length + "|" + layout;
   if (built.parts !== key) {
     built.parts = key;
-    box.innerHTML = '<div class="w-parth"><b id="lbl-parts">' + t("Split across categories") + '</b><button type="button" class="w-link" data-nosplit>' + t("Don’t split") + "</button></div>" +
-      '<div class="w-splitrows" role="group" aria-labelledby="lbl-parts">' + ad.parts.map((p, i) => '<div class="w-partrow" id="add-part' + i + '"><span class="w-cdot" id="add-pdot' + i + '"></span>' +
-        '<select class="w-mini w-partcat" data-pc="' + i + '" aria-label="' + esc(t("Category of part {n}", { n: i + 1 })) + '"><option value="">' + t("Pick a category") + "</option>" +
-        options.map((c) => '<option value="' + esc(c) + '">' + esc(c) + "</option>").join("") + "</select>" +
-        '<input class="w-mini w-num w-partamt" data-pa="' + i + '" inputmode="decimal" autocomplete="off" aria-label="' + esc(t("Amount of part {n}", { n: i + 1 })) + '">' +
-        (ad.parts.length > 2 ? '<button type="button" class="w-x" data-rmpart="' + i + '" aria-label="' + esc(t("Remove part {n}", { n: i + 1 })) + '">' + icon("x") + "</button>" : '<span class="w-x" aria-hidden="true"></span>') + "</div>").join("") +
-      '<div class="left" id="add-left" aria-live="polite"></div></div>' +
-      '<div class="w-inline"><button type="button" class="w-btn ghost" data-addpart>' + icon("plus") + t("Add a part") + '</button><span class="w-hint">' + t("Leave one amount empty and it takes what is left.") + "</span></div>" +
-      '<p class="w-err" id="add-perr" hidden role="alert"></p>';
+    box.innerHTML = '<div class="w-gr w-parth"><span class="k" id="lbl-parts">' + t("Split across categories") + '</span><button type="button" class="w-link" data-nosplit>' + t("Don’t split") + "</button></div>" +
+      '<div role="group" aria-labelledby="lbl-parts">' + ad.parts.map((p, i) => '<div class="w-gr w-partrow" id="add-part' + i + '"><span class="w-cdot" id="add-pdot' + i + '"></span>' +
+        '<span class="w-apop w-partcatw"><select class="w-partcat" data-pc="' + i + '" aria-label="' + esc(t("Category of part {n}", { n: i + 1 })) + '"><option value="">' + t("Pick a category") + "</option>" +
+        options.map((c) => '<option value="' + esc(c) + '">' + esc(c) + "</option>").join("") + "</select>" + chev(true) + "</span>" +
+        '<input class="w-anum w-aamt w-partamt" data-pa="' + i + '" inputmode="decimal" autocomplete="off" aria-label="' + esc(t("Amount of part {n}", { n: i + 1 })) + '">' +
+        (ad.parts.length > 2 ? '<button type="button" class="w-x" data-rmpart="' + i + '" aria-label="' + esc(t("Remove part {n}", { n: i + 1 })) + '">' + icon("x") + "</button>" : "") + "</div>").join("") + "</div>" +
+      '<button type="button" class="w-gr add" data-addpart>' + icon("plus") + '<span class="k">' + t("Add a part") + "</span></button>" +
+      '<div class="w-gr w-aleft" id="add-left" aria-live="polite"></div>' +
+      '<p class="w-err w-glf" id="add-perr" hidden role="alert"></p>';
   }
   const pc = partCents();
   ad.parts.forEach((p, i) => {
@@ -423,7 +477,7 @@ function renderParts() {
     if (dot) dot.style.background = p.c ? cc(p.c) : "var(--w-line)";
   });
   const left = partsLeft();
-  setHtml("add-left", esc(left >= 0 ? t("Left to assign") : t("Too much")) + "<b>" + esc(f(Math.abs(left) / 100)) + "</b>");
+  setHtml("add-left", '<span class="k">' + esc(left >= 0 ? t("Left to assign") : t("Too much")) + '</span><b class="v">' + esc(f(Math.abs(left) / 100)) + "</b>");
   const lb = $("add-left");
   if (lb) lb.classList.toggle("bad", !!left && amount() > 0);
   const er = problem();
@@ -433,13 +487,13 @@ function renderParts() {
 
 function renderDate() {
   const d = dateOf(), other = ad.date.length === 10, open = !!ad.cal;
-  if (layout === "phone") {
-    setText("add-datev", ad.date === "today" ? t("Today") : ad.date === "yesterday" ? t("Yesterday") : dShortW(d));
-    const c = $("add-datecell");
-    if (c) c.setAttribute("aria-expanded", String(open));
+  if ($("add-datecell")) {
+    // Adding, the day reads Today; editing, the date itself, as Calendar shows an event's
+    setText("add-datev", isEdit() ? dShortW(d) : ad.date === "today" ? t("Today") : ad.date === "yesterday" ? t("Yesterday") : dShortW(d));
+    $("add-datecell").setAttribute("aria-expanded", String(open));
   } else {
-    setHtml("add-date", [["today", t("Today")], ["yesterday", t("Yesterday")]].map(([k, l]) => '<button type="button" class="w-chip' + (ad.date === k ? " on" : "") + '" data-ad="' + k + '" aria-pressed="' + (ad.date === k) + '">' + l + "</button>").join("") +
-      '<button type="button" class="w-chip' + (other ? " on" : "") + '" id="add-pickb" aria-pressed="' + other + '" aria-expanded="' + open + '" aria-controls="add-cal">' + icon("cal") + (other ? esc(dShortW(d)) : t("Other date")) + "</button>");
+    setHtml("add-date", [["today", t("Today")], ["yesterday", t("Yesterday")]].map(([k, l]) => '<button type="button" data-ad="' + k + '" aria-pressed="' + (ad.date === k) + '">' + l + "</button>").join("") +
+      '<button type="button" id="add-pickb" aria-pressed="' + other + '" aria-expanded="' + open + '" aria-controls="add-cal">' + (other ? esc(dShortW(d)) : t("Other…")) + "</button>");
   }
   show("add-cal", open);
   if (!open) return;
@@ -459,44 +513,52 @@ function openCal(on) {
 }
 function focusDay() { const b = $("add-cal").querySelector('[data-cd="' + ad.calF + '"]'); if (b) b.focus({ preventScroll: true }); }
 function calClosed() {
-  const n = layout === "phone" ? $("add-datecell") : form().querySelector("#add-date .on");
+  const n = $("add-datecell") || form().querySelector('#add-date [aria-pressed="true"]');
   if (n) n.focus();
 }
 
 function renderRepeat() {
   const rule = ad.mode === "rule", fromRule = fromRuleTx(), can = canRepeat();
-  const phone = layout === "phone";
-  show("add-reprow", !ad.split && !ad.group && !pending());
-  const sw = $("add-rep");
-  if (sw) { sw.hidden = rule || fromRule; sw.setAttribute("aria-checked", String(ad.rep)); }
-  const on = (ad.rep || rule) && (can || rule);
-  show("add-reppanel", on && !phone);
-  const r = formRule(ad, dateOf());
+  show("add-reprow", (can || rule) && !fromRule);
+  setText("add-repv", rule && !ad.rep ? shortLabel(Object.assign({}, ad, { rep: true })) : shortLabel(ad));
   const known = !ad.rep && !isEdit() && ad.name.trim() ? state.rules.find((x) => x.n.trim().toLowerCase() === ad.name.trim().toLowerCase() && x.type === ad.type) : null;
-  let label;
+  let label = "";
   if (fromRule) {
     const rr = state.rules.find((x) => x.id === ad.edit.rid);
     label = esc(t("Comes from a rule. Saving changes only this one.")) + (rr ? ' <button type="button" class="w-link" data-rule-edit>' + t("Change the rule") + "</button>" : "");
-  } else if (on) label = esc(describe(r));
-  else if (known) label = esc(t("Already repeats {rule}. This adds one extra.", { rule: lc1(describe(known)) }));
-  else label = esc(t("Doesn’t repeat"));
+  } else if (known) label = esc(t("Already repeats {rule}. This adds one extra.", { rule: lc1(describe(known)) }));
   setHtml("add-rep-l", label);
-  pressed("add-freq", "data-fq", ad.fq);
-  show("add-custom", on && ad.fq === "custom");
-  setVal("add-every", ad.every);
-  const unit = $("add-unit");
-  if (unit && unit.value !== ad.unit) unit.value = ad.unit;
-  pressed("add-end", "data-end", ad.end);
-  document.querySelectorAll("#add-end [data-endcell]").forEach((c) => c.classList.toggle("on", c.dataset.endcell === ad.end));
-  show("add-until", ad.end === "until");
-  show("add-countw", ad.end === "count");
-  setVal("add-until", ad.until);
-  setVal("add-count", ad.count);
-  const until = $("add-until");
-  if (until) until.min = addD(dateOf(), 1);
-  if (on) {
-    setHtml("add-rsum", summaryHtml(r));
-    setHtml("add-next", nextHtml(r));
+  show("add-rep-l", !!label);
+}
+/* The pages pushed inside the sheet */
+function renderPages() {
+  const rule = ad.mode === "rule", on = ad.rep || rule;
+  if (ad.step === "repeat") {
+    setHtml("add-pfreq", freqCells(Object.assign({}, ad, { rep: on }), !rule));
+    show("add-custom", on && ad.fq === "custom");
+    setVal("add-every", ad.every);
+    const unit = $("add-unit");
+    if (unit && unit.value !== ad.unit) unit.value = ad.unit;
+    show("add-pends", on);
+    const es = $("add-endsel");
+    if (es && es.value !== ad.end) es.value = ad.end;
+    show("add-untilrow", ad.end === "until");
+    show("add-countw", ad.end === "count");
+    setVal("add-until", ad.until);
+    setVal("add-count", ad.count);
+    const until = $("add-until");
+    if (until) until.min = addD(dateOf(), 1);
+    const r = formRule(ad, dateOf());
+    setText("add-next", on ? nextText(r) : "");
+    show("add-next", on);
+    setHtml("add-rsum", on ? notesHtml(r) : "");
+    show("add-rsum", on && !!notesHtml(r));
+  }
+  if (ad.step === "cat") {
+    const opts = cache.cats.slice();
+    const rows = opts.map((c) => '<button type="button" class="w-gr" data-pcat="' + esc(c) + '" aria-pressed="' + (ad.cat === c) + '">' + tile(c) + '<span class="k">' + esc(c) + "</span>" + (ad.cat === c ? icon("check", "w-ack") : "") + "</button>");
+    if (opts.length && !ad.rule) rows.push('<button type="button" class="w-gr" data-pcat="' + SPLIT + '"><span class="w-ico w-conew">' + icon("split") + '</span><span class="k">' + t("Split across categories") + "</span></button>");
+    setHtml("add-pcats", rows.join(""));
   }
 }
 
@@ -510,45 +572,21 @@ function renderDup(a) {
 }
 
 /* ---------- phone ---------- */
-function renderPhone(a) {
+function renderPhone() {
   setText("add-knext", named() ? t("Done") : t("Next"));
-  // Paid by, as a cell
-  const by = $("add-bysel");
-  if (by) {
-    const opts = keys().map((k) => '<option value="' + esc(k) + '">' + esc(pname(k)) + (k === state.me ? " (" + esc(t("you")) + ")" : "") + "</option>").join("");
-    if (by.dataset.k !== opts) { by.innerHTML = opts; by.dataset.k = opts; }
-    by.value = payer();
-  }
-  show("add-bycell", shared() && ad.type === "expense");
-  const total = C.cents(a), sh = shared() && total ? sharesFor(total) : null;
-  const vals = sh ? Object.values(sh) : [];
-  const equal = sh && ad.sm === "even" && vals.every((v) => v === vals[0]);
-  show("add-eachcell", !!equal);
-  if (equal) setText("add-each", f(vals[0] / 100));
-  const sv = $("add-splitv");
-  if (sv) sv.hidden = !!equal || (shared() && !total && ad.sm !== "custom");
-  // Repeat cell and the Repeat step
-  const rule = ad.mode === "rule";
-  show("add-repcell", (canRepeat() || rule));
-  show("add-reprule", fromRuleTx());
-  setText("add-repv", rule && !ad.rep ? shortLabel(Object.assign({}, ad, { rep: true })) : shortLabel(ad));
-  if (ad.step === "repeat") {
-    setHtml("add-pfreq", freqCells(Object.assign({}, ad, { rep: ad.rep || rule }), !rule));
-    show("add-pends", ad.rep || rule);
-    show("add-rsumw", ad.rep || rule);
-    if (ad.rep || rule) { const r = formRule(ad, dateOf()); setHtml("add-rsum", summaryHtml(r)); setHtml("add-next", nextHtml(r)); }
-    show("add-custom", (ad.rep || rule) && ad.fq === "custom");
-  }
+  setHtml("add-catv", ad.cat ? tile(ad.cat) + esc(ad.cat) : t("Pick"));
 }
-// Repeat opens over the page and comes back to where it was
-function goStep(step) {
+// A page opens over the sheet and comes back to the row that opened it
+function goStep(step, from) {
   const box = form();
   keypad(false);
-  if (step === "repeat") ad.scroll = box.scrollTop;
+  closeSugg(); closeCat();
+  if (ad.step === "main") { ad.scroll = box.scrollTop; ad.from = from || (document.activeElement && document.activeElement.id) || ""; }
   ad.step = step;
   render();
-  box.scrollTop = step === "repeat" ? 0 : ad.scroll;
-  const target = step === "repeat" ? document.querySelector('#add-pfreq [aria-checked="true"]') : $("add-repcell");
+  box.scrollTop = step === "main" ? ad.scroll : 0;
+  const target = step === "main" ? (ad.from && $(ad.from)) || $("add-reprow")
+    : document.querySelector('[data-pstep="' + step + '"] [aria-checked="true"], [data-pstep="' + step + '"] [aria-pressed="true"]') || document.querySelector('[data-pstep="' + step + '"] .w-gr');
   if (target) target.focus({ preventScroll: true });
 }
 /* The keypad is open while the amount is typed, in the main button's place */
@@ -633,8 +671,10 @@ function pickSugg(i) {
 function renderCat() {
   setVal("add-cat", ad.cat || "");
   const inp = $("add-cat");
-  if (inp) inp.placeholder = cache.cats.length ? t("Pick a category") : t("Name a category, like Groceries");
-  setHtml("add-caticon", ad.cat ? catSvg(ad.cat) : icon("tag"));
+  if (inp) inp.placeholder = cache.cats.length ? t("Pick") : t("Name a category, like Groceries");
+  setHtml("add-caticon", ad.cat ? tile(ad.cat) : "");
+  // The field is as wide as its text, so the icon sits next to it
+  if (inp && document.activeElement !== inp) { inp.style.width = "0"; inp.style.width = Math.min(220, inp.scrollWidth + 2) + "px"; }
 }
 function catOpen() { const b = $("add-catlist"); return b && !b.hidden; }
 const SPLIT = "\u0000split"; // the list's last option: split a receipt across categories
@@ -761,12 +801,12 @@ function build() {
   layout = isPhone() ? "phone" : "desk";
   built = { split: "", parts: "" };
   $("add-modal").innerHTML = '<form class="w-sheet w-add' + (layout === "phone" ? " w-addp" : "") + '" id="add-form" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-title" autocomplete="off" novalidate>' +
-    (layout === "phone" ? phoneHtml() : deskHtml()) + "</form>";
+    sheetHtml() + "</form>";
 }
 function focusStart() {
   const i = $("add-amt");
-  // Editing on a phone, everything shows, with no keypad over it
-  if (layout === "phone" && isEdit()) { form().focus({ preventScroll: true }); return; }
+  // Editing, everything shows as it is: nothing selected, no keypad over it
+  if (isEdit()) { form().focus({ preventScroll: true }); return; }
   if (i) { i.focus(); if (layout !== "phone") i.select(); }
 }
 export function openAdd(o) {
@@ -806,7 +846,7 @@ function discard(then) {
   openDialog({
     title: ed ? t("Discard your changes?") : ad.type === "income" ? t("Discard this income?") : t("Discard this expense?"),
     body: "<p>" + esc(ed ? t("{name} stays as it was.", { name: ad.rule ? ad.rule.n : (ad.edit || ad.group[0]).n || t("It") }) : t("Nothing you typed is saved.")) + "</p>",
-    ok: t("Discard"), cancel: t("Keep editing"), danger: true,
+    kind: "alert", ok: t("Discard"), cancel: t("Keep Editing"), danger: true,
     onOk: () => { then(); },
   });
 }
@@ -975,12 +1015,14 @@ function askApply(old, made, changes) {
     let done = false;
     openDialog({
       title: t("Change {name}?", { name: old.n || old.c }),
-      body: '<div class="w-opts" role="radiogroup" aria-label="' + esc(t("Which ones change")) + '">' +
-        '<label><input type="radio" name="add-apply" value="later"' + (startsLater ? " checked" : " disabled") + "><span><b>" + t("From the next charge") + "</b><small>" +
+      body: '<div class="w-gl w-opts2" role="radiogroup" aria-label="' + esc(t("Which ones change")) + '">' +
+        '<label class="w-gr"><span class="k">' + t("From the next charge") + "<small>" +
           esc(startsLater && when ? tn(made, "The {n} it already made stays as it is. The change starts {date}.", "The {n} it already made stay as they are. The change starts {date}.", { date: dShort(when) })
-            : startsLater ? tn(made, "The {n} it already made stays as it is.", "The {n} it already made stay as they are.") : t("Not possible with a start date in the past.")) + "</small></span></label>" +
-        '<label><input type="radio" name="add-apply" value="all"' + (startsLater ? "" : " checked") + "><span><b>" + t("All, including past ones") + "</b><small>" +
-          esc(tn(made, "The {n} it already made changes too.", "The {n} it already made change too.")) + "</small></span></label></div>",
+            : startsLater ? tn(made, "The {n} it already made stays as it is.", "The {n} it already made stay as they are.") : t("Not possible with a start date in the past.")) + "</small></span>" +
+          '<input type="radio" name="add-apply" value="later"' + (startsLater ? " checked" : " disabled") + "></label>" +
+        '<label class="w-gr"><span class="k">' + t("All, including past ones") + "<small>" +
+          esc(tn(made, "The {n} it already made changes too.", "The {n} it already made change too.")) + "</small></span>" +
+          '<input type="radio" name="add-apply" value="all"' + (startsLater ? "" : " checked") + "></label></div>",
       ok: t("Save"),
       onOk: (root) => { done = true; const c = root.querySelector('input[name="add-apply"]:checked'); resolve(c ? c.value : "later"); },
     });
@@ -1042,15 +1084,15 @@ function focusMissing() {
   const box = form();
   if (!box) return;
   let target = null;
-  if (layout === "phone" && ad.step === "repeat" && !(er && er.f === "rep")) goStep("main");
+  if (ad.step !== "main" && !(er && er.f === "rep" && ad.step === "repeat")) goStep("main");
   if (!amount() || (er && er.f === "amt")) target = $("add-amt");
   if (!target && !named()) { ad.nameTried = true; render(); target = $("add-name"); }
-  if (!target && !ad.split && !ad.cat) target = $("add-cat");
+  if (!target && !ad.split && !ad.cat) target = $("add-cat") || $("add-catrow");
   if (!target && er) {
     if (er.f === "parts") target = box.querySelector('#add-parts select[data-pc]:invalid, #add-parts [aria-invalid="true"]') || [...box.querySelectorAll("#add-parts [data-pc]")].find((s) => !s.value) || box.querySelector("#add-parts [data-pa]");
-    else if (er.f === "cust") target = box.querySelector("[data-cust]");
+    else if (er.f === "cust") { if (layout === "phone") { goStep("split"); return; } target = box.querySelector("[data-cust]"); }
     else if (er.f === "date") target = $("add-pickb") || $("add-datecell");
-    else if (er.f === "rep") { if (layout === "phone") { ad.step = "repeat"; render(); } target = $("add-until"); }
+    else if (er.f === "rep") { if (ad.step !== "repeat") { ad.step = "repeat"; render(); } target = $("add-until"); }
   }
   if (target) target.focus();
 }
@@ -1118,6 +1160,11 @@ function toggleSplit() {
     if (c) c.focus();
   }
 }
+function setSm(k) {
+  if (k === "custom" && ad.sm !== "custom") seedCustom();
+  ad.sm = k;
+  render();
+}
 function refocus(box, attr, val) { const b = $(box); if (!b) return; const n = [...b.querySelectorAll("[" + attr + "]")].find((x) => x.getAttribute(attr) === val); if (n) n.focus(); }
 
 function onClick(ev) {
@@ -1130,8 +1177,11 @@ function onClick(ev) {
   if ((x = at("[data-aw]"))) {
     ad.who = x.dataset.aw; ad.touched.who = 1; render(); refocus("add-who", "data-aw", ad.who); return;
   }
-  if ((x = at("[data-sm]"))) { if (x.dataset.sm === "custom" && ad.sm !== "custom") seedCustom(); ad.sm = x.dataset.sm; render(); return; }
-  if ((x = at("[data-by]"))) { ad.by = x.dataset.by; ad.custCents = null; render(); return; }
+  if ((x = at("[data-sm]"))) { setSm(x.dataset.sm); refocus("add-smlist", "data-sm", ad.sm); return; }
+  if ((x = at("[data-pcat]"))) {
+    if (x.dataset.pcat === SPLIT) { goStep("main"); toggleSplit(); return; }
+    ad.cat = x.dataset.pcat; ad.touched.cat = 1; goStep("main"); return;
+  }
   if ((x = at("[data-ad]"))) { ad.date = x.dataset.ad; ad.cal = null; render(); refocus("add-date", "data-ad", ad.date); return; }
   if (at("#add-pickb") || at("#add-datecell")) return openCal(!ad.cal);
   if ((x = at("[data-cd]"))) { ad.date = normDate(x.dataset.cd); ad.cal = null; render(); calClosed(); return; }
@@ -1144,23 +1194,12 @@ function onClick(ev) {
     if (b && !b.disabled) b.focus(); else focusDay();
     return;
   }
-  if (at("#add-more")) { ad.more = true; render(); const i = $("add-tag"); if (i) i.focus(); return; }
   if ((x = at("[data-tg]"))) { ad.tags = ad.tags.filter((g) => g !== x.dataset.tg); render(); const i = $("add-tag"); if (i) i.focus(); return; }
-  if (at("#add-rep")) { ad.rep = !ad.rep; render(); return; }
-  if ((x = at("[data-fq]"))) { ad.fq = x.dataset.fq; render(); if (ad.fq === "custom") $("add-every").focus(); return; }
   if ((x = at("[data-pfq]"))) {
     const k = x.dataset.pfq;
     if (k === "never") ad.rep = false; else { ad.rep = true; ad.fq = k; }
     render();
     if (k === "custom") $("add-every").focus(); else refocus("add-pfreq", "data-pfq", k);
-    return;
-  }
-  if ((x = at("[data-end]"))) {
-    ad.end = x.dataset.end;
-    if (ad.end === "until" && !ad.until) { const [y, m] = ym(dateOf()), q = ymAdd(y, m, 6); ad.until = ds(q[0], q[1], Math.min(+dateOf().slice(8), dim(q[0], q[1]))); }
-    render();
-    const focusIn = ad.end === "until" ? $("add-until") : ad.end === "count" ? $("add-count") : null;
-    if (focusIn && layout === "phone") focusIn.focus();
     return;
   }
   if (at("[data-addpart]")) { ad.parts.push({ c: "", amt: "" }); render(); const s = form().querySelector('[data-pc="' + (ad.parts.length - 1) + '"]'); if (s) s.focus(); return; }
@@ -1176,7 +1215,7 @@ function onClick(ev) {
     render();
     return;
   }
-  if ((x = at("[data-step]"))) return goStep(x.dataset.step);
+  if ((x = at("[data-step]"))) return goStep(x.dataset.step, x.id);
 }
 function onInput(ev) {
   const n = ev.target, id = n.id;
@@ -1202,6 +1241,15 @@ function onChange(ev) {
   const n = ev.target, id = n.id;
   if (id === "add-unit") { ad.unit = n.value; render(); return; }
   if (id === "add-bysel") { ad.by = n.value; ad.custCents = null; render(); return; }
+  if (id === "add-smsel") { setSm(n.value); return; }
+  if (id === "add-endsel") {
+    ad.end = n.value;
+    if (ad.end === "until" && !ad.until) { const [y, m] = ym(dateOf()), q = ymAdd(y, m, 6); ad.until = ds(q[0], q[1], Math.min(+dateOf().slice(8), dim(q[0], q[1]))); }
+    render();
+    const focusIn = ad.end === "until" ? $("add-until") : ad.end === "count" ? $("add-count") : null;
+    if (focusIn) focusIn.focus();
+    return;
+  }
   if (id === "add-tag" && cache.tags.includes(cleanTag(n.value))) { ad.tagDraft = n.value; addTag(); return; }
   if (n.dataset.pc !== undefined) { ad.parts[+n.dataset.pc].c = n.value; render(); return; }
   if (id === "add-every") { ad.every = String(clampInt(n.value, 1, 99, 1)); n.value = ad.every; render(); return; }
@@ -1232,7 +1280,7 @@ function onKey(ev) {
     if (catOpen()) { closeCat(); n.select(); return; }
     if (ad.cal) { ad.cal = null; render(); calClosed(); return; }
     if (layout === "phone" && form().classList.contains("kp")) { keypad(false); return; }
-    if (layout === "phone" && ad.step === "repeat") { goStep("main"); return; }
+    if (ad.step !== "main") { goStep("main"); return; }
     requestClose();
     return;
   }
@@ -1275,6 +1323,7 @@ function onKey(ev) {
     }
     if (id === "add-cat") { ev.preventDefault(); if (catOpen()) pickCat(ad.chl); else if (layout === "phone") n.blur(); else commit(false); return; }
     if (id === "add-tag") { ev.preventDefault(); addTag(); return; }
+    if (id === "add-newcat") { ev.preventDefault(); const v = n.value.trim(); if (v) { ad.cat = v; ad.touched.cat = 1; n.value = ""; goStep("main"); } return; }
     if (n.dataset && n.dataset.pa !== undefined) {
       ev.preventDefault();
       const i = +n.dataset.pa, pc = partCents();

@@ -82,6 +82,8 @@ async function device({ width = 1280, height = 860, clock } = {}) {
 }
 const shot = async (page, name) => { if (SHOTS) { await page.waitForTimeout(300); await page.screenshot({ path: join(SHOTS, name + ".png") }); } };
 const appShown = (page, timeout = 15000) => page.waitForSelector("#app:not([hidden])", { timeout }).then(() => true, () => false);
+// Unlock: their face and name, the password field and Forgot password?, as at sign-in
+const unlockShown = (page, timeout = 15000) => page.waitForFunction(() => !document.getElementById("gate").hidden && document.getElementById("vg-forgot") && document.querySelector("#gate input#vg-in[type=password]"), null, { timeout }).then(() => true, () => false);
 const gateShown = (page, text, timeout = 15000) => page.waitForFunction((t) => !document.getElementById("gate").hidden && document.getElementById("gate").innerText.includes(t), text, { timeout }).then(() => true, () => false);
 // Back at sign-in: their face and name, and the password field
 const atPassword = (page, name, timeout = 15000) => page.waitForFunction((n) => !document.getElementById("gate").hidden && document.getElementById("si-in") && document.getElementById("gate-h").textContent === n, name, { timeout }).then(() => true, () => false);
@@ -197,22 +199,22 @@ try {
   const plainBefore = check("plain", DB).items;
   await alex1.click("#pv-toggle");
   const onText = await alex1.locator("#dlg").innerText();
-  ok(onText.includes("Turn on end-to-end encryption?") && onText.includes("Everyone keeps signing in with the same password.") && !onText.includes("code"), "the dialog explains what changes: no codes, everyone keeps the same password");
+  ok(onText.includes("Turn On Encryption") && onText.includes("Only your household’s devices will read your data.") && onText.includes("Sign-in stays on") && !onText.includes("code"), "the sheet says what changes in one sentence and a footnote: no codes");
   await alex1.fill("#pv-pw", "wrong-password");
   await alex1.click("[data-dlg-ok]");
   await alex1.waitForFunction(() => !document.getElementById("dlg-err").hidden, null, { timeout: 15000 });
   ok((await alex1.locator("#dlg-err").innerText()).length > 0 && !check("grep", DB, "VAULT_ID").VAULT_ID, "a wrong password changes nothing");
   await alex1.fill("#pv-pw", HP1);
   await alex1.click("[data-dlg-ok]");
-  await alex1.waitForFunction(() => document.querySelector("#dlg h5") && document.querySelector("#dlg h5").textContent.includes("Emergency Kit"), null, { timeout: 60000 });
+  await alex1.waitForFunction(() => document.querySelector("#dlg .w-shtitle") && document.querySelector("#dlg .w-shtitle").textContent.includes("Emergency Kit"), null, { timeout: 60000 });
   await shot(alex1, "kit-dialog");
   const alexKey = (await alex1.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
   ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(alexKey), "the Emergency Kit shows a 52-character recovery key");
   ok(await alex1.locator("#dlg [data-dlg-ok]").isDisabled(), "Done waits until the kit is saved");
   await alex1.keyboard.press("Escape");
   ok(await alex1.locator("#dlg .w-kitkey").count() === 1, "Escape doesn't close the kit");
-  await alex1.check("#kit-saved");
-  ok((await alex1.locator("#dlg h5").innerText()).includes("household’s Emergency Kit"), "one Emergency Kit, for the household");
+  await alex1.click("#kit-saved");
+  ok((await alex1.locator("#dlg .w-shtitle").innerText()).includes("household’s Emergency Kit"), "one Emergency Kit, for the household");
   await alex1.click("#dlg [data-dlg-ok]");
   await alex1.waitForLoadState("networkidle");
   ok(await appShown(alex1, 20000), "Wally opens again, encrypted");
@@ -232,11 +234,11 @@ try {
   /* ================= encryption turned on elsewhere: Unlock once ================= */
   section("A device that was open meanwhile");
   await alex2.reload({ waitUntil: "networkidle" });
-  ok(await gateShown(alex2, "Unlock Wally"), "Alex’s phone asks to unlock, once");
+  ok(await unlockShown(alex2), "Alex’s phone asks to unlock, once");
   await shot(alex2, "unlock-phone");
   await alex2.fill("#vg-in", "nope-nope");
   await alex2.click("#vg-go");
-  await alex2.waitForFunction(() => !document.getElementById("vg-msg").hidden, null, { timeout: 15000 });
+  await alex2.waitForFunction(() => document.getElementById("vg-msg").textContent.trim().length > 0, null, { timeout: 15000 });
   ok((await alex2.locator("#vg-msg").innerText()).includes("isn’t right"), "a wrong password says so");
   await alex2.fill("#vg-in", HP1);
   await alex2.click("#vg-go");
@@ -247,8 +249,8 @@ try {
   noErrors(alex2, "unlocking");
   // Ana's browser, signed in before encryption: the same unlock, with the same password
   await ana0.reload({ waitUntil: "networkidle" });
-  ok(await gateShown(ana0, "Unlock Wally"), "Ana’s browser, already signed in, asks to unlock once");
-  ok((await ana0.locator("#gate").innerText()).includes("Enter the household password"), "with the household password");
+  ok(await unlockShown(ana0), "Ana’s browser, already signed in, asks to unlock once");
+  ok((await ana0.locator("#gate-h").innerText()) === "Ana" && (await ana0.getAttribute("#vg-in", "placeholder")) === "Household password", "her face and name, with the household password");
   await shot(ana0, "unlock-ana");
   await ana0.fill("#vg-in", HP1);
   await ana0.click("#vg-go");
@@ -331,7 +333,7 @@ try {
   // Storage cleared, session still valid (Safari's seven days): the password only
   await alex2.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase("wally-vault"); q.onsuccess = q.onerror = q.onblocked = () => r(); }));
   await alex2.reload({ waitUntil: "networkidle" });
-  ok(await gateShown(alex2, "Unlock Wally"), "storage cleared: the phone asks for the password only");
+  ok(await unlockShown(alex2), "storage cleared: the phone asks for the password only");
   await alex2.fill("#vg-in", HP1);
   await alex2.click("#vg-go");
   ok(await appShown(alex2), "and opens");
@@ -346,7 +348,7 @@ try {
   await alex2.waitForTimeout(300);
   ok(!(await hasKeys(alex2)), "“Lock when Wally closes” leaves no key on this browser");
   await alex2.reload({ waitUntil: "networkidle" });
-  ok(await gateShown(alex2, "Unlock Wally"), "so it asks each time Wally opens");
+  ok(await unlockShown(alex2), "so it asks each time Wally opens");
   await alex2.fill("#vg-in", HP1);
   await alex2.click("#vg-go");
   ok(await appShown(alex2), "and opens, with the key in memory only");
@@ -360,7 +362,7 @@ try {
   ok(await hasKeys(alex2), "turning it off keeps the key on this browser again");
 
   // Sign out others: every other browser in the household, Ana's too; their next contact wipes them
-  await alex1.goto(base + "/settings/signin", { waitUntil: "networkidle" });
+  await alex1.goto(base + "/settings/security/browsers", { waitUntil: "networkidle" });
   await alex1.waitForSelector('[data-act="others"]:not([disabled])', { timeout: 10000 });
   await alex1.waitForFunction(() => /Ana · Last seen/.test(document.getElementById("set-pane").innerText), null, { timeout: 10000 }).catch(() => {});
   ok(/Ana · Last seen/.test(await alex1.locator("#set-pane").innerText()), "Signed-in browsers shows Ana’s browsers too");
@@ -384,8 +386,8 @@ try {
   const ana2 = await device();
   await signIn(ana2, ANA, HP1);
   ok(await appShown(ana2, 20000), "Ana signs in on another browser");
-  await ana2.goto(base + "/settings/people", { waitUntil: "networkidle" });
-  await ana2.click("#set-pane [data-signout]");
+  // The app's own Sign out (the person menu, or Settings on your own page)
+  await ana2.evaluate(() => import("/js/shell.js").then((m) => m.signOut()));
   await ana2.waitForURL(base + "/", { timeout: 10000 });
   await ana2.waitForTimeout(500);
   ok(!(await hasKeys(ana2)), "signing out leaves no key on that browser");
@@ -393,9 +395,9 @@ try {
 
   /* ================= getting back in ================= */
   section("Getting back in");
-  // Two-step on, for the household, from Settings › Sign-in
-  await alex1.goto(base + "/settings/signin", { waitUntil: "networkidle" });
-  await alex1.click('[data-act="2on"]');
+  // Two-step on, for the household, from Settings › Sign-in & Privacy
+  await alex1.goto(base + "/settings/security", { waitUntil: "networkidle" });
+  await alex1.click('a[data-pane="security/two-step"]');
   await alex1.waitForSelector("#ts-secret");
   const secret = (await alex1.textContent("#ts-secret")).replace(/\s/g, "");
   await alex1.fill("#ts-code", totpAt(secret, Math.floor(Date.now() / 30000)));
@@ -421,12 +423,12 @@ try {
   await alex3.click("#vg-help");
   ok(await gateShown(alex3, "Ask Ana"), "“Lost it too?” says to ask Ana, who uses the same password");
   const lost = await alex3.locator("#gate").innerText();
-  ok(lost.includes("Nobody else, not even whoever runs the server, can open it.") && !lost.includes("signin_off"), "encrypted: nobody else can open it, and no command for the server");
+  ok(lost.includes("Not even whoever runs the server can.") && !lost.includes("signin_off"), "encrypted: nobody else can open it, and no command for the server");
   await alex3.click("#vg-rec");
   ok(await gateShown(alex3, "Use your recovery key"), "and back to the recovery key");
   await alex3.fill("#vg-in", "AAAA-AAAA");
   await alex3.click("#vg-go");
-  await alex3.waitForFunction(() => !document.getElementById("vg-msg").hidden, null, { timeout: 15000 });
+  await alex3.waitForFunction(() => document.getElementById("vg-msg").textContent.trim().length > 0, null, { timeout: 15000 });
   ok((await alex3.locator("#vg-msg").innerText()).length > 0, "a mistyped key is refused");
   await alex3.fill("#vg-in", alexKey.toLowerCase());
   await alex3.click("#vg-go");
@@ -457,11 +459,14 @@ try {
   ok(JSON.stringify(await ledger(ana1)) === JSON.stringify(await ledger(alex3)), "with the same ledger");
 
   // Settings › Sign-in, encrypted: what to do if the password is forgotten
-  await alex3.goto(base + "/settings/signin", { waitUntil: "networkidle" });
-  await alex3.waitForSelector('[data-act="2off"]');
+  await alex3.goto(base + "/settings/security", { waitUntil: "networkidle" });
+  await alex3.waitForSelector('a[data-pane="security/kit"]');
+  const mainText = await alex3.locator("#set-pane").innerText();
+  ok(mainText.includes("If you forget the password") && mainText.includes("Emergency Kit"), "Settings › Sign-in & Privacy: the Emergency Kit gets you back in");
+  await alex3.click('a[data-pane="security/kit"]');
+  await alex3.waitForSelector('[data-act="kit"]');
   const forgotText = await alex3.locator("#set-pane").innerText();
-  ok(forgotText.includes("If you forget the password") && forgotText.includes("Emergency Kit"), "Settings › Sign-in: the Emergency Kit gets you back in");
-  ok(!forgotText.includes("password.txt") && !forgotText.includes("signin_off") && forgotText.includes("Then nobody can open the data, not even whoever runs the server."), "Settings › Sign-in, encrypted: lost the kit too means nobody can open it; no password.txt, no command");
+  ok(!forgotText.includes("password.txt") && !forgotText.includes("signin_off") && forgotText.includes("Then nobody can open the data, not even whoever runs the server."), "Emergency Kit, encrypted: lost the kit too means nobody can open it; no password.txt, no command");
   // A new kit, made in this browser: the old one stops working
   const proveIn = async (key) => { const d = await device(); await d.goto(base + "/", { waitUntil: "networkidle" });
     const r = await d.evaluate(async ([k, id]) => { const s = await import("/js/vault/session.js"); s.bind(await import("/js/core.js")); try { await s.prove(id, k); return 200; } catch (e) { return e.status; } }, [key, ALEX]);
@@ -471,14 +476,14 @@ try {
   await alex3.click("#dlg [data-dlg-ok]");
   await alex3.waitForSelector("#kit-saved", { timeout: 20000 });
   const newKey = (await alex3.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
-  await alex3.check("#kit-saved");
+  await alex3.click("#kit-saved");
   await alex3.click("#dlg [data-dlg-ok]");
   await alex3.waitForFunction(() => document.getElementById("dlg").hidden, null, { timeout: 10000 });
   ok(newKey !== alexKey && await proveIn(alexKey) === 401, "encrypted: a new kit, and the old one stops working");
   ok(await proveIn(newKey) === 200, "the new kit opens the household key");
-  await alex3.goto(base + "/settings/signin", { waitUntil: "networkidle" });
-  await alex3.waitForSelector('[data-act="2off"]');
-  await alex3.click('[data-act="2off"]');
+  await alex3.goto(base + "/settings/security/two-step", { waitUntil: "networkidle" });
+  await alex3.waitForSelector("#ts-toggle");
+  await alex3.click("#ts-toggle");
   await alex3.fill("#ts-pw", HP2);
   await alex3.click("#dlg [data-dlg-ok]");
   await alex3.waitForFunction(() => document.getElementById("dlg").hidden, null, { timeout: 15000 });
@@ -496,11 +501,11 @@ try {
   ok(now.items.length === fromApp, "the server has exactly the records the app has (" + fromApp + ")");
   const hits2 = Object.entries(check("grep", DB, ...WORDS, "Psychologist", "Gym", "market")).filter(([, v]) => v).map(([k]) => k);
   ok(hits2.length === 0, "still nothing readable in wally.db" + (hits2.length ? " — found " + hits2.join(", ") : ""));
-  await alex3.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
+  await alex3.goto(base + "/settings/security/server", { waitUntil: "networkidle" });
   await alex3.waitForFunction(() => document.getElementById("set-pane").innerText.includes("Nothing in the clear"), null, { timeout: 10000 }).catch(() => {});
-  ok((await alex3.locator("#set-pane").innerText()).includes("Nothing in the clear"), "Settings › Privacy confirms nothing is in the clear");
+  ok((await alex3.locator("#set-pane").innerText()).includes("Nothing in the clear"), "What the server can see confirms nothing is in the clear");
   const priv = await alex3.locator("#set-pane").innerText();
-  ok(!priv.includes("Recently") && !priv.includes("helped") && await alex3.locator('#set-pane [data-act="kit"]').count() === 0, "Settings › Privacy: no “Recently” group, and the kit lives in Settings › Sign-in now");
+  ok(!priv.includes("Recently") && !priv.includes("helped") && await alex3.locator('#set-pane [data-act="kit"]').count() === 0, "What the server can see: no “Recently” group, and the kit has its own page");
   await shot(alex3, "privacy-on");
 
   /* ================= stopping half-way ================= */
@@ -515,7 +520,6 @@ try {
   await quitter.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
   await quitter.click("#pv-toggle");
   await quitter.fill("#pv-pw", HP2);
-  await quitter.fill("#pv-word", "turn off");
   await quitter.click("[data-dlg-ok]");
   await ana1.waitForTimeout(1500);
   const paused = await (await fetch(base + "/api/auth/status")).json();
@@ -539,7 +543,6 @@ try {
   await victim.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
   await victim.click("#pv-toggle");
   await victim.fill("#pv-pw", HP2);
-  await victim.fill("#pv-word", "turn off");
   await victim.click("[data-dlg-ok]");
   await victim.waitForFunction(() => !document.getElementById("dlg-err").hidden, null, { timeout: 30000 }).catch(() => {});
   ok(killed !== null && existsSync(join(data, "wally.next.db")), "the server was killed with the new file half-built");
@@ -556,21 +559,20 @@ try {
   await alex3.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
   await alex3.click("#pv-toggle");
   await shot(alex3, "turn-off");
+  ok(await alex3.locator("#dlg #pv-word").count() === 0 && !(await alex3.isDisabled("#dlg [data-dlg-ok]")), "turning off asks for the password only; Turn Off stays lit");
+  await alex3.click("#dlg [data-dlg-ok]");
+  await alex3.waitForFunction(() => { const e = document.getElementById("dlg-err"); return e && !e.hidden && /password/i.test(e.textContent); }, null, { timeout: 5000 });
+  ok(await alex3.locator("#dlg #pv-pw").count() === 1, "with the field empty it asks for the password, and stays open");
   await alex3.fill("#pv-pw", HP2);
-  await alex3.fill("#pv-word", "turn of");
-  await alex3.click("[data-dlg-ok]");
-  await alex3.waitForFunction(() => !document.getElementById("dlg-err").hidden, null, { timeout: 5000 });
-  ok((await alex3.locator("#dlg-err").innerText()).includes("turn off"), "it needs “turn off” typed exactly");
-  await alex3.fill("#pv-word", "turn off");
   await alex3.click("[data-dlg-ok]");
   // The encrypted kit went with the encryption: on reload Wally makes a plain one and asks to save it
   ok(await gateShown(alex3, "Save the household’s Emergency Kit", 60000), "turned off: Wally makes a new kit for the household");
-  await alex3.waitForSelector("#kg-saved");
+  await alex3.waitForSelector("#onb-saved");
   const plainKit2 = (await alex3.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-  ok(await alex3.isDisabled("#kg-done"), "Open Wally waits until it is saved");
+  ok(await alex3.isDisabled("#onb-next"), "Open Wally waits until it is saved");
   await shot(alex3, "kit-after-off");
-  await alex3.check("#kg-saved");
-  await alex3.click("#kg-done");
+  await alex3.click("#onb-saved");
+  await alex3.click("#onb-next");
   ok(await appShown(alex3, 30000) && await until(alex3, async ({ core }) => core.state.status && core.state.status.vault && !core.state.status.vault.on, null, 30000), "Wally opens again, in the clear");
   ok(newKey !== plainKit2 && await plainRecover(ALEX, plainKit2) === 200 && await plainRecover(ALEX, newKey) === 401, "the new kit works, and the encrypted one doesn’t");
   const plainAfter = check("plain", DB).items;
@@ -603,7 +605,7 @@ try {
   await alex3.waitForSelector("#dlg .w-kitkey", { timeout: 120000 });
   const took = (Date.now() - t0) / 1000;
   ok(took < 60, "turning on with " + plainBig.length + " items took " + took.toFixed(1) + " s");
-  await alex3.check("#kit-saved");
+  await alex3.click("#kit-saved");
   await alex3.click("#dlg [data-dlg-ok]");
   await appShown(alex3, 30000);
   const t1b = Date.now();

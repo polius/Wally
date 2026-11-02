@@ -2,7 +2,7 @@
    year or a long range, Income vs spending and By category. */
 import {
   t, esc, TODAY, START, ds, dim, ym, ymAdd, addD, span, num, f, fk, monthName, monthIn, monthYear, F,
-  dlab, dlabL, dlabY, totals, daily, cum, extend, monthsIn, monthBounds, cc,
+  dlab, dlabL, dlabY, totals, daily, cum, extend, monthsIn, monthBounds, cc, state, amt, T,
 } from "../../core.js";
 import { el, txt, niceMax, hover, row } from "../../ui.js";
 import { prevOf } from "./range.js";
@@ -10,7 +10,21 @@ import { prevOf } from "./range.js";
 const DASH = '<div class="r d-sum"><span>';
 
 /* ---------- small helpers ---------- */
-function monthCum(y, m) { return cum(daily(ds(y, m, 1), dim(y, m))); }
+/* Everyday spending: every expense except bills, the ones a recurring rule made */
+export function everyday(x) { return x.type === "expense" && !x.rec; }
+export function eDaily(a, len, sc) {
+  const arr = new Array(len).fill(0), t0 = T(a);
+  for (const x of state.tx) {
+    if (!everyday(x)) continue;
+    const i = Math.round((T(x.d) - t0) / 86400000);
+    if (i < 0 || i >= len) continue;
+    arr[i] += amt(x, sc);
+  }
+  return arr;
+}
+export function eTotal(a, b, sc) { let v = 0; for (const x of state.tx) if (x.d >= a && x.d <= b && everyday(x)) v += amt(x, sc); return v; }
+export function eByCat(a, b, sc) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || !everyday(x)) continue; const v = amt(x, sc); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
+function monthCum(y, m) { return cum(eDaily(ds(y, m, 1), dim(y, m))); }
 function haveMonth(y, m, back) { const q = ymAdd(y, m, -back); return ds(q[0], q[1], 1) >= START; }
 /* "Oct 26" on an axis: the year only on January and on the first label */
 export function monLabel(y, m, withYear, short) { return F.mon[m - 1] + (withYear ? (short ? " ’" + String(y).slice(2) : " " + y) : ""); }
@@ -18,7 +32,7 @@ export function monLabel(y, m, withYear, short) { return F.mon[m - 1] + (withYea
 /* ---------- the running total: this range, the one before it (the dashed line), and a projection
    shaped like the last three months ---------- */
 export function paceData(r) {
-  const p = prevOf(r), days = span(r.start, r.end), cur = cum(daily(r.start, days));
+  const p = prevOf(r), days = span(r.start, r.end), cur = cum(eDaily(r.start, days));
   let len = r.len, cmp = null, cmpName = "", cmpShort = "", proj = null, label = "", avg3 = null;
   if (r.month) {
     const [y, m] = ym(r.start);
@@ -32,11 +46,11 @@ export function paceData(r) {
     const py = +r.start.slice(0, 4) - 1, ly = py + "-01-01";
     len = span(r.start, r.start.slice(0, 4) + "-12-31");
     if (ly >= START) {
-      cmp = extend(cum(daily(ly, span(ly, py + "-12-31"))), len); cmpName = cmpShort = String(py); label = p.label;
+      cmp = extend(cum(eDaily(ly, span(ly, py + "-12-31"))), len); cmpName = cmpShort = String(py); label = p.label;
       if (r.current) { const ci = cur.length - 1; proj = []; for (let i = ci; i < len; i++) proj.push(cur[ci] + (cmp[i] - cmp[ci])); }
     }
   } else if (p.ok) {
-    cmp = extend(cum(daily(p.start, span(p.start, p.end))), len); cmpName = t("Previous period"); cmpShort = t("previous"); label = p.label;
+    cmp = extend(cum(eDaily(p.start, span(p.start, p.end))), len); cmpName = t("Previous period"); cmpShort = t("previous"); label = p.label;
   }
   const curName = r.month ? monthName(+r.start.slice(5, 7)) : r.mode === "year" ? r.start.slice(0, 4) : t("This range");
   return { len, cur, cmp, cmpName, cmpShort, proj, label, curName };

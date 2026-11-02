@@ -103,7 +103,7 @@ try {
   ok(await page.locator("#onb-back").count() === 0, "there is no going back to before encrypting");
   await shot(page, "setup-kit");
   ok(await page.isDisabled("#onb-next"), "Continue waits for the kit to be saved");
-  await page.check("#onb-saved");
+  await page.click("#onb-saved");
   await page.click("#onb-next");
   await page.waitForSelector("[data-onb-data]");
   ok(await page.locator("#onb-back").count() === 0, "Your data: no Back into the kit");
@@ -148,12 +148,14 @@ try {
   await sam.context().close();
   // API keys while encrypted: the browser makes the key, with the household password
   await page.goto(a.base + "/settings/keys", { waitUntil: "networkidle" });
-  await page.waitForSelector("#key-name");
+  await page.waitForSelector('#set-pane [data-act="create"]');
   ok(!(await page.locator("#set-pane").innerText()).includes("Off while Wally is encrypted"), "API keys: available while encrypted");
+  // Create a key…: a sheet with what it's for, what it can do and, encrypted, the household password
   const makeKey = async (name, scope) => {
+    await page.click('#set-pane [data-act="create"]');
+    await page.waitForSelector("#dlg #key-name");
     await page.fill("#key-name", name);
-    await page.selectOption("#key-scope", scope);
-    await page.click('[data-act="create"]');
+    await page.click(`#dlg #key-scope [data-v="${scope}"]`);
     await page.waitForSelector("#dlg #key-pw");
     const said = await page.locator("#dlg").innerText();
     await page.fill("#key-pw", "alex-pass-1");
@@ -177,7 +179,7 @@ try {
   await appShown(page);
   ok(await page.evaluate(async (id) => (await import("/js/core.js")).state.tx.some((t) => t.id === id), addedId), "and Alex's browser opens it");
   await page.goto(a.base + "/settings/keys", { waitUntil: "networkidle" });
-  await page.waitForSelector("#key-name");
+  await page.waitForSelector('#set-pane [data-act="create"]');
   const ro = await makeKey("Dashboard", "read");
   ok((await withKey(ro.raw, "GET", "/summary/monthly")).status === 200 && (await withKey(ro.raw, "POST", "/transactions", { name: "x", category: "Groceries", amount: "1", date: new Date().toISOString().slice(0, 10) })).status === 403,
     "a read-only key reads, and can't change anything");
@@ -217,7 +219,7 @@ try {
   const meKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
   await shot(page, "setup-kit-me");
   ok(await page.isDisabled("#onb-next"), "Continue waits for the tick");
-  await page.check("#onb-saved");
+  await page.click("#onb-saved");
   await page.click("#onb-next");
   await page.waitForSelector("[data-onb-data]");
   ok(await page.locator("#onb-back").count() === 0, "no Back into the kit");
@@ -265,7 +267,7 @@ try {
   await shot(page, "setup-required");
   await page.click("#onb-next");
   await page.waitForSelector(".w-kitkey", { timeout: 30000 });
-  await page.check("#onb-saved");
+  await page.click("#onb-saved");
   await page.click("#onb-next");
   await page.waitForSelector("[data-onb-data]");
   await page.click('[data-onb-data="add"]');
@@ -305,7 +307,7 @@ try {
   await page.fill("#pv-pw", "alex-pass-1");
   await page.click("[data-dlg-ok]");
   await page.waitForSelector("#kit-saved", { timeout: 30000 });
-  await page.check("#kit-saved");
+  await page.click("#kit-saved");
   await page.click("#dlg [data-dlg-ok]");
   ok(await appShown(page, 30000) && (await status(now.base)).vault.on, "turning it on from the banner works");
   ok(check("grep", join(now.data, "wally.db"), "Mercadona").Mercadona === false, "and the old transaction is now encrypted too");
@@ -327,7 +329,7 @@ try {
     ok((await gate(page)).includes("Your data isn’t encrypted: browsers only encrypt on secure pages.") && !(await page.locator("#onb-skip").count()), "plain http: no encrypting step; the kit says why it isn't encrypted");
     const httpKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(httpKit), "plain http: the kit is made at setup");
-    await page.check("#onb-saved");
+    await page.click("#onb-saved");
     await page.click("#onb-next");
     await page.waitForSelector("[data-onb-data]");
     await page.click('[data-onb-data="add"]');

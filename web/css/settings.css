@@ -2,20 +2,134 @@
    Builds on .w-set, .w-setnav, .w-group, .w-gi, .w-glabel and friends from wally.css. */
 
 /* ---------- sidebar of panes (links, styled like the prototype's buttons) ---------- */
-.w-setnav{position:sticky;top:16px;gap:22px}
+.w-setnav{position:sticky;top:16px;gap:12px}
 .w-setnav .grp{gap:2px}
-.w-setnav .grp > span{padding:0 12px 6px;font-weight:500}
-.w-setnav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
+.w-setnav .grp > span{padding:0 10px 4px;font-weight:400;font-size:12px}
+.w-setnav a svg.i{width:16px;height:16px}
+.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;font-size:14px;white-space:nowrap;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
 .w-setnav a:hover{color:var(--w-ink)}
 .w-setnav a[aria-current="page"]{background:var(--w-panel);color:var(--w-ink);box-shadow:0 0 0 1px var(--w-line)}
 .w-setnav a[aria-current="page"] svg{color:var(--w-accent)}
 .w-setnav a span{margin-inline-start:auto;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:400}
 .w-setnav button span{margin-left:0;margin-inline-start:auto}
 .w-setver{font-size:var(--fs-cap);color:var(--w-ink3);padding:4px 12px 0}
-.w-set{margin-top:18px;grid-template-columns:224px minmax(0,1fr);gap:40px}
+.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:30px}
 /* Rows of settings read best at a measured width: the whole page sits centred instead of stretching */
 @media (min-width:1024px){.w-app > #main[data-page="settings"]{max-width:1232px}}
 .w-pane{outline:0;min-width:0}
+.w-pwrap{min-width:0;max-width:640px;display:grid;align-content:start}
+/* The pane's head: ‹ back, the title, its button (Edit) */
+.w-phead{display:grid;justify-items:start;gap:2px}
+.w-phead:empty{display:none}
+.w-pth{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 12px;width:100%}
+.w-pth h4{font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.w-phead .w-sback{margin:0 0 8px 10px;min-height:32px}
+#set-act{display:inline-flex;gap:16px}
+#set-act button,#set-act a{color:var(--w-accent-ink);font-size:var(--fs-sub);font-weight:500;text-decoration:none}
+#set-act button.on{font-weight:600}
+/* Rows inside panes */
+.w-pane{display:grid;align-content:start;gap:0}
+.w-pane > .w-glh{padding-top:0}
+.w-pane > :is(.w-gl,.w-glf) + .w-glh{margin-top:20px}
+.w-pane > .w-gl + .w-gl{margin-top:18px}
+.w-pane > .w-glf + .w-gl{margin-top:18px}
+a.w-gr{text-decoration:none;color:var(--w-ink)}
+.w-pane .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-pane .w-gr{font-size:16px;min-height:48px;padding-block:11px}
+.w-pane .w-gr > .k small{color:var(--w-ink2)}
+.w-pane .w-gr > .w-ico{width:30px;height:30px;border-radius:8px}
+.w-pane .w-gr > .w-ico svg.i{width:15px;height:15px}
+.w-pane .w-gr .w-av.lg{width:36px;height:36px;font-size:15px}
+.w-pane .w-gr .w-badge{margin-inline-start:6px;vertical-align:2px}
+.w-glead{width:30px;display:grid;place-items:center;flex:none}
+.w-gr.add .w-glead svg.i{width:18px;height:18px}
+.w-gr.add.w36 .w-glead{width:36px}
+.w-sico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink);flex:none}
+.w-sico svg.i{width:16px;height:16px}
+.w-gck{width:18px;height:18px;color:var(--w-accent-ink);flex:none;stroke-width:2.4}
+span.w-gck{display:inline-block}
+.w-av.w-av48{width:48px;height:48px;font-size:20px}
+.w-dot{width:16px;height:16px;border-radius:50%;display:inline-block}
+.w-tagico{background:var(--w-fill);color:var(--w-ink2)}
+.w-shero .w-tagico,.w-tagico.w-tag48{width:48px;height:48px;border-radius:12px}
+.w-shero .w-tagico{width:64px;height:64px;border-radius:16px}
+.w-tagico.w-tag48 svg.i{width:22px;height:22px}
+.w-av.w-av26{width:26px;height:26px;font-size:12px}
+.w-hash{color:var(--w-ink3);margin-inline-end:-8px}
+.w-shlead2{text-align:start;font-size:14px;color:var(--w-ink2);padding:0 6px 6px}
+.w-gr.w-gempty{display:block;padding:0}
+.w-gr svg.w-gdown{width:14px;height:14px;color:var(--w-ink3)}
+.w-gr input.w-end{text-align:end;color:var(--w-ink2)}
+.w-gr .w-seg{flex:none}
+.w-popmenu{position:fixed;z-index:70;min-width:220px;max-height:calc(100vh - 16px);overflow:auto;background:var(--w-raised);border-radius:12px;box-shadow:var(--w-shadow),0 0 0 1px var(--w-line);padding:6px;display:grid}
+.w-popmenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 10px;border-radius:7px;font-size:14px;text-align:start;color:var(--w-ink)}
+.w-popmenu button[aria-checked="true"]{color:var(--w-accent-ink);font-weight:500}
+.w-popmenu button:hover,.w-popmenu button:focus-visible{background:var(--w-fill);outline:0}
+.w-popmenu svg.i{width:15px;height:15px}
+.w-sico.w-sico48{width:48px;height:48px;border-radius:12px}
+.w-sico.w-sico48 svg.i{width:22px;height:22px}
+code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0;color:inherit}
+.w-glf.w-glf2{padding-top:8px}
+.w-pane > .w-glf + .w-glf{margin-top:0}
+.w-pane > .w-glh + .w-code{margin-top:0}
+.w-gl .w-gr input:focus-visible{outline:none}
+.w-gminus{width:22px;height:22px;border-radius:50%;background:var(--w-bad);display:grid;place-items:center;flex:none}
+.w-gminus::after{content:"";width:11px;height:2px;border-radius:1px;background:#fff}
+.w-ggrip{color:var(--w-ink3);cursor:grab;touch-action:none;width:30px;height:30px;display:grid;place-items:center;border-radius:6px;flex:none}
+.w-ggrip svg.i{width:18px;height:18px}
+.w-gr.dragging{background:var(--w-panel2);box-shadow:0 6px 18px rgba(0,0,0,.14);z-index:2}
+/* An item's own page: picture, name, one line */
+.w-shero{display:grid;justify-items:center;gap:6px;text-align:center;margin:4px 0 20px}
+.w-shero h4{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:4px}
+.w-shero p{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-shero .w-av{width:72px;height:72px;font-size:30px}
+.w-shero .w-ico{width:64px;height:64px;border-radius:16px}
+.w-shero .w-ico svg.i{width:30px;height:30px}
+.w-shero .w-sico{width:64px;height:64px;border-radius:16px}
+.w-shero .w-sico svg.i{width:30px;height:30px}
+/* Searching a long list */
+.w-gsearch{display:flex;align-items:center;gap:8px;height:38px;border-radius:10px;background:var(--w-fill);padding:0 12px;color:var(--w-ink3);margin:0 0 16px}
+.w-gsearch input{border:0;background:none;outline:0;font:inherit;font-size:var(--fs-sub);flex:1;min-width:0;color:var(--w-ink)}
+.w-gsearch svg.i{width:17px;height:17px}
+.w-sym{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);font-size:12px;font-weight:600;color:var(--w-ink2);flex:none;overflow:hidden}
+/* Code and steps */
+.w-pane .w-code,.w-dialog .w-code{font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--w-panel);border-radius:var(--r-card);padding:14px 16px;white-space:pre;overflow:auto;color:var(--w-ink);border:0;margin:0}
+.w-dialog .w-code{background:var(--w-panel2);max-height:150px;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.w-dialog .w-code:hover,.w-dialog .w-code:focus{-webkit-mask-image:none;mask-image:none}
+.w-glh.w-glh2{display:flex;justify-content:space-between;align-items:baseline}
+.w-glh a{color:var(--w-accent-ink);text-decoration:none}
+.w-stepn{width:24px;height:24px;border-radius:50%;background:var(--w-accent-soft);color:var(--w-accent-ink);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none;align-self:flex-start;margin-top:1px}
+.w-steps3 .w-gr{align-items:flex-start;font-size:14.5px;line-height:1.4}
+.w-keybox2{background:var(--w-panel2);border-radius:var(--r-card);padding:16px;display:grid;justify-items:center}
+.w-keybox2 code{font:500 13.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-align:center;overflow-wrap:anywhere;color:var(--w-ink);background:none}
+.w-big-ico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-big-ico svg.i{width:30px;height:30px}
+/* An alert with its buttons one above the other (Delete, then Cancel) */
+.w-alert.w-stack{grid-template-columns:1fr}
+.w-alert.w-stack > .w-dlgx{order:4;margin-top:0}
+/* Deleting a category on a phone: a short sheet, where its transactions go as a row, a red Delete, Cancel */
+@media (max-width:767px){
+  .w-alert.w-hsheet{background:var(--w-raised);border-radius:14px 14px 0 0;padding:10px 16px calc(30px + env(safe-area-inset-bottom,0px));gap:0}
+  .w-alert.w-hsheet::before{content:"";justify-self:center;width:36px;height:5px;border-radius:3px;background:var(--w-fill2);margin-bottom:14px;order:0}
+  .w-hsheet .w-alg{display:contents}
+  .w-hsheet .w-alg > *{padding:0 10px}
+  .w-hsheet .w-alg h5{font-size:17px;font-weight:600;color:var(--w-ink);text-align:center}
+  .w-hsheet .w-alg > p{font-size:14px;color:var(--w-ink2);text-align:center;margin:4px 0 0;padding-bottom:14px}
+  .w-hsheet .w-alg > label.w-pop2{margin:0;padding:0 12px 0 16px;min-height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px}
+  .w-hsheet .w-pop2 span{color:var(--w-ink)}
+  .w-hsheet .w-pop2 select{max-width:65%;color:var(--w-ink2);padding-inline-end:22px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m9.5 6 6 6-6 6'/%3E%3C/svg%3E")}
+  [dir="rtl"] .w-hsheet .w-pop2 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m14.5 6-6 6 6 6'/%3E%3C/svg%3E");background-position:left center}
+  .w-hsheet .w-alg > .w-dlgok,.w-hsheet .w-alg > .w-dlgok.danger{margin:14px 0 0;height:46px;border:0;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:400;padding:0 16px}
+  .w-alert.w-hsheet > .w-dlgx{margin:8px 0 0;height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:600}
+}
+.w-pop2{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px 0 10px;margin-top:8px;border-radius:8px;background:var(--w-fill);font-size:14px;text-align:start}
+.w-pop2 span{color:var(--w-ink2)}
+.w-pop2 select{-webkit-appearance:none;appearance:none;border:0;font:inherit;color:var(--w-ink);text-align:end;text-align-last:end;outline:0;max-width:60%;padding:4px 18px 4px 4px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E") no-repeat right center/14px}
+.w-pop2 select:focus-visible{outline:2px solid var(--w-accent);border-radius:6px}
+/* Colours to pick from */
+.w-swatches{display:grid;grid-template-columns:repeat(5,44px);gap:16px;justify-content:center;padding:18px 10px;background:var(--w-panel2);border-radius:var(--r-card)}
+.w-swatches button{width:44px;height:44px;border-radius:50%;display:block}
+.w-swatches button[aria-checked="true"]{box-shadow:0 0 0 3px var(--w-raised),0 0 0 5px var(--w-ink)}
 .w-pane > *{min-width:0}
 
 /* ---------- rows ---------- */
@@ -76,7 +190,6 @@
 .w-keybox code{overflow-wrap:anywhere}
 .w-scopy{justify-self:start}
 .w-steps2{margin:0;padding-inline-start:20px;display:grid;gap:6px;font-size:var(--fs-foot);color:var(--w-ink2)}
-.w-dialog .w-code{max-height:220px;white-space:pre}
 .w-dialog .w-qr{width:168px;height:168px}
 
 /* Savings: presets and a typed share */
@@ -136,13 +249,41 @@ label.w-btn{cursor:pointer;position:relative}
 .w-scell:active{background:var(--w-panel2)}
 .w-main > .w-plabel{margin:18px 4px 6px}
 .w-main > .w-head + .w-plabel{margin-top:14px}
-.w-main > .w-setver{text-align:center;margin-top:20px}
+.w-main > .w-setver{text-align:center;margin-top:20px;font-size:var(--fs-foot)}
+.w-setroot{display:grid}
+.w-setroot > .w-glh{padding-top:0}
+.w-setroot > .w-gl + .w-glh{margin-top:22px}
+.w-setroot > .w-glh:first-child{padding-top:0}
+.w-setroot > .w-setver{text-align:center;margin-top:20px;font-size:var(--fs-foot)}
+.w-setlist .w-gr{font-size:var(--fs-body);min-height:52px;text-decoration:none;color:var(--w-ink)}
+.w-setlist .w-gr .v{color:var(--w-ink3)}
+/* A pushed page on the phone: ‹ back and the action in a row, the large title below */
+.w-pnav{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px}
+.w-pnav #set-act button,.w-pnav #set-act a{font-size:var(--fs-body)}
+.w-shead h3#set-title{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.035em;line-height:1.1;margin-top:2px}
 
 @media (max-width:1023px){
-  .w-set{grid-template-columns:190px minmax(0,1fr);gap:24px}
+  .w-set{grid-template-columns:200px minmax(0,1fr);gap:20px}
+  /* A narrow list of panes, as on iPad: names only */
+  .w-setnav a span{display:none}
 }
 @media (max-width:767px){
-  .w-pane{gap:18px}
+  .w-pwrap{max-width:none}
+  .w-pane .w-gr{font-size:var(--fs-body);min-height:46px}
+  /* The large title sits right on its first group, as in iOS Settings */
+  .w-shead{margin-bottom:-6px;gap:0}
+  .w-pane > .w-glh:first-child{padding-top:0}
+  .w-setroot > .w-glh:first-child{padding-top:14px}
+  .w-setroot > .w-gl + .w-glh{margin-top:18px}
+  #main.w-subpage .w-shead{margin-bottom:0}
+  #main.w-subpage .w-shero{margin-top:-4px}
+  .w-shero > .w-av{width:84px;height:84px;font-size:36px}
+  .w-shero > .w-ico{width:72px;height:72px;border-radius:18px}
+  .w-shero > .w-ico svg.i{width:34px;height:34px}
+  .w-alg > label.w-pop2{margin:12px 16px 0;padding:0 8px 0 12px;min-height:44px;width:auto;font-size:15px;border-radius:10px}
+  .w-pane .w-code{white-space:pre-wrap;overflow-wrap:anywhere}
+  /* An action sheet has no picture on a phone */
+  .w-alert:not(.w-falert) .w-altop{display:none}
   .w-gi{padding:12px 14px;gap:12px;grid-template-columns:auto minmax(0,1fr) auto}
   /* Wide controls go under the text */
   .w-gi > .w-gctl{grid-column:2 / -1;justify-content:flex-start}
@@ -195,3 +336,92 @@ label.w-btn{cursor:pointer;position:relative}
 .w-swpick button i{width:34px;height:34px;border-radius:50%;display:block}
 .w-swpick button:hover{background:var(--w-fill)}
 .w-swpick button[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--w-ink)}
+
+/* Sign-in & Privacy (security.js): one page in short groups, its sub-pages, and its alerts and sheets */
+.w-sec{display:grid;align-content:start;max-width:640px}
+.w-sec > .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-sec > .w-glh{margin-top:18px}
+.w-sec > .w-glh:first-child{margin-top:0}
+.w-sec > .w-gl + .w-gl{margin-top:14px}
+.w-sec a.w-gr{text-decoration:none;color:inherit}
+.w-sec .w-gr[disabled]{opacity:.45;cursor:default}
+.w-sec .w-gr .k small{line-height:1.35}
+.w-sec .w-gr .w-switch{margin-inline-start:8px}
+.w-sec .w-gr.w-gtext{color:var(--w-ink2);font-size:var(--fs-sub);line-height:1.45;padding-block:12px}
+.w-sec .w-gr .w-badge{margin-inline-start:4px;vertical-align:1px}
+.w-secdev{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2);flex:none}
+.w-secdev.bad{background:var(--w-bad-soft);color:var(--w-bad)}
+.w-secdev svg.i{width:16px;height:16px}
+.w-sechero{display:grid;justify-items:center;text-align:center;gap:6px;margin:0 0 16px}
+.w-sechero b{font-size:20px;font-weight:650;letter-spacing:-.02em}
+.w-sechero p{font-size:var(--fs-foot);color:var(--w-ink2);max-width:380px}
+.w-secico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-secico svg.i{width:30px;height:30px}
+/* Alerts that ask for the password: a picture on top, then one field */
+.w-alead{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-alead.red{background:var(--w-bad-soft);color:var(--w-bad)}
+.w-alead svg.i{width:24px;height:24px}
+.w-afld{width:100%;height:32px;border:1px solid var(--w-line);border-radius:7px;background:var(--w-panel2);padding:0 10px;font:inherit;font-size:13px;color:var(--w-ink);margin-top:8px;outline:0}
+.w-afld:focus{border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
+.w-falert .w-hint{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-falert .w-alg > .w-dlgok[disabled]{color:var(--w-on-accent);opacity:.45}
+.w-falert .w-alg > .w-dlgok.danger[disabled]{color:#fff}
+/* Sheets: a lead sentence, a picture and title on top, the key or codes in a card, two buttons */
+.w-shlead{text-align:center;font-size:var(--fs-foot);color:var(--w-ink2);padding:0 4px 4px!important}
+.w-shtop .w-shtitle{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:6px}
+.w-shtop p{font-size:14px;color:var(--w-ink2);max-width:400px}
+.w-seckey{background:var(--w-panel2);border-radius:14px;padding:16px;display:grid;justify-items:center;gap:12px}
+.w-seckey .w-qr{width:105px;height:105px;margin:0;color:#111;background:#fff;border:0;border-radius:10px;padding:8px;box-sizing:content-box}
+.w-seckey .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 10px;font:600 15px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;background:none;border:0;padding:0;color:var(--w-ink)}
+.w-seckey .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
+.w-seckey .w-codes{background:none;border:0;padding:0;width:100%;justify-items:center;font-size:var(--fs-sub)}
+.w-secscan{padding:14px}
+.w-secscan .w-qr{width:84px;height:84px}
+.w-secsecret{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;flex-wrap:wrap}
+.w-secsecret code{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);background:none;border:0;padding:0;letter-spacing:.04em;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}
+.w-secsecret .w-link{font-size:14px;font-weight:500}
+.w-secbtns{display:flex;gap:10px;justify-content:center;margin:4px 0}
+.w-secbtns .w-btn{height:34px;border-radius:999px;font-size:14px;font-weight:600;padding:0 14px;gap:6px}
+.w-secbtns .w-btn svg.i{width:15px;height:15px}
+.w-kitsheet .w-shh{margin-bottom:6px}
+.w-dialog.w-kitsheet,.w-dialog.w-sh480{max-width:480px}
+.w-dialog.w-sh520{max-width:520px}
+@media (min-width:768px){.w-dialog.w-sh400{max-width:400px}.w-dialog.w-sh420{max-width:420px}.w-dialog.w-sh440{max-width:440px}}
+.w-shfull .w-shb > .w-gl + .w-gl{margin-top:6px}
+.w-shtop p.w-mw360{max-width:360px}
+.w-shtop p.w-mw340{max-width:340px}
+.w-shtop .w-shtitle.w-sht20{font-size:20px}
+/* Language & Region, Appearance, API keys */
+.w-gr .w-seg.w-segm{margin-block:-4px}
+.w-gr .w-seg.w-segm button{padding:4px 12px;font-size:14px}
+.w-mbr{display:none}
+.w-pane .w-code,.w-dialog .w-code{direction:ltr;text-align:left}
+@media (max-width:767px){
+  .w-pane .w-code .w-mbr{display:inline}
+}
+.w-dialog .w-gl > label.w-gr{min-height:46px;font-size:16px}
+.w-dialog .w-gl > label.w-gr:focus-within{box-shadow:inset 0 0 0 2px var(--w-accent);border-radius:10px}
+.w-dialog .w-glh{padding-inline:16px}
+.w-dialog .w-glh ~ .w-glh{margin-top:10px}
+@media (max-width:767px){
+  /* An alert with a field stays an alert in the middle, as on iOS */
+  .w-dlgwrap:has(.w-falert){place-items:center;padding:20px}
+  .w-dialog.w-alert.w-falert{width:290px;max-width:290px;background:var(--w-raised);border-radius:14px;box-shadow:var(--w-shadow);padding:20px 18px 16px;grid-template-columns:1fr 1fr;gap:8px;animation:w-fade 200ms var(--ease)}
+  .w-falert .w-alg{display:contents}
+  .w-falert .w-alg > *{padding:0}
+  .w-falert .w-alg > .w-afld{padding:0 10px}
+  .w-falert > .w-dlgx{order:2}
+  .w-falert .w-alg > .w-dlgok{order:3}
+  .w-falert .w-alg h5{font-size:var(--fs-sub);color:var(--w-ink)}
+  .w-falert .w-alg > p{font-size:var(--fs-foot);color:var(--w-ink2);margin:-2px 0 0}
+  .w-falert .w-alg > .w-dlgok,.w-falert .w-alg > .w-dlgok.danger,.w-falert > .w-dlgx{height:34px;margin:10px 0 0;border:0;border-radius:999px;font-size:14px;font-weight:600}
+  .w-falert .w-alg > .w-dlgok{background:var(--w-accent);color:var(--w-on-accent)}
+  .w-falert .w-alg > .w-dlgok.danger{background:var(--w-bad);color:#fff}
+  .w-falert > .w-dlgx{background:var(--w-fill);color:var(--w-ink)}
+  .w-falert .w-alg > .w-dlgok[disabled]{opacity:.45}
+  .w-shtop .w-shtitle{font-size:22px}
+  /* The kit and two-step sheets are tall: they rise to just under the top, like a full iOS sheet */
+  .w-dialog.w-shfull{max-width:none;min-height:calc(100dvh - 48px)}
+  .w-secsecret{flex-wrap:nowrap;justify-content:space-between;align-items:flex-start}
+  .w-secsecret code{flex:1}
+}

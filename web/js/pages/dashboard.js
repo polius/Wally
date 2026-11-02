@@ -1,13 +1,13 @@
 /* Summary, the page at /: how this month is going, where it's heading, then the details.
-   The title is the period ("October ▾") and opens a menu of months, the year and a custom range.
+   The title is the period ("November ▾"): ‹ › beside it step a month (or a year), and it opens a short
+   menu: This month, Last month, This year, All time, Custom range….
    The layout and its sections are in dashboard/summary.js; this file wires the page. */
 import { state, t, esc, icon, rerank, TODAY, ym, monthName } from "../core.js";
 import { navigate, headActions } from "../shell.js";
 import { hideTip, empty } from "../ui.js";
-import { view, loadRange, setMode, setMonth, stepMonth, rangeOf, goTx, openRange, openRangeSheet, MODES } from "./dashboard/range.js";
+import { view, loadRange, setMode, setMonth, stepMonth, canStep, steps, rangeOf, goTx, openRange, MODES } from "./dashboard/range.js";
 import { summaryHtml, renderSummary, periodMenu, toggleCats } from "./dashboard/summary.js";
 
-const phoneMQ = matchMedia("(max-width: 767px)");
 const $ = (id) => document.getElementById(id);
 let root = null, layoutKey = "";
 
@@ -15,7 +15,9 @@ let root = null, layoutKey = "";
 function header() {
   return '<header class="w-head s-head"><div class="s-titlew">' +
     '<button type="button" class="s-title" data-menu="period" aria-haspopup="menu" aria-expanded="false"><span id="s-title"></span>' + icon("down") + "</button>" +
-    '<div class="w-menu s-pmenu" id="s-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' + headActions() + "</header>";
+    '<div class="w-menu s-pmenu" id="s-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' +
+    '<div class="s-steps" id="s-steps"><button type="button" class="s-stepb" data-step="-1" aria-label="' + esc(t("Previous")) + '">' + icon("left") + "</button>" +
+    '<button type="button" class="s-stepb" data-step="1" aria-label="' + esc(t("Next")) + '">' + icon("right") + "</button></div>" + headActions() + "</header>";
 }
 function emptyHtml() {
   return '<header class="w-head s-head"><div class="s-titlew"><h3 class="s-title">' + t("Summary") + "</h3></div>" + headActions() + "</header>" +
@@ -34,7 +36,6 @@ function layout() {
 /* ---------- drawing ---------- */
 function titleOf(r) {
   if (r.month) { const [y, m] = ym(r.start); return esc(monthName(m)) + (y !== +TODAY.slice(0, 4) ? " <span>" + y + "</span>" : ""); }
-  if (r.mode === "year") return esc(r.title) + " <span>" + esc(r.sub) + "</span>";
   return esc(r.title);
 }
 function render() {
@@ -43,9 +44,12 @@ function render() {
   $("s-title").innerHTML = titleOf(r);
   $("s-title").parentNode.setAttribute("aria-label", t("Period: {range}", { range: $("s-title").textContent }));
   $("s-pmenu").innerHTML = periodMenu();
+  $("s-steps").hidden = !steps();
+  $("s-steps").querySelector('[data-step="-1"]').disabled = !canStep(-1);
+  $("s-steps").querySelector('[data-step="1"]').disabled = !canStep(1);
   renderSummary(r);
 }
-function pickCustom() { if (phoneMQ.matches) openRangeSheet(rangeOf(), render); else openRange(rangeOf(), render); }
+function pickCustom() { openRange(rangeOf(), render); }
 
 /* ---------- events ---------- */
 function onClick(ev) {
@@ -54,10 +58,13 @@ function onClick(ev) {
   if ((x = b("[data-pm]"))) {
     const v = x.dataset.pm;
     if (v === "custom") { setTimeout(pickCustom); return; }
-    if (v === "year") setMode("year"); else setMonth(+v.slice(0, 4), +v.slice(5));
+    if (v === "this") setMode("month");
+    else if (v === "last") { const now = [+TODAY.slice(0, 4), +TODAY.slice(5, 7)], q = now[1] === 1 ? [now[0] - 1, 12] : [now[0], now[1] - 1]; setMonth(q[0], q[1]); }
+    else setMode(v);
     render();
     return;
   }
+  if ((x = b("[data-step]"))) { if (stepMonth(+x.dataset.step)) { hideTip(); render(); } return; }
   if ((x = b("[data-hv]"))) { view.hv = x.dataset.hv; render(); return; }
   if (b('[data-act="cats-all"]')) { toggleCats(); render(); return; }
   if ((x = b("[data-go-cat]"))) { hideTip(); goTx({ cat: x.dataset.goCat }); return; }
@@ -112,10 +119,10 @@ export function unmount() {
   }
   root = null;
 }
-/* Keys: 1 to 3 pick Month, Year or Custom; ← → step months */
+/* Keys: 1 to 4 pick Month, Year, Custom or All time; ← → step months (or years) */
 export function key(ev) {
   if (!root || !state.tx.length) return;
-  const i = ["1", "2", "3"].indexOf(ev.key);
+  const i = ["1", "2", "3", "4"].indexOf(ev.key);
   if (i >= 0) {
     ev.preventDefault();
     if (MODES[i] === "custom") pickCustom();

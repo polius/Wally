@@ -59,7 +59,7 @@ const noErrors = (page, what) => {
   if (theirs.length) console.log("  note " + what + ": errors in other pages: " + [...new Set(theirs)].join(" | "));
   ok(mine.length === 0, what + ": no console errors" + (mine.length ? " — " + mine.join(" | ") : ""));
 };
-const kpi = (page, i) => page.locator(".w-mrev .w-mrk > div").nth(i).locator("b").textContent();
+const kpi = (page, i) => page.locator(".w-mrev .w-mrtop .w-mrtile").nth(i).locator("b").textContent();
 
 try {
   const base = await startServer(PORT, true);
@@ -71,7 +71,7 @@ try {
   /* ---------- the figures against the API ---------- */
   {
     const page = await open(base, "/review");
-    await page.waitForSelector(".w-mrev .w-mrk");
+    await page.waitForSelector(".w-mrev .w-mrtop .w-mrtile");
     const title = await page.textContent("#mr-title");
     ok(new RegExp(String(lastClosed[0])).test(title), "review: opens on the last closed month (" + title + ")");
     ok(page.url().endsWith("/review"), "review: /review with no month is the last closed one");
@@ -80,22 +80,21 @@ try {
     ok(euros(await kpi(page, 2)) === Math.round(M.recurring / 100), "review: Bills = /summary/monthly recurring");
     ok(euros(await kpi(page, 3)) === Math.round((M.expense - M.recurring) / 100), "review: Everyday = expense − recurring");
     ok(euros(await page.textContent(".w-mrhero .big")) === Math.round(Math.abs(M.income - M.expense) / 100), "review: Kept = income − expense");
-    // Usual: the average of the 6 months before
-    const six = before.months.filter((m) => m.month < LAST).slice(-6);
-    const usualExp = six.reduce((s, m) => s + m.expense, 0) / six.length / 100;
-    const usualText = await page.locator(".w-mrev .w-mrk > div").nth(1).locator("small").textContent();
-    ok(near(euros(usualText), Math.round(usualExp)), "review: usual = average of the 6 months before (" + usualText + " vs " + Math.round(usualExp) + ")");
+    // The story order, and the two blocks that went
+    const order = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
+    ok(order.join("|") === "Where it went|What changed|Each of you|Day by day|Bills|Worth knowing", "review: one reading order (" + order.join(", ") + ")");
+    ok(!(await page.textContent(".w-mrev")).includes("Who spent on what") && await page.locator(".w-mrev .w-mrcal").count() === 0, "review: no second breakdown, no calendar grid");
+    ok(!(await page.textContent(".w-mrev")).includes("dashed line") && !(await page.textContent(".w-mrev")).includes("Click a month"), "review: no notes on how to read the charts");
     // Categories
-    const rows = await page.$$eval(".w-mrev a.w-mrcr", (l) => l.map((a) => [a.dataset.cat, a.querySelector(":scope > b").textContent]));
+    const rows = await page.$$eval(".w-mrev a.w-mrwrow", (l) => l.map((a) => [a.dataset.cat, a.querySelector(":scope > b").textContent]));
     const catOk = rows.every(([c, v]) => M.categories[c] && euros(v) === Math.round(M.categories[c].total / 100));
     ok(rows.length > 3 && catOk, "review: every category total matches the API (" + rows.length + " categories)");
-    const firstColor = await page.$eval(".w-mrev a.w-mrcr .bar span", (s) => s.style.background);
-    ok(firstColor.includes("--c1"), "review: the biggest category takes the first colour");
+    ok(await page.locator(".w-mrev .w-mrkey").count() === 1 && await page.locator(".w-mrev a.w-mrwrow .w-mrsplit i").count() > rows.length, "review: who spent it, inside each bar");
     // People: always everyone, each by share
-    const cards = page.locator(".w-mrp");
-    ok(await cards.count() === 2, "review: the people block shows both people");
+    const cards = page.locator(".w-mrev .w-mrpc");
+    ok(await cards.count() === 2, "review: Each of you shows both people");
     for (const [i, id] of [[0, "1"], [1, "2"]]) {
-      const spent = euros(await cards.nth(i).locator(".w-mrtrio > div").nth(1).locator("b").textContent());
+      const spent = euros(await cards.nth(i).locator(".w-mrkv").nth(1).locator("b").textContent());
       ok(near(spent, M.people[id].expense / 100), "review: person " + id + " spent matches the API by share (" + spent + " vs " + (M.people[id].expense / 100).toFixed(2) + ")");
     }
     const shared = await page.textContent("#mr-shared");
@@ -106,8 +105,7 @@ try {
     await page.click('.w-mrh [data-mrsc="1"]');
     await page.waitForFunction(() => document.querySelector('.w-mrh [data-mrsc="1"]').getAttribute("aria-pressed") === "true");
     ok(near(euros(await kpi(page, 1)), M.people["1"].expense / 100), "scope: Went out becomes Alex’s share");
-    ok(await page.locator(".w-mrp").count() === 2 && await page.locator(".w-mrp.dim").count() === 1, "scope: the people block still shows both, the other dimmed");
-    ok((await page.textContent(".w-mrhero p")).startsWith("Alex"), "scope: the headline is about Alex");
+    ok(await page.locator(".w-mrev .w-mrpc").count() === 2 && await page.locator(".w-mrev .w-mrpc.dim").count() === 1, "scope: Each of you still shows both, the other dimmed");
     await page.click('.w-mrh [data-mrsc="all"]');
 
     // Arrows through closed months, and the keyboard
@@ -119,7 +117,7 @@ try {
     await page.waitForFunction((p) => location.search === "?m=" + p, LAST);
     ok(true, "arrows: → goes forward again");
     // The chart: one bar per month, click to open
-    const bars = page.locator("#mr-c12 rect[role=button]");
+    const bars = page.locator(".w-mrev .w-mrbars [data-mrm]");
     ok(await bars.count() >= 6, "chart: a bar per month (" + await bars.count() + ")");
     await bars.nth(0).click();
     await page.waitForFunction((l) => location.search !== "?m=" + l, LAST);
@@ -128,10 +126,10 @@ try {
     await page.goto(base + "/review?m=2099-01", { waitUntil: "networkidle" });
     ok((await page.textContent("#mr-title")).includes(String(lastClosed[0])), "review: a month not over yet shows the last closed one");
     // Tooltips and links
-    await page.hover(".w-mrev a.w-mrcr >> nth=0");
+    await page.hover(".w-mrev a.w-mrwrow >> nth=0");
     ok(await page.locator("#tip.on").count() === 1 && (await page.textContent("#tip")).includes("Usual"), "tooltip: a category says spent, last month and usual");
-    const cat0 = await page.getAttribute(".w-mrev a.w-mrcr >> nth=0", "data-cat");
-    await page.click(".w-mrev a.w-mrcr >> nth=0");
+    const cat0 = await page.getAttribute(".w-mrev a.w-mrwrow >> nth=0", "data-cat");
+    await page.click(".w-mrev a.w-mrwrow >> nth=0");
     await page.waitForURL("**/transactions?**");
     ok(page.url().includes("ym=" + LAST) && page.url().includes("cat=" + encodeURIComponent(cat0)), "link: a category opens its transactions for the month");
     await page.goBack();
@@ -149,7 +147,10 @@ try {
     const page = await open(base, "/");
     await page.waitForTimeout(800);
     ok(new URL(page.url()).pathname === "/", "opening Wally is never interrupted by Month in review");
-    ok(await page.locator('#s-recapw a[href="/review?m=' + LAST + '"]').count() === 1, "Summary offers last month's recap instead");
+    // The recap card shows only once a recap is ready to read: on a closed month in Summary
+    await page.goto(base + "/?ym=" + LAST, { waitUntil: "networkidle" });
+    await page.waitForTimeout(500);
+    ok(await page.locator('#s-recapw a[href="/review?m=' + LAST + '"]').count() === 1, "Summary on last month offers its recap");
     await page.click("#s-recapw a");
     await page.waitForFunction((l) => location.search === "?m=" + l, LAST);
     ok(true, "the recap card opens that month");
@@ -160,12 +161,12 @@ try {
   /* ---------- Export as PDF: the report in A4 pages, from the button or from ⌘P ---------- */
   {
     const page = await open(base, "/review?m=" + LAST);
-    await page.waitForSelector(".w-mrpdf");
+    await page.waitForSelector(".w-mrh [data-menu=mrmore]");
     await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
-    const head = await page.locator(".w-mrh > *").evaluateAll((n) => n.map((x) => x.className));
-    ok(head.findIndex((c) => c.includes("w-mrpdf")) === head.findIndex((c) => c.includes("w-seg")) - 1, "Export as PDF sits just before Household: " + head.join(" | "));
+    ok(await page.locator(".w-mrh [data-mr-pdf]").isHidden(), "Export as PDF waits in the ••• menu");
     const title0 = await page.title();
-    await page.click(".w-mrpdf");
+    await page.click(".w-mrh [data-menu=mrmore]");
+    await page.click(".w-mrh [data-mr-pdf]");
     await page.waitForFunction(() => window.__printed === 1);
     const sheets = await page.locator("#w-print .pr-sheet").count();
     ok(sheets >= 1 && sheets <= 3, "the report is laid out in " + sheets + " A4 pages");
@@ -173,6 +174,15 @@ try {
     ok((await page.locator("#w-print .pr-pn").allInnerTexts()).every((x, i) => x === "Page " + (i + 1) + " of " + sheets), "every page has its number");
     ok(await page.locator("#w-print").evaluate((r) => [...r.querySelectorAll(".pr-body")].every((b) => b.scrollHeight <= b.clientHeight + 1)), "nothing runs off a page");
     ok(await page.locator("#w-print h1").innerText() !== "" && await page.locator("#w-print .pr-cr:not(.hd)").count() > 0, "title, figures and categories are in it");
+    // Usual: the average of the 6 months before, printed under each total
+    const six = before.months.filter((m) => m.month < LAST).slice(-6);
+    const usualExp = six.reduce((s, m) => s + m.expense, 0) / six.length / 100;
+    const usualText = await page.locator("#w-print .pr-kpi > div").nth(1).locator("small").textContent();
+    ok(near(euros(usualText), Math.round(usualExp)), "report: usual = average of the 6 months before (" + usualText + " vs " + Math.round(usualExp) + ")");
+    ok(sheets === 2 && (await page.locator("#w-print .pr-sheet").nth(1).locator("h2").first().innerText()).startsWith("Each of you"), "page 2 starts with Each of you");
+    const billsKv = await page.locator("#w-print .pr-sheet").nth(1).locator(".pr-kv").nth(1).innerText();
+    ok((/[\d,.]+\s*€\s+in\s+\d+\s+bills?/.test(billsKv) && /First\s+\S/.test(billsKv)) || /No bills/.test(billsKv), "report: next month's bills, then the first one on its own line (" + billsKv.replace(/\s+/g, " ") + ")");
+    ok(await page.locator("#w-print .pr-grid").count() === 0 && await page.locator("#w-print .pr-split i").count() > 0, "the report has no day grid, and who spent it is in the bars");
     const pdf = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString("latin1");
     const pages = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
     ok(pages === sheets, "the PDF has as many pages as the report: " + pages);
@@ -185,7 +195,7 @@ try {
     await page.context().close();
   }
 
-  /* ---------- the phone: four pages ---------- */
+  /* ---------- the phone: five pages ---------- */
   {
     const page = await open(base, "/review", { width: 390, height: 844, touch: true });
     await page.waitForSelector(".w-mrstory");
@@ -210,11 +220,15 @@ try {
     });
     ok(await page.locator('[data-sp="2"]').isVisible(), "phone: swiping goes on");
     await page.click("#mr-snext");
-    ok(await page.locator('[data-sp="3"]').isVisible() && await page.locator("#mr-snext").isHidden(), "phone: page 4 is the last");
-    await shot(page, "review-phone-4");
+    ok(await page.locator('[data-sp="3"]').isVisible() && (await page.textContent('[data-sp="3"]')).includes("Each of you"), "phone: page 4, each of you");
+    await page.click("#mr-snext");
+    ok(await page.locator('[data-sp="4"]').isVisible() && await page.locator("#mr-snext").isHidden(), "phone: page 5 is the last");
+    const p5 = await page.textContent('[data-sp="4"]');
+    ok(p5.includes("Day by day") && p5.includes("Bills") && p5.includes("Worth knowing"), "phone: the last page has day by day, bills and worth knowing");
+    await shot(page, "review-phone-5");
     await page.click(".w-mrstory [data-mr-prev]");
-    ok((await page.textContent(".w-mrstop .w-hint")).length > 0 && page.url().endsWith("?m=" + PREV) && await page.locator('[data-sp="0"]').isVisible(), "phone: the arrows step months, from page 1");
-    ok(await page.locator(".w-mrstop [data-mr-pdf]").isVisible(), "phone: Export as PDF beside close");
+    ok((await page.textContent(".w-mrstop .w-mrsm")).length > 0 && page.url().endsWith("?m=" + PREV) && await page.locator('[data-sp="0"]').isVisible(), "phone: the arrows step months, from page 1");
+    ok(await page.locator(".w-mrstop [data-menu=mrmore]").isVisible() && await page.locator(".w-mrstory .w-mrsc").isVisible(), "phone: ••• beside close, Household | each person under");
     await page.click(".w-mrstory [data-mr-close]");
     await page.waitForFunction(() => location.pathname === "/");
     ok(true, "phone: close goes to the Dashboard");
@@ -225,7 +239,7 @@ try {
   /* ---------- dark, tablet, Arabic ---------- */
   {
     const page = await open(base, "/review", { width: 900, height: 900, theme: "dark" });
-    await page.waitForSelector(".w-mrev .w-mrk");
+    await page.waitForSelector(".w-mrev .w-mrtop .w-mrtile");
     const over = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     ok(!over, "tablet: nothing wider than the screen");
     await shot(page, "review-900-dark", true);
@@ -234,7 +248,7 @@ try {
     await page.evaluate(() => fetch("/api/language/ar", { method: "PUT", headers: { "X-Wally-Person": "1" } }));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.reload({ waitUntil: "networkidle" });
-    await page.waitForSelector(".w-mrev .w-mrk");
+    await page.waitForSelector(".w-mrev .w-mrtop .w-mrtile");
     ok(await page.evaluate(() => document.documentElement.dir) === "rtl", "arabic: right to left");
     await shot(page, "review-ar", true);
     await page.setViewportSize({ width: 390, height: 844 });

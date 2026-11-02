@@ -85,10 +85,10 @@ function renderSignin() {
     return;
   }
   if (s === "nokit") {
-    // Upgraded from 1.x and nobody has signed in since: there is no Emergency Kit yet
-    paint(card(mark() + head(t("There is no Emergency Kit yet"), t("Wally 1 had none, so only whoever runs the server can help. They can turn sign-in off with this command, then you turn it on again with a new password:")) +
-      '<div class="w-keybox w-sifile"><code translate="no">docker exec wally python3 -m api.signin_off</code></div>' +
-      '<button type="button" class="w-btn primary w-submit w-wide" id="si-back" data-autofocus>' + t("Back to sign in") + "</button>"));
+    // Upgraded from 1.x and nobody has signed in since: there is no Emergency Kit yet. The server command is in the README.
+    paint('<main class="w-lock wide" aria-labelledby="gate-h"><div class="w-lockhero"><span class="w-mark w-lockmark" aria-hidden="true"></span><h1 id="gate-h">' + t("There is no Emergency Kit yet") + "</h1><p>" +
+      t("Wally 1 had none, so only whoever runs the server can help: they can turn sign-in off, then you turn it on again with a new password.") + "</p></div>" +
+      '<div class="w-locklinks"><button type="button" class="w-link w-silink acc" id="si-back" data-autofocus>' + t("Back to sign in") + "</button></div></main>");
     root.querySelector("#si-back").addEventListener("click", () => go(si.p ? "pw" : "household"));
     return;
   }
@@ -227,7 +227,8 @@ function forgot() {
 /* ======================= who is using this browser (sign-in off) ======================= */
 /* A profile picker: big faces, one tap. Arrows move between them; the choice is remembered here. */
 function renderWho() {
-  paint(facePicker(t("Who’s using Wally?"), t("Wally remembers you on this browser and notes who adds each transaction."), t("No password needed while sign-in is off."), (b) => {
+  // Title and faces only, like the sign-in picker
+  paint(facePicker(t("Who’s using Wally?"), "", "", (b) => {
     write("wally.person", b.dataset.prof);
     finish();
   }), ".w-who");
@@ -273,30 +274,27 @@ function wirePicker(onPick) {
    signs in next makes one and saves it. */
 const kg = { key: "", qr: "", saved: false, err: "" };
 async function startKit() {
-  paint(card(mark() + head(t("Save the household’s Emergency Kit"), t("Getting it ready…"))));
+  paint(onbFrame({ key: "kit-wait", ico: "file", title: t("Save the household’s Emergency Kit"), sub: t("Getting it ready…") }));
   try {
     kg.key = (await POST("/kit", {}, { quiet401: true })).key;
     kg.qr = await (await import("../vault/kit.js")).qrSvg(kg.key);
   } catch (e) {
     // Someone else in the household saved it a moment ago: nothing to do here
     if (e.status === 409) return finish();
-    paint(card(mark() + head(t("Save the household’s Emergency Kit"), apiMessage(e)) + '<button type="button" class="w-btn primary w-submit w-wide" id="kg-retry">' + t("Try again") + "</button>" + signOutLink()));
-    root.querySelector("#kg-retry").addEventListener("click", startKit);
+    paint(onbFrame({ key: "kit-err", ico: "file", title: t("Save the household’s Emergency Kit"), sub: apiMessage(e), next: t("Try again"), body: '<div class="w-locklinks">' + signOutLink() + "</div>" }));
+    root.querySelector("#onb-next").addEventListener("click", startKit);
     wireSignOut();
     return;
   }
   renderKit();
 }
+/* The same step as in setup: the key beside its QR code, a switch, then Wally */
 function renderKit() {
-  paint(card(mark() + head(t("Save the household’s Emergency Kit"), t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) +
-    '<div class="w-kit">' + kg.qr + keyGroups(kg.key) + "</div>" +
-    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="kg-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="kg-copy">' + icon("copy") + t("Copy") + "</button></div>" +
-    '<label class="w-sichk"><input type="checkbox" id="kg-saved"' + (kg.saved ? " checked" : "") + ">" + t("I saved it somewhere safe") + "</label>" +
-    '<button type="button" class="w-btn primary w-submit w-wide" id="kg-done"' + (kg.saved ? "" : " disabled") + ">" + t("Open Wally") + "</button>", "wide"), "#kg-dl");
-  root.querySelector("#kg-dl").addEventListener("click", () => downloadKit(kg.key));
-  root.querySelector("#kg-copy").addEventListener("click", (ev) => copy(kg.key, ev.currentTarget));
-  root.querySelector("#kg-saved").addEventListener("change", (ev) => { kg.saved = ev.target.checked; root.querySelector("#kg-done").disabled = !kg.saved; });
-  root.querySelector("#kg-done").addEventListener("click", () => finish());
+  paint(onbFrame({ key: "kit", ico: "file", title: t("Save the household’s Emergency Kit"), next: t("Open Wally"), nextOff: !kg.saved,
+    sub: t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again."),
+    body: kitBody(kg.key, kg.qr, kg.saved, "") }), "#onb-dl");
+  wireKit(kg.key, (on) => { kg.saved = on; });
+  root.querySelector("#onb-next").addEventListener("click", () => { if (kg.saved) finish(); });
 }
 /* The kit as a designed PDF, made in this browser: the key never leaves it */
 async function downloadKit(key) { (await import("../vault/kit.js")).downloadKitPdf(key); }
@@ -344,17 +342,17 @@ function progress() {
 function initialOf(name) { const c = [...String(name || "").trim()][0]; return c ? c.toLocaleUpperCase(LANG) : ""; }
 function faceOf(name, i) { const c = initialOf(name); return '<span class="w-av p' + (i % 6) + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
 function peopleRows(names, created) {
+  // One group of rows, as in Contacts: a face that fills in as the name is typed, the name, then You or a red minus
   if (created.length) {
-    return '<ul class="w-onbppl">' + created.map((p) => "<li>" + av(String(p.id)) + "<span>" + esc(p.name) + "</span>" + (p.id === created[0].id ? '<span class="w-badge">' + t("You") + "</span>" : "") + "</li>").join("") + "</ul>" +
-      '<p class="w-hint">' + t("Names can be changed later in Settings › People.") + "</p>";
+    return '<ul class="w-gl w-onbgl w-onbppl">' + created.map((p) => '<li class="w-gr">' + av(String(p.id)) + '<span class="k">' + esc(p.name) + "</span>" + (p.id === created[0].id ? '<span class="w-badge">' + t("You") + "</span>" : "") + "</li>").join("") + "</ul>" +
+      '<p class="w-glf">' + t("Names can be changed later in Settings › People.") + "</p>";
   }
-  return '<div class="w-onbpl" id="onb-names">' + names.map((n, i) =>
-    '<div class="w-onbper">' + faceOf(n, i) +
+  return '<div class="w-gl w-onbgl w-onbpl" id="onb-names">' + names.map((n, i) =>
+    '<div class="w-gr w-onbper">' + faceOf(n, i) +
     '<input class="w-onbpin" data-name="' + i + '" value="' + esc(n) + '" maxlength="40" placeholder="' + esc(i === 0 ? t("Your name") : t("Name")) + '" autocomplete="' + (i === 0 ? "name" : "off") + '" aria-label="' + esc(i === 0 ? t("Your name") : t("Name of person {n}", { n: i + 1 })) + '">' +
-    (i === 0 ? '<span class="w-onbpend"><span class="w-badge">' + t("You") + "</span></span>"
-      : '<span class="w-onbpend"><button type="button" class="w-x" data-drop="' + i + '" aria-label="' + esc(t("Remove person {n}", { n: i + 1 })) + '">' + icon("x") + "</button></span>") + "</div>").join("") +
-    // Lined up with the names: an empty face, the button where a name would go
-    '<div class="w-onbper"><span class="w-av w-onbghost" aria-hidden="true"></span><button type="button" class="w-onbadd" id="onb-add">' + icon("plus") + t("Add someone") + '</button><span class="w-onbpend"></span></div></div>';
+    (i === 0 ? '<span class="w-badge">' + t("You") + "</span>"
+      : '<button type="button" class="w-onbdrop" data-drop="' + i + '" aria-label="' + esc(t("Remove person {n}", { n: i + 1 })) + '">' + icon("minus") + "</button>") + "</div>").join("") +
+    '<button type="button" class="w-gr add w-onbadd" id="onb-add"><span class="w-onbaddi">' + icon("plus") + "</span>" + t("Add someone") + "</button></div>";
 }
 function readNames(names) { root.querySelectorAll("[data-name]").forEach((i) => { names[+i.dataset.name] = i.value; }); }
 function wireNames(names, rerender) {
@@ -385,29 +383,47 @@ async function createPeople(names) {
 
 /* What encrypting means, in everyday words: the same list whether it's chosen or required */
 function whatItMeans(others) {
+  const item = (ic, b, sm) => "<li>" + icon(ic) + "<span><b>" + b + "</b>" + sm + "</span></li>";
   return '<ul class="w-onbmeans">' +
-    "<li>" + icon("key") + "<span><b>" + t("Your password is the key.") + "</b> " + t("Nobody can reset it for you, not even whoever runs the server.") + "</span></li>" +
-    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("One for the household, to print or keep in a password manager. It gets you back in if you forget the password.") + "</span></li>" +
-    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone uses the same password.") + "</b> " + t("Each person types it once on their own phone or computer.") + "</span></li>" : "") + "</ul>";
+    item("key", t("Your password is the key."), t("Nobody can reset it for you, not even whoever runs the server.")) +
+    item("file", t("You save an Emergency Kit."), t("One for the household, to print or keep in a password manager. It gets you back in if you forget the password.")) +
+    (others ? item("users", t("Everyone uses the same password."), t("Each person types it once on their own phone or computer.")) : "") + "</ul>";
 }
 /* The household's Emergency Kit: the recovery key, its QR code, and a tick before going on */
 function kitBody(key, qr, saved, note) {
-  return '<div class="w-kit">' + qr + keyGroups(key) + "</div>" +
-    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
-    '<label class="w-sichk w-onbtick"><input type="checkbox" id="onb-saved"' + (saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>" +
-    (note ? '<p class="w-hint w-onbnote">' + note + "</p>" : "");
+  return '<div class="w-kitbox"><span class="w-kitqr">' + qr + '</span><div class="w-kitside">' + keyGroups(key) +
+    '<div class="w-kitbtns"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div></div></div>" +
+    '<div class="w-gl w-onbgl"><label class="w-gr" for="onb-saved"><span class="k">' + t("I saved the Emergency Kit somewhere safe") + "</span>" +
+    '<button type="button" class="w-switch" role="switch" id="onb-saved" aria-checked="' + !!saved + '"></button></label></div>' +
+    (note ? '<p class="w-glf">' + note + "</p>" : "");
 }
 function wireKit(key, onTick) {
   root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(key));
   root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(key, ev.currentTarget));
-  root.querySelector("#onb-saved").addEventListener("change", (ev) => {
-    onTick(ev.target.checked);
-    root.querySelector("#onb-next").disabled = !ev.target.checked;
+  const sw = root.querySelector("#onb-saved");
+  sw.addEventListener("click", () => {
+    const on = sw.getAttribute("aria-checked") !== "true";
+    sw.setAttribute("aria-checked", String(on));
+    onTick(on);
+    root.querySelector("#onb-next").disabled = !on;
   });
 }
 function pwFields(id, label, value, confirm) {
-  return '<div class="w-onbfields"><div class="w-input"><input type="password" id="' + id + '" placeholder="' + esc(label) + '" aria-label="' + esc(label) + '" autocomplete="' + (confirm ? "new-password" : "current-password") + '" value="' + esc(value || "") + '">' + eye(id) + "</div>" +
-    (confirm ? '<div class="w-input"><input type="password" id="' + id + '2" placeholder="' + esc(t("Confirm password")) + '" aria-label="' + esc(t("Confirm password")) + '" autocomplete="new-password" value="' + esc(value || "") + '"></div>' : "") + "</div>";
+  return '<div class="w-gl w-onbgl w-onbfields"><div class="w-gr"><input type="password" id="' + id + '" placeholder="' + esc(label) + '" aria-label="' + esc(label) + '" autocomplete="' + (confirm ? "new-password" : "current-password") + '" value="' + esc(value || "") + '">' + eye(id) + "</div>" +
+    (confirm ? '<div class="w-gr"><input type="password" id="' + id + '2" placeholder="' + esc(t("Confirm password")) + '" aria-label="' + esc(t("Confirm password")) + '" autocomplete="new-password" value="' + esc(value || "") + '"></div>' : "") + "</div>";
+}
+/* A row that opens a list, as in iOS Settings: the label, the value and a chevron, with the native
+   list (a menu on a computer, a wheel on a phone) under the whole row */
+function pickRow(id, label, value, options, aria) {
+  return '<label class="w-gr w-grpick"><span class="k">' + label + '</span><span class="v">' + value + '</span>' + icon("right", "chev") +
+    '<select id="' + id + '" aria-label="' + esc(aria || label) + '">' + options + "</select></label>";
+}
+// "Euro (€)": the currency's name in the app's language, then its symbol
+function currencyLabel(x) {
+  let n = x.name;
+  try { if (/^[A-Z]{3}$/.test(x.name)) n = new Intl.DisplayNames([LANG], { type: "currency" }).of(x.name) || x.name; } catch (e) { /* the code */ }
+  n = n.charAt(0).toLocaleUpperCase(LANG) + n.slice(1);
+  return x.symbol && x.symbol !== x.name ? n + " (" + x.symbol + ")" : n;
 }
 
 /* ---------- first run: Welcome, People, Password, Encrypt, Emergency Kit, Your data ---------- */
@@ -439,22 +455,23 @@ function renderWelcome() {
     const sample = new Intl.NumberFormat(LANG, { minimumFractionDigits: 2 }).format(12);
     const sel = c && c.currencies.find((x) => x.name === c.selected), sym = sel ? sel.symbol : "€";
     Object.assign(o, { ico: "mark", title: t("Welcome to Wally"), sub: t("Keep track of what your household spends and earns. Your data stays on this server."), next: t("Continue") });
-    o.body = '<div class="w-onbf">' +
-      '<label class="w-onbrow"><span>' + t("Language") + '</span><select class="w-mini" id="onb-lang">' + LANGUAGES.map(([code, n]) => '<option value="' + code + '"' + (code === LANG ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></label>" +
-      (c ? '<label class="w-onbrow"><span>' + t("Currency") + '</span><select class="w-mini" id="onb-cur">' + c.currencies.map((x) => '<option value="' + esc(x.name) + '"' + (x.name === c.selected ? " selected" : "") + ">" + esc(x.name) + " · " + esc(x.symbol) + "</option>").join("") + "</select></label>" +
-        '<div class="w-onbrow"><span id="onb-pos-l">' + t("Symbol") + '</span><div class="w-seg" id="onb-pos" role="group" aria-labelledby="onb-pos-l">' +
+    const langName = (LANGUAGES.find(([code]) => code === LANG) || ["", LANG])[1];
+    o.body = '<div class="w-gl w-onbgl">' +
+      pickRow("onb-lang", t("Language"), esc(langName), LANGUAGES.map(([code, n]) => '<option value="' + code + '"' + (code === LANG ? " selected" : "") + ">" + esc(n) + "</option>").join("")) +
+      (c ? pickRow("onb-cur", t("Currency"), esc(currencyLabel(sel || { name: c.selected, symbol: sym })), c.currencies.map((x) => '<option value="' + esc(x.name) + '"' + (x.name === c.selected ? " selected" : "") + ">" + esc(currencyLabel(x)) + "</option>").join("")) +
+        '<div class="w-gr"><span class="k" id="onb-pos-l">' + t("Amounts") + '</span><div class="w-seg" id="onb-pos" role="group" aria-labelledby="onb-pos-l">' +
         [["left", sym + sample], ["right", sample + " " + sym]].map(([v, l]) => '<button type="button" data-v="' + v + '" aria-pressed="' + (c.position === v) + '">' + esc(l) + "</button>").join("") + "</div></div>" : "") +
       "</div>";
   } else if (k === "people") {
     Object.assign(o, { ico: "users", title: t("Who shares this household?"), sub: t("Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you."), next: t("Continue") });
-    o.body = peopleRows(onb.names, onb.people) + (onb.people.length ? "" : '<p class="w-hint w-onbnote">' + t("Living alone? Just add yourself.") + "</p>");
+    o.body = peopleRows(onb.names, onb.people) + (onb.people.length ? "" : '<p class="w-glf">' + t("Living alone? Just add yourself.") + "</p>");
     if (!onb.people.length) focus = "[data-name]";
   } else if (k === "password") {
     const must = mustEncrypt();
     Object.assign(o, { ico: "lock", title: t("Create a household password"), next: t("Continue"), alt: must ? "" : t("Not now"),
       sub: others ? t("Wally asks for it when it opens. Everyone in the household uses this one password.") : t("Wally asks for it when it opens.") });
     o.body = pwFields("onb-pwd", t("Password"), onb.secret, true) +
-      '<p class="w-hint w-onbnote">' + (must ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
+      '<p class="w-glf">' + (must ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
         : t("At least 8 characters. Without a password, anyone who can reach this server can open Wally.")) + "</p>";
     focus = "#onb-pwd";
   } else if (k === "encrypt") {
@@ -465,21 +482,21 @@ function renderWelcome() {
         : t("Everything is locked on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money."),
       next: secure ? t("Encrypt") : "", alt: must ? "" : t("Not now") });
     o.body = (secure ? whatItMeans(others) : '<p class="w-err">' + t("This needs a secure connection. Open Wally at its https:// address to finish setting up.") + "</p>") +
-      (must ? "" : '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Privacy.") + "</p>") +
+      (must ? "" : '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Sign-in & Privacy.") + "</p>") +
       '<p class="w-hint w-onbprog" id="onb-prog" aria-live="polite" hidden></p>';
   } else if (k === "kit") {
     Object.assign(o, { ico: "file", back: false, title: t("Save the household’s Emergency Kit"), next: t("Continue"), nextOff: !onb.saved,
       sub: onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
         : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
-    o.body = kitBody(onb.kit, onb.qr, onb.saved, onb.sealed || canEncrypt() ? "" : t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Privacy."));
+    o.body = kitBody(onb.kit, onb.qr, onb.saved, onb.sealed || canEncrypt() ? "" : t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Sign-in & Privacy."));
     focus = "#onb-dl";
   } else {
     // No going back into the kit: it was shown once, and ticked
-    Object.assign(o, { ico: "io", back: o.back && !onb.kit, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
-    o.body = '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
-      [["import", "io", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
+    Object.assign(o, { ico: "download", back: o.back && !onb.kit, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
+    o.body = '<div class="w-gl w-onbgl w-onbpick" role="radiogroup" aria-labelledby="gate-h">' +
+      [["import", "upload", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
        ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([key, ic, b, sm]) =>
-        '<button type="button" class="w-choice" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '" aria-pressed="' + (onb.data === key) + '"><span class="w-ico">' + icon(ic) + "</span><b>" + b + "</b><small>" + sm + "</small></button>").join("") + "</div>";
+        '<button type="button" class="w-gr" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '"><span class="w-onbsico">' + icon(ic) + '</span><span class="k">' + b + "<small>" + sm + '</small></span><span class="w-onbradio">' + icon("check") + "</span></button>").join("") + "</div>";
   }
   paint(onbFrame(o), focus);
   wireEyes();
@@ -634,24 +651,27 @@ function renderUpgrade() {
   if (kind === "people") {
     Object.assign(o, { ico: "users", title: t("Who’s in your household?"), next: t("Continue"),
       sub: t("Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.") });
-    o.body = peopleRows(up.names, up.people) + (up.people.length ? "" : '<p class="w-hint w-onbnote">' + t("Everything already in Wally starts out shared by the household.") + "</p>");
+    o.body = peopleRows(up.names, up.people) + (up.people.length ? "" : '<p class="w-glf">' + t("Everything already in Wally starts out shared by the household.") + "</p>");
     if (!up.people.length) focus = "[data-name]";
   } else if (kind === "tags") {
     const example = "#" + (Object.values(up.picks)[0] || up.tags[0]);
-    Object.assign(o, { ico: "tag", title: t("Did you tag personal expenses?"), next: t("Continue"), alt: t("Skip"),
+    Object.assign(o, { ico: "tag", title: t("Did you tag personal expenses?"), next: t("Continue"), alt: t("Not now"),
       sub: t("If you marked what one person spent with a tag, like {tag}, choose it here. Those transactions become theirs, and everything else stays shared.", { tag: "<b>" + esc(example) + "</b>" }) });
-    o.body = '<div class="w-onbtags">' + up.people.map((p) => '<div class="w-onbtagrow"><span class="w-onbtagwho">' + av(String(p.id)) + "<span><b>" + esc(p.name) + '</b><small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></span>" +
-        '<select class="w-mini" data-tagfor="' + p.id + '" aria-label="' + esc(t("Tag for {name}", { name: p.name })) + '"><option value="">' + t("No tag") + "</option>" +
-        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></div>").join("") + "</div>" +
-      '<p class="w-hint w-onbnote" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
-      '<label class="w-sichk w-onbtick"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label>";
-    focus = "select";
+    // Each person is a row; their tag opens a short list, as a row in iOS Settings does
+    o.body = '<div class="w-gl w-onbgl w-onbtags">' + up.people.map((p) =>
+        '<label class="w-gr w-grpick w-onbtagrow">' + av(String(p.id)) + '<span class="k">' + esc(p.name) + '<small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span>" +
+        '<span class="v" data-tagv="' + p.id + '">' + (up.picks[p.id] ? "#" + esc(up.picks[p.id]) : t("No tag")) + "</span>" + icon("right", "chev") +
+        '<select data-tagfor="' + p.id + '" aria-label="' + esc(t("Tag for {name}", { name: p.name })) + '"><option value="">' + t("No tag") + "</option>" +
+        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></label>").join("") + "</div>" +
+      '<p class="w-glf" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
+      '<div class="w-gl w-onbgl"><label class="w-gr" for="up-rm"><span class="k">' + t("Remove the tag from those transactions") + '</span><button type="button" class="w-switch" role="switch" id="up-rm" aria-checked="' + !!up.remove + '"></button></label></div>';
+    focus = "#onb-next";
   } else if (kind === "encrypt") {
     Object.assign(o, { ico: "shield", title: t("Encrypt your data"), next: t("Encrypt"), alt: t("Not now"),
       sub: t("Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.") });
     o.body = whatItMeans(up.people.length > 1) +
-      '<p class="w-onblabel">' + t("To start, enter the household password.") + "</p>" + pwFields("up-pw", t("Household password"), "", false) +
-      '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Privacy.") + "</p>" +
+      '<p class="w-glh w-onblabel">' + t("To start, enter the household password.") + "</p>" + pwFields("up-pw", t("Household password"), "", false) +
+      '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Sign-in & Privacy.") + "</p>" +
       '<p class="w-hint w-onbprog" id="onb-prog" aria-live="polite" hidden></p>';
     focus = "#up-pw";
   } else {
@@ -673,12 +693,15 @@ function wireUpgrade(kind) {
   if (kind === "tags") {
     root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
       if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
+      const v = root.querySelector('[data-tagv="' + sel.dataset.tagfor + '"]');
+      if (v) v.textContent = sel.value ? "#" + sel.value : t("No tag");
       markTaken();
       previewTags();
     }));
     markTaken();
     if (!up.preview) previewTags();
-    root.querySelector("#up-rm").addEventListener("change", (ev) => { up.remove = ev.target.checked; });
+    const rm = root.querySelector("#up-rm");
+    rm.addEventListener("click", () => { up.remove = !up.remove; rm.setAttribute("aria-checked", String(up.remove)); });
   }
   if (kind === "kit") {
     wireKit(up.kit, (on) => { up.saved = on; onbError(""); });
@@ -811,7 +834,7 @@ function showCounts() {
    with or without encryption, and a new password follows, for everyone. */
 let vmod = null;
 async function vs() { if (!vmod) { vmod = await import("../vault/session.js"); vmod.bind(core); } return vmod; }
-const vg = { step: "unlock", p: null, err: "", text: "", found: null, signedIn: false };
+const vg = { step: "unlock", p: null, err: "", text: "", found: null, signedIn: false, shake: false };
 
 function startVault(step, p) {
   Object.assign(vg, { step, p: p || vg.p, err: "", text: "", found: null, signedIn: !!(status && status.signed_in) });
@@ -821,54 +844,76 @@ function vgo(step) { vg.step = step; vg.err = ""; renderVault(); }
 function others() { return state.people.filter((p) => String(p.id) !== String(vg.p)); }
 
 const sealed = () => !!(status.vault && status.vault.on);
+/* The same look as signing in: no card. A face (or a key, or Wally's mark), a title, one rounded field
+   with the arrow inside, quiet links under it. A mistake turns the field red and shakes it. */
+function lockScreen(o) {
+  return '<main class="w-lock wide" aria-labelledby="gate-h"><div class="w-lockhero">' + o.top + '<h1 id="gate-h">' + o.title + "</h1>" + (o.sub ? "<p>" + o.sub + "</p>" : "") + "</div>" +
+    (o.form || "") + (o.links ? '<div class="w-locklinks">' + o.links + "</div>" : "") + (o.note ? '<p class="w-sienc w-lnote">' + icon("lock") + "<span>" + o.note + "</span></p>" : "") + "</main>";
+}
+const goBtn = (label, off) => '<button class="w-lockgo" type="submit" id="vg-go" aria-label="' + esc(label) + '"' + (off ? " disabled" : "") + ">" + icon("right") + "</button>";
+const keyIcon = () => '<span class="w-lockkey" aria-hidden="true">' + icon("key") + "</span>";
 function renderVault() {
   if (sealed() && !canEncrypt()) {
     // Browsers only encrypt on secure pages: there is nothing this page can do
-    paint(card(mark() + head(t("Open Wally over HTTPS"), t("This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.")) + (vg.signedIn ? signOutLink() : "")));
+    paint(lockScreen({ top: '<span class="w-mark w-lockmark" aria-hidden="true"></span>', title: t("Open Wally over HTTPS"),
+      sub: t("This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address."), links: vg.signedIn ? signOutLink() : "" }));
     wireSignOut();
     return;
   }
-  const s = vg.step, name = esc(pname(vg.p)), msg = vg.err;
-  const errP = '<p class="w-err" id="vg-msg" role="alert"' + (msg ? "" : " hidden") + ">" + msg + "</p>";
-  const submit = (label) => '<button class="w-btn primary w-submit" type="submit" id="vg-go">' + label + "</button>";
-  const bad = msg ? " err" : "";
+  const s = vg.step, name = esc(pname(vg.p)), msg = vg.err, bad = !!msg;
+  const shake = bad && vg.shake ? " shake" : "";
+  vg.shake = false;
+  const msgP = '<p class="w-lockmsg" id="vg-msg" role="alert">' + msg + "</p>";
+  const links = (...l) => l.filter(Boolean).join("");
+  const link = (id, label, acc) => '<button type="button" class="w-link w-silink' + (acc ? " acc" : "") + '" id="' + id + '">' + label + "</button>";
   let html;
   if (s === "unlock") {
-    html = bigAv(vg.p) + head(t("Unlock Wally"), t("Wally is encrypted. Enter the household password to open it on this browser.")) +
-      '<form id="vg-form" class="w-siform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>' +
-      '<div class="w-input' + bad + '"><input type="password" id="vg-in" placeholder="' + esc(t("Password")) + '" aria-label="' + esc(t("Password")) + '" autocomplete="current-password" aria-describedby="vg-msg">' + eye("vg-in") + "</div>" +
-      errP + submit(t("Unlock")) + "</form>" +
-      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-forgot">' + t("Forgot password?") + "</button>" + signOutLink() + "</div>";
+    html = lockScreen({ top: av(vg.p, "w-lockav"), title: name,
+      form: '<form id="vg-form" class="w-lockform" novalidate><div class="w-lockfield' + (bad ? " err" : "") + shake + '"><input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>' +
+        '<input type="password" id="vg-in" placeholder="' + esc(t("Household password")) + '" aria-label="' + esc(t("Household password")) + '" autocomplete="current-password" aria-invalid="' + bad + '" aria-describedby="vg-msg">' + eye("vg-in") + goBtn(t("Unlock")) + "</div>" + msgP + "</form>",
+      links: links(link("vg-forgot", t("Forgot password?")), signOutLink()),
+      note: t("End-to-end encrypted: whoever runs this server can’t read your data.") });
   } else if (s === "recover") {
-    html = bigAv(vg.p) + head(t("Use your recovery key"), t("It’s on the household’s Emergency Kit: 52 letters and digits, in groups of four. It works without two-step sign-in too.")) +
-      '<form id="vg-form" class="w-siform" novalidate><div class="w-input' + bad + '">' +
-      '<textarea id="vg-in" class="w-sikey" rows="3" placeholder="XXXX-XXXX-XXXX-…" aria-label="' + esc(t("Recovery key")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vg-msg">' + esc(vg.text) + "</textarea>" +
-      "</div>" + errP + submit(t("Continue")) + "</form>" +
-      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-help">' + t("Lost it too?") + "</button>" + (vg.signedIn ? signOutLink() : '<button type="button" class="w-link w-silink" id="vg-back">' + t("Back to sign in") + "</button>") + "</div>";
+    html = lockScreen({ top: keyIcon(), title: t("Use your recovery key"),
+      sub: t("It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too."),
+      form: '<form id="vg-form" class="w-lockform" novalidate><div class="w-lockfield key' + (bad ? " err" : "") + shake + '">' +
+        '<textarea id="vg-in" class="w-sikey" rows="1" placeholder="XXXX-XXXX-XXXX-XXXX-…" aria-label="' + esc(t("Recovery key")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-invalid="' + bad + '" aria-describedby="vg-msg">' + esc(vg.text) + "</textarea>" +
+        goBtn(t("Continue")) + "</div>" + msgP + "</form>",
+      links: links(link("vg-help", t("Lost it too?")), vg.signedIn ? signOutLink() : link("vg-back", t("Back to sign in"))) });
   } else if (s === "help") {
     const list = others();
-    const last = sealed()
-      ? t("Only your password or your recovery key can open this household’s data. Nobody else, not even whoever runs the server, can open it.")
-      : t("Whoever runs the server can turn sign-in off with this command, then you turn it on again with a new password:");
-    html = bigAv(vg.p) + head(t("Lost the Emergency Kit too?"), list.length
+    // One sentence on who can help; how the data is protected goes in the small note
+    const sub = list.length
       ? t("Ask {names}: everyone in the household signs in with the same password.", { names: esc(new Intl.ListFormat(LANG, { type: "disjunction" }).format(list.map((p) => p.name))) })
-      : last) +
-      (list.length ? '<p class="w-sip">' + last + "</p>" : "") +
-      (sealed() ? "" : '<div class="w-keybox w-sifile"><code translate="no">docker exec wally python3 -m api.signin_off</code></div>') +
-      '<div class="w-silinks"><button type="button" class="w-link w-silink" id="vg-rec">' + t("Use my recovery key") + "</button></div>";
+      : sealed() ? t("Only your password or your recovery key can open this household’s data.")
+      : t("Whoever runs the server can turn sign-in off, then you turn it on again with a new password.");
+    html = lockScreen({ top: av(vg.p, "w-lockav"), title: t("Lost the Emergency Kit too?"), sub,
+      links: links(link("vg-rec", t("Use my recovery key"), true), vg.signedIn ? signOutLink() : link("vg-back", t("Back to sign in"))),
+      note: sealed() ? t("Only the password or the recovery key can open your data. Not even whoever runs the server can.") : "" });
   } else if (s === "newpw") {
-    html = bigAv(vg.p) + head(t("Choose a new household password"), t("At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.")) +
-      '<form id="vg-form" class="w-siform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + esc(t("Household")) + '" tabindex="-1" aria-hidden="true" readonly>' +
-      '<div class="w-input' + bad + '"><input type="password" id="vg-in" placeholder="' + esc(t("New password")) + '" aria-label="' + esc(t("New password")) + '" autocomplete="new-password" aria-describedby="vg-msg">' + eye("vg-in") + "</div>" +
-      '<div class="w-input' + bad + '"><input type="password" id="vg-in2" placeholder="' + esc(t("The same again")) + '" aria-label="' + esc(t("The same again")) + '" autocomplete="new-password" aria-describedby="vg-msg">' + eye("vg-in2") + "</div>" +
-      errP + submit(t("Save password")) + "</form>";
+    // Both fields in one rounded group, the arrow on the second
+    const typed = vg.typed || ["", ""];
+    vg.typed = null;
+    html = lockScreen({ top: av(vg.p, "w-lockav"), title: t("Choose a new household password"),
+      sub: t("At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one."),
+      form: '<form id="vg-form" class="w-lockform" novalidate><input type="text" class="w-sr" autocomplete="username" value="' + esc(t("Household")) + '" tabindex="-1" aria-hidden="true" readonly>' +
+        '<div class="w-lockgroup' + (bad ? " err" : "") + shake + '"><div class="w-lockrow"><input type="password" id="vg-in" placeholder="' + esc(t("New password")) + '" aria-label="' + esc(t("New password")) + '" autocomplete="new-password" value="' + esc(typed[0]) + '" aria-invalid="' + bad + '" aria-describedby="vg-msg">' + eye("vg-in") + '<span class="w-lockgap"></span></div>' +
+        '<div class="w-lockrow"><input type="password" id="vg-in2" placeholder="' + esc(t("The same again")) + '" aria-label="' + esc(t("The same again")) + '" autocomplete="new-password" value="' + esc(typed[1]) + '" aria-invalid="' + bad + '" aria-describedby="vg-msg">' + eye("vg-in2") + goBtn(t("Save password")) + "</div></div>" + msgP + "</form>" });
   }
-  paint(card(html, s === "help" ? "wide" : ""), "#vg-in");
+  paint(html, "#vg-in");
   wireEyes();
   wireSignOut();
   const on = (id, fn) => { const n = root.querySelector(id); if (n) n.addEventListener("click", fn); };
   const form = root.querySelector("#vg-form");
   if (form) form.addEventListener("submit", (ev) => { ev.preventDefault(); submitVault(); });
+  const key = root.querySelector("textarea#vg-in");
+  if (key) {
+    // One line that grows as the key is typed; Return sends it
+    const fit = () => { key.style.height = "auto"; key.style.height = key.scrollHeight + "px"; };
+    key.addEventListener("input", fit);
+    key.addEventListener("keydown", (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); submitVault(); } });
+    fit();
+  }
   on("#vg-forgot", () => startVault("recover", vg.p));
   on("#vg-help", () => vgo("help"));
   on("#vg-rec", () => { vg.text = ""; vgo("recover"); });
@@ -882,7 +927,7 @@ async function submitVault() {
   const input = root.querySelector("#vg-in");
   const value = input ? input.value : "";
   const s = vg.step;
-  if (s !== "newpw" && !value.trim()) { vg.err = s === "unlock" ? t("Enter your password first.") : t("Enter the code first."); return renderVault(); }
+  if (s !== "newpw" && !value.trim()) { vg.err = s === "unlock" ? t("Enter your password first.") : t("Enter the code first."); vg.shake = true; return renderVault(); }
   vsending = true;
   busy(root.querySelector("#vg-go"), true);
   try {
@@ -900,8 +945,9 @@ async function submitVault() {
     }
     if (s === "newpw") {
       const a = value, b = root.querySelector("#vg-in2").value;
-      if (a.length < 8) { vg.err = t("Use at least 8 characters."); return renderVault(); }
-      if (a !== b) { vg.err = t("The two passwords are different."); return renderVault(); }
+      // What was typed stays, so it can be corrected
+      if (a.length < 8) { vg.err = t("Use at least 8 characters."); vg.shake = true; vg.typed = [a, b]; return renderVault(); }
+      if (a !== b) { vg.err = t("The two passwords are different."); vg.shake = true; vg.typed = [a, b]; return renderVault(); }
       if (sealed()) await session.setup(vg.found, a, vg.p);
       else {
         // Where the browser can, the server never sees the new password: only a login key made from it
@@ -929,5 +975,6 @@ function vaultError(e) {
     vg.err = t("That recovery key isn’t right.");
   } else if (e.status === 401 && vg.step === "newpw") { vg.err = t("That took too long. Start again."); vg.step = "recover"; }
   else vg.err = apiMessage(e);
+  vg.shake = true;
   renderVault();
 }

@@ -41,7 +41,7 @@ const api = async (method, path, body) => {
 const core = (p, fn, arg) => p.evaluate(async ([src, arg]) => { const c = await import("/js/core.js"); return new Function("c", "arg", "return (" + src + ")(c, arg)")(c, arg); }, [fn.toString(), arg]);
 const title = (p) => p.$eval("#tx-title", (e) => e.textContent.trim());
 const countN = async (p) => +(await p.$eval("#tx-count", (e) => e.firstChild.textContent)).replace(/[^\d]/g, "");
-/* The period is the title; its menu holds the year, everything, a custom range and the months */
+/* The period is the title, with ‹ › beside it; its menu holds five shortcuts */
 const checked = (p) => p.$$eval('#tx-pmenu [aria-checked="true"]', (es) => es.map((e) => e.dataset.pm));
 async function pick(p, v) { await p.click(".tx-head .s-title"); await p.click('#tx-pmenu [data-pm="' + v + '"]'); await wait(p); }
 async function more(p, act) { await p.click(".tx-more"); await p.click('#tx-more [data-act="' + act + '"]'); await wait(p); }
@@ -73,10 +73,15 @@ async function demo() {
   const inMonth = await core(p, (c) => c.state.tx.filter((x) => x.d.slice(0, 7) === c.TODAY.slice(0, 7)).length);
   ok((await countN(p)) === inMonth, "count is this month's transactions", [await countN(p), inMonth]);
   ok(/In .+Out /.test(await p.$eval("#tx-count", (e) => e.textContent)), "one line says what came in and went out, no chart", await p.$eval("#tx-count", (e) => e.textContent));
-  ok(!(await p.$("#tx-strip,#tx-range,#tx-step,#tx-type,#tx-catbtn")), "no strip, range buttons, arrows or filter chips in the toolbar");
+  ok(!(await p.$("#tx-strip,#tx-range,#tx-type,#tx-catbtn")) && !!(await p.$("#tx-step")), "‹ › beside the title; no strip, range buttons or filter chips", null);
+  ok(await p.$eval('#tx-step [data-act="next"]', (e) => e.disabled), "› is off on the last month");
   await p.click("#tx-list"); await p.keyboard.press("ArrowRight"); await wait(p);
   ok((await title(p)) === T(tm, ty), "→ does not go past this month");
-  ok((await checked(p)).join() === ymOf(ty, tm), "this month is ticked in the period menu", await checked(p));
+  ok((await checked(p)).join() === "this", "This month is ticked in the period menu", await checked(p));
+  await p.click('#tx-step [data-act="prev"]'); await wait(p);
+  ok((await title(p)) === T(tm === 1 ? 12 : tm - 1, tm === 1 ? ty - 1 : ty), "‹ goes one month back", await title(p));
+  await p.click('#tx-step [data-act="next"]'); await wait(p);
+  ok((await title(p)) === T(tm, ty), "› comes forward again");
   await p.keyboard.press("ArrowLeft"); await wait(p);
   const pm = tm === 1 ? 12 : tm - 1, py = tm === 1 ? ty - 1 : ty;
   ok((await title(p)) === T(pm, py), "← previous month", await title(p));
@@ -95,9 +100,9 @@ async function demo() {
   await go(p, "/transactions");
   await p.click(".tx-head .s-title");
   const menu = await p.$$eval("#tx-pmenu [data-pm]", (b) => b.map((x) => x.textContent));
-  ok(menu[0] === ty + " so far" && menu[1] === "All time" && menu[2] === "Custom range…" && menu.includes(months[tm - 1]), "the year, everything, a custom range, then months", menu.slice(0, 4));
+  ok(menu.join("|") === "This month|Last month|This year|All time|Custom range…", "five shortcuts", menu);
   await p.keyboard.press("Escape");
-  for (const [k, label, key] of [["year", String(ty), "2"], ["all", "All time", "3"], [ymOf(ty, tm), months[tm - 1], "1"]]) {
+  for (const [k, label, key] of [["year", String(ty), "2"], ["all", "All time", "3"], ["this", months[tm - 1], "1"]]) {
     await pick(p, k);
     ok((await title(p)).startsWith(label), k + " title", await title(p));
     ok((await checked(p)).join() === k, k + " ticked");
@@ -111,12 +116,14 @@ async function demo() {
   ok(await p.$eval("#tx-list", (e) => e.classList.contains("tx-win")), "over 500 rows: the windowed list");
   ok((await p.$$("#tx-list .w-monh")).length >= 1, "All is grouped by month");
   await pick(p, "year");
-  await pick(p, ymOf(py, pm));
-  ok(url(p).searchParams.get("ym") === ymOf(py, pm) && (await title(p)) === T(pm, py), "a month in the menu opens it", p.url());
+  await p.click('#tx-step [data-act="prev"]'); await wait(p);
+  ok((await title(p)) === String(ty - 1) && url(p).searchParams.get("y") === String(ty - 1), "‹ in year view goes a year back", [await title(p), p.url()]);
+  await pick(p, "last");
+  ok(url(p).searchParams.get("ym") === ymOf(py, pm) && (await title(p)) === T(pm, py), "Last month opens it", p.url());
 
   section("Old 3 months and 12 months links");
   await go(p, "/transactions?mode=3m");
-  ok((await checked(p)).join() === ymOf(ty, tm), "mode=3m opens as Month");
+  ok((await checked(p)).join() === "this", "mode=3m opens as Month");
   await go(p, "/transactions?mode=12m");
   ok((await checked(p)).join() === "year", "mode=12m opens as Year");
 
@@ -127,22 +134,23 @@ async function demo() {
   ok((await countN(p)) === cust, "custom range count", [await countN(p), cust]);
   ok(url(p).searchParams.get("from") === ty + "-02-03", "custom range stays in the address");
 
-  section("Search in every month, and Only this range");
+  section("Search in every month, and the scope bar");
   await go(p, "/transactions");
   await typeSearch(p, "mercadona");
-  ok((await title(p)).startsWith("Search"), "title says Search", await title(p));
+  ok((await title(p)) === T(tm, ty), "the title keeps the month", await title(p));
+  ok(await p.$eval("#tx-scope", (e, m) => !e.hidden && e.textContent === "All months" + m, months[tm - 1]), "a scope bar: All months | this month", await p.$eval("#tx-scope", (e) => e.textContent));
   let rr = await rows(p);
   ok(rr.length > 20 && rr.every((r) => /mercadona/i.test(r.name)), "every month, only Mercadona", rr.length);
   ok((await p.$$("#tx-list .w-monh")).length > 3, "grouped by month");
   const total = await core(p, (c) => c.state.tx.filter((x) => /mercadona/i.test(x.n)).length);
   ok((await countN(p)) === total, "count matches every Mercadona", [await countN(p), total]);
   ok(url(p).searchParams.get("q") === "mercadona" && !url(p).searchParams.get("mode"), "address has the search", p.url());
-  await p.click('[data-act="only"]'); await wait(p);
-  ok((await title(p)) === T(tm, ty), "Only this month narrows to the month", await title(p));
+  await p.click('#tx-scope [data-sc="range"]'); await wait(p);
+  ok((await title(p)) === T(tm, ty) && (await p.$eval('#tx-scope [data-sc="range"]', (e) => e.getAttribute("aria-pressed"))) === "true", "the scope bar narrows to the month", await title(p));
   ok((await countN(p)) < total, "fewer after narrowing");
   ok(url(p).searchParams.get("mode") === "month", "narrowed search keeps its range in the address", p.url());
-  await p.click('[data-act="everym"]'); await wait(p);
-  ok((await countN(p)) === total, "Search every month widens again");
+  await p.click('#tx-scope [data-sc="all"]'); await wait(p);
+  ok((await countN(p)) === total, "All months widens again");
   await typeSearch(p, "MERCADONA");
   ok((await countN(p)) === total, "search is case-insensitive");
 
@@ -151,7 +159,7 @@ async function demo() {
   rr = await rows(p);
   const amounts = await core(p, (c, ids) => ids.map((id) => c.state.tx.find((x) => x.id === id).a), rr.map((r) => r.id));
   ok(rr.length && amounts.every((a) => a >= 50), ">50 keeps amounts over 50", rr.length);
-  ok(await p.$eval("#tx-views", (e) => /over 50/.test(e.textContent)), "chip says over 50");
+  ok(await p.$eval("#tx-mirror", (e) => [...e.querySelectorAll(".tok")].map((x) => x.textContent).join() === ">50"), ">50 shows as a token in the box");
   await typeSearch(p, "<20");
   const am2 = await core(p, (c, ids) => ids.map((id) => c.state.tx.find((x) => x.id === id).a), (await rows(p)).map((r) => r.id));
   ok(am2.length && am2.every((a) => a <= 20), "<20 keeps amounts under 20");
@@ -168,7 +176,7 @@ async function demo() {
   await typeSearch(p, "groceries");
   rr = await rows(p);
   ok(rr.length && rr.every((r) => r.sub.includes("Groceries")), "a category name filters by category");
-  ok(await p.$eval("#tx-views", (e) => e.textContent.includes("Groceries")), "category chip");
+  ok(await p.$eval("#tx-mirror .tok", (e) => e.textContent === "groceries"), "a category shows as a token");
   const pastMonth = tm > 3 ? tm - 2 : tm + 1; // a month name: the latest one that is not in the future
   const mname = months[pastMonth - 1];
   await typeSearch(p, mname.slice(0, 3).toLowerCase());
@@ -178,19 +186,18 @@ async function demo() {
   rr = await rows(p);
   const combo = await core(p, (c, ids) => ids.map((id) => { const x = c.state.tx.find((y) => y.id === id); return x.a >= 50 && x.p === "1" && /mercadona/i.test(x.n); }), rr.map((r) => r.id));
   ok(combo.length && combo.every(Boolean), "words and filters combine", combo.length);
-  ok((await p.$$("#tx-views [data-chip]")).length === 3, "three chips");
+  ok((await p.$$("#tx-mirror .tok")).length === 2, "two tokens, the word stays plain text");
 
-  section("Removing chips");
+  section("Clearing the search");
   await typeSearch(p, "mercadona >50");
-  await p.click('#tx-views [data-chip="0"]'); await wait(p);
-  ok((await p.inputValue("#tx-q")) === "mercadona", "removing the amount chip leaves the word", await p.inputValue("#tx-q"));
-  await p.click('#tx-views [data-chip="0"]'); await wait(p);
-  ok((await p.inputValue("#tx-q")) === "" && (await title(p)) === T(tm, ty), "removing the last chip clears the search");
+  await p.click('#tx-sbox [data-act="qx"]'); await wait(p);
+  ok((await p.inputValue("#tx-q")) === "" && (await title(p)) === T(tm, ty) && (await p.$eval("#tx-scope", (e) => e.hidden)), "× clears the search and the scope bar");
+  await p.click("#tx-list"); await wait(p);
 
   section("Filter: type, categories, Shared only");
   await go(p, "/transactions?mode=year");
   await p.click("#tx-fbtn"); await wait(p, 300);
-  ok(await p.$eval("#dlg h5", (e) => e.textContent === "Filters"), "Filter opens one sheet of filters");
+  ok(await p.$eval("#tx-fpop", (e) => !e.hidden) && (await p.$eval("#dlg", (e) => e.hidden)), "Filter opens a popover under it, not a dialog");
   await p.click('#tx-ftype [data-v="income"]'); await wait(p);
   rr = await rows(p);
   ok(rr.length && rr.every((r) => r.pos), "Income only", rr.length);
@@ -198,19 +205,22 @@ async function demo() {
   await p.click('#tx-ftype [data-v="expense"]'); await wait(p);
   ok((await rows(p)).every((r) => !r.pos), "Expenses only");
   await p.click('#tx-ftype [data-v="all"]'); await wait(p);
-  await p.click('#dlg [data-fc="Food"]'); await wait(p);
-  await p.click('#dlg [data-fc="Groceries"]'); await wait(p);
+  await p.click('#tx-fpop [data-fc="Food"]'); await wait(p);
+  await p.click('#tx-fpop [data-fc="Groceries"]'); await wait(p);
   rr = await rows(p);
   ok(rr.length && rr.every((r) => /Food|Groceries/.test(r.sub)), "only the categories picked");
   ok(url(p).searchParams.getAll("cat").sort().join() === "Food,Groceries", "categories in the address", p.url());
-  ok((await p.$eval("#tx-nf", (e) => !e.hidden && e.textContent)) === "2", "Filter counts what is on");
-  await p.click('#dlg [data-f="shared"]'); await wait(p);
+  ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter · 2", "Filter counts what is on", await p.$eval("#tx-fl", (e) => e.textContent));
+  ok(/^\d+ transactions?$/.test(await p.$eval("#tx-fpop .tx-fn", (e) => e.textContent)), "the popover says how many it shows");
+  await p.click("#tx-fsw"); await wait(p);
   rr = await rows(p);
   ok(rr.every((r) => r.shared), "Shared only", rr.length);
-  await p.click('#dlg [data-f="reset"]'); await wait(p);
-  ok(await p.$eval("#tx-nf", (e) => e.hidden), "Reset clears them");
+  await p.click('#tx-fpop [data-f="reset"]'); await wait(p);
+  ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter", "Reset clears them");
   await p.keyboard.press("Escape"); await wait(p);
-  ok(await p.$eval("#dlg", (e) => e.hidden), "Escape closes it");
+  ok(await p.$eval("#tx-fpop", (e) => e.hidden), "Escape closes it");
+  await p.click("#tx-fbtn"); await wait(p, 200); await p.click("#tx-list"); await wait(p);
+  ok(await p.$eval("#tx-fpop", (e) => e.hidden), "a click outside closes it");
 
   section("A day of the month");
   await go(p, "/transactions");
@@ -277,9 +287,12 @@ async function demo() {
   } else ok(true, "(no note in the demo data)");
   const rec = await core(p, (c) => { const x = c.state.tx.find((y) => y.rid); return x && x.id; });
   await go(p, "/transactions?id=" + rec);
-  const href = await p.$eval("#tx-insp .tx-rep", (a) => a.getAttribute("href"));
+  const href = await p.$eval("#tx-insp .tx-kvl", (a) => a.getAttribute("href"));
   const rid = await core(p, (c, id) => c.state.tx.find((x) => x.id === id).rid, rec);
   ok(href === "/recurring?id=" + encodeURIComponent(rid), "Repeats links to the rule", href);
+  ok(await p.$eval("#tx-insp .tx-ih", (e) => !!e.querySelector('[data-act="edit"]')), "Edit sits at the panel's top right");
+  ok(await p.$eval("#tx-insp .w-pacts", (e) => [...e.children].map((b) => b.textContent + (b.classList.contains("red") ? "*" : "")).join() === "Duplicate,Delete transaction*"), "Duplicate, then Delete in red, as rows");
+  ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => r.textContent.startsWith("Who")) && !e.textContent.includes("Whose")), "“Who”, never “Whose”");
   ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => r.textContent.startsWith("Added"))), "who added it, as the last row");
   ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => /^This year\d+ times/.test(r.textContent))), "the payee's year in one line");
   // A split receipt part, and an imported one: made through restore so they carry a group and a source
@@ -311,8 +324,11 @@ async function demo() {
 
   section("Calendar");
   await go(p, "/transactions");
-  await more(p, "view-cal");
-  ok(!(await p.$eval("#tx-calp", (e) => e.hidden)) && (await p.$$("#tx-cal .w-rday")).length >= 28, "••• › Show as a calendar: the month grid");
+  ok((await p.$$eval("#tx-more [data-act]", (es) => es.map((e) => e.dataset.act))).join() === "select,export", "••• holds Select and Export only");
+  await p.click('#tx-vsw [data-view="cal"]'); await wait(p);
+  ok(!(await p.$eval("#tx-calp", (e) => e.hidden)) && (await p.$$("#tx-cal .w-rday")).length >= 28, "List | Calendar: the month grid");
+  ok(await p.$eval('#tx-vsw [data-view="cal"]', (e) => e.getAttribute("aria-pressed") === "true"), "the switch shows Calendar");
+  ok(!(await p.$("#tx-cal-sub")), "no explanation under the month");
   ok(url(p).searchParams.get("view") === "cal", "view=cal in the address");
   const lastOfMonth = await core(p, (c) => c.ds(+c.TODAY.slice(0, 4), +c.TODAY.slice(5, 7), c.dim(+c.TODAY.slice(0, 4), +c.TODAY.slice(5, 7))));
   if (lastOfMonth > TODAY) ok((await p.$$("#tx-cal .w-rday.fut")).length === +lastOfMonth.slice(8) - +TODAY.slice(8), "days still to come are dashed");
@@ -382,47 +398,34 @@ async function demo() {
   const l2 = csv2.text.replace(/^﻿/, "").trim().split(/\r?\n/)[1] || "";
   ok(/,Shared,(Alex|Ana),Alex \d+\.\d\d; Ana \d+\.\d\d,/.test(l2), "shared rows: Shared, who paid, the shares", l2);
 
-  section("Saved views");
+  section("Recent searches, instead of saved views");
   await go(p, "/transactions");
-  await typeSearch(p, "#coffee >5");
-  await p.click('[data-act="save-view"]'); await wait(p);
-  await p.fill("#tx-vname", "Coffee e2e");
-  await p.click("#dlg [data-dlg-ok]"); await wait(p, 500);
-  let cfg = await api("GET", "/config");
-  ok(cfg.saved_views.some((v) => v.name === "Coffee e2e" && v.query === "#coffee >5"), "saved on the server", cfg.saved_views);
-  ok(!(await p.$('[data-act="save-view"]')), "Save view is gone for a saved search");
+  ok(!(await p.$('[data-act="save-view"],#tx-views,[data-view-x],[data-viewx]')), "no saved views anywhere");
+  await p.click("#tx-q"); await p.keyboard.type("#coffee >5"); await p.keyboard.press("Enter"); await wait(p);
+  await p.click("#tx-list"); await wait(p);
+  await p.click('#tx-sbox [data-act="qx"]').catch(() => {}); await wait(p);
+  await p.click("#tx-q"); await wait(p, 200);
+  ok(await p.$eval("#tx-recent", (e) => !e.hidden && e.textContent.includes("#coffee >5") && e.textContent.includes("Try")), "focusing the empty box shows recent searches and hints");
+  await p.click('#tx-recent [data-rq="#coffee >5"]'); await wait(p);
+  ok((await p.inputValue("#tx-q")) === "#coffee >5" && (await p.$eval("#tx-recent", (e) => e.hidden)), "a recent search applies", await p.inputValue("#tx-q"));
   await typeSearch(p, "");
-  ok(await p.$eval("#tx-views", (e) => e.textContent.includes("Coffee e2e")), "listed as a chip");
-  const vi = await p.$$eval("#tx-views [data-view]", (es) => es.findIndex((e) => e.textContent === "Coffee e2e"));
-  await p.click('#tx-views [data-view="' + vi + '"]'); await wait(p);
-  ok((await p.inputValue("#tx-q")) === "#coffee >5" && (await title(p)).startsWith("Search"), "a view applies its search in every month");
-  await typeSearch(p, "");
-  await p.click('#tx-views [data-viewx="' + vi + '"]'); await wait(p, 500);
-  cfg = await api("GET", "/config");
-  ok(!cfg.saved_views.some((v) => v.name === "Coffee e2e"), "deleted");
-  await undo(p);
-  cfg = await api("GET", "/config");
-  ok(cfg.saved_views.some((v) => v.name === "Coffee e2e"), "Undo keeps it");
-  await p.click('#tx-views [data-viewx="' + vi + '"]'); await wait(p, 500);
-  await typeSearch(p, "#coffee");
-  await p.click('[data-act="save-view"]'); await wait(p);
-  await p.fill("#tx-vname", "");
-  await p.click("#dlg [data-dlg-ok]"); await wait(p);
-  ok(await p.$eval("#dlg-err", (e) => !e.hidden && e.textContent.length > 0), "a view needs a name");
-  await p.keyboard.press("Escape");
+  await p.click("#tx-list"); await p.click("#tx-q"); await wait(p, 200);
+  await p.click('#tx-recent [data-rins="#"]'); await wait(p);
+  ok((await p.inputValue("#tx-q")) === "#" && (await p.evaluate(() => document.activeElement.id)) === "tx-q", "a hint starts the search for you");
+  await p.keyboard.press("Escape"); await p.keyboard.press("Escape");
 
   section("Deep links");
   const d3 = TODAY.slice(0, 8) + "03";
   await go(p, "/transactions?view=cal&day=" + d3);
   ok((await p.$eval("#tx-cal .w-rday.sel", (e) => e.dataset.cd)) === d3, "view=cal&day=");
   await go(p, "/transactions?cat=Food");
-  ok((await p.$eval("#tx-nf", (e) => e.textContent)) === "1" && (await rows(p)).every((r) => r.sub.includes("Food")), "cat=");
+  ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter · 1" && (await rows(p)).every((r) => r.sub.includes("Food")), "cat=");
   await go(p, "/transactions?mode=year");
   ok((await checked(p)).join() === "year", "mode=year");
   await go(p, "/transactions?mode=month&ym=" + first.slice(0, 7));
   ok((await title(p)) === T(+first.slice(5, 7), +first.slice(0, 4)), "mode=month&ym=");
   await go(p, "/transactions?q=mercadona");
-  ok((await title(p)).startsWith("Search") && (await p.inputValue("#tx-q")) === "mercadona", "q=");
+  ok((await title(p)) === T(tm, ty) && (await p.inputValue("#tx-q")) === "mercadona" && (await p.$eval('#tx-scope [data-sc="all"]', (e) => e.getAttribute("aria-pressed"))) === "true", "q= searches every month");
   const old = await core(p, (c) => c.state.tx[c.state.tx.length - 5].id);
   await go(p, "/transactions?id=" + old);
   ok((await selId(p)) === old, "id= selects an old one, in its month");
@@ -438,7 +441,7 @@ async function demo() {
   await go(p, "/transactions");
   await typeSearch(p, "zzqxv");
   ok(await p.$eval("#tx-list", (e) => e.textContent.includes("No transactions match “zzqxv”")), "no search results");
-  await p.click('[data-act="only"]'); await wait(p);
+  await p.click('#tx-scope [data-sc="range"]'); await wait(p);
   ok(!!(await p.$('#tx-list [data-act="everym"]')), "it offers every month when narrowed");
   await p.click('#tx-list [data-act="clear"]'); await wait(p);
   ok((await p.inputValue("#tx-q")) === "", "Clear filters");
@@ -471,7 +474,7 @@ async function demo() {
   section("390 px: phone");
   p = await newPage({ w: 390, h: 844 });
   await go(p, "/transactions");
-  ok(await p.$eval(".tx-head .w-pswitch", (e) => getComputedStyle(e).display !== "none") && await p.$eval(".tx-search", (e) => e.getBoundingClientRect().width > 200), "phone header: the person menu, then a wide search");
+  ok(await p.$eval(".tx-head .w-pswitch", (e) => getComputedStyle(e).display !== "none") && await p.$eval(".tx-search", (e) => e.getBoundingClientRect().width > 150), "phone header: the person menu, then the search row");
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll");
   const tap = (await rows(p))[1];
   await p.click('#tx-list [data-id="' + tap.id + '"]'); await wait(p, 400);
@@ -480,19 +483,33 @@ async function demo() {
   await p.click('#tx-insp [data-act="close"]'); await wait(p, 400);
   ok(await p.$eval("#tx-insp", (e) => getComputedStyle(e).visibility === "hidden"), "‹ Transactions closes it");
   await p.click("#tx-fbtn"); await wait(p, 300);
-  ok(await p.$eval("#dlg h5", (e) => e.textContent === "Filters"), "Filters sheet");
+  ok(await p.$eval("#dlg", (e) => e.querySelector(".w-shh h5").textContent === "Filter" && e.querySelector(".w-shh").textContent === "ResetFilterDone"), "a sheet: Reset · Filter · Done");
   await p.click('#tx-ftype [data-v="income"]'); await wait(p);
-  const showN = await p.$eval("#dlg [data-dlg-ok]", (e) => e.textContent);
+  const shownN = await p.$eval("#dlg .tx-fn", (e) => e.textContent);
   await p.click("#dlg [data-dlg-ok]"); await wait(p);
-  ok((await rows(p)).every((r) => r.pos) && showN === "Show " + (await countN(p)), "income only, Show n matches", showN);
-  ok((await p.$eval("#tx-nf", (e) => e.textContent)) === "1", "Filter says 1 is on");
+  ok((await rows(p)).every((r) => r.pos) && shownN === (await countN(p)) + " transactions", "income only, and the sheet said how many", shownN);
+  ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter · 1" && (await p.$eval("#tx-fbtn", (e) => e.classList.contains("on"))), "Filter says 1 is on");
   await p.click("#tx-fbtn"); await wait(p, 300);
-  await p.click('#dlg [data-f="reset"]'); await p.click("#dlg [data-dlg-ok]"); await wait(p);
+  await p.click('#dlg .w-shh [data-f="reset"]'); await wait(p);
+  ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter", "Reset in the sheet clears it");
+  await p.click("#dlg [data-dlg-ok]"); await wait(p);
+  await p.click("#tx-q"); await wait(p, 200);
+  ok(await p.$eval(".tx-cancel", (e) => !e.hidden) && (await p.$eval("#tx-qrec", (e) => !e.hidden)) && (await p.$eval("#tx-fbtn", (e) => getComputedStyle(e.parentNode).display === "none")), "searching: Cancel, recent searches, the buttons step aside");
+  await p.click(".tx-cancel"); await wait(p);
+  ok(await p.$eval(".tx-cancel", (e) => e.hidden), "Cancel ends the search");
   await pick(p, "year");
   ok((await title(p)).startsWith(String(ty)), "the title menu: the year so far", await title(p));
   await pick(p, "custom"); await wait(p, 300);
-  await p.fill("#tx-rfrom", ty + "-01-05"); await p.dispatchEvent("#tx-rfrom", "change");
-  await p.fill("#tx-rto", ty + "-01-20"); await p.dispatchEvent("#tx-rto", "change");
+  ok(await p.$eval("#dlg .w-shh", (e) => e.textContent === "CancelCustom RangeDone"), "Cancel · Custom Range · Done");
+  await p.click('#dlg [data-end="a"]'); await wait(p);
+  // The calendar's title opens the months of its year; January is one tap away
+  await p.click("#dlg [data-rpick]"); await wait(p, 80);
+  ok(await p.$$eval("#dlg .tx-rmon button", (b) => b.length) === 12, "the calendar's title opens the twelve months");
+  await p.click('#dlg [data-rmo="1"]'); await wait(p, 80);
+  ok(await p.$('#dlg [data-rd="' + ty + '-01-05"]') !== null, "picking January shows its days");
+  await p.click('#dlg [data-rd="' + ty + '-01-05"]'); await wait(p, 80);
+  await p.click('#dlg [data-rd="' + ty + '-01-20"]'); await wait(p, 80);
+  ok((await p.$eval("#dlg .w-glf", (e) => e.textContent)) === "16 days", "it counts the days", await p.$eval("#dlg .w-glf", (e) => e.textContent));
   await p.click("#dlg [data-dlg-ok]"); await wait(p);
   ok(url(p).searchParams.get("mode") === "custom" && url(p).searchParams.get("from") === ty + "-01-05", "Range sheet: custom dates", p.url());
   await go(p, "/transactions?view=cal");
@@ -505,7 +522,7 @@ async function demo() {
   await go(p, "/transactions");
   ok(await p.evaluate(() => document.documentElement.dir === "rtl"), "right to left");
   ok((await p.$$("#tx-list .w-row")).length > 0, "rows drawn");
-  await p.click("#tx-list .w-row >> nth=1"); await more(p, "view-cal");
+  await p.click("#tx-list .w-row >> nth=1"); await p.click('#tx-vsw [data-view="cal"]'); await wait(p);
   await api("PUT", "/language/en");
 
   // Tidy up the test rows

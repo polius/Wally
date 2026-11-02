@@ -1,7 +1,6 @@
-/* The add sheet on a phone: everything on one page, and Repeat as its own sheet. The amount is typed on a
-   keypad with + and −, open only while the amount is typed; under it, what it was for, which suggests the
-   payees that amount most likely is; then the details. The main button always shows the amount and sits
-   in thumb reach. The pieces shared with the desktop sheet keep the same ids. */
+/* The add sheet's pieces: the phone's amount and keypad, and the pages pushed inside the sheet on both
+   layouts (Repeat; on a phone also Category and Split). The phone types the amount on a keypad with + and −,
+   open only while the amount is typed. The pieces shared with the desktop sheet keep the same ids. */
 import { t, esc, icon, decSep, symbol, state, TODAY, span } from "../core.js";
 import { FQ_LABELS, UNITS } from "./repeat.js";
 
@@ -11,10 +10,9 @@ function cur() { return '<span class="cur" aria-hidden="true">' + esc(symbol()) 
 function amountField() {
   const left = !state.currency || state.currency.position !== "right";
   return (left ? cur() : "") +
-    '<input id="add-amt" inputmode="none" autocomplete="off" placeholder="0" aria-label="' + esc(t("Amount")) + '" aria-describedby="add-calc add-aerr">' +
+    '<input id="add-amt" inputmode="none" autocomplete="off" placeholder="0' + esc(decSep()) + '00" aria-label="' + esc(t("Amount")) + '" aria-describedby="add-calc add-aerr">' +
     (left ? "" : cur());
 }
-const CK = '<b class="ck" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></b>';
 const KEYS = () => ["1", "2", "3", "+", "4", "5", "6", "−", "7", "8", "9", "back", decSep(), "0", "00", "next"];
 function keyHtml(k) {
   if (k === "back") return '<button type="button" class="op" data-k="back" aria-label="' + esc(t("Delete last digit")) + '">' + icon("back") + "</button>";
@@ -23,73 +21,56 @@ function keyHtml(k) {
   return '<button type="button"' + (op ? ' class="op"' : "") + ' data-k="' + esc(k) + '"' + (op ? ' aria-label="' + esc(k === "+" ? t("Plus") : t("Minus")) + '"' : "") + ">" + esc(k) + "</button>";
 }
 
-/* The whole phone sheet: the page, and Repeat over it */
-export function phoneHtml() {
-  return '<h2 class="vh" id="add-title"></h2>' +
-    '<section class="w-pstep" data-pstep="main">' +
-      '<div class="w-grab" aria-hidden="true"></div>' +
-      '<div class="w-mh"><button type="button" class="w-plink" data-close>' + t("Cancel") + "</button>" + typeSeg() + "</div>" +
-      '<span class="w-pill w-peditp" id="add-editing" hidden></span>' +
-      '<div class="w-pamt" id="add-amtrow">' + amountField() + '</div>' +
-      '<p class="w-pcalc" id="add-calc" aria-live="polite"></p>' +
-      '<p class="w-err w-pcenter" id="add-aerr" hidden role="alert"></p>' +
-      '<div id="add-namerow"><div class="w-plabel" id="lbl-name"></div>' +
-        '<div class="w-input"><input id="add-name" autocomplete="off" aria-labelledby="lbl-name" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done"><div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div></div>' +
-      '<p class="w-err" id="add-nerr" hidden role="alert"></p>' +
-      '<div id="add-catrow"><div class="w-plabel" id="lbl-cat">' + t("Category") + "</div>" + catBox() + "</div>" +
-      '<div class="w-sub w-parts" id="add-parts" hidden></div>' +
-      '<div id="add-whorow"><div class="w-plabel" id="lbl-who"></div><div class="w-chips w-pscroll" id="add-who" role="radiogroup" aria-labelledby="lbl-who"></div></div>' +
-      '<div class="w-psplit" id="add-split" hidden>' + splitInner(false) + "</div>" +
-      '<div class="w-cells" id="add-cells">' +
-        '<label class="w-cell" id="add-bycell"><span>' + t("Paid by") + '</span><select id="add-bysel" class="w-cellsel"></select></label>' +
-        '<div class="w-cell" id="add-eachcell"><span>' + t("Each pays") + '</span><b id="add-each"></b></div>' +
-        '<button type="button" class="w-cell w-pdate" id="add-datecell" aria-expanded="false" aria-controls="add-cal"><span id="lbl-date"></span><b id="add-datev"></b></button>' +
-        '<div class="w-dcal w-pdcal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
-        '<p class="w-err w-pcell" id="add-derr" hidden role="alert"></p>' +
-        '<button type="button" class="w-cell" id="add-repcell" data-step="repeat"><span>' + t("Repeat") + '</span><b class="acc" id="add-repv"></b></button>' +
-        '<div class="w-cell w-pnote" id="add-reprule" hidden><span id="add-rep-l"></span></div>' +
-        '<div class="w-cell w-ptags"><span id="lbl-tags">' + t("Tags") + '</span><div class="w-chips" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span><input id="add-tag" class="w-mini" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></div></div>' +
-        '<label class="w-cell"><span>' + t("Note") + '</span><input id="add-note" class="w-cellin" autocomplete="off" placeholder="' + esc(t("Optional")) + '"></label>' +
-      "</div>" +
-      '<p class="w-dup" id="add-dup" hidden></p>' +
-      '<p class="w-err" id="add-serr" hidden role="alert"></p>' +
-      '<div class="w-pfoot"><button class="w-btn primary w-submit" type="submit" id="add-go"></button>' +
-        '<div class="w-cells" id="add-delcell" hidden><button type="button" class="w-cell w-pdel" id="add-del">' + t("Delete") + "</button></div></div>" +
-      // In the main button's place while the amount is typed
-      '<div class="w-keys k4 w-pkeys" id="add-keypad" role="group" aria-label="' + esc(t("Keypad")) + '">' + KEYS().map(keyHtml).join("") + "</div>" +
-    "</section>" +
-    /* Repeat */
-    '<section class="w-pstep" data-pstep="repeat">' +
-      '<div class="w-grab" aria-hidden="true"></div>' +
-      '<div class="w-mh"><button type="button" class="w-plink" data-step="main">' + icon("left") + t("Back") + '</button><b class="w-ptitle">' + t("Repeat") + '</b><button type="button" class="w-plink w-pdone" data-step="main">' + t("Done") + "</button></div>" +
-      '<div class="w-cells" id="add-pfreq" role="radiogroup" aria-label="' + esc(t("How often")) + '"></div>' +
-      '<div class="w-cells w-pcustom" id="add-custom" hidden><div class="w-cell"><span>' + t("Every") + '</span><span class="w-inline"><input id="add-every" type="number" min="1" max="99" inputmode="numeric" class="w-mini w-num" aria-label="' + esc(t("Interval")) + '"><select id="add-unit" class="w-mini" aria-label="' + esc(t("Unit")) + '">' + UNITS().map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select></span></div></div>" +
-      '<div id="add-pends"><div class="w-plabel" id="lbl-ends">' + t("Ends") + '</div><div class="w-cells" id="add-end" role="radiogroup" aria-labelledby="lbl-ends">' +
-        '<div class="w-cell w-pend" data-endcell="never"><button type="button" role="radio" data-end="never">' + t("Never") + "</button>" + CK + "</div>" +
-        '<div class="w-cell w-pend" data-endcell="until"><button type="button" role="radio" data-end="until">' + t("On a date") + '</button><input type="date" id="add-until" class="w-mini" aria-label="' + esc(t("Last date")) + '" hidden>' + CK + "</div>" +
-        '<div class="w-cell w-pend" data-endcell="count"><button type="button" role="radio" data-end="count">' + t("After") + '</button><span class="w-inline" id="add-countw" hidden><input id="add-count" type="number" min="2" max="999" inputmode="numeric" class="w-mini w-num" aria-label="' + esc(t("Number of times")) + '">' + t("times") + "</span>" + CK + "</div>" +
-      "</div></div>" +
-      '<p class="w-err" id="add-rerr" hidden role="alert"></p>' +
-      '<div class="w-rsum" id="add-rsumw"><p id="add-rsum"></p><div class="w-next" id="add-next"></div></div>' +
+export const KEYPAD = () => '<div class="w-keys k4 w-pkeys" id="add-keypad" role="group" aria-label="' + esc(t("Keypad")) + '">' + KEYS().map(keyHtml).join("") + "</div>";
+export const chev = (down) => icon(down ? "down" : "right", "chev");
+/* A page pushed inside the sheet (Repeat, Category, Split): ‹ Back · title */
+export function pageHead(title) {
+  return '<div class="w-grab" aria-hidden="true"></div><div class="w-ah w-ahp"><button type="button" class="w-alink w-aback" data-step="main">' + icon("left") + t("Back") + '</button><b class="w-atitle">' + title + "</b><span></span></div>";
+}
+/* The amount on a phone: typed on the keypad */
+export function phoneAmount() {
+  return '<div class="w-pamt" id="add-amtrow">' + amountField() + '</div><p class="w-pcalc" id="add-calc" aria-live="polite"></p>';
+}
+/* Repeat, a page of its own on both layouts, like Calendar's */
+export function repeatPage() {
+  return '<section class="w-apage" data-pstep="repeat" hidden>' + pageHead(t("Repeat")) +
+    '<div class="w-gl" id="add-pfreq" role="radiogroup" aria-label="' + esc(t("How often")) + '"></div>' +
+    '<div class="w-gl" id="add-custom" hidden><div class="w-gr"><span class="k" id="lbl-every">' + t("Every") + '</span><span class="v w-aevery"><input id="add-every" type="number" min="1" max="99" inputmode="numeric" class="w-anum" aria-labelledby="lbl-every">' +
+      '<span class="w-apop"><select id="add-unit" aria-label="' + esc(t("Unit")) + '">' + UNITS().map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" + chev(true) + "</span></span></div></div>" +
+    '<div class="w-gl" id="add-pends"><div class="w-gr"><span class="k" id="lbl-ends">' + t("End repeat") + '</span><span class="v w-apop"><select id="add-endsel" aria-labelledby="lbl-ends">' +
+      '<option value="never">' + t("Never") + '</option><option value="until">' + t("On a date") + '</option><option value="count">' + t("After a number of times") + "</option></select>" + chev() + "</span></div>" +
+      '<div class="w-gr" id="add-untilrow" hidden><span class="k" id="lbl-until">' + t("End date") + '</span><input type="date" id="add-until" class="w-adate" aria-labelledby="lbl-until"></div>' +
+      '<div class="w-gr" id="add-countw" hidden><span class="k" id="lbl-count">' + t("Times") + '</span><input id="add-count" type="number" min="2" max="999" inputmode="numeric" class="w-anum" aria-labelledby="lbl-count"></div></div>' +
+    '<p class="w-err w-glf" id="add-rerr" hidden role="alert"></p>' +
+    '<p class="w-glf w-anext" id="add-next"></p><p class="w-glf" id="add-rsum"></p>' +
     "</section>";
 }
-/* The category field, the same on both layouts: pick from its list, or type to filter or name a new one */
+/* Category on a phone: a page with the list, a new one, or split across categories */
+export function catPage() {
+  return '<section class="w-apage" data-pstep="cat" hidden>' + pageHead(t("Category")) +
+    '<div class="w-gl" id="add-pcats" role="group" aria-label="' + esc(t("Category")) + '"></div>' +
+    '<div class="w-gl"><label class="w-gr">' + icon("plus", "w-aplus") + '<input id="add-newcat" autocomplete="off" enterkeyhint="done" placeholder="' + esc(t("New category")) + '" aria-label="' + esc(t("New category")) + '"></label></div>' +
+    "</section>";
+}
+/* How a shared cost is split, on a phone: a page with the ways, each person's part and who paid */
+export function splitPage() {
+  return '<section class="w-apage" data-pstep="split" hidden>' + pageHead(t("Split")) +
+    '<div class="w-gl" id="add-smlist" role="radiogroup" aria-label="' + esc(t("How to share")) + '"></div>' +
+    '<div class="w-gl" id="add-custrows" hidden></div>' +
+    '<p class="w-glf" id="add-each"></p>' +
+    '<p class="w-err w-glf" id="add-cerr" hidden role="alert"></p>' +
+    '<div class="w-gl" id="add-bygrp"><div class="w-gr"><span class="k" id="lbl-by">' + t("Paid by") + '</span><span class="v w-apop"><select id="add-bysel" aria-labelledby="lbl-by"></select>' + chev(false) + "</span></div></div>" +
+    '<p class="w-glf" id="add-owes"></p>' +
+    "</section>";
+}
+/* The category field on the desktop: pick from its list, or type to filter or name a new one */
 export function catBox() {
   return '<div class="w-catbox"><span class="w-caticon" id="add-caticon" aria-hidden="true"></span>' +
-    '<input id="add-cat" class="w-mini" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="add-catlist" aria-expanded="false" aria-labelledby="lbl-cat" enterkeyhint="done">' + icon("down", "w-catchev") +
+    '<input id="add-cat" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="add-catlist" aria-expanded="false" aria-labelledby="lbl-cat" enterkeyhint="done">' + icon("down", "w-catchev") +
     '<div class="w-sugg w-catlist" id="add-catlist" hidden role="listbox" aria-labelledby="lbl-cat"></div></div>';
 }
 export function typeSeg() {
-  return '<div class="w-seg sm" role="group" aria-label="' + esc(t("Type")) + '" id="add-type"><button type="button" data-at="expense" aria-pressed="true">' + t("Expense") + '</button><button type="button" data-at="income" aria-pressed="false">' + t("Income") + "</button></div>";
-}
-/* The share controls, the same on both layouts (Paid by is a cell on the phone) */
-export function splitInner(withBy) {
-  return '<div class="w-subh"><div class="w-seg sm" role="group" aria-label="' + esc(t("How to share")) + '" id="add-splitmode"><button type="button" data-sm="even">' + t("Evenly") +
-    '</button><button type="button" data-sm="income" id="sm-income">' + t("By income") + '</button><button type="button" data-sm="custom">' + t("Custom") + '</button></div><span class="w-hint" id="sm-hint"></span></div>' +
-    '<input type="range" id="add-split-r" min="0" max="100" step="1" class="w-range" hidden>' +
-    '<div id="add-splitv"></div>' +
-    '<p class="w-err" id="add-cerr" hidden role="alert"></p>' +
-    (withBy ? '<div class="w-inline" id="add-byrow"><span class="lbl w-bylbl">' + t("Paid by") + '</span><div class="w-seg sm" role="group" aria-label="' + esc(t("Paid by")) + '" id="add-by"></div></div>' : "");
+  return '<div class="w-seg" role="group" aria-label="' + esc(t("Type")) + '" id="add-type"><button type="button" data-at="expense" aria-pressed="true">' + t("Expense") + '</button><button type="button" data-at="income" aria-pressed="false">' + t("Income") + "</button></div>";
 }
 
 /* Keypad: what a key does to the amount typed so far */
@@ -126,12 +107,12 @@ export function pickList(payees, type, amount) {
   return payees.filter((x) => x.type === type && x.k90 > 0)
     .map((x) => [x, score(x)]).sort((a, b) => b[1] - a[1]).slice(0, 4).map((e) => e[0]);
 }
-/* Repeat as checkmark cells: Never, Daily … Custom › */
+/* Repeat as rows with a checkmark: Never, Every day … Custom */
 export function freqCells(ad, canStop) {
   const items = (canStop ? [["never", t("Never")]] : []).concat(FQ_LABELS());
   return items.map(([k, label]) => {
     const on = k === "never" ? !ad.rep : ad.rep && ad.fq === k;
-    return '<button type="button" class="w-cell" role="radio" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-pfq="' + k + '"><span>' + label + "</span>" +
-      (on ? '<b class="ck" aria-hidden="true">' + icon("check") + "</b>" : k === "custom" ? '<b class="w-chev" aria-hidden="true">' + icon("right") + "</b>" : "") + "</button>";
+    return '<button type="button" class="w-gr" role="radio" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-pfq="' + k + '"><span class="k">' + label + "</span>" +
+      (on ? icon("check", "w-ack") : k === "custom" ? icon("right", "chev w-ack") : "") + "</button>";
   }).join("");
 }

@@ -7,7 +7,7 @@ import {
   pname, couple, icon, wkOff, dows, rerank, POST, DEL, fromRule, reloadRules, reloadLedger, monthName, monthIn, relDay,
 } from "../core.js";
 import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, everyN } from "../sched.js";
-import { hover, hideTip, row, chart, el, txt, toast, errorToast, openDialog, seg, trapFocus } from "../ui.js";
+import { hover, hideTip, row, toast, errorToast, openDialog, closeDialog, dialogError, trapFocus } from "../ui.js";
 import { refresh, headActions } from "../shell.js";
 
 const RECENT = 548;          // a price change from the last 18 months is still news
@@ -15,7 +15,7 @@ const RECENT = 548;          // a price change from the last 18 months is still 
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 
-const ui = { tab: "expense", sel: null, open: false, endedOpen: false, order: [], day: null, cal: false };
+const ui = { tab: "expense", sel: null, open: false, endedOpen: false, order: [], day: null, cal: false, fromDay: false };
 let root = null;
 let H = new Map();           // history per rule, worked out once per render
 
@@ -64,10 +64,11 @@ export function mount(el, route) {
   ui.sel = id || null;
   ui.open = !!id;
   ui.day = null;
+  // Bills | Income and List | Calendar: in the toolbar on wider screens, in their own row under the title on phones
   root.innerHTML =
     '<header class="w-head s-head rec-head"><div class="s-titlew"><h3 class="s-title">' + t("Recurring") + "</h3></div>" +
-      headActions('<button type="button" class="w-btn ghost rec-hb" id="rec-calb" aria-pressed="false" aria-label="' + esc(t("Calendar")) + '" title="' + esc(t("Calendar")) + '">' + icon("cal") + "</button>") + "</header>" +
-    seg("rec-tab", [["expense", t("Bills")], ["income", t("Income")]], ui.tab, t("Show"), "rec-tabs") +
+      headActions('<div class="rec-ctl rec-ctl-h">' + controls() + "</div>") + "</header>" +
+    '<div class="rec-ctl rec-ctl-p">' + controls() + "</div>" +
     '<div id="rec-page"></div>';
   root.addEventListener("click", onClick);
   root.addEventListener("keydown", onKeydown);
@@ -108,18 +109,30 @@ export function key(ev) {
   else if (k === "Backspace" || k === "Delete") { ev.preventDefault(); deleteRule(r); }
 }
 
+/* Bills | Income, then List | Calendar */
+function controls() {
+  return '<div class="w-seg rec-tabs" role="group" aria-label="' + esc(t("Show")) + '">' +
+      [["expense", t("Bills")], ["income", t("Income")]].map(([v, l]) => '<button type="button" data-rtab="' + v + '" aria-pressed="' + (ui.tab === v) + '">' + l + "</button>").join("") + "</div>" +
+    '<div class="w-seg rec-views" role="group" aria-label="' + esc(t("View")) + '">' +
+      '<button type="button" data-rview="list" aria-pressed="' + !ui.cal + '" aria-label="' + esc(t("List")) + '" title="' + esc(t("List")) + '">' + icon("list") + "</button>" +
+      '<button type="button" data-rview="cal" aria-pressed="' + ui.cal + '" aria-label="' + esc(t("Calendar")) + '" title="' + esc(t("Calendar")) + '">' + icon("cal") + "</button></div>";
+}
+/* The first day ahead with something on it: what the calendar opens on */
+function firstDay() {
+  const o = occurrences(TODAY, addD(TODAY, 34)).filter((x) => ruleAmt(x.r) > 0 && keep(x.r)).sort((a, b) => (a.d < b.d ? -1 : 1));
+  return o.length ? o[0].d : null;
+}
+
 function render() {
   if (!root) return;
   H = new Map();
   rerank(TODAY.slice(0, 8) + "01", TODAY);
   const focus = rememberFocus();
-  root.querySelectorAll("#rec-tab button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === ui.tab)));
-  root.querySelector("#rec-calb").setAttribute("aria-pressed", String(ui.cal));
-  root.querySelector("#rec-calb").classList.toggle("on", ui.cal);
+  root.querySelectorAll("[data-rtab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.rtab === ui.tab)));
+  root.querySelectorAll("[data-rview]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.rview === "cal") === ui.cal)));
   const page = root.querySelector("#rec-page");
   const rules = state.rules.filter((r) => ruleAmt(r) > 0);
-  root.querySelector("#rec-tab").hidden = !state.rules.length;
-  root.querySelector("#rec-calb").hidden = !state.rules.length;
+  root.querySelectorAll(".rec-ctl").forEach((c) => { c.hidden = !state.rules.length; });
 
   if (!state.rules.length) {
     page.innerHTML = '<section class="w-panel">' + emptyRules() + "</section>";
@@ -131,6 +144,7 @@ function render() {
   let sel = ruleById(ui.sel);
   if (sel && superseded(sel)) { sel = latestVersion(sel); ui.sel = sel.id; }
   if (sel && ruleAmt(sel) <= 0) sel = null;
+  if (sel && !keep(sel)) sel = null;      // Bills | Income: the panel follows the tab
   const listed = rules.filter((r) => !superseded(r));
   const shown = listed.filter(keep);
   if (!sel && wide() && shown.length) {
@@ -140,23 +154,27 @@ function render() {
   ui.sel = sel ? sel.id : null;
   if (!sel) ui.open = false;
 
+  // The calendar replaces the list; beside it, the picked day (or a bill opened from it)
+  if (ui.cal && !ui.day) ui.day = firstDay();
+  const calSide = ui.cal && !(ui.fromDay && sel);
   page.innerHTML =
     '<section class="rec-sum" aria-label="' + esc(t("Every month")) + '">' + summary(rules) + "</section>" +
-    (ui.cal ? '<div class="w-grid2 rec-top">' +
-      '<section class="w-panel"><div class="w-ph"><div><h4>' + t("Next five weeks") + '</h4><p id="rec-cal-sub"></p></div>' +
-        '<div class="w-legend"><span><s class="rec-lg-today"></s>' + t("Today") + '</span><span><s class="rec-lg-in"></s>' + t("Money in") + "</span></div></div>" +
-        '<div class="w-rcal rec-cal" id="rec-cal"></div></section>' +
-      '<div class="rec-side"><section class="w-panel rec-day" id="rec-day" hidden></section></div>' +
-    "</div>" : "") +
-    '<div class="w-tx rec-body">' +
-      '<section class="w-panel rec-list" id="rec-list" aria-label="' + esc(t("Rules")) + '">' + list(listed, shown) + "</section>" +
-      '<aside class="w-panel w-insp rec-insp" id="rec-insp" tabindex="-1" aria-label="' + esc(sel ? sel.n : t("Rule")) + '"></aside>' +
+    '<div class="w-tx rec-body' + (ui.cal ? " rec-calv" : "") + '">' +
+      (ui.cal
+        ? '<section class="w-panel rec-calp" aria-labelledby="rec-cal-h"><div class="rec-calh"><div><h4 id="rec-cal-h">' + t("Next five weeks") + '</h4><p id="rec-cal-sub"></p></div>' +
+            '<div class="w-legend rec-legend"><span><i class="rec-lg-today"></i>' + t("Today") + '</span><span><i class="rec-lg-in"></i>' + t("Money in") + "</span></div></div>" +
+            '<div class="w-rcal rec-cal" id="rec-cal"></div></section>'
+        : '<section class="w-panel rec-list" id="rec-list" aria-label="' + esc(t("Rules")) + '">' + list(listed, shown) + "</section>") +
+      (calSide ? '<aside class="w-panel rec-day" id="rec-day" aria-live="polite"></aside>'
+        : '<aside class="w-panel w-insp rec-insp" id="rec-insp" tabindex="-1" aria-label="' + esc(sel ? sel.n : t("Rule")) + '"></aside>') +
     "</div>" +
     '<div class="rec-scrim" data-close hidden></div>';
 
   if (ui.cal) calendar();
-  if (sel) inspector(sel); else root.querySelector("#rec-insp").innerHTML = '<div class="w-empty"><b>' + t("Nothing selected") + "</b><p>" + t("Pick a rule to see it here.") + "</p></div>";
-  setOpen(ui.open && !!sel);
+  if (!calSide) {
+    if (sel) inspector(sel); else root.querySelector("#rec-insp").innerHTML = '<div class="w-empty"><b>' + t("Nothing selected") + "</b><p>" + t("Pick a rule to see it here.") + "</p></div>";
+  }
+  setOpen(ui.open && !!sel && !calSide);
   restoreFocus(focus);
 }
 
@@ -193,11 +211,11 @@ function calendar() {
     const d = addD(start, i), items = byDay[d] || [];
     let out = 0, inn = 0;
     items.forEach((x) => { if (isIncome(x.r)) inn += ruleAmt(x.r); else out += ruleAmt(x.r); });
-    const ics = items.slice(0, 3).map((x) => tile(x.r.c, 18)).join("") + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + "</span>" : "");
+    const ics = items.slice(0, 3).map((x) => tile(x.r.c, 20)).join("") + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + "</span>" : "");
     const day = +d.slice(8) === 1 ? esc(dlab(d)) : +d.slice(8);
     const on = d === ui.day && items.length > 0;
     const cls = "w-rday" + (d < TODAY ? " past" : "") + (d === TODAY ? " t" : "") + (inn ? " in" : "") + (on ? " sel" : "");
-    const body = '<span class="d">' + day + '</span><span class="ics">' + ics + '</span><span class="v">' + (inn ? '<b class="pos">' + bdi("+" + esc(fkn(inn))) + "</b> " : "") + (out ? bdi(esc(fkn(out))) : "") + "</span>";
+    const body = '<span class="d">' + day + '</span><span class="ics">' + ics + '</span><span class="v">' + (inn ? '<b class="pos">' + bdi("+" + esc(fkn(inn))) + "</b>" : "") + (out ? "<b>" + bdi(esc(fkn(out))) + "</b>" : "") + "</span>";
     if (!items.length) { cells += '<span class="' + cls + ' rec-none" aria-hidden="true">' + body + "</span>"; continue; }
     const label = dlabL(d) + ": " + items.map((x) => x.r.n + (couple() ? " (" + pname(x.r.p) + ")" : "") + " " + (isIncome(x.r) ? "+" : "") + f(ruleAmt(x.r))).join(", ");
     cells += '<button type="button" class="' + cls + '" data-rd="' + d + '" aria-label="' + esc(label) + '" aria-pressed="' + on + '" aria-controls="rec-day">' + body + "</button>";
@@ -211,18 +229,32 @@ function calendar() {
   });
   dayList(byDay[ui.day]);
 }
-/* The day picked in the calendar: what lands on it, each opening its rule */
+/* The day picked in the calendar: what lands on it, each opening its rule.
+   Beside the calendar on wider screens; under it, with the day as a heading, on phones. */
 function dayList(items) {
   const box = root.querySelector("#rec-day");
-  box.hidden = false;
-  if (!items) { box.innerHTML = '<div class="w-empty rec-dayhint"><span class="w-empty-i">' + icon("cal") + "</span><b>" + t("Pick a day") + "</b><p>" + t("See what lands on it, and open each rule.") + "</p></div>"; return; }
-  box.innerHTML = '<div class="w-ph"><div><h4>' + esc(dlabL(ui.day)) + '</h4></div><button type="button" class="w-x" data-day-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    '<div class="w-list">' + items.map(({ r }) => {
-      const inc = isIncome(r), who = couple() ? '<span class="rec-who">' + av(r.p, "sm") + esc(pname(r.p)) + "</span> · " : "";
-      return '<button type="button" class="w-rrow rec-drow' + (r.id === ui.sel ? " sel" : "") + '" data-sel="' + r.id + '">' + tile(r.c, 32) +
-        '<div class="rec-rn"><h6>' + esc(r.n) + '</h6><p><span class="rec-meta">' + who + esc(shortDesc(r)) + "</span></p></div>" +
-        '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + "</span></button>";
-    }).join("") + "</div>";
+  if (!box) return;
+  if (!items || !ui.day) { box.innerHTML = '<div class="w-empty rec-dayhint"><span class="w-empty-i">' + icon("cal") + "</span><b>" + t("Pick a day") + "</b></div>"; return; }
+  const out = sum(items.filter((x) => !isIncome(x.r)), (x) => ruleAmt(x.r)), inn = sum(items.filter((x) => isIncome(x.r)), (x) => ruleAmt(x.r));
+  const nb = items.filter((x) => !isIncome(x.r)).length, ni = items.length - nb;
+  const count = [nb ? tn(nb, "{n} bill", "{n} bills") : "", ni ? tn(ni, "{n} payment", "{n} payments") : ""].filter(Boolean).join(" · ");
+  const rows = items.map(({ r }) => {
+    const inc = isIncome(r);
+    return '<button type="button" class="w-rrow rec-drow" data-sel="' + r.id + '">' + tile(r.c, 40) +
+      '<div class="rec-rn"><h6>' + esc(r.n) + "</h6><p>" + esc(whoText(r) || shortDesc(r)) + "</p></div>" +
+      '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + "</span></button>";
+  }).join("");
+  box.innerHTML =
+    '<div class="rec-dayh"><h4>' + esc(dlabL(ui.day)) + "</h4><span>" + esc(ui.day === TODAY ? t("today") : inDays(ui.day)) + "</span></div>" +
+    '<div class="rec-daysum"><b class="amt' + (!out && inn ? " pos" : "") + '">' + (out ? m(out) : m(inn, "+")) + "</b><span>" + esc(count) + "</span></div>" +
+    '<div class="rec-dayrows">' + rows + "</div>" +
+    '<p class="rec-dayfoot">' + t("Pick a bill to see it here, with Edit, Pause and End.") + "</p>";
+}
+/* "Shared · Alex pays", or the person's name; nothing when there is one person */
+function whoText(r) {
+  if (!couple()) return "";
+  if (r.p !== null) return pname(r.p);
+  return t("Shared") + (r.by ? " · " + t("{name} pays", { name: pname(r.by) }) : "");
 }
 
 /* ---------- the list of rules, in time order ---------- */
@@ -276,80 +308,82 @@ function ruleRow(r) {
   const up = pc && !state_ ? '<small class="' + (pc.to > pc.from ? "up-bad" : "dn-good") + '">' + (pc.to > pc.from ? "↑ " : "↓ ") +
     '<span class="rec-sr">' + (pc.to > pc.from ? t("went up") : t("went down")) + " </span>" + m(scaled(r, Math.abs(pc.to - pc.from))) + "</small>" : "";
   const perM = !up && (r.freq !== "monthly" || (r.every || 1) !== 1) ? "<small>" + t("{amount} a month", { amount: m(perMonth(r)) }) + "</small>" : "";
-  return '<button type="button" class="w-rrow' + (r.id === ui.sel ? " sel" : "") + (state_ ? " off" : "") + '" data-rid="' + r.id + '" aria-pressed="' + (r.id === ui.sel) + '">' +
-    tile(r.c, 32) +
+  return '<button type="button" class="w-rrow' + (r.id === ui.sel && !ui.cal ? " sel" : "") + (state_ ? " off" : "") + '" data-rid="' + r.id + '" aria-pressed="' + (r.id === ui.sel) + '">' +
+    tile(r.c, 40) +
     '<div class="rec-rn"><h6>' + esc(r.n) + "</h6><p>" + esc(bits.join(" · ")) + "</p></div>" +
     '<span class="amt' + (inc ? " pos" : "") + '">' + (r.varies ? t("about") + " " : "") + m(ruleAmt(r), inc ? "+" : "") + up + perM + "</span></button>";
 }
 
-/* ---------- the rule's side panel (a full-screen sheet on phones) ---------- */
+/* ---------- the rule's side panel (a full-screen page on phones) ----------
+   As on the phone, and in Contacts and Calendar: Edit at the top right, the facts as rows,
+   the actions as rows at the bottom with Delete last, in red. */
 function inspector(r) {
   const box = root.querySelector("#rec-insp");
   const inc = isIncome(r), h = hist(r), paid = sum(h, (x) => amt(x)), pc = change(r);
   const isOver = over(r);
-  const next = r.paused ? [] : ruleDates(r, addD(TODAY, 1), "2199-12-31", phone() ? 2 : 5);
+  const next = r.paused ? [] : ruleDates(r, addD(TODAY, 1), "2199-12-31", phone() ? 2 : 4);
   const missed = r.missed && r.missed.length ? '<div class="w-panel rec-miss"><b>' + tn(r.missed.length, "{n} date was skipped while paused", "{n} dates were skipped while paused") + "</b> " +
     esc(r.missed.map(dlab).join(", ")) + '<span class="w-noticeb"><button type="button" class="w-btn ghost" data-miss-add="' + r.id + '">' + t("Add them") + '</button><button type="button" class="w-btn ghost" data-miss-no="' + r.id + '">' + t("Dismiss") + "</button></span></div>" : "";
+  const del = inc ? t("Delete income") : t("Delete bill");
+  const who = whoText(r);
+  const pcText = pc ? t("From {from} to {to} on {date}", { from: m(scaled(r, pc.from)), to: m(scaled(r, pc.to)), date: esc(dlab(pc.d)) }) : "";
 
   if (phone()) {
     const last = h.slice(-3).reverse();
+    const gr = (k, v, cls) => '<div class="w-gr"><span class="k">' + k + '</span><span class="v' + (cls ? " " + cls : "") + '">' + v + "</span></div>";
     box.innerHTML =
       '<div class="w-mh rec-mh"><button type="button" class="w-plink" data-close>' + icon("left") + t("Recurring") + '</button><button type="button" class="w-plink" data-act="edit">' + t("Edit") + "</button></div>" +
-      '<div class="rec-mhero">' + tile(r.c, 48) + "<b>" + esc(r.n) + '</b><span class="rec-mamt amt' + (inc ? " pos" : "") + '">' + (r.varies ? '<small>' + t("about") + "</small> " : "") + m(ruleAmt(r)) + "</span>" +
-        '<span class="w-hint">' + esc(shortDesc(r)) + (couple() ? " · " + esc(pname(r.p)) : "") + (r.paused ? " · " + t("Paused") : "") + "</span></div>" +
+      '<div class="rec-mhero">' + tile(r.c, 72) + "<b>" + esc(r.n) + '</b><span class="rec-mamt amt' + (inc ? " pos" : "") + '">' + (r.varies ? "<small>" + t("about") + "</small> " : "") + m(ruleAmt(r)) + "</span>" +
+        '<span class="rec-msub">' + esc([describe(r), who, r.paused ? t("Paused") : isOver ? t("Ended") : ""].filter(Boolean).join(" · ")) + "</span></div>" +
       missed +
-      (pc ? '<div class="w-panel rec-pc"><b>' + (pc.to > pc.from ? t("Price went up") : t("Price went down")) + "</b> " + t("from {from} to {to} on {date}", { from: m(scaled(r, pc.from)), to: m(scaled(r, pc.to)), date: esc(dlab(pc.d)) }) + "</div>" : "") +
-      '<div class="w-plabel">' + t("Next") + '</div><div class="w-cells">' + (next.length ? next.map((d) => '<div class="w-cell"><span>' + esc(dlabW(d)) + "</span><b>" + esc(inDays(d)) + "</b></div>").join("")
-        : '<div class="w-cell"><span>' + (r.paused ? t("Paused, nothing scheduled") : t("No more charges")) + "</span></div>") + "</div>" +
-      '<div class="w-plabel">' + (inc ? t("Last payments") : t("Last charges")) + '</div><div class="w-cells">' + (last.length ? last.map((x) => '<div class="w-cell"><span>' + esc(dlabY(x.d)) + '</span><b class="amt">' + m(amt(x)) + "</b></div>").join("")
-        : '<div class="w-cell"><span>' + t("Nothing added yet") + "</span></div>") + "</div>" +
-      '<div class="w-cells rec-mact">' + (isOver ? "" : '<button type="button" class="w-cell" data-act="pause">' + (r.paused ? t("Resume") : t("Pause")) + "</button>" +
-        '<button type="button" class="w-cell" data-act="end">' + t("End on a date") + "</button>") +
-        '<button type="button" class="w-cell danger" data-act="del">' + t("Delete rule") + "</button></div>";
+      (pc ? '<div class="w-gl rec-pcg"><div class="w-gr"><span class="rec-pci' + (pc.to > pc.from ? "" : " down") + '">' + icon("trend") + '</span><span class="k">' +
+        (pc.to > pc.from ? t("Price went up") : t("Price went down")) + "<small>" + pcText + "</small></span></div></div>" : "") +
+      '<div class="w-glh">' + t("Next") + '</div><div class="w-gl">' + (next.length ? next.map((d) => gr(esc(dlabW(d)), esc(inDays(d)))).join("")
+        : '<div class="w-gr"><span class="k">' + (r.paused ? t("Paused, nothing scheduled") : t("No more charges")) + "</span></div>") + "</div>" +
+      '<div class="w-glh">' + (inc ? t("Last payments") : t("Last charges")) + '</div><div class="w-gl">' + (last.length ? last.map((x) => gr(esc(dlabY(x.d)), '<span class="amt">' + m(amt(x)) + "</span>")).join("")
+        : '<div class="w-gr"><span class="k">' + t("Nothing added yet") + "</span></div>") + "</div>" +
+      (isOver ? "" : '<div class="w-gl rec-macts"><button type="button" class="w-gr acc" data-act="pause">' + (r.paused ? t("Resume") : t("Pause")) + "</button>" +
+        '<button type="button" class="w-gr acc" data-act="end">' + t("End on a date…") + "</button></div>") +
+      '<div class="w-gl rec-macts"><button type="button" class="w-gr red" data-act="del">' + del + "</button></div>";
     return;
   }
 
   const ends = r.endDate ? (r.endDate < TODAY ? t("Ended on {date}", { date: dlabY(r.endDate) }) : t("On {date}", { date: dlabY(r.endDate) })) : t("Never");
-  const shared = r.p === null && couple();
-  const whoVal = shared ? (r.sh ? t("Shared") : t("Shared evenly")) + (r.by ? " · " + t("{name} pays", { name: esc(pname(r.by)) }) : "") : esc(pname(r.p));
   const howMany = tn(h.length, "{n} time", "{n} times");
-  let story = h.length ? (inc ? t("{times}, {amount} received so far.", { times: howMany, amount: "<b>" + m(paid) + "</b>" }) : t("{times}, {amount} paid so far.", { times: howMany, amount: "<b>" + m(paid) + "</b>" }))
+  const story = h.length ? (inc ? t("{times}, {amount} received so far", { times: howMany, amount: m(paid) }) : t("{times}, {amount} paid so far", { times: howMany, amount: m(paid) }))
     : next.length ? t("Nothing added yet. The first one is on {date}.", { date: esc(dlab(next[0])) }) : t("Nothing added yet.");
-  if (pc) story += " " + t("Changed from {from} to {to} in {month}.", { from: m(scaled(r, pc.from)), to: m(scaled(r, pc.to)), month: esc(monthYear(...ym(pc.d))) });
+  // Dates within the coming year read without the year, as in Calendar
+  const yr = (d) => esc(dlab(d)) + (d > addD(TODAY, 330) ? " " + d.slice(0, 4) : "");
+  const kv = (k, v, cls) => '<div class="rec-kv"><span>' + k + '</span><b class="' + (cls || "") + '">' + v + "</b></div>";
 
   box.innerHTML =
-    '<div class="rec-ih"><span class="w-eyebrow">' + (inc ? t("Recurring income") : t("Recurring bill")) + "</span>" + (r.paused ? '<span class="w-badge">' + t("Paused") + "</span>" : isOver ? '<span class="w-badge">' + t("Ended") + "</span>" : "") +
+    (ui.cal && ui.fromDay && ui.day ? '<button type="button" class="w-plink rec-back" data-to-day>' + icon("left") + esc(dlabL(ui.day)) + "</button>" : "") +
+    '<div class="rec-ih"><span class="rec-eye2">' + (inc ? t("Recurring income") : t("Recurring bill")) + "</span>" + (r.paused ? '<span class="w-badge">' + t("Paused") + "</span>" : isOver ? '<span class="w-badge">' + t("Ended") + "</span>" : "") +
+      '<button type="button" class="w-plink rec-edit" data-act="edit">' + t("Edit") + "</button>" +
       '<button type="button" class="w-x rec-close" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    '<div class="rec-iamt"><span class="w-big' + (inc ? " pos" : "") + '">' + (r.varies ? '<span class="rec-about">' + t("about") + " </span>" : "") + bdi(bigMoney(ruleAmt(r))) + "</span>" +
+    '<div class="rec-iamt"><span class="rec-amt amt' + (inc ? " pos" : "") + '">' + (r.varies ? '<span class="rec-about">' + t("about") + " </span>" : "") + m(ruleAmt(r), inc ? "+" : "") + "</span>" +
       '<span class="rec-iname">' + esc(r.n) + '</span><span class="rec-idesc">' + esc(describe(r)) + "</span></div>" +
     missed +
-    '<div class="w-fields"><div class="w-field"><span>' + t("Category") + '</span><span class="val">' + tile(r.c, 22) + esc(r.c) + "</span></div>" +
-      (couple() ? '<div class="w-field"><span>' + t("Who") + '</span><span class="val">' + av(r.p, "sm") + whoVal + "</span></div>" : "") +
-      '<div class="w-field"><span>' + t("Started") + '</span><span class="val">' + esc(dlabY(r.start)) + "</span></div>" +
-      '<div class="w-field"><span>' + t("Ends") + '</span><span class="val">' + esc(ends) + "</span></div>" +
-      (r.note ? '<div class="w-field"><span>' + t("Note") + '</span><span class="val rec-note">' + esc(r.note) + "</span></div>" : "") + "</div>" +
-    '<div class="rec-sec"><span class="w-eyebrow">' + t("Next") + '</span><div class="w-next">' +
-      (next.length ? next.map((d) => "<span>" + esc(dlabW(d)) + (d.slice(0, 4) !== TODAY.slice(0, 4) ? " " + d.slice(0, 4) : "") + "</span>").join("") : r.paused ? t("Paused, nothing scheduled") : t("No more charges")) + "</div></div>" +
-    '<div class="rec-sec"><span class="w-eyebrow">' + t("History") + "</span>" + (h.length ? '<div class="cv" id="c-rhist"></div>' : "") + '<span class="rec-story">' + story + "</span></div>" +
-    '<div class="rec-acts">' +
-      (isOver ? "" : '<button type="button" class="w-btn ghost" data-act="pause">' + icon(r.paused ? "play" : "pause") + (r.paused ? t("Resume") : t("Pause")) + "</button>") +
-      '<button type="button" class="w-btn ghost" data-act="edit">' + icon("edit") + t("Edit") + "</button>" +
-      (isOver ? "" : '<button type="button" class="w-btn ghost" data-act="end">' + icon("cal") + t("End…") + "</button>") +
-      '<button type="button" class="w-btn ghost danger" data-act="del">' + icon("trash") + t("Delete") + "</button></div>";
-
-  if (h.length) historyChart(r, h.slice(-12), inc);
+    '<div class="rec-kvs">' + kv(t("Category"), tile(r.c, 24) + esc(r.c), "ic") + (who ? kv(t("Who"), esc(who)) : "") + kv(t("Started"), esc(dlabY(r.start))) + kv(t("Ends"), esc(ends)) +
+      (next.length ? kv(t("Next"), esc(dlabW(next[0])) + (next[0] > addD(TODAY, 330) ? " " + next[0].slice(0, 4) : "")) : kv(t("Next"), r.paused ? t("Paused") : t("No more charges"), "dim")) +
+      (next.length > 1 ? kv(t("Then"), next.slice(1).map(yr).join(", "), "dim") : "") +
+      (pc ? kv(pc.to > pc.from ? t("Price went up") : t("Price went down"), pcText, "dim") : "") +
+      (r.note ? kv(t("Note"), esc(r.note), "rec-note") : "") + "</div>" +
+    '<div class="rec-sec"><span class="rec-hl">' + (h.length ? t("History") + " · " : "") + story + "</span>" + (h.length ? histBars(r, h.slice(-12), inc) : "") + "</div>" +
+    '<div class="w-pacts rec-acts">' +
+      (isOver ? "" : '<button type="button" data-act="pause">' + (r.paused ? t("Resume") : t("Pause")) + "</button>" +
+        '<button type="button" data-act="end">' + t("End on a date…") + "</button>") +
+      '<button type="button" class="red" data-act="del">' + del + "</button></div>";
+  box.querySelectorAll("[data-hb]").forEach((b) => { const x = h.slice(-12)[+b.dataset.hb]; hover(b, "<b>" + esc(dlabY(x.d)) + "</b>" + row(inc ? t("Received") : t("Paid"), m(amt(x)))); });
 }
 
-function historyChart(r, hv, inc) {
-  chart("c-rhist", 66, (svg, w, hh) => {
-    const vals = hv.map((x) => amt(x)), mx = Math.max(...vals, 1), bw = w / Math.max(hv.length, 6);
-    hv.forEach((x, i) => {
-      const v = vals[i], bh = Math.max(2, (v / mx) * (hh - 18)), x0 = bw * i + bw * 0.2, b = bw * 0.6;
-      const rc = el("rect", { x: x0, y: hh - 14 - bh, width: b, height: bh, rx: 2, fill: cc(r.c), "fill-opacity": i === hv.length - 1 ? 1 : 0.45 }, svg);
-      hover(rc, "<b>" + esc(dlabY(x.d)) + "</b>" + row(inc ? t("Received") : t("Paid"), m(v)));
-      if (i % 2 === hv.length % 2 || hv.length <= 6) txt(svg, x0 + b / 2, hh - 2, F.mon[+x.d.slice(5, 7) - 1], "ax", "middle");
-    });
-  }, () => t("History of {name}: {n} charges, the last {amount} on {date}", { name: r.n, n: hv.length, amount: f(amt(hv[hv.length - 1])), date: dlabY(hv[hv.length - 1].d) }));
+/* The last charges as bars: grey, the latest in the accent; one label in two, the latest always */
+function histBars(r, hv, inc) {
+  const vals = hv.map((x) => amt(x)), mx = Math.max(...vals, 1), n = hv.length;
+  const label = t("History of {name}: {n} charges, the last {amount} on {date}", { name: r.n, n, amount: f(vals[n - 1]), date: dlabY(hv[n - 1].d) });
+  return '<div class="rec-hist" role="img" aria-label="' + esc(label) + '"><div class="rec-hbars">' +
+    hv.map((x, i) => '<i data-hb="' + i + '" class="' + (i === n - 1 ? "on" : "") + '" style="height:' + Math.max(6, (vals[i] / mx) * 100).toFixed(1) + '%"></i>').join("") + "</div>" +
+    '<div class="rec-hax" aria-hidden="true">' + hv.map((x, i) => "<span" + (i === n - 1 ? ' class="on"' : "") + ">" + (i % 2 === 0 || i === n - 1 ? esc(F.mon[+x.d.slice(5, 7) - 1]) : "") + "</span>").join("") + "</div></div>";
 }
 
 /* ---------- opening and closing the panel below 1280 px ---------- */
@@ -383,7 +417,7 @@ function closePanel() {
 function rememberFocus() {
   const a = document.activeElement;
   if (!root || !a || !root.contains(a)) return null;
-  for (const attr of ["data-act", "data-rid", "data-rd", "data-ended", "data-close"]) if (a.hasAttribute(attr)) return "[" + attr + (a.getAttribute(attr) ? '="' + a.getAttribute(attr) + '"' : "") + "]";
+  for (const attr of ["data-act", "data-rid", "data-rd", "data-ended", "data-close", "data-rtab", "data-rview"]) if (a.hasAttribute(attr)) return "[" + attr + (a.getAttribute(attr) ? '="' + a.getAttribute(attr) + '"' : "") + "]";
   return null;
 }
 function restoreFocus(sel) { if (!sel) return; const n = root.querySelector(sel); if (n) n.focus({ preventScroll: true }); }
@@ -399,23 +433,20 @@ function onKeydown(ev) {
 async function onClick(ev) {
   const g = (sel) => ev.target.closest(sel);
   let b;
-  if ((b = g("#rec-tab button"))) { ui.tab = b.dataset.v; render(); return; }
-  if (g("#rec-calb")) { ui.cal = !ui.cal; ui.day = null; render(); return; }
+  if ((b = g("[data-rtab]"))) { if (ui.tab !== b.dataset.rtab) { ui.tab = b.dataset.rtab; ui.day = null; ui.fromDay = false; render(); } return; }
+  if ((b = g("[data-rview]"))) { const cal = b.dataset.rview === "cal"; if (cal !== ui.cal) { ui.cal = cal; ui.day = null; ui.fromDay = false; render(); } return; }
+  if (g("[data-to-day]")) { ui.fromDay = false; render(); return; }
   if (g("[data-new]")) { openAddSheet({ repeat: true }); return; }
   if ((b = g("[data-rid]"))) { select(b.dataset.rid); return; }
   if ((b = g("[data-sel]"))) {
+    // A bill picked from the day opens in the same side panel, with the day a tap away
+    ui.fromDay = true;
     select(b.dataset.sel);
-    // Beside the list, the rule can be out of sight: bring it in
-    if (wide()) root.querySelector("#rec-insp").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const box = root.querySelector("#rec-insp");
+    if (box && wide()) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
     return;
   }
-  if ((b = g("[data-rd]"))) { hideTip(); ui.day = ui.day === b.dataset.rd ? null : b.dataset.rd; render(); return; }
-  if (g("[data-day-close]")) {
-    const d = ui.day;
-    ui.day = null; render();
-    const c = root.querySelector('[data-rd="' + d + '"]'); if (c) c.focus();
-    return;
-  }
+  if ((b = g("[data-rd]"))) { hideTip(); ui.day = b.dataset.rd; ui.fromDay = false; render(); return; }
   if (g("[data-ended]")) { ui.endedOpen = !ui.endedOpen; render(); return; }
   if (g("[data-close]")) { closePanel(); return; }
   if ((b = g("[data-miss-add]"))) { missed(b.dataset.missAdd, true); return; }
@@ -458,13 +489,25 @@ async function togglePause(r, quiet) {
   } catch (e) { errorToast(e); if (quiet) throw e; }
 }
 
+/* End on a date: a sheet, the last day as a row; the date reads like the rest of the app */
 function endRule(r) {
   const last = hist(r).filter((x) => x.rid === r.id).pop();
   const def = last && last.d > r.start ? (last.d > TODAY ? TODAY : last.d) : (r.start > TODAY ? r.start : TODAY);
   openDialog({
-    title: t("End {name}?", { name: esc(r.n) }),
-    body: "<p>" + t("What it already added stays. Nothing is added after this day.") + '</p><label class="rec-fld"><span>' + t("Last day") + '</span><div class="w-input"><input type="date" id="rec-end" value="' + def + '" min="' + r.start + '" required></div></label>',
-    ok: t("End rule"),
+    kind: "sheet",
+    title: t("End {name}", { name: esc(r.n) }),
+    body: '<div class="w-gl"><label class="w-gr rec-endrow"><span class="k">' + t("Last day") + '</span><span class="rec-datep"><span id="rec-endl">' + esc(dlabW(def) + ", " + def.slice(0, 4)) + "</span>" +
+      '<input type="date" id="rec-end" value="' + def + '" min="' + r.start + '" required aria-label="' + esc(t("Last day")) + '"></span></label></div>' +
+      '<p class="w-glf">' + t("What it already added stays. Nothing is added after this day.") + "</p>",
+    ok: t("End"),
+    onOpen: (dlg) => {
+      dlg.classList.add("rec-endsheet");
+      const inp = dlg.querySelector("#rec-end"), lab = dlg.querySelector("#rec-endl");
+      inp.addEventListener("click", () => { try { inp.showPicker(); } catch (e) { /* the field still works by typing */ } });
+      inp.addEventListener("change", () => { if (inp.value) lab.textContent = dlabW(inp.value) + ", " + inp.value.slice(0, 4); });
+      // The date is already chosen: focus the action, as Calendar does, not the field
+      setTimeout(() => { const ok = dlg.querySelector("[data-dlg-ok]"); if (ok) ok.focus(); }, 0);
+    },
     onOk: async (dlg) => {
       const d = dlg.querySelector("#rec-end").value;
       if (!d) throw new Error(t("Choose a date."));
@@ -477,27 +520,38 @@ function endRule(r) {
   });
 }
 
+/* Delete: an alert, like deleting a repeating event in Calendar. Keeping what it added comes first. */
 function deleteRule(r) {
   const made = state.tx.filter((x) => x.rid === r.id);
   const total = made.reduce((s, x) => s + x.a, 0);
-  const opts = made.length ? '<div class="w-opts" role="radiogroup" aria-label="' + esc(t("Past transactions")) + '">' +
-    '<label><input type="radio" name="rec-del" value="future" checked><span><b>' + t("Keep past transactions") + "</b><small>" + tn(made.length, "The {n} transaction it added stays, as an ordinary one.", "The {n} transactions it added stay, as ordinary ones.") + "</small></span></label>" +
-    '<label><input type="radio" name="rec-del" value="all"><span><b>' + t("Delete them too") + "</b><small>" + tn(made.length, "{n} transaction, {amount}, is deleted.", "{n} transactions, {amount} in all, are deleted.", { amount: m(total) }) + "</small></span></label></div>" : "";
+  const inc = isIncome(r);
+  const go = async (applyTo) => {
+    await DEL("/recurring/" + r.id, { applyTo });
+    await Promise.all([reloadRules(), applyTo === "all" && made.length ? reloadLedger() : null]);
+    ui.sel = null; ui.open = false; ui.fromDay = false;
+    history.replaceState(history.state, "", "/recurring");
+    refresh({ rules: true });
+    toast(applyTo === "all" && made.length ? tn(made.length, "Deleted {name} and its {n} transaction", "Deleted {name} and its {n} transactions", { name: r.n }) : t("Deleted {name}. Past transactions stay.", { name: r.n }));
+  };
+  const all = made.length ? '<button type="button" class="w-dlgok danger rec-delall" data-delall>' +
+    (inc ? tn(made.length, "Delete income and its {n} transaction", "Delete income and its {n} transactions") : tn(made.length, "Delete bill and its {n} transaction", "Delete bill and its {n} transactions")) + "</button>" : "";
   openDialog({
-    title: t("Delete the rule for {name}?", { name: esc(r.n) }),
-    body: "<p>" + t("Nothing more is added from it.") + "</p>" + opts,
-    ok: t("Delete rule"),
+    kind: "alert",
+    top: tile(r.c, 48),
+    title: t("Delete {name}?", { name: esc(r.n) }),
+    body: "<p>" + (made.length ? tn(made.length, "Nothing more is added from it. The transaction it added ({amount}) can stay as an ordinary one.", "Nothing more is added from it. The {n} transactions it added ({amount}) can stay as ordinary ones.", { amount: m(total) }) : t("Nothing more is added from it.")) + "</p>" + all,
+    ok: made.length ? (inc ? t("Delete income only") : t("Delete bill only")) : inc ? t("Delete income") : t("Delete bill"),
     danger: true,
-    onOk: async (dlg) => {
-      const pick = dlg.querySelector('input[name="rec-del"]:checked');
-      const applyTo = pick ? pick.value : "future";
-      await DEL("/recurring/" + r.id, { applyTo });
-      await Promise.all([reloadRules(), made.length ? reloadLedger() : null]);
-      ui.sel = null; ui.open = false;
-      history.replaceState(history.state, "", "/recurring");
-      refresh({ rules: true });
-      toast(applyTo === "all" && made.length ? tn(made.length, "Deleted {name} and its {n} transaction", "Deleted {name} and its {n} transactions", { name: r.n }) : t("Deleted the rule for {name}. Past transactions stay.", { name: r.n }));
+    onOpen: (dlg) => {
+      if (!made.length) return;
+      dlg.classList.add("rec-del3");
+      dlg.querySelector("[data-delall]").addEventListener("click", async (ev) => {
+        const b = ev.currentTarget;
+        b.disabled = true;
+        try { await go("all"); closeDialog(); } catch (e) { dialogError(e.message || t("Something went wrong.")); b.disabled = false; }
+      });
     },
+    onOk: () => go("future"),
   });
 }
 

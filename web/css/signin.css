@@ -317,3 +317,202 @@
   .w-welwrap,.w-welwrap .w-wel{transition:none}
   .w-welmark,.w-welfeat li{animation:none}
 }
+
+/* ======================= Wally 2.0 redesign (27, 26, 15) ======================= */
+/* Setup and the upgrade fill the window, as Setup Assistant does: no card. Back and the dots at the
+   top of the window; the symbol, a large title and why, centred; then grouped rows and one button. */
+.w-gate .w-onb{width:100%;max-width:none;min-height:100%;align-self:stretch;margin:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 0 32px;position:relative}
+.w-gate:has(> .w-onb){padding:0}
+/* Back and the dots on one line, at the same height on every step (with or without Back) */
+.w-onbtop{position:absolute;top:0;left:0;right:0;padding:27px 34px 0;min-height:0;grid-template-rows:36px}
+.w-onbdots{gap:6px}
+/* Only the step you are on stands out */
+.w-onbdots li.done{background:var(--w-fill2)}
+/* Taller than the window: the step scrolls, it is never squeezed */
+.w-gate .w-onbb{width:min(560px,100%);padding:0;gap:0;flex-shrink:0}
+.w-onbhero{gap:0;margin-bottom:0}
+.w-onbico{width:64px;height:64px;border-radius:16px;margin-bottom:0;color:var(--w-accent-ink)}
+.w .w-onbico svg.i,.w-onbico svg.i{width:30px;height:30px;stroke-width:1.7}
+.w-onbmark{width:72px;height:72px;margin-bottom:0}
+.w-gate .w-onbhero h1{margin-top:22px;font-size:34px;font-weight:700;letter-spacing:-.035em;line-height:1.12}
+.w-gate .w-onbp{margin-top:10px;font-size:var(--fs-body);line-height:1.45;max-width:480px;color:var(--w-ink2)}
+.w-gate .w-onbb > :is(.w-gl,.w-kitbox){margin-top:32px}
+.w-gate .w-onbb > .w-onbmeans{margin-top:34px}
+.w-gate .w-onbb > .w-gl + .w-gl,.w-gate .w-onbb > .w-kitbox + .w-gl,.w-gate .w-onbb > .w-glf + .w-gl{margin-top:24px}
+.w-gate .w-onbb > .w-glh{margin-top:32px;padding:0 16px;text-align:start;font-weight:400;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-gate .w-onbb > .w-glh + .w-gl{margin-top:16px}
+.w-gate .w-onbb > .w-glf{text-align:start;margin-top:10px;padding:8px 16px 0;color:var(--w-ink2)}
+.w-gate .w-onbb > .w-onbnote{color:var(--w-ink2)}
+.w-gate .w-onbgl .w-badge{font-size:12px;font-weight:600;padding:2px 7px;border-radius:999px}
+.w-gate .w-onbb > .w-onbnote{margin-top:10px}
+.w-gate .w-onbb > .w-err,.w-gate .w-onbb > .w-onbprog{margin-top:12px;text-align:center}
+.w-gate .w-onbgl{text-align:start;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-gate .w-onbgl .w-gr{font-size:var(--fs-body);min-height:52px;gap:14px}
+.w-gate .w-onbgl .w-gr > .v{font-size:var(--fs-body)}
+.w-gate .w-onbgl .w-seg{margin-inline-start:auto}
+.w-gate .w-onbgl .w-seg{padding:2px;border-radius:9px}
+.w-gate .w-onbgl .w-seg button{font-size:14px;line-height:20px;padding:5px 12px;border-radius:7px}
+.w-gate .w-onbfoot{width:min(340px,100%);padding:38px 0 0;display:grid;gap:10px;justify-items:center}
+.w-gate .w-onbfoot .w-btn{width:100%;height:50px;font-size:var(--fs-body);border-radius:999px}
+.w-gate .w-onbfoot .w-btn[disabled]{opacity:1;background:var(--w-fill2);color:var(--w-ink3)}
+.w-onbalt{font-size:var(--fs-body);font-weight:400;color:var(--w-accent-ink);min-height:40px}
+/* A row that opens a list: the native list sits under the whole row */
+.w-grpick{position:relative;cursor:pointer}
+.w-grpick > .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w .w-gr.w-grpick > select{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;cursor:pointer;font-size:16px}
+.w-grpick:has(select:focus-visible){outline:2px solid var(--w-accent);outline-offset:-2px}
+/* People: one group of rows */
+.w-onbpl,.w-onbppl{gap:0;margin:0;padding:0;list-style:none}
+.w-onbper .w-av,.w-onbppl .w-av{width:34px;height:34px;font-size:15px}
+.w-onbpin{height:auto;padding:0;border:0;border-radius:0;background:none;font-size:var(--fs-body)}
+.w-onbpin:focus{box-shadow:none}
+.w-onbdrop{width:22px;height:22px;border-radius:50%;background:var(--w-bad);color:#fff;display:grid;place-items:center;flex:none}
+.w .w-onbdrop svg.i{width:14px;height:14px;stroke-width:2.6}
+.w-onbdrop:hover{filter:brightness(1.1)}
+.w-onbadd{flex:initial;height:auto;border:0;border-radius:0;justify-content:flex-start;font-weight:400;font-size:var(--fs-body);gap:14px}
+.w-onbadd:hover{background:var(--w-fill);border:0}
+.w-onbaddi{width:34px;display:grid;place-items:center;flex:none}
+.w .w-onbaddi svg.i{width:20px;height:20px}
+.w-onbppl .w-gr .k{font-weight:400}
+/* Passwords: two rows of one group */
+.w-gate .w-onbfields .w-gr{min-height:52px}
+/* Typed passwords as large, spaced dots */
+.w-gate .w-onbfields{gap:0}
+.w-gate .w-onbfields input[type="password"]:not(:placeholder-shown){font-size:20px;letter-spacing:3px}
+.w-gate .w-onbfields .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--w-ink3)}
+/* What encrypting means: Apple's What's New list, no box */
+.w-onbmeans{padding:0;border:0;background:none;border-radius:0;gap:18px}
+.w-onbmeans li{grid-template-columns:40px minmax(0,1fr);gap:14px;font-size:var(--fs-sub);line-height:1.4}
+.w-onbmeans li svg.i{width:26px;height:26px;margin:2px auto 0;color:var(--w-accent-ink);stroke-width:1.7}
+.w-onbmeans b{display:block;font-size:var(--fs-body);font-weight:600;margin-bottom:1px}
+/* The Emergency Kit: the key beside its QR code, then a switch */
+.w-kitbox{display:flex;gap:22px;align-items:center;background:var(--w-panel);border-radius:16px;padding:20px 22px;text-align:start;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-kitqr{width:116px;height:116px;flex:none;border-radius:10px;background:#fff;padding:3px;box-shadow:0 0 0 1px var(--w-line);color:#111;display:block}
+.w-kitqr .w-qr{width:100%;height:100%;padding:0;border:0;border-radius:0;display:block}
+.w-kitside{display:grid;gap:14px;min-width:0}
+.w-kitbox .w-kitkey{grid-template-columns:repeat(4,auto);justify-content:start;gap:2px 12px;font-size:var(--fs-body);line-height:1.75;font-weight:600}
+.w-kitbtns{display:flex;gap:10px;flex-wrap:wrap}
+.w-gate .w-kitbtns .w-btn{height:38px;font-size:var(--fs-sub);font-weight:600;border-radius:999px;padding:0 16px;gap:6px}
+.w-gate .w-kitbtns .w-btn svg.i{width:16px;height:16px}
+/* Bring your data: two rows to pick from */
+.w-onbpick .w-gr{text-align:start}
+.w-onbpick .w-gr .k{font-weight:400}
+/* Each line of the explanation as tall as a line of the row */
+.w-onbpick .w-gr .k small{font-weight:400;font-size:var(--fs-foot);line-height:calc(var(--fs-body) * 1.45);color:var(--w-ink2)}
+.w-onbsico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink);flex:none}
+.w .w-onbsico svg.i{width:16px;height:16px}
+.w-onbradio{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--w-line);display:grid;place-items:center;flex:none;color:transparent}
+.w .w-onbradio svg.i{width:14px;height:14px;stroke-width:2.6}
+.w-onbpick [aria-checked="true"] .w-onbradio{background:var(--w-accent);border-color:var(--w-accent);color:var(--w-on-accent)}
+/* Tags: a row per person */
+.w-onbtags{border:0;margin:0}
+.w-onbtagrow{padding:10px 16px;border-bottom:0;justify-content:flex-start}
+.w-onbtagrow .w-av{width:34px;height:34px;font-size:15px}
+.w-onbtagrow .k small{font-size:var(--fs-foot);color:var(--w-ink2);line-height:1.4}
+.w-onbtagrow .w-onbseen{display:block;color:var(--w-ink2)}
+@media (min-width:768px){
+  .w-onbtop .w-onbback{padding:0 8px 0 0}
+}
+@media (max-width:767px){
+  /* The phone keeps Setup Assistant: the button pinned at the bottom */
+  .w-gate .w-onb{justify-content:flex-start;padding:calc(56px + env(safe-area-inset-top,0px)) 0 0;min-height:100%}
+  .w-onbtop{padding:calc(9px + env(safe-area-inset-top,0px)) 10px 0;grid-template-rows:44px}
+  .w-onbback{font-size:var(--fs-body)}
+  .w-gate .w-onbb{width:100%;padding:0 20px 12px}
+  .w-onbico{margin-top:18px}
+  .w-gate .w-onbhero h1{margin-top:18px;font-size:28px}
+  .w-gate .w-onbp{margin-top:8px;font-size:16px}
+  .w-gate .w-onbb > .w-gl{margin-top:26px}
+  .w-gate .w-onbb > .w-kitbox{margin-top:30px}
+  .w-gate .w-onbb > .w-onbmeans{margin-top:32px}
+  .w-gate .w-onbb > .w-gl + .w-gl,.w-gate .w-onbb > .w-kitbox + .w-gl,.w-gate .w-onbb > .w-glf + .w-gl{margin-top:22px}
+  .w-gate .w-onbb > .w-glf{margin-top:8px}
+  .w-gate .w-onbb > .w-glh{margin-top:30px}
+  .w-gate .w-onbb > .w-glh + .w-gl{margin-top:14px}
+  .w-gate .w-onbgl .w-gr{min-height:50px}
+  .w-gate .w-onbfoot{position:sticky;bottom:0;width:100%;margin-top:auto;padding:12px 20px calc(26px + env(safe-area-inset-bottom,0px));background:var(--w-canvas);gap:6px}
+  .w-gate .w-onbfoot:has(.w-onbalt){padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .w-gate .w-onbfoot .w-btn{height:52px}
+  .w-kitbox{flex-direction:column;gap:14px;padding:18px}
+  .w-kitbox .w-kitkey{justify-content:center}
+  .w-kitbtns{justify-content:center}
+  .w-kitside{justify-items:center}
+  .w-onbmeans li{font-size:var(--fs-foot)}
+}
+
+/* Unlock and recovery: the sign-in look (26) */
+.w-lock.wide{width:min(380px,100%)}
+.w-lock.wide .w-lockhero p{max-width:340px}
+.w-lockkey{width:84px;height:84px;border-radius:22px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w .w-lockkey svg.i{width:38px;height:38px;stroke-width:1.6}
+.w-lockfield.key{height:auto;min-height:52px;border-radius:20px;padding:7px 7px 7px 18px;align-items:center}
+.w-lockfield.key .w-sikey{flex:1;min-width:0;padding:5px 0;text-align:start;font:500 14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em;overflow:hidden}
+.w-lockfield.key .w-sikey::placeholder{color:var(--w-ink3);text-transform:none}
+.w-lockfield:has(textarea:placeholder-shown) .w-lockgo{opacity:.35}
+.w-lockgroup{display:grid;border-radius:20px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:0 1px 2px rgba(20,22,27,.05);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.w-lockgroup:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 4px var(--w-accent-soft)}
+.w-lockgroup.err{border-color:var(--w-bad)}
+.w-lockrow{display:flex;align-items:center;gap:2px;height:52px;padding-inline:20px 7px}
+.w-lockrow + .w-lockrow{border-top:1px solid var(--w-line2)}
+.w-lockrow input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;padding:0;font:inherit;font-size:var(--fs-body);color:var(--w-ink)}
+.w-lockrow input::placeholder{color:var(--w-ink3)}
+.w-gate .w-lockrow .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%}
+.w-lockgap{width:36px;flex:none}
+.w-lockgroup:has(input:placeholder-shown) .w-lockgo{opacity:.35}
+.w-gate .w-locklinks .w-silink.acc{color:var(--w-accent-ink)}
+.w-lock > .w-locklinks:first-of-type{margin-top:14px}
+.w-lockhero + .w-locklinks{margin-top:18px}
+.w-sienc.w-lnote{margin-top:26px;font-size:var(--fs-foot);line-height:1.4;align-items:flex-start;text-align:start;max-width:320px;margin-inline:auto}
+.w-sienc.w-lnote svg.i{width:14px;height:14px;margin-top:2px}
+.w-lock.wide .w-lnote{max-width:300px}
+.w-lock.wide .w-lockhero + .w-locklinks + .w-lnote{max-width:320px}
+/* Unlock and recovery, spaced as drawn: centred in the window, a 96 px face, the field close under the words,
+   the message only when there is one, plain 15 px links and the note under them */
+.w-lock.wide .w-av.w-lockav{width:96px;height:96px;font-size:40px;box-shadow:0 8px 24px -8px rgba(20,22,27,.3)}
+/* Lines break where they fall, as drawn */
+.w-lock.wide :is(.w-lockhero h1,.w-lockhero p,.w-lockmsg),.w-gate .w-onb :is(.w-onbhero h1,.w-onbp){text-wrap:wrap}
+.w-lock.wide .w-lockfield.key{gap:10px}
+/* The rounded field or group shows focus; the text box inside it doesn't draw a second ring */
+.w-gate .w-lockfield .w-sikey:focus-visible,.w-gate .w-lockrow input:focus-visible{outline:none}
+/* Back sits a touch above the dots' line, as drawn */
+.w-onbback{translate:0 -3px}
+.w-lock.wide .w-lockmark{width:72px;height:72px}
+.w-lock.wide .w-lockhero h1{margin-top:20px;font-weight:700}
+.w-lock.wide .w-lockhero p{margin-top:8px;max-width:320px;margin-inline:auto}
+.w-lock.wide .w-lockform{margin-top:26px}
+.w-lock.wide .w-lockfield{height:52px}
+.w-lock.wide .w-lockfield.key{height:auto;padding:12px 7px 12px 18px}
+.w-lock.wide .w-lockfield.key .w-sikey{padding:0}
+.w-lock.wide .w-lockgo{width:38px;height:38px}
+.w-lock.wide .w-lockmsg{margin-top:12px;min-height:0;font-size:14px}
+.w-lock.wide .w-lockmsg:empty{display:none}
+.w-lock.wide .w-locklinks .w-silink{font-size:15px;font-weight:400;padding-inline:0}
+.w-lock.wide .w-lockform + .w-locklinks{margin-top:9px}
+.w-lock.wide .w-lockhero + .w-locklinks{margin-top:9px}
+.w-lock.wide .w-lockhero + .w-locklinks:has(+ .w-lnote){margin-top:17px}
+.w-lock.wide .w-sienc.w-lnote{margin-top:29px}
+@media (min-width:768px){
+  .w-lock.wide{padding:24px 0}
+  /* The links' tap area reaches past the text: centred on the text, not on the tap area */
+  .w-lock.wide > .w-locklinks:last-child{margin-bottom:-5px}
+  /* Not now: the same room under the button as a line of text */
+  .w-gate .w-onbalt{margin-bottom:-7px}
+}
+@media (max-width:767px){
+  .w-lock.wide{width:100%;padding-top:calc(120px + env(safe-area-inset-top,0px));padding-inline:25px}
+  /* The key centred under its code, the last group too */
+  .w-kitbox .w-kitkey{display:flex;flex-wrap:wrap;justify-content:center;max-width:calc(19 * (1ch + .04em) + 1px)}
+  .w-lock.wide .w-lockform + .w-locklinks,.w-lock.wide .w-lockhero + .w-locklinks{margin-top:3px}
+  .w-lock.wide .w-lockhero + .w-locklinks:has(+ .w-lnote){margin-top:11px}
+  .w-lock.wide .w-sienc.w-lnote{margin-top:23px}
+}
+/* fine spacing, checked against the mockups */
+.w-gate .w-onbb > .w-onbnote{margin-top:18px}
+@media (max-width:767px){.w-gate .w-onbb > .w-onbnote{margin-top:16px}}
+/* The groups of four a space apart, as typed */
+.w-kitbox .w-kitkey{gap:0 calc(1ch + .04em);letter-spacing:.04em}
+.w-onbtagrow .k small{line-height:calc(var(--fs-body) * 1.45)}
+.w-gate .w-onbfields .w-gr{padding-block:6px}
+@media (min-width:768px){.w-onbback{font-size:var(--fs-body)}}
+@media (max-width:767px){.w-gate .w-onbgl .w-seg button{min-height:0;padding:5px 12px;font-size:14px;line-height:20px}}

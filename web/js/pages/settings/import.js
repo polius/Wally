@@ -174,7 +174,6 @@ function exportGroup() {
   return group(t("Export"), [
     gi(ico("download"), t("Export everything"), t("CSV with date, name, category, amount, type, tags, person, paid by, shares and note. Imports back into Wally."),
       '<button type="button" class="w-btn ghost" data-act="export" data-k="export"' + (state.tx.length ? "" : " disabled") + ">" + t("Export CSV") + "</button>"),
-    gi(ico("file"), t("Wally v1 file format"), t("name,category,tags,amount,type,date is still accepted, so old exports import as they are.")),
   ]);
 }
 

@@ -20,11 +20,11 @@ export function schedMap(y, m, keep) {
   });
   return o;
 }
-/* The grid's buttons. key names the data attribute each day carries (data-<key>="2026-10-24").
+/* The grid's buttons. key names the data attribute each day carries (data-<key>="2026-10-24"); narrow: one-letter weekdays.
    Returns {html, ns: no-spend days so far, best: longest no-spend run} */
-export function monthGrid(y, m, by, sched, sel, key) {
+export function monthGrid(y, m, by, sched, sel, key, narrow) {
   const D = dim(y, m), first = ds(y, m, 1);
-  let cells = dows().map((d) => '<span class="dow" aria-hidden="true">' + esc(d) + "</span>").join(""), ns = 0, run = 0, best = 0;
+  let cells = dows(narrow).map((d) => '<span class="dow" aria-hidden="true">' + esc(d) + "</span>").join(""), ns = 0, run = 0, best = 0;
   for (let i = 0; i < wkOff(first); i++) cells += "<span></span>";
   for (let d = 1; d <= D; d++) {
     const s = ds(y, m, d), fut = s > TODAY, items = (fut ? sched[s] : by[s]) || [];

@@ -51,7 +51,7 @@ function headHtml(it) {
 }
 
 /* Heights in the windowed list (fixed there by transactions.css) */
-const H = { m: 44, d: 38, r: 56 };
+const H = { m: 44, d: 44, r: 67 };
 const WINDOW_OVER = 500;  // more rows than this: draw only what is on screen
 const OVERSCAN = 600;     // px drawn above and below the screen
 
@@ -83,6 +83,7 @@ export class TxList {
     items.forEach((it, i) => { if (it.k === "r") { this.index.set(it.x.id, i); this.rows.push(it.x); } });
     this.windowed = this.rows.length > WINDOW_OVER;
     this.box.classList.toggle("tx-win", this.windowed);
+    this.box.classList.toggle("tx-bym", items.length > 0 && items[0].k === "m");
     if (!items.length) { this.box.innerHTML = empty || ""; return; }
     if (!this.windowed) {
       this.box.innerHTML = items.map((it) => (it.k === "r" ? txRow(it.x, rowOpts(it.x)) : headHtml(it))).join("");

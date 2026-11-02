@@ -100,12 +100,9 @@ try {
   ok(sum.includes(Math.round(billM / incM * 100) + "% of what comes in"), "and the share of income: " + Math.round(billM / incM * 100) + "%");
   ok(/in the next 30 days/.test(sum), "and what the next 30 days hold");
   ok(await page.locator(".rec-kpis,.w-kpi").count() === 0, "no row of key figures");
-  ok((await page.locator("#rec-tab button").allInnerTexts()).join("|") === "Bills|Income", "Bills and Income, no All");
-  ok(await page.locator(".rec-cal").count() === 0, "the calendar waits behind its button");
-  await page.click("#rec-calb");
-  ok(await page.locator(".rec-cal .w-rday").count() === 35, "the calendar has five weeks");
-  ok(await page.locator(".rec-cal .w-rday.t").count() === 1, "today is marked once");
-  ok((await text(page, "#rec-day")).includes("Pick a day"), "beside it, a hint until a day is picked");
+  ok((await page.locator(".rec-ctl-h [data-rtab]").allInnerTexts()).join("|") === "Bills|Income", "Bills and Income in the toolbar, no All");
+  ok(await page.locator(".rec-ctl-h [data-rview]").count() === 2 && await page.locator(".rec-ctl-p").isHidden(), "a List | Calendar switch beside them; no second row on desktop");
+  ok(await page.locator(".rec-cal").count() === 0, "the list shows first");
   ok(await page.locator("#rec-list .w-rrow").count() >= 9, "the list shows the bills");
   ok((await text(page, "#rec-list")).includes("Next 7 days") && !(await text(page, "#rec-list")).includes("salary"), "bills in time order, from the next 7 days; no income");
   ok(await page.locator(".rec-endh").count() === 0, "replaced versions (old Netflix, old Spotify) are not listed as ended");
@@ -114,34 +111,50 @@ try {
   ok(sp(await netflixRow.innerText()).includes("2.00 €") && await netflixRow.locator(".amt .up-bad").count() === 1, "the Netflix row shows the price rise under its amount");
   ok(await page.locator(".w-rrow", { hasText: "Holaluz" }).count() === 0, "payees without a rule are not rules");
   ok(await page.locator(".w-rrow.sel").count() === 1, "the first rule is selected on wide screens");
+  const panel = await text(page, "#rec-insp");
+  ok(await page.locator("#rec-insp .rec-edit").isVisible() && panel.includes("Recurring bill"), "the panel: Edit at the top right");
+  ok((await page.locator("#rec-insp .w-pacts button").allInnerTexts()).join("|") === "Pause|End on a date…|Delete bill", "actions as rows, Delete bill last");
+  ok(await page.locator("#rec-insp .w-pacts button.red").innerText() === "Delete bill", "Delete in red");
+  ok(await page.locator("#rec-insp .w-next span").count() === 0 && /Next\s*\n?\s*\w{3}, \w{3} \d+/.test(panel), "dates as text, not pills");
+  ok(await page.locator("#rec-insp .rec-hbars i").count() >= 6 && await page.locator("#rec-insp .rec-hbars i.on").count() === 1, "history bars, the latest one in the accent");
   await shot(page, "rec-1440");
 
+  // The calendar replaces the list
+  await page.click(".rec-ctl-h [data-rview=cal]");
+  ok(await page.locator("#rec-list").count() === 0 && await page.locator(".rec-cal .w-rday").count() === 35, "Calendar: five weeks in the list's place");
+  ok(await page.locator(".rec-cal .w-rday.t").count() === 1, "today is marked once");
+  ok(await page.locator(".rec-cal .w-rday.sel").count() === 1 && (await text(page, "#rec-day")).includes("Pick a bill to see it here"), "it opens on the next day with a bill, listed beside it");
+  ok(!(await text(page, ".rec-calp")).includes("Click"), "no explanation under the calendar");
+  await shot(page, "rec-1440-cal");
+  await page.click(".rec-ctl-h [data-rview=list]");
   // Bills and Income
   ok(await page.locator(".rec-cal .w-rday.in").count() === 0, "Bills: the calendar shows no money in");
-  await page.click('#rec-tab [data-v="income"]');
+  await page.click('.rec-ctl-h [data-rtab="income"]');
   ok(await page.locator("#rec-list .w-rrow").count() === 2, "Income shows the two salaries");
   ok((await text(page, ".rec-big")) === money0(incM), "Income: its own total, " + money0(incM));
   ok(!(await text(page, "#rec-page")).includes("Netflix went up"), "Income hides bill notices");
-  await page.click('#rec-tab [data-v="expense"]');
+  ok((await text(page, "#rec-insp")).includes("Recurring income"), "the panel follows the tab");
+  await page.click('.rec-ctl-h [data-rtab="expense"]');
 
   // Selecting from the calendar, the panel
   const netflix = byName("Netflix");
   const nxt = nextAfterToday(netflix);
+  await page.click(".rec-ctl-h [data-rview=cal]");
   const cell = page.locator('.rec-cal [data-rd="' + nxt + '"]');
   if (await cell.count()) {
     await cell.click();
     ok(await cell.getAttribute("aria-pressed") === "true" && (await text(page, "#rec-day")).includes("Netflix"), "a calendar day lists what lands on it");
     await page.click('#rec-day [data-sel="' + netflix.id + '"]');
-    ok((await text(page, "#rec-insp")).includes("Netflix"), "an item of the day opens its rule");
-    await page.click("#rec-day [data-day-close]");
-    ok((await text(page, "#rec-day")).includes("Pick a day") && await cell.getAttribute("aria-pressed") === "false", "the day list closes");
+    ok((await text(page, "#rec-insp")).includes("Netflix") && await page.locator("#rec-insp [data-to-day]").isVisible(), "an item of the day opens its rule in the same panel, with the day a tap away");
+    await page.click("#rec-insp [data-to-day]");
+    ok((await text(page, "#rec-day")).includes("Netflix"), "‹ the day goes back to it");
   }
+  await page.click(".rec-ctl-h [data-rview=list]");
   await page.click('[data-rid="' + netflix.id + '"]');
   const insp = await text(page, "#rec-insp");
   ok(insp.includes("Every month on day 27"), "the panel describes the rule");
-  ok(await page.locator("#rec-insp .w-next span").count() === 5, "the panel shows the next five dates");
-  ok(/\d+ times, [\d,.]+ € paid so far\. Changed from 11\.99 € to 13\.99 €/.test(insp), "history counts both Netflix versions and the change");
-  ok(await page.locator("#c-rhist svg rect").count() > 3, "history chart is drawn");
+  ok(insp.includes("Then"), "the next dates after the first, as text");
+  ok(/History · \d+ times, [\d,.]+ € paid so far/.test(insp) && /Price went up\s*From 11\.99 € to 13\.99 €/.test(insp), "history counts both Netflix versions, and the price change has its row");
   ok(page.url().includes("?id=" + netflix.id), "the selection is in the address");
   await page.click('#rec-insp [data-act="edit"]');
   await page.waitForTimeout(200);
@@ -168,7 +181,7 @@ try {
   ok((await text(page, "#toast")).includes("paused"), "a toast says it is paused");
   ok((await text(page, ".rec-big")) === money0(billM - 39), "a paused rule leaves the monthly total");
   ok((await text(page, "#rec-list")).includes("Paused"), "and waits in a Paused group");
-  ok((await text(page, "#rec-insp")).includes("Paused, nothing scheduled"), "the panel shows nothing scheduled");
+  ok(/Next\s*Paused/.test(await text(page, "#rec-insp")) && await page.locator("#rec-insp .w-badge").innerText() === "Paused", "the panel says it is paused, with nothing next");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(400);
   ok((await api("GET", "/recurring")).find((r) => r.id === gym.id).paused === false, "Resume resumes it");
@@ -206,14 +219,16 @@ try {
   await page.click('#rec-insp [data-act="end"]');
   await page.fill("#rec-end", addD(swim.startDate, -1));
   await page.click("[data-dlg-ok]");
+  ok((await text(page, "#dlg .w-shh")).includes("End Swimming lessons") && (await page.locator("#dlg [data-dlg-ok]").innerText()) === "End", "End is a sheet: Cancel · title · End");
+  ok(Math.round((await page.locator("#dlg .w-dialog").boundingBox()).width) === 420, "the End sheet is a narrow one");
   ok(await page.locator("#dlg-err").isVisible() && (await text(page, "#dlg-err")).includes("cannot end before it starts"), "End before the start is refused in the dialog");
   const endOn = addD(TODAY, 20);
   await page.fill("#rec-end", endOn);
   await page.click("[data-dlg-ok]");
   await page.waitForTimeout(500);
   ok((await api("GET", "/recurring")).find((r) => r.id === swim.id).endDate === endOn, "End sets the end date on the server");
-  const chips = await page.locator("#rec-insp .w-next span").allInnerTexts();
-  ok(chips.length >= 1 && chips.length < 5, "the panel shows only the dates before the end (" + chips.join(", ") + ")");
+  const then = await page.locator("#rec-insp .rec-kv", { hasText: "Then" }).count() ? await page.locator("#rec-insp .rec-kv", { hasText: "Then" }).locator("b").innerText() : "";
+  ok(then.split(",").filter(Boolean).length < 3, "the panel shows only the dates before the end (" + then + ")");
   // The demo starts the lessons on a day relative to today, so the weekday comes from the rule
   const swimDay = new Date(swim.startDate + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
   ok((await text(page, "#rec-insp")).includes("Every 2 weeks on " + swimDay + ", until"), "the description says until when (" + swimDay + ")");
@@ -237,7 +252,9 @@ try {
   const pepeTx = await api("GET", "/transactions/search?text=Pepephone");
   await page.click('[data-rid="' + pepe.id + '"]');
   await page.click('#rec-insp [data-act="del"]');
-  ok((await text(page, "#dlg")).includes("Keep past transactions") && (await text(page, "#dlg")).includes("Delete them too"), "Delete asks about past transactions");
+  const dl = await text(page, "#dlg");
+  ok(await page.locator("#dlg .w-alert.rec-del3").count() === 1 && dl.includes("Delete Pepephone?") && dl.includes("can stay as ordinary ones"), "Delete is an alert that asks about past transactions");
+  ok((await page.locator("#dlg [data-dlg-ok]").innerText()) === "Delete bill only" && /Delete bill and its \d+ transactions/.test(await page.locator("#dlg [data-delall]").innerText()), "two answers, keeping them first");
   await page.click("[data-dlg-ok]");
   await page.waitForTimeout(700);
   const pepeLeft = await api("GET", "/transactions/search?text=Pepephone");
@@ -249,8 +266,7 @@ try {
   // Delete, with its transactions
   await page.click('[data-rid="' + gym.id + '"]');
   await page.click('#rec-insp [data-act="del"]');
-  await page.check('input[name="rec-del"][value="all"]');
-  await page.click("[data-dlg-ok]");
+  await page.click("#dlg [data-delall]");
   await page.waitForTimeout(700);
   ok((await api("GET", "/transactions/search?text=DiR%20Gym")).length === 0, "Delete them too removes its transactions");
   ok((await text(page, "#toast")).includes("Deleted DiR Gym and its"), "a toast says what went");
@@ -259,10 +275,10 @@ try {
   await page.click(".rec-head .w-pswitch-b"); await page.click('.rec-head .w-pswitch-m [data-scope="2"]');
   await page.waitForTimeout(300);
   ok(sp(await page.locator('.w-rrow', { hasText: "Rent" }).innerText()).includes("625.00 €"), "Ana: shared rent counts her half");
-  await page.click('#rec-tab [data-v="income"]');
+  await page.click('.rec-ctl-h [data-rtab="income"]');
   const ana = await text(page, "#rec-list");
   ok(!ana.includes("Alex salary") && ana.includes("Ana salary"), "Ana: Alex's salary is not hers");
-  await page.click('#rec-tab [data-v="expense"]');
+  await page.click('.rec-ctl-h [data-rtab="expense"]');
   await page.click(".rec-head .w-pswitch-b"); await page.click('.rec-head .w-pswitch-m [data-scope="all"]');
   await done(page, "1440 px");
 
@@ -282,8 +298,9 @@ try {
 
   console.log("900 px, dark");
   page = await open(base, "/recurring", { width: 900, theme: "dark" });
-  await page.click("#rec-calb");
-  ok(await page.locator(".rec-top").evaluate((n) => getComputedStyle(n).gridTemplateColumns.split(" ").length) === 1, "one column under 1024 px");
+  await page.click(".rec-ctl-h [data-rview=cal]");
+  ok(await page.locator(".rec-body").evaluate((n) => getComputedStyle(n).gridTemplateColumns.split(" ").length) === 1, "one column under 1024 px: the day under the calendar");
+  await page.click(".rec-ctl-h [data-rview=list]");
   await page.locator(".w-rrow").first().click();
   ok(await page.locator("#rec-insp.open").isVisible(), "the panel slides over");
   await shot(page, "rec-900-dark");
@@ -298,7 +315,9 @@ try {
   const sheet = page.locator("#rec-insp.open");
   ok(await sheet.isVisible() && (await sheet.boundingBox()).width === 390, "the rule opens as a full-screen sheet");
   const st = await sheet.innerText();
-  ok(st.includes("Price went up") && st.includes("Next") && st.includes("Last charges"), "the sheet shows the price change, next dates and last charges");
+  ok(st.includes("Price went up") && st.includes("Next") && st.includes("Last charges"), "the page shows the price change, next dates and last charges");
+  ok(st.includes("Every month on day 27") && await page.locator("#rec-insp .w-gr.red").innerText() === "Delete bill", "it describes the rule; Delete bill alone in its group, in red");
+  ok(await page.locator(".w-tabbar").isVisible(), "the tab bar stays, as on a pushed page");
   await shot(page, "rec-390-rule");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(400);
@@ -310,8 +329,11 @@ try {
   await page.click(".w-pswitch-b");
   await page.click('.w-pswitch-m [data-scope="1"]');
   await page.waitForTimeout(300);
-  await page.click('#rec-tab [data-v="income"]');
+  await page.click('.rec-ctl-p [data-rtab="income"]');
   ok(!(await text(page, "#rec-list")).includes("Ana salary"), "the switch changes the person");
+  await page.click('.rec-ctl-p [data-rtab="expense"]');
+  await page.click(".rec-ctl-p [data-rview=cal]");
+  ok(await page.locator(".rec-cal").isVisible() && (await text(page, "#rec-day h4")).length > 0, "Calendar on the phone: the picked day under it");
   await shot(page, "rec-390");
   await done(page, "390 px");
 
@@ -337,8 +359,7 @@ try {
   for (const r of await api("GET", "/recurring")) await api("DELETE", "/recurring/" + r.id, { applyTo: "future" });
   page = await open(base, "/recurring");
   ok((await text(page, "#rec-page")).includes("Nothing repeats yet"), "the empty state explains rules");
-  ok(await page.locator("#rec-calb").isHidden(), "no calendar button without rules");
-  ok(await page.locator("#rec-tab").isHidden(), "no filter without rules");
+  ok(await page.locator(".rec-ctl-h").isHidden() && await page.locator(".rec-ctl-p").isHidden(), "no Bills | Income or List | Calendar without rules");
   await page.click("#rec-page [data-new]");
   await page.waitForTimeout(150);
   ok((await addCalls(page))[0].repeat === true, "the empty state's New rule opens the add sheet");

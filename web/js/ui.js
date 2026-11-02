@@ -59,12 +59,21 @@ export function toast(msg, undo) {
   $("toast-t").textContent = msg;
   undoFn = undo || null;
   $("toast-undo").hidden = !undo;
+  placeToast();
   $("toast").classList.add("on");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $("toast").classList.remove("on"), undo ? 7000 : 3200);
 }
 export function errorToast(e) { toast(e && e.message ? e.message : t("Something went wrong.")); }
+/* While a dialog or a sheet is open, a toast moves out of its way (to the top on a phone), so it never
+   covers a dialog's buttons; it moves as soon as one opens, also when the toast came first */
+function placeToast() {
+  const open = (id) => { const n = $(id); return !!(n && !n.hidden); };
+  $("toast").classList.toggle("top", open("dlg") || open("add-modal"));
+}
 export function initToast() {
+  const watch = new MutationObserver(placeToast);
+  ["dlg", "add-modal"].forEach((id) => { const n = $(id); if (n) watch.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
   $("toast-undo").textContent = t("Undo");
   $("toast-undo").addEventListener("click", async () => {
     $("toast").classList.remove("on");
@@ -86,19 +95,39 @@ export function trapFocus(root, ev) {
 }
 
 /* ---------- dialogs ----------
-   openDialog({title, body, ok, cancel, danger, wide, onOk(root) → false keeps it open, onOpen(root)}) */
+   Two kinds, as on Apple platforms:
+   - alert: a question. Optional picture on top, a short title, one or two sentences, Cancel and the action
+     (red when it destroys). On phones it is an action sheet: the action in the card, Cancel apart.
+   - sheet: a form. Cancel · title · action along the top, grouped rows below. On phones it rises from the bottom.
+   openDialog({title, body, ok, cancel, danger, kind, top, wide, noCancel, sticky, onOk(root) → false keeps it open, onOpen(root)})
+   kind defaults to "sheet" when the body holds a field or a grouped list, else "alert". */
 let current = null;
+const FORMISH = /<(input|select|textarea)\b|w-group|w-gl\b|w-sform/;
 export function openDialog(o) {
   const w = $("dlg");
   const back = document.activeElement;
-  w.innerHTML = '<div class="w-dialog' + (o.wide ? " wide" : "") + '" role="dialog" aria-modal="true" aria-labelledby="dlg-t"><h5 id="dlg-t">' + o.title + "</h5>" + (o.body || "") +
-    '<p class="w-dlgerr" id="dlg-err" role="alert" hidden></p><div class="w-dlgf">' + (o.noCancel ? "" : '<button type="button" class="w-btn ghost" data-dlg-x>' + (o.cancel || t("Cancel")) + "</button>") +
-    (o.ok ? '<button type="button" class="w-btn primary' + (o.danger ? " dangerbtn" : "") + '" data-dlg-ok>' + o.ok + "</button>" : "") + "</div></div>";
+  const kind = o.kind || (FORMISH.test(o.body || "") ? "sheet" : "alert");
+  const cancel = o.noCancel ? "" : '<button type="button" class="w-dlgx" data-dlg-x>' + (o.cancel || t("Cancel")) + "</button>";
+  const ok = o.ok ? '<button type="button" class="w-dlgok' + (o.danger ? " danger" : "") + '" data-dlg-ok>' + o.ok + "</button>" : "";
+  const err = '<p class="w-dlgerr" id="dlg-err" role="alert" hidden></p>';
+  let html;
+  if (kind === "alert") {
+    html = '<div class="w-dialog w-alert' + (o.wide ? " wide" : "") + '" role="alertdialog" aria-modal="true" aria-labelledby="dlg-t"><div class="w-alg">' +
+      (o.top ? '<div class="w-altop">' + o.top + "</div>" : "") + '<h5 id="dlg-t">' + o.title + "</h5>" + (o.body || "") + err + ok + "</div>" + cancel + "</div>";
+  } else {
+    html = '<div class="w-dialog w-sheetd' + (o.wide ? " wide" : "") + '" role="dialog" aria-modal="true" aria-labelledby="dlg-t"><div class="w-shh">' +
+      (cancel || "<span></span>") + '<h5 id="dlg-t">' + o.title + "</h5>" + (ok || "<span></span>") + "</div>" + (o.top ? '<div class="w-shtop">' + o.top + "</div>" : "") +
+      '<div class="w-shb">' + (o.body || "") + err + "</div></div>";
+  }
+  w.innerHTML = html;
   w.hidden = false;
   current = { o, back };
   const root = w.firstChild;
   if (o.onOpen) o.onOpen(root);
-  const first = root.querySelector("[autofocus]") || root.querySelector("input,select,textarea") || root.querySelector("[data-dlg-x]") || root.querySelector("[data-dlg-ok]");
+  // An alert takes focus itself, like a macOS alert: Return answers it (unless it destroys), Escape cancels
+  if (kind === "alert") root.tabIndex = -1;
+  const first = root.querySelector("[autofocus]") || root.querySelector("input:not([type=checkbox]):not([type=radio]),select,textarea") ||
+    (kind === "alert" ? root : root.querySelector("[data-dlg-ok]") || root.querySelector("[data-dlg-x]"));
   if (first) first.focus();
   return root;
 }
@@ -131,6 +160,7 @@ export function initDialogs() {
   });
   w.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") { ev.stopPropagation(); if (!(current && current.o.sticky)) closeDialog(); }
+    else if (ev.key === "Enter" && ev.target === w.firstChild && w.firstChild.classList.contains("w-alert") && current && !current.o.danger) { const ok = w.querySelector("[data-dlg-ok]"); if (ok) { ev.preventDefault(); ok.click(); } }
     else if (ev.key === "Enter" && ev.target.matches("input:not([type=checkbox]):not([type=radio])")) { const ok = w.querySelector("[data-dlg-ok]"); if (ok) { ev.preventDefault(); ok.click(); } }
     else trapFocus(w.firstChild, ev);
   });

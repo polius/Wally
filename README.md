@@ -112,7 +112,7 @@ docker run --rm -v /path/to/your/data:/wally/data poliuscorp/wally python3 -m ap
 
 What changes on purpose:
 
-- The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person in **Settings › People**.
+- The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person from the tag's page in **Settings › Tags**.
 - If you had a password, it stays the household's password: everyone picks their name and signs in with it. 1.x had no Emergency Kit, so whoever signs in first is asked to save one.
 - Recurring transactions are no longer created in advance: each one is added on its day. Those 1.x had already added for dates after today are taken out, listed in the report, and come back on their day.
 
@@ -123,7 +123,7 @@ Wally supports the following environment variables:
 | Variable | Sample Value | Details |
 | --- | --- | --- |
 | DEMO | true | Pre-loads the app with sample data for a household of two. Nothing is kept. |
-| TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Appearance**. |
+| TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Language & Region**. |
 | WALLY_ENCRYPTION | required | For running Wally for someone else: every household is end-to-end encrypted from setup, and encryption and sign-in can't be turned off, so you can't read their data. Needs HTTPS. API keys are off, unless WALLY_API_KEYS is on. Ignored with DEMO. |
 | WALLY_API_KEYS | on | With WALLY_ENCRYPTION=required: allow API keys. While a call with a key runs, the server opens the data that call needs (see [API keys while encrypted](#api-keys-while-encrypted)). |
 
@@ -131,7 +131,7 @@ Wally supports the following environment variables:
 
 Everyone uses the same password, so first ask someone else in the household.
 
-Otherwise, use the **Emergency Kit**. Wally gives the household one when sign-in is turned on: a recovery key to print, download or keep in a password manager. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Make a new kit in **Settings › Sign-in**; the old one stops working.
+Otherwise, use the **Emergency Kit**. Wally gives the household one when sign-in is turned on: a recovery key to print, download or keep in a password manager. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Make a new kit in **Settings › Sign-in & Privacy › Emergency Kit**; the old one stops working.
 
 Lost the kit too? Whoever runs the server can turn sign-in off, then you turn it on again with a new password:
 
@@ -143,7 +143,7 @@ This doesn't work while the household is encrypted: then nobody can open the dat
 
 ## End-to-end encryption
 
-When you set Wally up with a password, it is encrypted right then, before anything is saved: one button, with **Not now** under it. Upgrading from 1.x offers the same step. Browsers only encrypt on secure pages, so over plain HTTP (`http://192.168.1.20`) Wally isn't encrypted and the setup says so; open it over HTTPS and turn it on later in **Settings › Privacy** (sign-in must be on). `localhost` counts as secure. If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household with no **Not now**, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
+When you set Wally up with a password, it is encrypted right then, before anything is saved: one button, with **Not now** under it. Upgrading from 1.x offers the same step. Browsers only encrypt on secure pages, so over plain HTTP (`http://192.168.1.20`) Wally isn't encrypted and the setup says so; open it over HTTPS and turn it on later in **Settings › Sign-in & Privacy** (sign-in must be on). `localhost` counts as secure. If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household with no **Not now**, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
 
 - **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
 - **The password**: the household password is the key. Your browser turns it into keys (Argon2id) and never sends it, and each browser asks for it once. Everyone keeps using the same password; nobody needs a code to join.
@@ -161,7 +161,7 @@ When a call with the key uses the household's data, the server opens the househo
 
 ## Data Import / Export
 
-Wally imports CSV files from **Settings › Import and export**: its own exports, Wally 1.x exports, and bank exports (you choose which column is which). The preview shows what is new, what matches something you already typed, and what was imported before, before anything is saved.
+Wally imports CSV files from **Settings › Import & Export**: its own exports, Wally 1.x exports, and bank exports (you choose which column is which). The preview shows what is new, what matches something you already typed, and what was imported before, before anything is saved.
 
 The Wally 1.x format is still accepted:
 

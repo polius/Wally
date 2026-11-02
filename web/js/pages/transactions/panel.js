@@ -54,23 +54,24 @@ function added(x) {
 }
 const muted = (s) => '<button type="button" class="tx-add" data-act="edit">' + esc(s) + "</button>";
 
-/* ---------- one transaction ---------- */
+/* ---------- one transaction ----------
+   Wide screens: the date with Edit at the top right, the amount and the name, plain rows, then
+   Duplicate and Delete transaction as rows (Delete last, in red), as on the phone.
+   Phones: a page with ‹ Transactions and Edit, the amount, grouped rows and the same two actions. */
 export function txPanel(x, phone) {
   if (!x) return '<div class="w-empty"><b>' + esc(t("Nothing selected")) + "</b>" + esc(t("Pick a transaction to see it here.")) + "</div>";
   const inc = x.type === "income", rule = ruleOf(x), pb = paidBy(x), sibs = siblings(x), h = history(x);
-  const repeats = x.rec
-    ? '<a href="/recurring?id=' + encodeURIComponent(x.rid) + '" data-link class="w-link tx-rep">' + icon("repeat") + esc(rule ? describe(rule) : t("Repeats")) + "</a>"
-    : '<span class="tx-mut">' + esc(t("Never")) + "</span>";
+  const repText = x.rec ? (rule ? describe(rule) : t("Repeats")) : null;
   const tags = x.tags.length ? '<span class="tx-tags">' + x.tags.map((g) => '<span class="w-ht">' + esc(g) + "</span>").join("") + "</span>" : muted(t("Add a tag"));
   const note = x.note ? '<span class="tx-note">' + esc(x.note) + "</span>" : muted(t("Add a note"));
   const fields = [
     [t("Category"), tile(x.c, 22) + "<span>" + esc(x.c) + "</span>"],
-    [inc ? t("Whose") : t("Who"), av(owner(x), "sm") + "<span>" + whoText(x) + "</span>"],
+    [t("Who"), av(owner(x), "sm") + "<span>" + whoText(x) + "</span>"],
     pb && [t("Paid by"), av(pb, "sm") + "<span>" + esc(pname(pb)) + "</span>"],
     [t("Date"), "<span>" + esc(dateText(x.d)) + "</span>"],
     [t("Tags"), tags],
     [t("Note"), note],
-    [t("Repeats"), repeats],
+    [t("Repeats"), repText ? "<span>" + esc(repText) + "</span>" : '<span class="tx-mut">' + esc(t("Never")) + "</span>", repText],
     x.src && [t("Imported from"), '<span class="tx-src">' + esc(x.src.name || "") + (x.src.date ? '<span class="tx-mut"> · ' + esc(dlab(x.src.date)) + "</span>" : "") + "</span>"],
   ].filter(Boolean);
   const sibHtml = sibs.length
@@ -78,41 +79,52 @@ export function txPanel(x, phone) {
       sibs.map((y) => '<button type="button" class="w-li tx-sib" data-sib="' + esc(y.id) + '">' + tile(y.c) + '<div><h6>' + esc(y.n || y.c) + "</h6><p>" + esc(y.c) + '</p></div><span class="w-amt">' + f(y.a) + "</span></button>").join("") +
       "</div></div>"
     : "";
-  const name = x.n || x.c;
+  const name = x.n || x.c, ruleHref = x.rec ? "/recurring?id=" + encodeURIComponent(x.rid) : "";
 
   if (phone) {
-    const cellsOf = (list) => '<div class="w-cells">' + list.map(([k, v]) => '<div class="w-cell"><span>' + esc(k) + '</span><b class="tx-cv">' + v + "</b></div>").join("") + "</div>";
+    const row = ([k, v, link]) => link
+      ? '<a class="w-gr" href="' + ruleHref + '" data-link><span class="k">' + esc(k) + '</span><span class="v tx-cv">' + v + "</span>" + icon("right", "chev") + "</a>"
+      : '<div class="w-gr"><span class="k">' + esc(k) + '</span><span class="v tx-cv">' + v + "</span></div>";
     return '<div class="w-mh tx-dnav"><button type="button" class="w-plink" data-act="close">' + icon("left") + esc(t("Transactions")) + '</button><button type="button" class="w-plink" data-act="edit">' + esc(t("Edit")) + "</button></div>" +
-      '<div class="tx-dhero">' + tile(x.c, 48) + "<b>" + esc(name) + '</b><span class="w-big' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + bigMoney(x.a) + '</span><span class="w-hint">' + esc(dateText(x.d)) + " · " + esc(audit(x)) + "</span></div>" +
-      cellsOf(fields) + sibHtml +
-      (h.n ? cellsOf([[t("This payee in {year}", { year: h.y }), esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total)]]) : "") +
-      '<div class="w-cells"><button type="button" class="w-cell tx-cellbtn" data-act="dup">' + icon("copy") + esc(t("Duplicate")) + '</button><button type="button" class="w-cell tx-cellbtn danger" data-act="del">' + icon("trash") + esc(t("Delete transaction")) + "</button></div>";
+      '<div class="tx-dhero">' + tile(x.c, 52) + "<b>" + esc(name) + '</b><span class="w-big' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="w-hint">' + esc(dateText(x.d)) + " · " + esc(audit(x)) + "</span></div>" +
+      '<div class="w-gl">' + fields.map(row).join("") + "</div>" + sibHtml +
+      (h.n ? '<div class="w-gl"><div class="w-gr"><span class="k">' + esc(t("This payee in {year}", { year: h.y })) + '</span><span class="v">' + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span></div></div>" : "") +
+      '<div class="w-gl"><button type="button" class="w-gr acc" data-act="dup">' + esc(t("Duplicate")) + '</button><button type="button" class="w-gr red" data-act="del">' + esc(t("Delete transaction")) + "</button></div>";
   }
-  // Wide screens: the date, the amount and the name, then plain rows; nothing is lost, the
-  // year's history is one line and who added it is the last row
+  // Wide screens: nothing is lost; the year's history is one line and who added it is the last row
   const rows = fields.filter(([k]) => k !== t("Date") && !((k === t("Tags") && !x.tags.length) || (k === t("Note") && !x.note)));
   if (h.n > 1) rows.push([t("This year"), "<span>" + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span>"]);
   rows.push([t("Added"), '<span class="tx-mut">' + esc(added(x)) + "</span>"]);
-  return '<div class="tx-ih"><span class="tx-idate">' + esc(cap(dateText(x.d))) + '</span><button type="button" class="tx-close" data-act="close" aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    '<div class="tx-iamt"><span class="w-big amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + bigMoney(x.a) + '</span><span class="tx-iname">' + esc(name) + "</span></div>" +
-    '<div class="tx-kv">' + rows.map(([k, v]) => '<div class="tx-kvr"><span>' + esc(k) + '</span><span class="val">' + v + "</span></div>").join("") + "</div>" +
+  const kv = ([k, v, link]) => link
+    ? '<a class="tx-kvr tx-kvl" href="' + ruleHref + '" data-link><span>' + esc(k) + '</span><span class="val">' + v + "</span></a>"
+    : '<div class="tx-kvr"><span>' + esc(k) + '</span><span class="val">' + v + "</span></div>";
+  return '<div class="tx-ih"><span class="tx-idate">' + esc(cap(dateText(x.d))) + '</span><span class="tx-ihr"><button type="button" class="tx-edit" data-act="edit" title="' + esc(t("Edit")) + ' (E)">' + esc(t("Edit")) + "</button>" +
+      '<button type="button" class="tx-close" data-act="close" aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></span></div>" +
+    '<div class="tx-iamt"><span class="w-big amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="tx-iname">' + esc(name) + "</span></div>" +
+    '<div class="tx-kv">' + rows.map(kv).join("") + "</div>" +
     sibHtml +
-    '<div class="tx-acts"><button type="button" class="w-btn ghost" data-act="edit" title="' + esc(t("Edit")) + ' (E)">' + esc(t("Edit")) + '</button><button type="button" class="w-btn ghost" data-act="dup" title="' + esc(t("Duplicate")) + ' (D)">' + esc(t("Duplicate")) +
-      '</button><button type="button" class="w-btn ghost danger" data-act="del" title="' + esc(t("Delete")) + ' (⌫)">' + esc(t("Delete")) + "</button></div>";
+    '<div class="w-pacts tx-pacts"><button type="button" data-act="dup" title="' + esc(t("Duplicate")) + ' (D)">' + esc(t("Duplicate")) + '</button><button type="button" class="red" data-act="del" title="' + esc(t("Delete")) + ' (⌫)">' + esc(t("Delete transaction")) + "</button></div>";
 }
 const cap = (s) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
-/* ---------- one day of the calendar ---------- */
-export function dayPanel(d, list, sched, wide) {
+/* The big amount: the cents and what follows them (" €") small, as one tail */
+const big = (n) => bigMoney(n).replace(/<\/span>([^<]*)$/, "$1</span>");
+/* ---------- one day of the calendar ----------
+   Wide screens: the day on the right, its total and its transactions. Phones: the day's list under the calendar. */
+export function dayPanel(d, list, sched, wide, phone) {
   const fut = d > TODAY, items = fut ? [] : list.filter((x) => x.d === d), sc = fut ? sched[d] || [] : [];
   let out = 0, inn = 0;
   items.forEach((x) => { if (x.type === "income") inn += amt(x); else out += amt(x); });
   sc.forEach((x) => { if (x.inc) inn += x.a; else out += x.a; });
   const rows = items.map((x) => txRow(x)).join("") +
     sc.map((x) => '<div class="w-li">' + tile(x.c) + "<div><h6>" + esc(x.n || x.c) + "</h6><p>" + esc(x.c) + " · " + esc(shortDesc(x.r)) + '</p></div><span class="w-amt' + (x.inc ? " pos" : "") + '">' + (x.inc ? "+" : "") + f(x.a) + "</span></div>").join("");
-  return '<div class="tx-ih"><span class="w-eyebrow">' + esc(fut ? t("Still to come") : d === TODAY ? t("Today") : t("Day")) + "</span>" +
-      (items.length ? '<button type="button" class="w-link tx-calopen" data-act="cal-open">' + esc(t("Show in list")) + "</button>" : "") + "</div>" +
-    '<div class="tx-iamt"><span class="tx-iname">' + esc(dateText(d)) + '</span><span class="w-big">' + bigMoney(out) + '</span><span class="tx-daysub">' + esc(fut ? t("in bills") : t("spent")) +
-      (inn ? ' · <b class="pos">+' + f(inn) + "</b> " + esc(t("in")) : "") + "</span></div>" +
-    '<div class="w-list tx-daylist">' + (rows || '<div class="w-empty"><b>' + esc(fut ? t("Nothing scheduled") : t("No spending")) + "</b>" + esc(fut ? t("No recurring bills on this day.") : t("A no-spend day.")) + "</div>") + "</div>" +
-    '<p class="w-audit">' + esc(fut ? t("From your recurring rules. Wally adds them on the day.") : items.length ? (wide ? t("Pick a transaction to open it in the list.") : t("Tap a transaction to open it.")) : "") + "</p>";
+  const none = '<div class="w-empty"><b>' + esc(fut ? t("Nothing scheduled") : t("No spending")) + "</b>" + esc(fut ? t("No recurring bills on this day.") : t("A no-spend day.")) + "</div>";
+  if (phone) {
+    return '<div class="tx-dsh"><h3>' + esc(cap(dateText(d))) + "</h3><span>" + (out || inn ? esc(fut ? t("{amount} in bills", { amount: f(out) }) : t("{amount} spent", { amount: f(out) })) : "") + "</span></div>" +
+      '<div class="w-panel tx-dlist"><div class="w-list tx-daylist">' + (rows || none) + "</div></div>";
+  }
+  return '<div class="tx-ih"><span class="tx-idate">' + esc(fut ? t("Still to come") : d === TODAY ? t("Today") : t("Day")) + "</span>" +
+      (items.length ? '<button type="button" class="tx-edit tx-calopen" data-act="cal-open">' + esc(t("Show in List")) + "</button>" : "") + "</div>" +
+    '<div class="tx-iamt"><span class="tx-iname">' + esc(cap(dateText(d))) + '</span><span class="w-big">' + bigMoney(out) + '</span><span class="tx-daysub">' + esc(fut ? t("in bills") : t("spent")) +
+      (inn ? ' · <b class="pos">+' + f(inn) + " " + esc(t("in")) + "</b>" : "") + "</span></div>" +
+    '<div class="w-list tx-daylist">' + (rows || none) + "</div>";
 }

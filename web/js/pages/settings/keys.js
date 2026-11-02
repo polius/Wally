@@ -1,24 +1,28 @@
-/* Settings › API keys: create (shown once), list with owner and last use, delete;
-   and how to add from a phone's lock screen with an iOS Shortcut or Android HTTP Shortcuts. */
+/* Settings › API keys: the keys (each opens its page, with Delete), creating one (shown once), how to add from a
+   phone's lock screen with an iOS Shortcut or Android HTTP Shortcuts, and how to use a key. */
 import * as core from "../../core.js";
-import { t, esc, state, GET, POST, DEL, pname, expCats, icon, TODAY } from "../../core.js";
-import { openDialog, toast, errorToast, empty } from "../../ui.js";
+import { t, esc, state, num, GET, POST, DEL, pname, expCats, icon, TODAY } from "../../core.js";
+import { openDialog, toast, errorToast, empty, seg as uiSeg } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { group, gi, ico, trashBtn, parseUtc, dayLabel, ago, copyText, counts, paint, field, passwordInput } from "./common.js";
+import { gl, gr, addRow, hero, sico, gate, phone, val, parseUtc, dayLabel, ago, copyText, counts, paint } from "./common.js";
+import { setAction, openPane } from "../settings.js";
 
 let box = null;
+let sub = "";        // "" for the list, or a key's id for its page
 let keys = null;
 let failed = null;
 
-export function mount(el) {
+export function mount(el, s) {
   box = el;
+  sub = s || "";
   box.addEventListener("click", onClick);
-  box.addEventListener("keydown", (ev) => { if (ev.key === "Enter" && ev.target.id === "key-name") { ev.preventDefault(); create(); } });
   render();
   load();
 }
+export function show(s) { sub = s || ""; render(); }
 export function update() { if (box) render(); }
 export function unmount() { box = null; }
+export function meta(s) { return s ? { title: "" } : {}; }
 
 async function load() {
   try { keys = await GET("/api-keys"); failed = null; counts.keys = keys.length; } catch (e) { keys = []; failed = e.message; }
@@ -38,44 +42,52 @@ function request(placeholders) {
 }
 
 const sealed = () => !!(state.status && state.status.vault && state.status.vault.on);
-let scope = "write";
+const keyName = (k) => k.name || t("Unnamed key");
+const can = (k) => (k.scope === "read" ? t("Read only") : t("Read and write"));
+const keyPic = (big) => '<span class="w-sico' + (big ? " w-sico48" : "") + '">' + icon("key") + "</span>";
 
 function render() {
+  if (!box) return;
+  setAction("");
   const v = (state.status && state.status.vault) || {};
   if (v.api_keys === false) {
     // WALLY_ENCRYPTION=required: a key would let the server open the data while a call runs
-    paint(box, group(t("API keys"), [gi(ico("shield"), t("Off on this server"),
-      t("Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs."))]));
+    paint(box, gl([gr({ lead: sico("shield"), k: t("Off on this server"), sub: t("Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs.") })]));
     return;
   }
+  if (sub) return renderKey();
   const signin = state.status && state.status.signin;
   let rows;
-  if (keys === null) rows = ['<div class="w-skel"><i></i><i style="width:60%"></i></div>'];
-  else if (failed) rows = [empty("alert", t("API keys can’t be listed"), esc(failed))];
+  if (keys === null) rows = ['<div class="w-gr"><div class="w-skel"><i></i><i style="width:60%"></i></div></div>'];
+  else if (failed) rows = ['<div class="w-gr w-gempty">' + empty("alert", t("API keys can’t be listed"), esc(failed)) + "</div>"];
   else rows = keys.map((k) => {
-    const used = parseUtc(k.last_used), made = parseUtc(k.created_at);
-    const parts = ["<code>" + esc(k.prefix) + "…</code>", k.scope === "read" ? t("Read only") : t("Read and write"), esc(pname(k.person_id)), t("created {date}", { date: made ? dayLabel(made) : "" }), used ? t("last used {when}", { when: ago(used) }) : t("never used")];
-    return gi(ico("key"), esc(k.name || t("Unnamed key")), parts.join(" · "), trashBtn(t("Delete {name}", { name: k.name || t("Unnamed key") }), ' data-act="delete" data-id="' + esc(k.id) + '" data-k="del:' + esc(k.id) + '"'));
+    const used = parseUtc(k.last_used);
+    return gr({ tag: "a", href: "/settings/keys/" + encodeURIComponent(k.id), attrs: ' data-pane="keys/' + encodeURIComponent(k.id) + '" data-act="key" data-k="key:' + esc(k.id) + '"', lead: keyPic(), k: esc(keyName(k)),
+      sub: '<code class="w-kpre">' + esc(k.prefix) + "…</code> · " + can(k) + " · " + (used ? t("last used {when}", { when: ago(used) }) : t("never used")), chev: true });
   });
-  if (keys && !keys.length && !failed) rows = [empty("key", t("No API keys yet"), t("A key lets a script, a spreadsheet or a phone shortcut add and read transactions."))];
-  rows.push('<div class="w-gi w-gadd"><span class="w-ico">' + icon("plus") + '</span><div class="w-inline"><input class="w-mini w-addin" id="key-name" placeholder="' + esc(t("What is this key for?")) +
-    '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off">' +
-    '<select class="w-mini" id="key-scope" aria-label="' + esc(t("What the key can do")) + '">' +
-    [["write", t("Read and write")], ["read", t("Read only")]].map(([v2, l]) => '<option value="' + v2 + '"' + (scope === v2 ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
-    '</div><button type="button" class="w-btn ghost" data-act="create" data-k="create">' + t("Create key") + "</button></div>");
-  const example = 'curl -H "X-API-Key: wly_…" \\\n  "' + location.origin + "/api/transactions/between?from=" + TODAY.slice(0, 8) + "01&to=" + TODAY + '"';
+  rows.push(addRow(t("Create a key…"), "create", ' data-k="create"'));
+  // On a phone the address breaks where it reads well (the spans only show there); copying isn't offered
+  const brk = '<span class="w-mbr">\n  </span>';
+  const example = esc('curl -H "X-API-Key: wly_…" \\\n  "' + location.origin + "/api/transactions") + brk + esc("/between?from=" + TODAY.slice(0, 8) + "01") + brk + esc("&to=" + TODAY + '"');
   paint(box,
-    (signin ? "" : '<div class="w-explain"><p>' + t("Sign-in is off, so anyone who can reach Wally can use the API, with or without a key. A key still tells Wally who added what. Turn on sign-in in {link} to require one.",
-      { link: '<a class="w-link" href="/settings/signin" data-pane="signin">' + t("Sign-in") + "</a>" }) + "</p></div>") +
-    group(t("API keys"), rows, t("A key is shown once, when it is created")) +
-    '<div class="w-sgroup"><div class="w-glabel"><span>' + t("Using a key") + '</span><span><a class="w-link" href="/api/docs" target="_blank" rel="noopener">' + t("Open API docs (/api/docs)") + "</a></span></div>" +
-    '<pre class="w-code">' + esc(example) + "</pre></div>" +
-    group(t("Add from your phone’s lock screen"), [
-      gi(ico("phone"), t("iPhone: Shortcut"), t("Asks for amount and name, then sends it to Wally with your key. Add it to the lock screen or the Action button."),
-        '<button type="button" class="w-btn ghost" data-act="ios" data-k="ios">' + t("Show steps") + "</button>"),
-      gi(ico("phone"), t("Android: HTTP Shortcuts"), t("A home screen or lock screen shortcut with the free HTTP Shortcuts app. Wally shows the request to paste."),
-        '<button type="button" class="w-btn ghost" data-act="android" data-k="android">' + t("Show request") + "</button>"),
-    ]));
+    gl(rows, t("Keys"), t("A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.")) +
+    (signin ? "" : '<p class="w-glf w-glf2">' + t("Sign-in is off, so anyone who can reach Wally can use the API. {link} to require a key.",
+      { link: '<a class="w-link" href="/settings/security" data-pane="security">' + t("Turn on sign-in") + "</a>" }) + "</p>") +
+    gl([gr({ lead: sico("phone"), k: t("iPhone: Shortcut"), sub: t("Asks for amount and name, then sends it to Wally."), chev: true, act: "ios", attrs: ' data-k="ios"' }),
+      gr({ lead: sico("phone"), k: t("Android: HTTP Shortcuts"), sub: t("A home or lock screen shortcut, with the free app."), chev: true, act: "android", attrs: ' data-k="android"' })], t("Add from your phone’s lock screen")) +
+    '<div class="w-glh w-glh2"><span>' + t("Using a key") + '</span><a href="/api/docs" target="_blank" rel="noopener">' + t("API docs") + "</a></div>" +
+    '<pre class="w-code">' + example + "</pre>");
+}
+
+/* A key's own page: what it can do, whose it is, when it was used; delete */
+function renderKey() {
+  if (keys === null) { paint(box, ""); return; }
+  const k = keys.find((x) => String(x.id) === sub);
+  if (!k) { openPane("keys"); return; }
+  const used = parseUtc(k.last_used), made = parseUtc(k.created_at);
+  paint(box, hero(keyPic(), esc(keyName(k)), '<code class="w-kpre">' + esc(k.prefix) + "…</code>") +
+    gl([gr({ k: t("Can"), v: can(k) }), gr({ k: t("Who"), v: esc(pname(k.person_id)) }), gr({ k: t("Created"), v: made ? dayLabel(made) : "" }), gr({ k: t("Last used"), v: used ? ago(used) : t("never") })]) +
+    gl([gr({ k: t("Delete key"), cls: "red", act: "delete", attrs: ' data-id="' + esc(k.id) + '" data-k="delete"' })]));
 }
 
 async function onClick(ev) {
@@ -87,43 +99,50 @@ async function onClick(ev) {
   if (b.dataset.act === "android") return steps("android");
 }
 
-async function create() {
-  const input = box.querySelector("#key-name");
-  const name = input.value.trim();
-  scope = box.querySelector("#key-scope").value;
-  if (!name) { toast(t("Say what the key is for first")); input.focus(); return; }
-  if (sealed()) return createSealed(name);
-  try {
-    show(await POST("/api-keys", { name, scope }));
-  } catch (e) { errorToast(e); }
-}
-
-/* Encrypted: the browser makes the key and locks the household key under it, so it needs the password */
-function createSealed(name) {
+/* A sheet: what it's for and what it can do. Encrypted, it also needs the password: the browser makes
+   the key and locks the household key under it. */
+function create() {
+  let scope = "write";
   openDialog({
-    title: t("Create {name}", { name: esc(name) }),
-    body: "<p>" + t("Wally is encrypted. While a call made with this key runs, the server opens the data it needs, then forgets it. What’s stored stays encrypted.") + "</p>" +
-      field(t("Household password"), passwordInput("key-pw", "current-password")),
-    ok: t("Create key"),
+    kind: "sheet",
+    title: t("New Key"),
+    body: '<div class="w-gl"><label class="w-gr"><input id="key-name" placeholder="' + esc(t("What is this key for?")) + '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off" autofocus></label>' +
+      '<div class="w-gr"><span class="k">' + t("Can") + "</span>" + uiSeg("key-scope", [["write", t("Read and write")], ["read", t("Read only")]], scope, t("What the key can do"), "sm") + "</div></div>" +
+      (sealed() ? '<div class="w-gl"><label class="w-gr"><input type="password" id="key-pw" placeholder="' + esc(t("Household password")) + '" aria-label="' + esc(t("Household password")) + '" autocomplete="current-password"></label></div>' +
+        '<p class="w-glf">' + t("Wally is encrypted. While a call made with this key runs, the server opens the data it needs, then forgets it.") + "</p>" : ""),
+    ok: t("Create"),
+    onOpen: (root) => {
+      gate(root, (r) => !!val(r, "key-name") && (!sealed() || !!(r.querySelector("#key-pw") || {}).value));
+      root.addEventListener("click", (ev) => {
+        const s2 = ev.target.closest("#key-scope [data-v]");
+        if (!s2) return;
+        scope = s2.dataset.v;
+        root.querySelectorAll("#key-scope [data-v]").forEach((x) => x.setAttribute("aria-pressed", String(x === s2)));
+      });
+    },
     onOk: async (root) => {
-      const pw = root.querySelector("#key-pw").value;
-      if (!pw) throw new Error(t("Enter your password first."));
-      const s = await import("../../vault/session.js");
-      s.bind(core);
-      const k = await s.makeApiKey(pw, name, scope);
-      setTimeout(() => show(k), 0);
+      const name = val(root, "key-name");
+      if (!name) throw new Error(t("Say what the key is for first"));
+      let k;
+      if (sealed()) {
+        const pw = root.querySelector("#key-pw").value;
+        if (!pw) throw new Error(t("Enter your password first."));
+        const s2 = await import("../../vault/session.js");
+        s2.bind(core);
+        k = await s2.makeApiKey(pw, name, scope);
+      } else k = await POST("/api-keys", { name, scope });
+      setTimeout(() => showKey(k, name), 0);
     },
   });
 }
 
-async function show(k) {
-  scope = "write";
-  if (box) box.querySelector("#key-name").value = "";
+async function showKey(k, name) {
   await load();
   openDialog({
-    title: t("Copy your new key"),
-    body: "<p>" + t("It is shown only this once. Put it where the tool that uses it can read it.") + "</p>" +
-      '<div class="w-keybox"><code id="key-raw">' + esc(k.key) + '</code><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>",
+    kind: "sheet",
+    title: t("“{name}” Key", { name: esc(name || k.name || "") }),
+    top: '<span class="w-big-ico">' + icon("key") + '</span><p class="w-mw340">' + t("It’s shown only this once. Put it where the tool that uses it can read it.") + "</p>",
+    body: '<div class="w-keybox2"><code id="key-raw">' + esc(k.key.slice(0, Math.ceil(k.key.length / 2))) + "<wbr>" + esc(k.key.slice(Math.ceil(k.key.length / 2))) + "</code></div>" + '<div class="w-gl"><button type="button" class="w-gr acc" data-copy>' + t("Copy key") + "</button></div>",
     ok: t("Done"),
     noCancel: true,
     onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied"))),
@@ -131,39 +150,43 @@ async function show(k) {
 }
 
 function remove(id) {
-  const k = keys.find((x) => x.id === id);
+  const k = keys.find((x) => String(x.id) === String(id));
   if (!k) return;
   openDialog({
-    title: t("Delete {name}?", { name: esc(k.name || t("Unnamed key")) }),
-    body: "<p>" + t("Anything using it stops working. This can’t be undone: a new key would be different.") + "</p>",
-    ok: t("Delete key"),
+    kind: "alert",
+    top: keyPic(true),
+    title: t("Delete “{name}”?", { name: esc(keyName(k)) }),
+    body: "<p>" + t("Anything using this key stops working. This can’t be undone.") + "</p>",
+    ok: phone() ? t("Delete Key") : t("Delete"),
     danger: true,
     onOk: async () => {
       await DEL("/api-keys/" + encodeURIComponent(id));
       await load();
-      toast(t("Deleted {name}. Anything using it stops working.", { name: k.name || t("Unnamed key") }));
+      toast(t("Deleted {name}. Anything using it stops working.", { name: keyName(k) }));
+      openPane("keys");
     },
   });
 }
 
+/* The steps to add from a phone's lock screen, as numbered rows, and the request to copy */
 function steps(kind) {
   const ios = kind === "ios";
   const req = request(ios ? [t("Amount"), t("Name")] : ["{amount}", "{name}"]);
   const list = ios
-    ? [t("Create a key above, and copy it."), t("In the Shortcuts app, make a new shortcut. Add “Ask for Input” for a number, with the prompt Amount, and another for text, with the prompt Name."),
-      t("Add “Get Contents of URL”. Set the method to POST, add the header X-API-Key with your key, and a JSON body with the fields below. Use the two answers for amount and name."),
+    ? [t("Create a key, and copy it."), t("In Shortcuts, make a new shortcut with two “Ask for Input” actions: a number, Amount, and text, Name."),
+      t("Add “Get Contents of URL”: method POST, header X-API-Key with your key, and the body below."),
       t("Add the shortcut to the lock screen as a widget, or to the Action button.")]
-    : [t("Create a key above, and copy it."), t("In HTTP Shortcuts, create a regular shortcut. Add two variables, amount and name, that ask for a value every time."),
-      t("Paste the request below: the method, the address, the two headers and the body. Replace “your key” with your key."),
+    : [t("Create a key, and copy it."), t("In HTTP Shortcuts, create a regular shortcut with two variables, amount and name, that ask every time."),
+      t("Paste the request below, and replace “your key” with your key."),
       t("Add the shortcut to the home screen, or to quick settings.")];
   openDialog({
-    title: ios ? t("Add from an iPhone") : t("Add from an Android phone"),
-    wide: true,
-    body: '<ol class="w-steps2">' + list.map((s) => "<li>" + s + "</li>").join("") + "</ol>" +
-      '<pre class="w-code" id="sc-req">' + esc(req) + "</pre>" +
-      '<button type="button" class="w-btn ghost w-scopy" data-copy>' + icon("copy") + t("Copy the request") + "</button>",
+    kind: "sheet",
+    title: ios ? t("iPhone Shortcut") : t("Android Shortcut"),
+    body: '<div class="w-gl w-steps3">' + list.map((s2, i) => '<div class="w-gr"><span class="w-stepn">' + num(i + 1) + '</span><span class="k">' + s2 + "</span></div>").join("") + "</div>" +
+      '<div class="w-glh">' + t("The request") + '</div><pre class="w-code" id="sc-req">' + esc(req) + "</pre>" +
+      '<div class="w-gl"><button type="button" class="w-gr acc" data-copy>' + t("Copy the request") + "</button></div>",
     ok: t("Done"),
     noCancel: true,
-    onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(req, t("Request copied"))),
+    onOpen: (root) => { root.classList.add("w-sh520", "w-shfull"); root.querySelector("[data-copy]").addEventListener("click", () => copyText(req, t("Request copied"))); },
   });
 }

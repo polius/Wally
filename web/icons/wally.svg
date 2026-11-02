@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="108.0 98.0 816 816" width="1024" height="1024">
+  <title>Wally</title>
+  <defs>
+    <linearGradient id="back" x1="175" y1="0" x2="838" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B57745"/><stop offset="1" stop-color="#9E6A3E"/>
+    </linearGradient>
+    <clipPath id="inside"><path d="M190,391 H762 A60,60 0 0 1 822,451 V782 A67,67 0 0 1 755,849 H257 A67,67 0 0 1 190,782 Z"/></clipPath>
+  </defs>
+
+  <!-- back of the wallet -->
+  <rect x="175" y="325" width="663" height="520" rx="52" fill="url(#back)" stroke="#3F342C" stroke-width="26"/>
+
+  <!-- notes -->
+  <polygon points="246.3,294.0 592.9,166.4 693.6,440.0 300.0,440.0" fill="#3F342C" stroke="#3F342C" stroke-width="76" stroke-linejoin="round"/>
+  <polygon points="246.3,294.0 592.9,166.4 693.6,440.0 300.0,440.0" fill="#81AF85" stroke="#81AF85" stroke-width="20" stroke-linejoin="round"/>
+  <polygon points="345.1,304.6 703.4,234.2 735.1,440.0 361.4,440.0" fill="#3F342C" stroke="#3F342C" stroke-width="76" stroke-linejoin="round"/>
+  <polygon points="345.1,304.6 703.4,234.2 735.1,440.0 361.4,440.0" fill="#81AF85" stroke="#81AF85" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M403,420 L403,361 L421,323 Q426,314 436,312 L612,283 Q628,280 638,289 L656,306 Q662,312 671,313 Q680,315 682,324 L700,420 Z" fill="#679B75"/>
+
+  <!-- front pocket -->
+  <path d="M177,378.5 H762 A73,73 0 0 1 835,451.5 V795 A67,67 0 0 1 768,862 H244 A67,67 0 0 1 177,795 Z" fill="#E1A365" stroke="#3F342C" stroke-width="26" stroke-linejoin="round"/>
+  <g clip-path="url(#inside)">
+    <path d="M150,810 H770 C800,810 816,800 822,770 V880 H150 Z" fill="#CA8A51"/>
+    <path d="M150,422 H770 Q792,422 792,444 V780 Q792,812 760,812 H150 Z" fill="#D99857"/>
+    <!-- strap shadow -->
+    <path d="M704.5,515.5 H848.5 Q870.5,515.5 870.5,537.5 V661.5 Q870.5,683.5 848.5,683.5 H704.5 A84,84 0 0 1 704.5,515.5 Z" transform="translate(-8 16)" fill="#C4874F" stroke="#C4874F" stroke-width="25" stroke-linejoin="round"/>
+  </g>
+
+  <!-- strap -->
+  <path d="M704.5,515.5 H848.5 Q870.5,515.5 870.5,537.5 V661.5 Q870.5,683.5 848.5,683.5 H704.5 A84,84 0 0 1 704.5,515.5 Z" fill="#D99857"/>
+  <clipPath id="strapc"><path d="M704.5,515.5 H848.5 Q870.5,515.5 870.5,537.5 V661.5 Q870.5,683.5 848.5,683.5 H704.5 A84,84 0 0 1 704.5,515.5 Z"/></clipPath>
+  <rect x="829" y="500" width="60" height="200" fill="#C98A52" clip-path="url(#strapc)"/>
+  <path d="M704.5,515.5 H848.5 Q870.5,515.5 870.5,537.5 V661.5 Q870.5,683.5 848.5,683.5 H704.5 A84,84 0 0 1 704.5,515.5 Z" fill="none" stroke="#3F342C" stroke-width="25" stroke-linejoin="round"/>
+
+  <!-- snap -->
+  <circle cx="705.5" cy="600.5" r="30.5" fill="#A36E42" stroke="#3F342C" stroke-width="20"/>
+</svg>

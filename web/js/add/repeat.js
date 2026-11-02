@@ -5,7 +5,7 @@ import { ruleDates, describe, endAfter, everyN } from "../sched.js";
 /* The quick choices, as [frequency, every] */
 export const FQ = { daily: ["daily", 1], weekly: ["weekly", 1], biweekly: ["weekly", 2], monthly: ["monthly", 1], yearly: ["yearly", 1] };
 export const FQ_LABELS = () => [
-  ["daily", t("Daily")], ["weekly", t("Weekly")], ["biweekly", t("Every 2 weeks")], ["monthly", t("Monthly")], ["yearly", t("Yearly")], ["custom", t("Custom")],
+  ["daily", t("Every day")], ["weekly", t("Every week")], ["biweekly", t("Every 2 weeks")], ["monthly", t("Every month")], ["yearly", t("Every year")], ["custom", t("Custom")],
 ];
 export const UNITS = () => [["daily", t("days")], ["weekly", t("weeks")], ["monthly", t("months")], ["yearly", t("years")]];
 
@@ -58,6 +58,25 @@ export function summaryHtml(r) {
 export function nextDates(r) {
   if (r.end.type === "until" && !r.end.until) return [];
   return ruleDates(r, addD(mmax(r.start, TODAY), 1), "2199-12-31", 3);
+}
+/* "Next: Dec 2, Jan 2, Feb 2" */
+export function nextText(r) {
+  const nx = nextDates(r);
+  if (!nx.length) return t("No more after this one");
+  // Within the coming year the year goes without saying
+  const soon = addD(TODAY, 330);
+  const list = new Intl.ListFormat(LANG, { type: "unit", style: "short" }).format(nx.map((d) => (d <= soon ? dlab(d) : withYear(d))));
+  return t("Next: {dates}", { dates: list });
+}
+/* Notes that matter for a rule: it started in the past, or falls on a day some months don't have */
+export function notesHtml(r) {
+  const out = [];
+  const past = r.start < TODAY ? ruleDates(r, addD(r.start, 1), TODAY).length : 0;
+  if (past) out.push(tn(past, "It started in the past, so {n} more up to today is added too.", "It started in the past, so {n} more up to today are added too."));
+  const d0 = +r.start.slice(8);
+  if (r.freq === "monthly" && d0 > 28) out.push(t("In shorter months it falls on the last day."));
+  else if (r.freq === "yearly" && r.start.slice(5) === "02-29") out.push(t("In other years it falls on 28 February."));
+  return out.map(esc).join(" ");
 }
 export function nextHtml(r) {
   const nx = nextDates(r);

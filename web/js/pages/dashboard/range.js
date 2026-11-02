@@ -1,17 +1,18 @@
-/* Summary's range: Month, Year or Custom, the period it is compared
-   with, the two-month Custom picker, the phone's range sheet, and links into Transactions that
-   keep the range. The last range is remembered on this browser. */
-import { t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, mmin, mmax, monthName, monthIn, monthYear, F, dlab, dows, wkOff, icon, num } from "../../core.js";
-import { openDialog, closeDialog } from "../../ui.js";
+/* Summary's range: a month, a year, all time or a custom range, the period it is compared with,
+   the Custom Range sheet, and links into Transactions that keep the range. ‹ › step a month (or a
+   year). The last range is remembered on this browser. */
+import { t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, mmin, mmax, monthName, monthIn, monthYear, F, dlab, dows, wkOff, icon, num, LANG } from "../../core.js";
+import { openDialog } from "../../ui.js";
 import { navigate } from "../../shell.js";
 
-export const MODES = ["month", "year", "custom"];
+export const MODES = ["month", "year", "custom", "all"];
 const KEY = "wally.dash.range";
 
 /* What Summary shows. Lives with the module, so it survives leaving and coming back. */
 export const view = {
   mode: "month",
   ym: ym(TODAY),        // the month shown in Month mode
+  y: +TODAY.slice(0, 4), // the year shown in Year mode
   custom: null,         // [from, to] in Custom mode
   hv: "pace",           // main chart for a year or a long range: pace | ivs | cats
   hoff: {},             // categories hidden from the legend
@@ -19,6 +20,7 @@ export const view = {
 
 export function loadRange() {
   view.ym = ym(TODAY);
+  view.y = +TODAY.slice(0, 4);
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
     // 3 months and 12 months were retired: they open as Month and Year
@@ -32,26 +34,29 @@ export function loadRange() {
 function saveRange() {
   try { localStorage.setItem(KEY, JSON.stringify({ mode: view.mode, custom: view.custom })); } catch (e) { /* fine */ }
 }
-/* Month mode always opens on the current month; the other modes are relative to today anyway */
+/* Month mode always opens on the current month, Year on this year; the other modes end today anyway */
 export function setMode(mode, custom) {
   view.mode = mode;
   if (mode === "month") view.ym = ym(TODAY);
+  if (mode === "year") view.y = +TODAY.slice(0, 4);
   view.custom = mode === "custom" ? custom : null;
   saveRange();
 }
 export function setMonth(y, m) { view.mode = "month"; view.ym = [y, m]; view.custom = null; saveRange(); }
+/* ‹ ›: a month back or forward in Month mode, a year in Year mode */
 export function stepMonth(k) {
-  const q = ymAdd(view.ym[0], view.ym[1], k);
-  if (k < 0 && !canStep(-1)) return false;
-  if (k > 0 && !canStep(1)) return false;
-  view.ym = q;
+  if (!canStep(k)) return false;
+  if (view.mode === "year") view.y += k;
+  else view.ym = ymAdd(view.ym[0], view.ym[1], k);
   return true;
 }
 export function canStep(k) {
+  if (view.mode === "year") { const y = view.y + k; return k < 0 ? y + "-12-31" >= START : y + "-01-01" <= TODAY; }
   if (view.mode !== "month") return false;
   const q = ymAdd(view.ym[0], view.ym[1], k), first = ds(q[0], q[1], 1);
-  return k < 0 ? first >= START : first <= TODAY;
+  return k < 0 ? ds(q[0], q[1], dim(q[0], q[1])) >= START : first <= TODAY;
 }
+export function steps() { return view.mode === "month" || view.mode === "year"; }
 
 /* "Aug – Oct 2026", or "Nov 2025 – Oct 2026" across a new year */
 function monthSpan(a, b) {
@@ -66,9 +71,11 @@ export function rangeOf() {
     return { mode: "month", start: ds(y, m, 1), end: mmin(full, TODAY), len: dim(y, m), daily: true, month: true, current: full >= TODAY,
       title: monthName(m), sub: String(y), noun: monthIn(m) };
   }
-  const now = ym(TODAY);
   let s, e = TODAY, title, sub, noun;
-  if (view.mode === "year") { s = now[0] + "-01-01"; title = String(now[0]); sub = t("so far"); noun = String(now[0]); }
+  if (view.mode === "year") {
+    const y = view.y;
+    s = y + "-01-01"; e = mmin(y + "-12-31", TODAY); title = String(y); sub = e === TODAY ? t("so far") : ""; noun = String(y);
+  } else if (view.mode === "all") { s = START; title = t("All time"); sub = ""; noun = t("all time"); }
   else {
     [s, e] = view.custom;
     title = t("{from} – {to}", { from: dlab(s), to: dlab(e) });
@@ -88,6 +95,7 @@ export function prevOf(r) {
     const end = r.current ? ds(p[0], p[1], Math.min(+TODAY.slice(8), pd)) : ds(p[0], p[1], pd);
     return { start, end, label: monthIn(p[1]), ok: start >= START };
   }
+  if (r.mode === "all") return { start: r.start, end: r.end, label: "", ok: false };
   if (r.mode === "year") {
     const py = +r.start.slice(0, 4) - 1, ps = py + "-01-01";
     let pe = py + r.end.slice(4);
@@ -103,7 +111,7 @@ export function rangeParams() {
   const r = rangeOf(), q = new URLSearchParams();
   q.set("mode", view.mode);
   if (view.mode === "month") q.set("ym", r.start.slice(0, 7));
-  if (view.mode === "custom") { q.set("from", r.start); q.set("to", r.end); }
+  if (view.mode === "custom" || view.mode === "all" || (view.mode === "year" && view.y !== +TODAY.slice(0, 4))) { q.set("mode", "custom"); q.set("from", r.start); q.set("to", r.end); }
   return q;
 }
 /* goTx({cat}) · goTx({cat, ym:[y,m]}) · goTx({q}) · goTx({id}) · goTx({day}) */
@@ -121,77 +129,65 @@ export function goTx(o) {
   navigate("/transactions?" + q.toString());
 }
 
-/* ---------- Custom: a two-month picker with presets ---------- */
-const rp = { view: null, a: null, b: null, hover: null };
+/* ---------- Custom Range: a sheet like Calendar's event dates ----------
+   Starts and Ends as rows; the calendar opens under the row being set. Picking the first day moves on
+   to the last one. Both sizes use the same sheet. */
+const rp = { a: null, b: null, edge: "a", view: null, pick: false };
+const DAYF = () => new Intl.DateTimeFormat(LANG, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
+const dayLabel = (s) => DAYF().format(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8)));
 
-function presets() {
-  const now = ym(TODAY), first = (q) => ds(q[0], q[1], 1), last = (q) => ds(q[0], q[1], dim(q[0], q[1]));
-  const lm = ymAdd(now[0], now[1], -1), ly = now[0] - 1;
-  const list = [
-    [t("This month"), first(now), TODAY],
-    [t("Last month"), first(lm), last(lm)],
-    [t("Last 3 months"), first(ymAdd(now[0], now[1], -2)), TODAY],
-    [t("Last 6 months"), first(ymAdd(now[0], now[1], -5)), TODAY],
-    [t("Year to date"), now[0] + "-01-01", TODAY],
-    [t("All of {year}", { year: ly }), ly + "-01-01", ly + "-12-31"],
-    [t("All time"), START, TODAY],
-  ];
-  // Only what has data, and never the same dates twice
-  const seen = new Set();
-  return list.filter(([, a, b]) => { const k = a + b; if (b < START || seen.has(k)) return false; seen.add(k); return true; })
-    .map(([l, a, b]) => [l, mmax(a, START), b]);
+/* The calendar's title opens the months of its year, as Calendar's month and year picker does */
+function pickHtml() {
+  const [y, m] = rp.view, sy = +START.slice(0, 4), ty = +TODAY.slice(0, 4);
+  let h = '<div class="d-cal"><div class="d-calh"><button type="button" class="d-calt on" data-rpick aria-expanded="true">' + esc(String(y)) + icon("right") + "</button><span>" +
+    '<button type="button" class="d-calnav" data-ry="-1" aria-label="' + esc(t("Previous year")) + '"' + (y > sy ? "" : " disabled") + ">" + icon("left") + "</button>" +
+    '<button type="button" class="d-calnav" data-ry="1" aria-label="' + esc(t("Next year")) + '"' + (y < ty ? "" : " disabled") + ">" + icon("right") + "</button></span></div>" +
+    '<div class="d-calm" role="group" aria-label="' + esc(String(y)) + '">';
+  for (let k = 1; k <= 12; k++) {
+    const off = ds(y, k, 1) > TODAY || ds(y, k, dim(y, k)) < START;
+    h += '<button type="button" data-rmo="' + k + '"' + (k === m ? ' class="on" aria-current="true"' : "") + (off ? " disabled" : "") + ' aria-label="' + esc(monthYear(y, k)) + '">' + esc(F.mon[k - 1]) + "</button>";
+  }
+  return h + "</div></div>";
 }
-
+function calHtml() {
+  if (rp.pick) return pickHtml();
+  const [y, m] = rp.view, D = dim(y, m), first = ds(y, m, 1);
+  const prevOk = ds(y, m, 1) > START, nx = ymAdd(y, m, 1), nextOk = ds(nx[0], nx[1], 1) <= TODAY;
+  let h = '<div class="d-cal"><div class="d-calh"><button type="button" class="d-calt" data-rpick aria-expanded="false" aria-label="' + esc(t("Choose a month")) + '">' + esc(monthYear(y, m)) + icon("right") + "</button><span>" +
+    '<button type="button" class="d-calnav" data-rv="-1" aria-label="' + esc(t("Earlier months")) + '"' + (prevOk ? "" : " disabled") + ">" + icon("left") + "</button>" +
+    '<button type="button" class="d-calnav" data-rv="1" aria-label="' + esc(t("Later months")) + '"' + (nextOk ? "" : " disabled") + ">" + icon("right") + "</button></span></div>" +
+    '<div class="d-calg" role="group" aria-label="' + esc(monthYear(y, m)) + '">' + dows(true).map((d) => '<span class="dw" aria-hidden="true">' + esc(d) + "</span>").join("");
+  for (let i = 0; i < wkOff(first); i++) h += "<span></span>";
+  for (let d = 1; d <= D; d++) {
+    const s = ds(y, m, d), off = s > TODAY || s < START, cls = [];
+    if (s === rp.a || s === rp.b) cls.push("on");
+    else if (rp.a && rp.b && s > rp.a && s < rp.b) cls.push("in");
+    if (s === TODAY) cls.push("td");
+    h += '<button type="button" data-d="' + s + '" class="' + cls.join(" ") + '"' + (off ? " disabled" : "") + ' aria-pressed="' + (s === rp.a || s === rp.b) + '" aria-label="' + esc(F.fullYear.format(Date.UTC(y, m - 1, d))) + '">' + num(d) + "</button>";
+  }
+  return h + "</div></div>";
+}
+function edgeRow(k) {
+  const v = k === "a" ? rp.a : rp.b, on = rp.edge === k;
+  return '<button type="button" class="w-gr d-edge" data-edge="' + k + '" aria-expanded="' + on + '"><span class="k">' + (k === "a" ? t("Starts") : t("Ends")) +
+    '</span><span class="v"><span class="d-tok' + (on ? " on" : "") + '">' + esc(v ? dayLabel(v) : "") + "</span></span></button>";
+}
 function drawRange(root, focusDay) {
-  const box = root.querySelector(".d-rng");
-  const ps = presets();
-  box.querySelector(".w-presets").innerHTML = "<span>" + t("Presets") + "</span>" + ps.map((p, i) =>
-    '<button type="button" data-pr="' + i + '" aria-pressed="' + (rp.a === p[1] && rp.b === p[2]) + '">' + esc(p[0]) + "</button>").join("");
-  let lo = rp.a, hi = rp.b || rp.hover;
-  if (lo && hi && hi < lo) { const x = lo; lo = hi; hi = x; }
-  let html = "";
-  [0, 1].forEach((k) => {
-    const [y, m] = ymAdd(rp.view[0], rp.view[1], k), D = dim(y, m), first = ds(y, m, 1);
-    html += '<div class="w-mon"><h6>' + esc(monthYear(y, m)) + '</h6><div class="w-mgrid" role="group" aria-label="' + esc(monthYear(y, m)) + '">' +
-      dows(true).map((d) => '<span class="dw" aria-hidden="true">' + esc(d) + "</span>").join("");
-    for (let i = 0; i < wkOff(first); i++) html += "<span></span>";
-    for (let d = 1; d <= D; d++) {
-      const s = ds(y, m, d), off = s > TODAY || s < START, cls = [];
-      if (lo && hi && s > lo && s < hi) cls.push("in");
-      if (s === lo) cls.push("s");
-      if (s === hi) cls.push("e");
-      if (lo && !hi && s === lo) cls.push("s", "e");
-      if (s === TODAY) cls.push("td");
-      const picked = s === rp.a || s === rp.b;
-      html += '<button type="button" data-d="' + s + '" class="' + cls.join(" ") + '"' + (off ? " disabled" : "") + ' aria-pressed="' + picked + '" aria-label="' + esc(F.fullYear.format(Date.UTC(y, m - 1, d))) + '"><span>' + num(d) + "</span></button>";
-    }
-    html += "</div></div>";
-  });
-  box.querySelector(".w-months").innerHTML = html;
-  box.querySelector(".d-rngsum").innerHTML = rp.a && rp.b
-    ? t("{from} to {to}, {days}", { from: "<b>" + esc(F.fullYear.format(Date.UTC(+rp.a.slice(0, 4), +rp.a.slice(5, 7) - 1, +rp.a.slice(8)))) + "</b>", to: "<b>" + esc(F.fullYear.format(Date.UTC(+rp.b.slice(0, 4), +rp.b.slice(5, 7) - 1, +rp.b.slice(8)))) + "</b>", days: tn(span(rp.a, rp.b), "{n} day", "{n} days") })
-    : rp.a ? t("Pick the last day") : t("Pick the first day");
+  root.querySelector(".d-rng").innerHTML = edgeRow("a") + (rp.edge === "a" ? calHtml() : "") + edgeRow("b") + (rp.edge === "b" ? calHtml() : "");
+  root.querySelector(".d-rngsum").textContent = rp.a && rp.b ? tn(span(rp.a, rp.b), "{n} day", "{n} days") : "";
   const ok = root.querySelector("[data-dlg-ok]");
   if (ok) ok.disabled = !(rp.a && rp.b);
-  box.querySelector("[data-rv='-1']").disabled = ds(rp.view[0], rp.view[1], 1) <= START;
-  const nx = ymAdd(rp.view[0], rp.view[1], 2);
-  box.querySelector("[data-rv='1']").disabled = ds(nx[0], nx[1], 1) > TODAY;
-  if (focusDay) { const b = box.querySelector('[data-d="' + focusDay + '"]'); if (b) b.focus(); }
+  if (focusDay) { const b = root.querySelector('[data-d="' + focusDay + '"]') || root.querySelector('[data-edge="' + rp.edge + '"]'); if (b) b.focus(); }
 }
 
 export function openRange(r, onApply) {
-  rp.a = r.start; rp.b = r.end; rp.hover = null;
-  const e = ym(rp.b);
-  rp.view = ymAdd(e[0], e[1], -1);
-  if (ds(rp.view[0], rp.view[1], 1) < START) rp.view = ym(START);
+  rp.a = r.start; rp.b = r.end; rp.edge = "a"; rp.pick = false;
+  rp.view = ym(rp.a);
   openDialog({
-    title: t("Choose a date range"),
-    wide: true,
-    ok: t("Apply"),
-    body: '<div class="d-rng"><div class="w-presets"></div><div class="w-picker"><div class="w-mnav">' +
-      '<button type="button" class="w-step d-rngstep" data-rv="-1" aria-label="' + esc(t("Earlier months")) + '">' + icon("left") + "</button>" +
-      '<button type="button" class="w-step d-rngstep" data-rv="1" aria-label="' + esc(t("Later months")) + '">' + icon("right") + "</button></div>" +
-      '<div class="w-months"></div><p class="d-rngsum" aria-live="polite"></p></div></div>',
+    kind: "sheet",
+    title: t("Custom Range"),
+    ok: t("Done"),
+    body: '<div class="w-gl d-rng"></div><p class="w-glf d-rngsum" aria-live="polite"></p>',
     onOpen(root) {
       root.classList.add("d-rngdlg");
       drawRange(root);
@@ -199,28 +195,23 @@ export function openRange(r, onApply) {
         const day = ev.target.closest("[data-d]");
         if (day && !day.disabled) {
           const s = day.dataset.d;
-          if (!rp.a || rp.b) { rp.a = s; rp.b = null; }
+          // The first day moves on to the last one, on the same month: it is usually near
+          if (rp.edge === "a") { rp.a = s; if (rp.b && rp.b < s) rp.b = s; rp.edge = "b"; }
           else if (s < rp.a) { rp.b = rp.a; rp.a = s; }
           else rp.b = s;
-          rp.hover = null;
-          drawRange(root, s);
+          drawRange(root, rp.edge === "b" ? null : s);
+          const again = root.querySelector('[data-d="' + s + '"]') || root.querySelector('[data-edge="' + rp.edge + '"]');
+          if (again) again.focus();
           return;
         }
-        const pr = ev.target.closest("[data-pr]");
-        if (pr) { const p = presets()[+pr.dataset.pr]; rp.a = p[1]; rp.b = p[2]; const q = ym(p[2]); rp.view = ymAdd(q[0], q[1], -1); drawRange(root); pr.ownerDocument.querySelector('[data-pr="' + pr.dataset.pr + '"]').focus(); return; }
+        const pk = ev.target.closest("[data-rpick]"), yr = ev.target.closest("[data-ry]"), mo = ev.target.closest("[data-rmo]");
+        if (pk) { rp.pick = !rp.pick; drawRange(root); root.querySelector("[data-rpick]").focus(); return; }
+        if (yr && !yr.disabled) { rp.view = [rp.view[0] + +yr.dataset.ry, rp.view[1]]; drawRange(root); const again = root.querySelector('[data-ry="' + yr.dataset.ry + '"]'); (again && !again.disabled ? again : root.querySelector("[data-rpick]")).focus(); return; }
+        if (mo && !mo.disabled) { rp.view = [rp.view[0], +mo.dataset.rmo]; rp.pick = false; drawRange(root); root.querySelector("[data-rpick]").focus(); return; }
+        const e = ev.target.closest("[data-edge]");
+        if (e) { rp.pick = false; rp.edge = e.dataset.edge; rp.view = ym(rp.edge === "a" ? rp.a : rp.b); drawRange(root); root.querySelector('[data-edge="' + rp.edge + '"]').focus(); return; }
         const st = ev.target.closest("[data-rv]");
         if (st && !st.disabled) { rp.view = ymAdd(rp.view[0], rp.view[1], +st.dataset.rv); drawRange(root); const again = root.querySelector('[data-rv="' + st.dataset.rv + '"]'); if (again && !again.disabled) again.focus(); }
-      });
-      root.addEventListener("mouseover", (ev) => {
-        const b = ev.target.closest("[data-d]");
-        if (!b || b.disabled || !rp.a || rp.b || rp.hover === b.dataset.d) return;
-        rp.hover = b.dataset.d;
-        root.querySelectorAll(".w-mgrid [data-d]").forEach((x) => {
-          const s = x.dataset.d, lo = rp.a < rp.hover ? rp.a : rp.hover, hi = rp.a < rp.hover ? rp.hover : rp.a;
-          x.classList.toggle("in", s > lo && s < hi);
-          x.classList.toggle("s", s === lo);
-          x.classList.toggle("e", s === hi);
-        });
       });
     },
     onOk() {
@@ -230,48 +221,10 @@ export function openRange(r, onApply) {
     },
   });
 }
-/* A whole calendar month (or this month so far) is shown as Month, anything else as Custom */
+/* A whole calendar month (or this month so far) is shown as Month, a whole year as Year, anything else as Custom */
 function applyDates(a, b) {
   const [y, m] = ym(b), monthEnd = ds(y, m, dim(y, m));
   if (a.slice(8) === "01" && a.slice(0, 7) === b.slice(0, 7) && (b === monthEnd || b === TODAY)) setMonth(+a.slice(0, 4), +a.slice(5, 7));
+  else if (a.slice(5) === "01-01" && a.slice(0, 4) === b.slice(0, 4) && (b.slice(5) === "12-31" || b === TODAY)) { view.mode = "year"; view.y = +a.slice(0, 4); view.custom = null; saveRange(); }
   else setMode("custom", [a, b]);
-}
-
-/* ---------- phones: the range as a sheet ---------- */
-export function openRangeSheet(r, onApply) {
-  const now = ym(TODAY), lm = ymAdd(now[0], now[1], -1);
-  const items = [
-    ["month", t("This month")],
-    ["last", t("Last month")],
-    ["year", t("Year to date")],
-  ];
-  const on = (k) => (k === "month" ? view.mode === "month" && view.ym[0] === now[0] && view.ym[1] === now[1]
-    : k === "last" ? view.mode === "month" && view.ym[0] === lm[0] && view.ym[1] === lm[1] : view.mode === k);
-  openDialog({
-    title: t("Range"),
-    ok: t("Apply"),
-    body: '<div class="w-cells d-sheetlist" role="group" aria-label="' + esc(t("Range")) + '">' + items.map(([k, l]) =>
-      '<button type="button" class="w-cell" data-pick="' + k + '" aria-pressed="' + on(k) + '"><span>' + l + "</span>" + (on(k) ? '<b class="ck" aria-hidden="true">✓</b>' : "") + "</button>").join("") + "</div>" +
-      '<div class="w-plabel">' + t("Custom") + '</div><div class="w-cells">' +
-      '<label class="w-cell"><span>' + t("From") + '</span><input type="date" class="d-date" id="d-rfrom" min="' + START + '" max="' + TODAY + '" value="' + r.start + '"></label>' +
-      '<label class="w-cell"><span>' + t("To") + '</span><input type="date" class="d-date" id="d-rto" min="' + START + '" max="' + TODAY + '" value="' + r.end + '"></label></div>',
-    onOpen(root) {
-      root.classList.add("d-sheet");
-      root.addEventListener("click", (ev) => {
-        const b = ev.target.closest("[data-pick]");
-        if (!b) return;
-        const k = b.dataset.pick;
-        if (k === "last") setMonth(lm[0], lm[1]); else setMode(k);
-        closeDialog();
-        onApply();
-      });
-    },
-    onOk(root) {
-      const a = root.querySelector("#d-rfrom").value, b = root.querySelector("#d-rto").value;
-      if (!a || !b) throw new Error(t("Pick both dates."));
-      if (a > b) throw new Error(t("The first day comes after the last one."));
-      applyDates(mmax(a, START), mmin(b, TODAY));
-      onApply();
-    },
-  });
 }

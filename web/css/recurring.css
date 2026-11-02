@@ -1,86 +1,171 @@
-/* Recurring: one total, Bills or Income, what Wally noticed as one banner, the five-week calendar
-   behind a button, the rule list in time order and its side panel.
+/* Recurring: one total, Bills | Income and List | Calendar in the toolbar, the rules in time order
+   (or the five-week calendar in their place) and one side panel.
    1280 px and wider: the panel stays open beside the list. Narrower: it slides over the list.
-   Phones: it is a full-screen sheet. */
+   Phones: the controls get their own row, and a rule opens as a full-screen page. */
 [data-page="recurring"] .w-rrow{text-align:start}
 [data-page="recurring"] .w-rrow .amt{text-align:end}
 .rec-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-/* The header: the title, then the calendar, the person menu and Add */
+
+/* The toolbar: Bills | Income, List | Calendar, the person menu and Add */
 .rec-head{flex-wrap:nowrap}
-.w-btn.rec-hb{height:34px;border-radius:999px;padding:0 13px;font-size:var(--fs-sub);background:var(--w-fill);color:var(--w-ink)}
-.w-btn.rec-hb svg.i{width:16px;height:16px}
-#rec-calb{width:34px;padding:0}
-#rec-calb.on{background:var(--w-accent-soft);color:var(--w-accent-ink)}
-.rec-tabs{justify-self:start}
-.rec-tabs button{min-width:96px}
+.rec-ctl{display:flex;align-items:center;gap:10px}
+.rec-ctl[hidden]{display:none}
+.rec-ctl-p{display:none}
+.rec-tabs button{min-width:56px}
+.rec-views button{display:grid;place-items:center;padding:5px 10px}
+.rec-views svg.i{width:16px;height:16px}
+
 /* One total, and what it means */
 .rec-sum{display:grid;gap:2px}
 .rec-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
 .rec-big{font-size:var(--fs-hero);font-weight:700;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums}
 .rec-big.pos{color:var(--w-ink)}
 .rec-line{font-size:var(--fs-sub);color:var(--w-ink2)}
-/* The day picked in the calendar */
-/* The right column: the picked day on top, what Wally noticed filling the rest */
-.rec-side{display:flex;flex-direction:column;gap:16px;min-width:0}
-.rec-side > .w-panel:last-child{flex:1}
-.rec-day .w-ph{align-items:center}
-.rec-day .w-rrow.rec-drow{grid-template-columns:32px minmax(0,1fr) auto}
 
 #rec-page{display:grid;gap:16px}
 [data-page="recurring"]{gap:16px}
 .rec-empty{padding:36px 16px}
 
 /* The list */
-.rec-list{padding:4px 14px 12px}
-.rec-list .w-rrow{grid-template-columns:32px minmax(0,1fr) auto;min-height:54px}
+.rec-list{padding:6px 18px 12px}
+.rec-list .w-rrow,.rec-day .w-rrow{grid-template-columns:40px minmax(0,1fr) auto;gap:14px;min-height:58px;padding:9px 10px;margin-inline:-10px;width:calc(100% + 20px);border-radius:10px}
+[data-page="recurring"] .w-rrow .w-ico{border-radius:10px}
+[data-page="recurring"] .w-rrow .w-ico svg.i{width:18px;height:18px}
+[data-page="recurring"] .w-rrow h6{font-size:16px;font-weight:500}
+[data-page="recurring"] .w-rrow p{font-size:var(--fs-foot);color:var(--w-ink2)}
+[data-page="recurring"] .w-rrow .amt{font-size:16px;font-weight:400}
+[data-page="recurring"] .w-rrow .amt small{font-size:12px;color:var(--w-ink2)}
 .rec-list .w-rrow .amt small.up-bad{color:var(--w-bad)}
 .rec-list .w-rrow .amt small.dn-good{color:var(--w-good)}
-.rec-rn p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rec-rn p{display:block;white-space:normal;overflow-wrap:anywhere}
+/* End on a date: a narrow sheet */
+@media (min-width:768px){.w-dialog.rec-endsheet{max-width:420px}}
 .rec-rn{min-width:0}
 .rec-rn h6{min-width:0}
-.rec-who{display:inline-flex;align-items:center;gap:5px}
-.rec-meta{display:inline-flex;align-items:center;gap:4px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rec-endh{width:100%;color:var(--w-ink2);cursor:pointer;text-align:start}
 .rec-endh span{display:inline-flex;align-items:center;gap:6px}
 .rec-endh svg.i{width:14px;height:14px;transition:transform 180ms var(--ease)}
 .rec-endh[aria-expanded="true"] svg.i{transform:rotate(180deg)}
 .rec-endh:hover{color:var(--w-ink)}
 
-/* The panel */
-.rec-insp{outline:0}
+/* The calendar, in the list's place */
+.rec-calp{padding:18px 20px 20px}
+.rec-calh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.rec-calh h4{font-size:var(--fs-body);font-weight:600;letter-spacing:-.01em}
+.rec-calh p{font-size:var(--fs-foot);color:var(--w-ink2)}
+.rec-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.rec-legend .rec-lg-today{border-radius:50%;background:var(--w-accent)}
+.rec-legend .rec-lg-in{background:var(--w-good)}
+.rec-cal{gap:6px}
+.rec-cal .dow{font-size:12px;padding-bottom:2px}
+.rec-cal .w-rday{min-height:84px;border-radius:10px;background:var(--w-panel2);border-color:transparent!important;padding:6px 8px!important;gap:3px;font-size:12px}
+.rec-cal .w-rday .d{font-size:12px;color:var(--w-ink2)}
+.rec-cal .w-rday.t{box-shadow:none;background:var(--w-panel2)}
+.rec-cal .w-rday.t .d{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--w-accent);color:var(--w-on-accent);font-weight:600}
+.rec-cal .w-rday.in{background:var(--w-good-soft)}
+.rec-cal .w-rday.sel{background:var(--w-panel2);box-shadow:0 0 0 2px var(--w-accent);border-color:transparent!important}
+.rec-cal .w-rday.sel .d{color:var(--w-ink2);font-weight:400}
+.rec-cal .w-rday.t.sel .d{color:var(--w-on-accent);font-weight:600}
+.rec-cal .w-rday.past{opacity:.55}
+.rec-cal .w-rday .ics .w-ico{width:20px!important;height:20px!important;border-radius:6px}
+.rec-cal .w-rday .ics .w-ico svg.i{width:11px;height:11px}
+.rec-cal .w-rday .v{font-size:12.5px;display:flex;gap:4px;flex-wrap:wrap}
+.rec-cal .w-rday .v b{font-weight:600;color:var(--w-ink)}
+.rec-cal .w-rday .v b.pos{color:var(--w-good)}
+.rec-cal .w-rday:hover:not(.past):not(.sel){border-color:transparent!important;box-shadow:0 0 0 1px var(--w-accent-line)}
+
+/* The picked day */
+.rec-day{padding:20px;display:grid;align-content:start}
+.rec-dayh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rec-dayh h4,.rec-dayh span{font-size:var(--fs-foot);color:var(--w-ink2);font-weight:400}
+.rec-daysum{display:grid;margin:2px 0 8px}
+.rec-daysum b{font-size:34px;font-weight:650;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums}
+.rec-daysum b.pos{color:var(--w-good)}
+.rec-daysum span{font-size:14px;color:var(--w-ink2)}
+.rec-dayrows{border-top:1px solid var(--w-line2);padding-top:4px}
+.rec-dayfoot{font-size:var(--fs-foot);color:var(--w-ink2);margin-top:8px}
+.rec-dayhint{padding:20px 8px}
+
+/* The panel: Edit at the top right, the facts as rows, the actions as rows */
+.rec-insp{outline:0;padding:20px;gap:0}
 .w .rec-insp:focus-visible{outline:0}
-.rec-ih{display:flex;align-items:center;gap:8px}
-.rec-ih .w-badge{margin-inline-start:auto}
-.rec-close{display:none;margin-inline-start:auto}
-.rec-ih .w-badge + .rec-close{margin-inline-start:0}
-.rec-iamt{display:grid;gap:4px}
+.rec-back{display:inline-flex;align-items:center;gap:2px;margin:-4px 0 10px -4px;font-size:var(--fs-foot)}
+.rec-back svg.i{width:16px;height:16px}
+.rec-ih{display:flex;align-items:center;gap:8px;min-height:24px}
+.rec-eye2{font-size:var(--fs-foot);color:var(--w-ink2)}
+.rec-edit{margin-inline-start:auto;font-size:var(--fs-sub)}
+.rec-close{display:none}
+.rec-iamt{display:grid;margin:6px 0 8px}
+.rec-amt{font-size:34px;font-weight:650;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums}
+.rec-amt.pos{color:var(--w-good)}
 .rec-about{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
 .rec-iname{font-size:var(--fs-body);font-weight:600}
-.rec-idesc,.rec-story{font-size:var(--fs-foot);color:var(--w-ink2)}
-.rec-story b{color:var(--w-ink);font-weight:600}
-.rec-sec{display:grid;gap:8px}
-.rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
-.rec-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.rec-acts .w-btn{width:100%}
-.rec-miss{display:grid;gap:8px;padding:12px 14px;font-size:var(--fs-foot);color:var(--w-ink2);background:var(--w-panel2)}
+.rec-idesc{font-size:14px;color:var(--w-ink2)}
+.rec-kvs{display:grid}
+.rec-kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--w-line2);font-size:16px;min-height:50px}
+.rec-kv > span{color:var(--w-ink2);flex:none}
+.rec-kv > b{font-weight:500;text-align:end;min-width:0}
+.rec-kv > b.ic{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.rec-kv > b.dim{color:var(--w-ink2);font-weight:400}
+.rec-kv > b.rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
+.rec-kv .w-ico{width:24px!important;height:24px!important;border-radius:6px}
+.rec-kv .w-ico svg.i{width:13px;height:13px}
+.rec-sec{display:grid;gap:6px;margin-top:14px}
+.rec-hl{font-size:14px;color:var(--w-ink2)}
+.rec-hist{display:grid;gap:4px;direction:ltr}
+.rec-hbars{display:flex;align-items:flex-end;gap:4px;height:44px}
+.rec-hbars i{flex:1;border-radius:4px 4px 2px 2px;background:var(--w-fill2)}
+.rec-hbars i.on{background:var(--w-accent)}
+.rec-hax{display:flex;gap:4px}
+.rec-hax span{flex:1;text-align:center;font-size:11px;color:var(--w-ink3);white-space:nowrap}
+.rec-hax span.on{color:var(--w-ink);font-weight:600}
+.rec-acts{margin-top:16px}
+.rec-miss{display:grid;gap:8px;padding:12px 14px;font-size:var(--fs-foot);color:var(--w-ink2);background:var(--w-panel2);margin-bottom:8px}
 .rec-miss b{color:var(--w-ink);font-weight:600}
-.rec-fld{display:grid;gap:6px;font-size:var(--fs-foot);color:var(--w-ink3)}
 .rec-scrim{position:fixed;inset:0;z-index:49;background:var(--w-scrim)}
 .rec-scrim[hidden]{display:none}
 
-/* Phone sheet pieces */
+/* End on a date: the date as a quiet pill over the native picker */
+.rec-endrow{cursor:default}
+.w-dialog .w-gl > label.w-gr.rec-endrow:focus-within{box-shadow:none}
+.rec-datep{position:relative;display:inline-flex;align-items:center;background:var(--w-fill);border-radius:8px;padding:5px 10px;font-size:var(--fs-sub);color:var(--w-ink);white-space:nowrap}
+.rec-datep input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;outline:none!important}
+.rec-datep input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:auto;height:auto;opacity:0;cursor:pointer}
+.rec-datep:has(input:focus-visible){box-shadow:0 0 0 2px var(--w-accent-line)}
+
+/* Delete: three answers stacked, keeping what it added first */
+.w-alert.rec-del3{grid-template-columns:minmax(0,1fr);max-width:320px}
+.w-alert.rec-del3 > .w-dlgx,.w-alert.rec-del3 .w-alg > .w-dlgok{grid-column:1 / -1;margin-top:0}
+.w-alert.rec-del3 .w-alg > .w-dlgok:not(.rec-delall){order:2;margin-top:10px}
+.w-alert.rec-del3 .w-alg > .rec-delall{order:3;background:var(--w-fill);color:var(--w-bad)}
+.w-alert.rec-del3 > .w-dlgx{order:4}
+@media (max-width:767px){
+  /* On a phone: two red rows in the card, Cancel apart */
+  .w-alert.rec-del3{max-width:none}
+  .w-alert.rec-del3 .w-alg > .w-dlgok:not(.rec-delall){margin-top:12px}
+  .w-alert.rec-del3 .w-alg > .w-dlgok{border-top:1px solid var(--w-line2)}
+  .w-alert.rec-del3 .w-alg > .w-dlgok{font-size:19px;white-space:normal;line-height:1.25;padding:0 16px;height:auto;min-height:56px}
+  .w-alert.rec-del3 .w-alg > .rec-delall{order:3;margin:0;background:none;border-radius:0;border-top:1px solid var(--w-line2);font-weight:400}
+}
+
+/* The phone page */
 .rec-mh{position:sticky;top:0;z-index:1;background:var(--w-canvas);margin:0 -16px;padding:4px 16px 8px}
-.rec-mh .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px}
-.rec-mh .w-plink svg.i{width:18px;height:18px}
-.rec-mhero{display:grid;justify-items:center;gap:4px;text-align:center;padding:4px 0 6px}
-.rec-mhero .w-ico{border-radius:var(--r-card);margin-bottom:4px}
-.rec-mhero b{font-size:var(--fs-body);font-weight:600}
-.rec-mamt{font-size:var(--fs-large);font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.rec-mh .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px;font-size:var(--fs-body);font-weight:400}
+.rec-mh .w-plink svg.i{width:22px;height:22px;margin-inline-start:-6px}
+.rec-mhero{display:grid;justify-items:center;gap:2px;text-align:center;padding:2px 0 8px}
+.rec-mhero .w-ico{border-radius:18px;margin-bottom:8px}
+.rec-mhero .w-ico svg.i{width:32px;height:32px}
+.rec-mhero b{font-size:22px;font-weight:650;letter-spacing:-.02em}
+.rec-mamt{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.2}
+.rec-mamt.pos{color:var(--w-good)}
 .rec-mamt small{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
-.rec-pc{font-size:var(--fs-foot);padding:12px 14px}
-.rec-pc b{font-weight:600}
-.rec-mact .w-cell{width:100%;justify-content:center;color:var(--w-accent-ink);font-weight:500;min-height:46px}
-.rec-mact .w-cell.danger{color:var(--w-bad)}
+.rec-msub{font-size:14px;color:var(--w-ink2)}
+.rec-pci{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--w-bad-soft);color:var(--w-bad)}
+.rec-pci.down{background:var(--w-good-soft);color:var(--w-good)}
+.rec-pci svg.i{width:16px;height:16px}
+.rec-insp .w-glh{margin-top:18px}
+.rec-insp .w-gl + .w-gl{margin-top:18px}
+.rec-insp .w-gr .v .amt{color:var(--w-ink2)}
 
 /* ---------- under 1280 px: the panel slides over the list ---------- */
 @media (max-width:1279px){
@@ -88,33 +173,49 @@
   .rec-insp{display:none}
   .rec-insp.open{display:grid;align-content:start;position:fixed;top:0;bottom:0;inset-inline-end:0;width:min(380px,100vw);z-index:50;border-radius:0;border-width:0;border-inline-start:1px solid var(--w-line);overflow-y:auto;overscroll-behavior:contain;box-shadow:var(--w-shadow);animation:rec-in 260ms var(--ease)}
   .rec-close{display:grid}
+  .rec-edit{margin-inline-start:auto}
 }
 @keyframes rec-in{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
 [dir="rtl"] .rec-insp.open{animation-name:rec-in-rtl}
 @keyframes rec-in-rtl{from{transform:translateX(-24px);opacity:.4}to{transform:none;opacity:1}}
 
-/* ---------- under 1024 px: one column ---------- */
-@media (max-width:1023px){
-  .rec-top{grid-template-columns:minmax(0,1fr)}
-}
-
 /* ---------- phones ---------- */
 @media (max-width:767px){
   .rec-lock body{overflow:hidden}
-  .rec-body{order:1}
-  .rec-top{order:2}
-  .rec-tabs{display:flex;width:100%}
-  .rec-tabs button{flex:1;min-height:36px}
-  .w-btn.rec-hb{width:40px;height:40px;padding:0;justify-content:center}
-  .rec-cal{gap:3px}
-  .rec-cal .w-rday{min-height:54px;padding:4px 4px!important;gap:2px;border-radius:var(--r-ctl)}
-  .rec-cal .w-rday .ics .w-ico{width:14px!important;height:14px!important}
-  .rec-cal .w-rday .ics .w-ico svg.i{width:9px;height:9px}
-  .rec-cal .w-rday .v{font-size:var(--fs-cap)}
-  .rec-list{padding:4px 12px 10px}
-  .rec-list .w-rrow{min-height:58px;gap:10px;padding:9px 6px}
-  .rec-list .w-rrow h6{font-size:var(--fs-body);font-weight:400}
-  .rec-list .w-rrow .amt{font-size:var(--fs-body);font-weight:400}
-  .rec-insp.open{width:100%;inset:0;border:0;background:var(--w-canvas);box-shadow:none;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px));gap:12px;animation-name:w-up}
+  .rec-ctl-h{display:none}
+  .rec-ctl-p{display:flex;margin:-4px 0 2px}
+  .rec-ctl-p .rec-tabs{flex:1;display:flex}
+  .rec-ctl-p .rec-tabs button{flex:1;min-height:34px;font-size:var(--fs-sub)}
+  .rec-ctl-p .rec-views button{min-height:34px;padding:0 12px}
+  .rec-calp{padding:14px 12px 12px}
+  .rec-calh{margin-bottom:10px;padding:0 4px}
+  .rec-cal{gap:4px}
+  .rec-cal .dow{font-size:11px}
+  .rec-cal .w-rday{min-height:66px;padding:4px!important;gap:2px;border-radius:8px}
+  .rec-cal .w-rday .d{font-size:11px}
+  .rec-cal .w-rday.t .d{width:20px;height:20px}
+  .rec-cal .w-rday .ics .w-ico{width:20px!important;height:20px!important;border-radius:6px}
+  .rec-cal .w-rday .ics .w-ico svg.i{width:10px;height:10px}
+  .rec-cal .w-rday .v{font-size:10px;letter-spacing:-.02em;white-space:nowrap}
+  /* The picked day under the calendar: a heading and its bills */
+  .rec-day{background:none;box-shadow:none;padding:6px 0 0}
+  .rec-dayh{padding:0 4px 8px}
+  .rec-dayh h4{font-size:var(--fs-title);font-weight:650;letter-spacing:-.02em;color:var(--w-ink)}
+  .rec-dayh span{font-size:var(--fs-foot)}
+  .rec-daysum,.rec-dayfoot{display:none}
+  .rec-dayrows{border:0;padding:4px 16px;background:var(--w-panel);border-radius:var(--r-card)}
+  .rec-list{padding:4px 16px 10px}
+  .rec-list .w-rrow{min-height:62px;padding:9px 6px;margin-inline:-6px;width:calc(100% + 12px)}
+  [data-page="recurring"] .w-rrow h6{font-size:var(--fs-body);font-weight:400}
+  [data-page="recurring"] .w-rrow .amt{font-size:var(--fs-body);font-weight:400}
+  /* A pushed page: the tab bar stays, as in iOS */
+  .rec-insp.open{width:100%;inset:0;border:0;background:var(--w-canvas);box-shadow:none;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(var(--tabbar) + 40px + env(safe-area-inset-bottom,0px));gap:0;animation-name:w-up;z-index:39}
+  .rec-scrim{display:none!important}
   .rec-insp .w-panel{border-radius:var(--r-card)}
+  .rec-insp .w-gl{background:var(--w-panel)}
+  .rec-insp .w-gr{font-size:var(--fs-body);min-height:50px}
+  .rec-insp .w-glh{margin-top:20px}
+  .rec-insp .rec-pcg{margin-top:12px}
 }
+/* Recurring has no ‹ › next to its title, so the phone person button keeps its chevron */
+@media (max-width:767px){#main[data-page="recurring"] .w-pswitch-b > svg.i{display:inline-block;width:16px;height:16px}}
