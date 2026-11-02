@@ -618,22 +618,14 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-sicode{text-align:center;letter-spacing:.2em;font-variant-numeric:tabular-nums}
 .w-qr{display:block;width:132px;height:132px;margin:2px auto;background:#fff;border-radius:var(--r-ctl);padding:8px;color:#111}
 .w-codes{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font:var(--fs-foot)/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);background:var(--w-panel2);border:1px solid var(--w-line);border-radius:var(--r-card);padding:12px 16px}
-.w-onb{width:640px;background:var(--w-panel);border:1px solid var(--w-line);border-radius:var(--r-sheet);box-shadow:var(--w-shadow);overflow:hidden}
-.w-onbh{display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid var(--w-line2);background:var(--w-panel2)}
-.w-steps{display:flex;gap:18px;margin:0;padding:0;list-style:none;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:500}
-.w-steps li{display:flex;align-items:center;gap:7px}
-.w-steps span{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:var(--fs-cap);box-shadow:inset 0 0 0 1.5px var(--w-line)}
-.w-steps li.on{color:var(--w-ink)}
-.w-steps li.on span{background:var(--w-accent);color:var(--w-on-accent);box-shadow:none}
-.w-steps li.done span{background:var(--w-accent-soft);color:var(--w-accent-ink);box-shadow:none}
-.w-onbb{padding:26px 28px 8px;display:grid;gap:8px;min-height:300px;align-content:start}
-.w-onbb h3{font-size:var(--fs-large);font-weight:600;letter-spacing:-.03em}
-.w-onbp{font-size:var(--fs-sub);color:var(--w-ink2);margin-bottom:10px}
+.w-onb{width:520px;background:var(--w-panel);border:1px solid var(--w-line);border-radius:var(--r-sheet);box-shadow:var(--w-shadow);overflow:hidden}
+.w-onbb{display:grid;gap:8px;align-content:start}
+.w-onbp{font-size:var(--fs-sub);color:var(--w-ink2)}
 .w-onbf{display:grid;gap:12px}
 .w-onbf label{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:center;font-size:var(--fs-foot)}
 .w-onbf label > span{color:var(--w-ink3)}
 .w-onbf .w-mini{width:auto}
-.w-onbfoot{display:flex;justify-content:space-between;padding:14px 22px;border-top:1px solid var(--w-line2)}
+.w-onbfoot{display:grid;gap:4px}
 .w-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .w-choice{display:grid!important;gap:6px;align-content:start;text-align:left;padding:14px!important;border-radius:var(--r-card);border:1px solid var(--w-line)!important;min-height:150px}
 .w-choice b{font-size:var(--fs-sub);font-weight:600}

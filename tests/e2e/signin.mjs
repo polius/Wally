@@ -162,10 +162,11 @@ try {
     const page = alex;
     await page.waitForSelector("#gate .w-prof");
     ok((await gateText(page)).includes("Who is signing in?"), "signin: who is signing in");
-    ok((await gateText(page)).includes("Everyone uses the household password"), "signin: says everyone uses the household password");
+    ok(!(await gateText(page)).includes("Wally remembers"), "signin: just the faces, no notes");
     await shot(page, "signin-who");
     await page.click('[data-prof="1"]');
-    ok((await gateText(page)).includes("Hi, Alex") && (await gateText(page)).includes("Enter the household password"), "signin: the household password, for the person picked");
+    await page.waitForSelector("#si-in");
+    ok(await page.locator("#gate-h").innerText() === "Alex" && await page.getAttribute("#si-in", "placeholder") === "Household password", "signin: the household password, for the person picked");
     ok(await page.evaluate(() => document.activeElement.id) === "si-in", "signin: focus in the password field");
     ok(await page.getAttribute("#si-in", "autocomplete") === "current-password", "signin: password manager friendly");
     await page.click("#si-not");
@@ -175,7 +176,7 @@ try {
     await page.click("[data-eye]");
     ok(await page.getAttribute("#si-in", "type") === "text", "signin: show password");
     await page.press("#si-in", "Enter");
-    await page.waitForSelector(".w-input.err");
+    await page.waitForSelector(".w-lockfield.err");
     ok((await page.textContent("#si-msg")).trim() === "That password isn’t right.", "signin: a wrong password says only that, with no tries counted");
     ok(await page.getAttribute("#si-in", "aria-invalid") === "true", "signin: field marked invalid");
     await shot(page, "signin-wrong");
@@ -203,7 +204,7 @@ try {
     ok(true, "signin: the server's 429 shows the wait");
     const secs = +(await page.textContent("#si-msg")).match(/(\d+) seconds/)[1];
     await page.waitForFunction(() => !document.getElementById("si-go").disabled, null, { timeout: (secs + 3) * 1000 });
-    ok(await page.locator("#si-msg").isHidden(), "signin: the message goes when the wait is over");
+    ok((await page.textContent("#si-msg")).trim() === "", "signin: the message goes when the wait is over");
     await page.fill("#si-in", "household1");
     await page.press("#si-in", "Enter");
     ok(await appShown(page), "signin: the household password opens the app for Alex");
@@ -219,7 +220,8 @@ try {
     const page = ana;
     await page.waitForSelector("#gate .w-prof");
     await page.click('[data-prof="2"]');
-    ok((await gateText(page)).includes("Hi, Ana"), "same password: Ana picks her name");
+    await page.waitForSelector("#si-in");
+    ok(await page.locator("#gate-h").innerText() === "Ana", "same password: Ana picks her name");
     await shot(page, "signin-password-phone");
     await page.fill("#si-in", "household1");
     await page.press("#si-in", "Enter");
@@ -266,14 +268,14 @@ try {
     const page = alex;
     await signOutVia(page);
     await page.waitForSelector("#si-in");
-    ok((await gateText(page)).includes("Hi, Alex"), "remember: after Sign out, Wally goes straight to Alex");
+    ok(await page.locator("#gate-h").innerText() === "Alex", "remember: after Sign out, Wally goes straight to Alex");
     await page.fill("#si-in", "household1");
     await page.press("#si-in", "Enter");
     await page.waitForSelector(".w-sicode");
     ok(await page.getAttribute("#si-in", "autocomplete") === "one-time-code" && await page.getAttribute("#si-in", "inputmode") === "numeric", "code: one-time-code and numeric keyboard");
     ok(await page.locator("#si-nophone").isVisible() && (await page.textContent("#si-nophone")).includes("No phone or codes?"), "code: a “No phone or codes?” link");
     await page.locator("#si-in").pressSequentially("111111");
-    await page.waitForSelector(".w-input.err");
+    await page.waitForSelector(".w-lockfield.err");
     ok((await page.textContent("#si-msg")).includes("Codes change every 30 seconds"), "code: wrong code explained, sent without pressing Sign in");
     await shot(page, "code-wrong");
     await page.locator("#si-in").pressSequentially(await freshCode(secret));
@@ -344,7 +346,7 @@ try {
     await page.click("#si-alt");
     await page.fill("#si-in", codes[0]);
     await page.press("#si-in", "Enter");
-    await page.waitForSelector(".w-input.err");
+    await page.waitForSelector(".w-lockfield.err");
     ok((await page.textContent("#si-msg")).includes("already used"), "recovery: a used code is refused");
     await page.fill("#si-in", codes[1]);
     await page.press("#si-in", "Enter");
@@ -368,12 +370,12 @@ try {
     ok(sessions.length === 1 && sessions[0].current, "change password: only this browser is still signed in");
     await ana.reload({ waitUntil: "networkidle" });
     await ana.waitForSelector("#si-in");
-    ok((await gateText(ana)).includes("Hi, Ana"), "change password: Ana's phone is signed out");
+    ok(await ana.locator("#gate-h").innerText() === "Ana" && await ana.locator("#si-in").count() === 1, "change password: Ana's phone is signed out");
     await ana2.reload({ waitUntil: "networkidle" });
     ok(await ana2.locator("#si-in").count() === 1 && !(await ana2.locator("#app").isVisible()), "change password: and her other browser too");
     await ana.fill("#si-in", "household1");
     await ana.press("#si-in", "Enter");
-    await ana.waitForSelector(".w-input.err");
+    await ana.waitForSelector(".w-lockfield.err");
     ok(true, "change password: the old one no longer works");
     await ana.fill("#si-in", "household2");
     await ana.press("#si-in", "Enter");
@@ -442,7 +444,7 @@ try {
     // Ana: signed out, and in with the new password and the same two-step
     await ana.reload({ waitUntil: "networkidle" });
     await ana.waitForSelector("#si-in");
-    ok((await gateText(ana)).includes("Hi, Ana"), "new password: Ana's phone is signed out");
+    ok(await ana.locator("#gate-h").innerText() === "Ana" && await ana.locator("#si-in").count() === 1, "new password: Ana's phone is signed out");
     await ana.fill("#si-in", "household3");
     await ana.press("#si-in", "Enter");
     await ana.waitForSelector(".w-sicode");
@@ -459,7 +461,7 @@ try {
     await other.click("#vg-back");
     // On a browser that hasn't signed in before, Back starts sign-in over, at the names
     await other.waitForSelector("#si-forgot, #gate .w-prof");
-    ok(/Hi, Ana|Who is signing in\?/.test(await gateText(other)), "forgot: Back to sign in");
+    ok(/^Ana$|Who is signing in\?/.test(await other.locator("#gate-h").innerText()), "forgot: Back to sign in");
     noErrors(other, "forgot");
     await other.context().close();
   }
@@ -505,33 +507,47 @@ try {
     await page.keyboard.type("Extra");
     await page.click('[data-drop="2"]');
     ok(await page.locator("[data-name]").count() === 2, "welcome: a row can be removed");
-    await page.click("#onb-pw");
+    ok(await page.locator("#onb-pw").count() === 0 && await page.locator(".w-onbdots li").count() === 6, "welcome: one question a step, six dots from the start");
+    await page.click("#onb-next");
+    // The password, a step of its own
+    await page.waitForSelector("#onb-pwd");
+    ok((await gateText(page)).includes("Create a household password") && await page.locator("#onb-skip").innerText() === "Not now", "welcome: step 3, the household password, with Not now");
     await page.fill("#onb-pwd", "short");
+    await page.fill("#onb-pwd2", "short");
     await page.click("#onb-next");
     await page.waitForFunction(() => document.getElementById("onb-err").textContent.includes("8"));
     ok(true, "welcome: a short password is refused");
     await page.fill("#onb-pwd", "household-pass");
+    await page.fill("#onb-pwd2", "household-pazz");
+    await page.click("#onb-next");
+    await page.waitForFunction(() => document.getElementById("onb-err").textContent.includes("match"));
+    ok(true, "welcome: two passwords that don’t match are refused");
+    await page.fill("#onb-pwd2", "household-pass");
     await shot(page, "welcome-2");
     await page.click("#onb-next");
-    // With a password: who runs the server (tests/e2e/vault-setup.mjs covers the other answer)
-    await page.waitForSelector("[data-who]");
-    ok((await gateText(page)).includes("Who runs this server?"), "welcome: step 3, who runs the server");
-    await page.click('[data-who="me"]');
+    // Then encrypting, unless it waits (tests/e2e/vault-setup.mjs covers encrypting)
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Encrypt your data"));
+    ok(await page.locator("#onb-next").innerText() === "Encrypt" && await page.locator(".w-onbfoot #onb-skip").innerText() === "Not now", "welcome: step 4, encrypting, with Not now under it");
+    // Back keeps the password typed, and nothing was saved yet
+    await page.click("#onb-back");
+    await page.waitForSelector("#onb-pwd");
+    ok(await page.inputValue("#onb-pwd") === "household-pass" && !(await (await fetch(empty.base + "/api/auth/status")).json()).signin, "welcome: Back to the password keeps it, and sign-in isn't on yet");
     await page.click("#onb-next");
+    await page.waitForSelector("#onb-skip");
+    await page.click("#onb-skip");
     // Not encrypted: the Emergency Kit made with the password
     await page.waitForSelector(".w-kitkey");
-    ok((await gateText(page)).includes("Save the household’s Emergency Kit") && !(await gateText(page)).includes("Wally is encrypted"), "welcome: Me: the household's Emergency Kit, not encrypted");
+    ok((await gateText(page)).includes("Save the household’s Emergency Kit") && !(await gateText(page)).includes("Wally is encrypted"), "welcome: not now: the household's Emergency Kit, not encrypted");
     const onbKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(checks(onbKit), "welcome: a real recovery key (" + onbKit + ")");
     ok(await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1 && (await page.locator("#onb-dl").innerText()).includes("Download PDF"), "welcome: Download PDF and Copy");
+    ok(await page.locator("#onb-back").count() === 0, "welcome: no Back from the kit");
     await shot(page, "welcome-kit");
-    await page.click("#onb-next");
-    await page.waitForSelector("#onb-err:not([hidden])");
-    ok((await page.textContent("#onb-err")).includes("Save your Emergency Kit first"), "welcome: Continue waits for the tick");
+    ok(await page.isDisabled("#onb-next"), "welcome: Continue waits for the tick");
     await page.check("#onb-saved");
     await page.click("#onb-next");
     await page.waitForSelector("[data-onb-data]");
-    ok((await gateText(page)).includes("Bring your data"), "welcome: step 4, your data");
+    ok((await gateText(page)).includes("Bring your data"), "welcome: step 6, your data");
     ok(await page.locator("#onb-back").count() === 0, "welcome: no Back into the kit");
     await shot(page, "welcome-3");
     await page.click('[data-onb-data="import"]');
@@ -573,7 +589,7 @@ try {
     await shot(page, "upgrade-household");
     await page.fill("#si-in", "nope-nope");
     await page.press("#si-in", "Enter");
-    await page.waitForSelector(".w-input.err");
+    await page.waitForSelector(".w-lockfield.err");
     ok(true, "upgrade: a wrong household password is refused");
     // Forgot it: Wally 1 had no Emergency Kit, so only whoever runs the server can help
     ok((await (await fetch(v1.base + "/api/auth/status")).json()).kit === null, "upgrade: no kit yet");
@@ -603,58 +619,66 @@ try {
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector("[data-name]");
     ok(!(await page.locator("#gate .w-wel").count()), "upgrade: the welcome is shown once");
-    ok((await gateText(page)).includes("Who uses Wally?"), "upgrade: asks who uses Wally");
+    ok((await gateText(page)).includes("Who’s in your household?"), "upgrade: asks who is in the household");
     await page.fill('[data-name="0"]', "Alex");
     await page.click("#onb-add");
     await page.keyboard.type("Ana");
     await shot(page, "upgrade-people");
     await page.click("#onb-next");
     await page.waitForSelector("[data-tagfor]");
-    ok((await gateText(page)).includes("Tagged with someone’s name?"), "upgrade: offers to turn tags into people");
+    ok((await gateText(page)).includes("Did you tag personal expenses?") && (await gateText(page)).includes("like #alex"), "upgrade: offers to turn tags into people, with one of theirs as the example");
     const ids = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.dataset.tagfor));
     const picked = await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value));
     ok(picked.join() === "alex,ana", "upgrade: the tag with each person’s name is picked (" + picked + ")");
     ok(await page.$eval(`[data-tagfor="${ids[0]}"] option[value="ana"]`, (o) => o.disabled), "upgrade: a tag picked for Ana is greyed out for Alex");
-    const counts = () => page.$$eval("[id^=tagn-]", (l) => l.map((e) => (e.hidden ? "" : e.textContent)).join(" / "));
+    // The count only, without the examples under it
+    const counts = () => page.$$eval("[id^=tagn-]", (l) => l.map((e) => (e.hidden ? "" : e.id === "tagn-shared" ? e.textContent : e.firstChild ? e.firstChild.textContent : "")).join(" / "));
     await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
-    ok((await counts()) === "1 transaction becomes Alex’s / 3 transactions become Ana’s / 1 transaction has more than one of these tags and stays shared",
+    ok((await counts()) === "1 transaction becomes theirs / 3 transactions become theirs / 1 transaction is tagged for more than one person, so it stays shared.",
       "upgrade: counted together, a transaction with both tags stays shared (" + (await counts()) + ")");
+    ok((await page.locator(`#tagn-${ids[1]} .w-onbseen`).innerText()).includes("Coffee"), "upgrade: a few of them by name, so it's plain what the tag meant");
     await shot(page, "upgrade-tags");
     await page.selectOption(`[data-tagfor="${ids[0]}"]`, "");
     await page.waitForFunction(() => /4 transactions/.test(document.getElementById("gate").innerText));
-    ok((await counts()) === " / 4 transactions become Ana’s / ", "upgrade: without Alex’s tag, it becomes Ana’s (" + (await counts()) + ")");
+    ok((await counts()) === "Nothing changes for Alex / 4 transactions become theirs / ", "upgrade: without Alex’s tag, it becomes Ana’s (" + (await counts()) + ")");
     await page.selectOption(`[data-tagfor="${ids[0]}"]`, "alex");
     await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
-    ok(await page.locator("#gate .w-steps").count() === 0 && await page.locator(".w-onbfoot #onb-skip").count() === 1, "upgrade: no stepper for two short steps, and Skip sits next to Continue");
+    ok(await page.locator(".w-onbdots li").count() === 4 && await page.locator(".w-onbfoot #onb-skip").innerText() === "Skip", "upgrade: four dots (people, tags, encrypting, the kit), and Skip under Continue");
     // The "You" row is this browser now: no signing out and in again
     const mid = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(mid.me && mid.me.name === "Alex", "upgrade: this browser became Alex, on the You row, without a second sign-in");
     // Back: nothing is lost, and the tags are applied only at the end
     await page.click("#onb-back");
-    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Who uses Wally?"));
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Who’s in your household?"));
     ok((await page.$$eval(".w-onbppl li > span:not(.w-av):not(.w-badge)", (l) => l.map((x) => x.textContent.trim()))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, and no Back on the first step");
     await page.click("#onb-next");
     await page.waitForSelector("[data-tagfor]");
     ok((await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value))).join() === "alex,ana", "upgrade: back on Tags, the picks are as they were left");
     await page.click("#onb-next");
-    // Signed in as a person, with no kit yet: Wally makes one and asks to save it
-    await page.waitForSelector("#kg-saved", { timeout: 10000 });
+    // Encrypting is offered, chosen by default, with Not now under it
+    await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Encrypt your data"));
+    ok(await page.locator("#up-pw").count() === 1 && (await page.locator("#onb-next").innerText()) === "Encrypt" && await page.locator(".w-onbfoot #onb-skip").innerText() === "Not now",
+      "upgrade: then encrypting, with the household password, and Not now");
+    await shot(page, "upgrade-encrypt");
+    await page.click("#onb-skip");
+    // Signed in as a person, with no kit yet: Wally makes one and asks to save it, as the last step
+    await page.waitForSelector("#onb-saved", { timeout: 10000 });
     ok((await gateText(page)).includes("Save the household’s Emergency Kit"), "upgrade: signed in as yourself, Wally makes the household's Emergency Kit");
     const upKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(checks(upKit) && await page.locator("#gate svg").count() >= 1, "upgrade: a recovery key, with its QR code");
-    ok(await page.locator("#kg-dl").count() === 1 && await page.locator("#kg-copy").count() === 1, "upgrade: Download PDF and Copy");
-    ok(await page.isDisabled("#kg-done"), "upgrade: Open Wally waits for the tick");
+    ok(await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1 && !(await page.locator("#onb-back").count()), "upgrade: Download PDF and Copy, and no Back");
+    ok(await page.isDisabled("#onb-next") && (await page.locator("#onb-next").innerText()) === "Open Wally", "upgrade: Open Wally waits for the tick");
     await shot(page, "upgrade-kit");
-    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#kg-dl")]);
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#onb-dl")]);
     const upPdf = readFileSync(await dl.path(), "latin1");
     ok(dl.suggestedFilename() === "wally-emergency-kit.pdf" && upPdf.startsWith("%PDF-") && upKit.split("-").every((g) => upPdf.includes(g)), "upgrade: the kit downloads as a PDF, with its key");
-    await page.check("#kg-saved");
-    await page.click("#kg-done");
+    await page.check("#onb-saved");
+    await page.click("#onb-next");
     ok(await appShown(page), "upgrade: then the app, with no second sign-in and no password of their own to choose");
     const kst2 = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(!!kst2.kit, "upgrade: the household has its kit now");
     await page.reload({ waitUntil: "networkidle" });
-    ok(await appShown(page) && !(await page.locator("#kg-saved").count()), "upgrade: and isn't asked again");
+    ok(await appShown(page) && !(await page.locator("#kg-saved, #onb-saved").count()), "upgrade: and isn't asked again");
     const ust = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(ust.me && ust.me.name === "Alex", "upgrade: signed in as Alex");
     const usage = await page.evaluate((ids) => Promise.all(ids.map((id) => fetch("/api/people/" + id + "/usage").then((r) => r.json()))), ids);
@@ -671,6 +695,43 @@ try {
     ok(await page.evaluate(() => document.documentElement.dir) === "rtl", "arabic: right to left");
     await shot(page, "signin-ar-dark-phone");
     noErrors(page, "arabic");
+    await page.context().close();
+  }
+
+  /* ================= upgrade from v1, encrypting on the way ================= */
+  const v1e = await startServer(PORT + 3, { copy: join(REPO, "tests/fixtures/v1.db") });
+  {
+    const page = await open(v1e.base);
+    await page.waitForSelector("#si-in");
+    await page.fill("#si-in", "household");
+    await page.press("#si-in", "Enter");
+    await page.waitForSelector("#gate .w-wel #wel-go");
+    await page.click("#wel-go");
+    await page.waitForSelector("[data-name]");
+    await page.fill('[data-name="0"]', "Alex");
+    await page.click("#onb-next");
+    await page.waitForSelector("[data-tagfor]");
+    await page.click("#onb-skip");
+    await page.waitForSelector("#up-pw");
+    await page.click("#onb-next");
+    ok((await page.textContent("#onb-err")).includes("Enter your password first"), "upgrade, encrypting: the password first");
+    await page.fill("#up-pw", "not-it-at-all");
+    await page.click("#onb-next");
+    await page.waitForFunction(() => document.getElementById("onb-err").textContent.includes("password isn’t right"), null, { timeout: 15000 });
+    ok(true, "upgrade, encrypting: a wrong password is refused, and nothing changes");
+    await page.fill("#up-pw", "household");
+    await page.click("#onb-next");
+    await page.waitForSelector(".w-kitkey", { timeout: 30000 });
+    ok((await gateText(page)).includes("Wally is encrypted."), "upgrade, encrypting: encrypted, then the Emergency Kit");
+    ok(await page.isDisabled("#onb-next"), "upgrade, encrypting: Open Wally waits for the tick");
+    await page.check("#onb-saved");
+    await page.click("#onb-next");
+    ok(await appShown(page), "upgrade, encrypting: then the app, unlocked, with no kit to save again");
+    const est = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
+    ok(est.vault.on && !!est.kit && est.me.name === "Alex", "upgrade, encrypting: encrypted, with its kit, as Alex");
+    const n = await page.evaluate(async () => (await import("/js/core.js")).state.tx.length);
+    ok(n > 0 && await page.evaluate(async () => (await import("/js/core.js")).vaultOn()), "upgrade, encrypting: every transaction opens on this browser (" + n + ")");
+    noErrors(page, "upgrade, encrypting");
     await page.context().close();
   }
 } catch (e) {

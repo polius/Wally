@@ -54,6 +54,12 @@ def required() -> bool:
     which is sample data made in the clear."""
     return os.getenv("WALLY_ENCRYPTION", "").strip().lower() == "required" and os.getenv("DEMO", "false").lower() != "true"
 
+def api_keys_allowed() -> bool:
+    """While a call with an API key runs, the server opens the data that call needs. A server that
+    promises never to read anyone's data (WALLY_ENCRYPTION=required) allows keys only when its host
+    says so with WALLY_API_KEYS=on."""
+    return not required() or os.getenv("WALLY_API_KEYS", "").strip().lower() in ("on", "true", "1")
+
 def load_state(db: Session):
     """Remember whether encryption is on, so every request can check it without reading the database."""
     STATE["vault"] = vault_id(db)

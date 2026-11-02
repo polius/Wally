@@ -1,4 +1,5 @@
-/* First run with encryption: the "Who runs this server?" step, and WALLY_ENCRYPTION=required.
+/* First run with encryption: on by default with a password, Skip, plain HTTP, WALLY_ENCRYPTION=required,
+   and API keys on an encrypted household.
      REPO=/path/to/Wally PYTHON=/path/to/python PORT=8941 node vault-setup.mjs
    Starts its own servers. Screenshots go to SHOTS (a folder) when it is set. */
 import { chromium } from "playwright";
@@ -64,37 +65,34 @@ const appShown = (page, timeout = 20000) => page.waitForSelector("#app:not([hidd
 const noErrors = (page, what) => ok(page.errors.length === 0, what + ": no console errors" + (page.errors.length ? " — " + page.errors.join(" | ") : ""));
 const status = async (base) => (await fetch(base + "/api/auth/status")).json();
 
-/* Basics, then People: Alex and Ana, with a password */
-async function basicsAndPeople(page, { toggle = true } = {}) {
+/* Basics, People (Alex and Ana), then the household password */
+async function basicsAndPeople(page) {
   await page.waitForSelector("#onb-next");
   await page.click("#onb-next");
   await page.waitForSelector("[data-name]");
   await page.fill('[data-name="0"]', "Alex");
   await page.click("#onb-add");
   await page.fill('[data-name="1"]', "Ana");
-  if (toggle) await page.click("#onb-pw");
+  await page.click("#onb-next");
+  await page.waitForSelector("#onb-pwd");
   await page.fill("#onb-pwd", "alex-pass-1");
+  await page.fill("#onb-pwd2", "alex-pass-1");
   await page.click("#onb-next");
 }
 
 try {
-  /* ================= Someone else runs it: encrypted at setup ================= */
-  console.log("Someone else runs the server");
+  /* ================= encrypted at setup, by default ================= */
+  console.log("Encrypted by default");
   const a = await startServer();
   let page = await device(a.base);
   await basicsAndPeople(page);
-  await page.waitForSelector("[data-who]");
-  const text = await gate(page);
-  ok(text.includes("Who runs this server?") && text.includes("Me, or someone here") && text.includes("Someone else"), "after People, Wally asks who runs the server");
-  ok(text.includes("Privacy"), "as its own step, Privacy");
-  ok(!text.includes("What changes"), "nothing more until a choice is made");
-  await page.click("#onb-next");
-  ok((await page.locator("#onb-err").innerText()).includes("Choose who runs this server"), "Continue asks for a choice first");
-  await page.click('[data-who="else"]');
+  await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Encrypt your data"));
   const means = await gate(page);
-  ok(means.includes("Your password is the key.") && means.includes("You save an Emergency Kit.") && means.includes("Everyone uses the same password.") && !means.includes("code") && means.includes("Phone shortcuts and API keys are off."),
-    "choosing Someone else says, in four plain lines, what changes");
-  ok(await page.locator("#onb-next").innerText() === "Encrypt and continue", "and the button says what it does");
+  ok(!(await page.locator("[data-who]").count()) && !means.includes("Who runs this server?"), "after People, no question about who runs the server");
+  ok(await page.locator(".w-onbdots li.on").count() === 1 && await page.locator(".w-onbdots li").count() === 6, "as its own step, after the password");
+  ok(means.includes("Your password is the key.") && means.includes("You save an Emergency Kit.") && means.includes("Everyone uses the same password.") && !means.includes("code") && !means.includes("API keys"),
+    "it says, in three plain lines, what changes");
+  ok(await page.locator("#onb-next").innerText() === "Encrypt" && await page.locator(".w-onbfoot #onb-skip").innerText() === "Not now", "one button that says what it does, and Not now under it");
   await shot(page, "setup-question");
   await page.click("#onb-next");
   await page.waitForSelector(".w-kitkey", { timeout: 30000 });
@@ -104,8 +102,7 @@ try {
   ok(await page.locator("[data-code]").count() === 0 && !(await gate(page)).includes("code"), "one kit for the household, and no codes for anyone");
   ok(await page.locator("#onb-back").count() === 0, "there is no going back to before encrypting");
   await shot(page, "setup-kit");
-  await page.click("#onb-next");
-  ok((await page.locator("#onb-err").innerText()).includes("Save your Emergency Kit first"), "Continue waits for the kit to be saved");
+  ok(await page.isDisabled("#onb-next"), "Continue waits for the kit to be saved");
   await page.check("#onb-saved");
   await page.click("#onb-next");
   await page.waitForSelector("[data-onb-data]");
@@ -149,6 +146,45 @@ try {
   ok((await sam.evaluate(() => fetch("/api/auth/status").then((r) => r.json()))).me.name === "Sam", "as Sam");
   noErrors(sam, "Sam, encrypted"); noErrors(page, "adding Sam");
   await sam.context().close();
+  // API keys while encrypted: the browser makes the key, with the household password
+  await page.goto(a.base + "/settings/keys", { waitUntil: "networkidle" });
+  await page.waitForSelector("#key-name");
+  ok(!(await page.locator("#set-pane").innerText()).includes("Off while Wally is encrypted"), "API keys: available while encrypted");
+  const makeKey = async (name, scope) => {
+    await page.fill("#key-name", name);
+    await page.selectOption("#key-scope", scope);
+    await page.click('[data-act="create"]');
+    await page.waitForSelector("#dlg #key-pw");
+    const said = await page.locator("#dlg").innerText();
+    await page.fill("#key-pw", "alex-pass-1");
+    await page.click("#dlg [data-dlg-ok]");
+    await page.waitForSelector("#dlg #key-raw", { timeout: 20000 });
+    const raw = (await page.locator("#key-raw").innerText()).trim();
+    await page.click("#dlg [data-dlg-ok]");
+    await page.waitForFunction(() => document.getElementById("dlg").hidden);
+    return { raw, said };
+  };
+  const rw = await makeKey("Script", "write");
+  ok(/^wly_[0-9a-f]{64}$/.test(rw.raw) && rw.said.includes("the server opens the data it needs, then forgets it"), "a key is made after the password, and the dialog says what it lets the server do");
+  const withKey = (raw, method, path, body) => fetch(a.base + "/api" + path, { method, headers: { "x-api-key": raw, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const listed = await (await withKey(rw.raw, "GET", "/transactions")).json();
+  ok(Array.isArray(listed) && listed.some((t) => t.name === "Fruiteria Rosa"), "the key reads the encrypted household");
+  const added = await withKey(rw.raw, "POST", "/transactions", { name: "Forn de la Plaça", category: "Groceries", amount: "4.10", date: new Date().toISOString().slice(0, 10) });
+  const addedId = added.status === 200 ? (await added.json()).id : null;
+  ok(added.status === 200, "and adds to it (" + added.status + ")");
+  ok(!check("grep", join(a.data, "wally.db"), "Forn").Forn, "what the key added is encrypted in the file");
+  await page.goto(a.base + "/", { waitUntil: "networkidle" });
+  await appShown(page);
+  ok(await page.evaluate(async (id) => (await import("/js/core.js")).state.tx.some((t) => t.id === id), addedId), "and Alex's browser opens it");
+  await page.goto(a.base + "/settings/keys", { waitUntil: "networkidle" });
+  await page.waitForSelector("#key-name");
+  const ro = await makeKey("Dashboard", "read");
+  ok((await withKey(ro.raw, "GET", "/summary/monthly")).status === 200 && (await withKey(ro.raw, "POST", "/transactions", { name: "x", category: "Groceries", amount: "1", date: new Date().toISOString().slice(0, 10) })).status === 403,
+    "a read-only key reads, and can't change anything");
+  ok((await page.locator("#set-pane").innerText()).includes("Read only"), "the list says what each key can do");
+  await shot(page, "keys-encrypted");
+  noErrors(page, "API keys, encrypted");
+
   // Whoever runs the server can't turn sign-in off on an encrypted household
   const refused = signinOff(a);
   ok(refused.code === 1 && /encrypted/.test(refused.text), "api.signin_off is refused while encrypted (exit " + refused.code + ")");
@@ -157,33 +193,30 @@ try {
   // The sign-in page says it is encrypted
   const fresh = await device(a.base);
   await fresh.click('[data-prof="1"]');
+  await fresh.waitForSelector("#si-in");
   ok((await gate(fresh)).includes("End-to-end encrypted: whoever runs this server can’t read your data."), "the sign-in page says the data is encrypted");
   await shot(fresh, "signin-encrypted");
   await fresh.context().close(); await ana.context().close(); await page.context().close();
 
-  /* ================= I run it: as before ================= */
-  console.log("\nI run the server");
+  /* ================= skipped: as before ================= */
+  console.log("\nSkipping encryption");
   const b = await startServer();
   page = await device(b.base);
   await basicsAndPeople(page);
-  await page.waitForSelector("[data-who]");
-  await page.click('[data-who="me"]');
-  ok(!(await gate(page)).includes("What changes"), "choosing Me changes nothing and says nothing more");
-  ok(await page.locator("#onb-next").innerText() === "Continue", "the button is plain Continue");
+  await page.waitForSelector(".w-onbfoot #onb-skip");
   await page.click("#onb-back");
-  await page.waitForSelector("[data-name], .w-onbppl");
+  await page.waitForSelector("#onb-pwd");
   await page.click("#onb-next");
-  await page.waitForSelector("[data-who]");
-  ok(await page.locator('[data-who="me"][aria-checked="true"]').count() === 1, "Back keeps the choice");
-  await page.click("#onb-next");
+  await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Encrypt your data"));
+  ok(true, "Back to the password and on again: encrypting is still the next step");
+  await page.click("#onb-skip");
   // Not encrypted: the kit made with the password
   await page.waitForSelector(".w-kitkey", { timeout: 15000 });
   const meText = await gate(page);
   ok(meText.includes("Save the household’s Emergency Kit") && !meText.includes("Wally is encrypted."), "Me: the household's Emergency Kit, made with the password");
   const meKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
   await shot(page, "setup-kit-me");
-  await page.click("#onb-next");
-  ok((await page.locator("#onb-err").innerText()).includes("Save your Emergency Kit first"), "Continue waits for the tick");
+  ok(await page.isDisabled("#onb-next"), "Continue waits for the tick");
   await page.check("#onb-saved");
   await page.click("#onb-next");
   await page.waitForSelector("[data-onb-data]");
@@ -204,8 +237,11 @@ try {
   await page.waitForSelector("[data-name]");
   await page.fill('[data-name="0"]', "Alex");
   await page.click("#onb-next");
+  await page.waitForSelector("#onb-pwd");
+  ok((await gate(page)).includes("Wally asks for it when it opens.") && !(await gate(page)).includes("Everyone in the household"), "on their own: the password step doesn't talk about everyone");
+  await page.click("#onb-skip");
   await page.waitForSelector("[data-onb-data]");
-  ok(!(await gate(page)).includes("Privacy"), "sign-in off: no Privacy step");
+  ok(await page.locator(".w-onbdots li").count() === 4 && !(await (await status(c.base))).signin, "no password: no encrypting and no kit, and sign-in stays off");
   await page.context().close();
 
   /* ================= WALLY_ENCRYPTION=required ================= */
@@ -214,10 +250,13 @@ try {
   page = await device(r.base);
   await page.click("#onb-next");
   await page.waitForSelector("[data-name]");
-  ok(await page.locator("#onb-pw").isDisabled() && await page.getAttribute("#onb-pw", "aria-checked") === "true", "the password can’t be switched off");
-  ok((await gate(page)).includes("Needed on this server: your password is the key to your data."), "and it says why");
   await page.fill('[data-name="0"]', "Alex");
+  await page.click("#onb-next");
+  await page.waitForSelector("#onb-pwd");
+  ok(await page.locator("#onb-skip").count() === 0, "the password can’t wait");
+  ok((await gate(page)).includes("Needed on this server: your password is the key to your data."), "and it says why");
   await page.fill("#onb-pwd", "alex-pass-1");
+  await page.fill("#onb-pwd2", "alex-pass-1");
   await page.click("#onb-next");
   await page.waitForFunction(() => document.getElementById("gate").innerText.includes("This server encrypts your data"), null, { timeout: 10000 }).catch(() => {});
   const req = await gate(page);
@@ -282,13 +321,10 @@ try {
     page = await ctx.newPage();
     await page.goto("http://" + ip.address + ":" + h.port + "/", { waitUntil: "networkidle" });
     await basicsAndPeople(page);
-    await page.waitForSelector("[data-who]");
-    ok(await page.locator('[data-who="else"]').isDisabled() && (await gate(page)).includes("Needs a secure connection"), "Someone else needs HTTPS, and says so");
-    // Without encryption, the kit works on plain http too
+    // Browsers don't encrypt here: straight to the kit made with the password, saying why
     const http = "http://" + ip.address + ":" + h.port;
-    await page.click('[data-who="me"]');
-    await page.click("#onb-next");
     await page.waitForSelector(".w-kitkey", { timeout: 15000 });
+    ok((await gate(page)).includes("Your data isn’t encrypted: browsers only encrypt on secure pages.") && !(await page.locator("#onb-skip").count()), "plain http: no encrypting step; the kit says why it isn't encrypted");
     const httpKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
     ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(httpKit), "plain http: the kit is made at setup");
     await page.check("#onb-saved");

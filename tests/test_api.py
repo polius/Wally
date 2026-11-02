@@ -538,7 +538,9 @@ def test_tags_into_people_together(couple):
     rule(client, tags=["Alex"], startDate=TODAY)
     body = {"tags": {"ana": ana, "#Alex": alex}}
     preview = client.post("/people/from-tags/preview", json=body).json()
-    assert preview == {"counts": {str(ana): 1, str(alex): 2}, "shared": 1}
+    assert {k: preview[k] for k in ("counts", "shared")} == {"counts": {str(ana): 1, str(alex): 2}, "shared": 1}
+    # A few of each person's by name, so it's plain what the tag meant
+    assert set(preview["examples"]) == {str(ana), str(alex)} and all(0 < len(v) <= 3 for v in preview["examples"].values())
     # The preview changes nothing
     assert all(t["person_id"] is None for t in client.get("/transactions").json())
     assert client.post("/people/from-tags", json=body).json()["counts"] == preview["counts"]

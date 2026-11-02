@@ -159,9 +159,120 @@ def test_plain_routes_and_api_keys_are_refused(encrypted):
     for path in ("/transactions", "/ledger", "/recurring", "/categories", "/tags", "/rules", "/summary/monthly", f"/people/{alex}/usage"):
         assert client.get(path).status_code == 409, path
     assert client.post("/transactions", json={"name": "x", "category": "Food", "amount": "1", "date": TODAY}).status_code == 409
+    # A key the server would make can't open anything: the browser makes it, with the lock
     assert client.post("/api-keys", json={"name": "phone"}).status_code == 400
     assert client.get("/config", headers={"x-api-key": "wly_whatever"}).status_code == 401
+    assert client.get("/transactions", headers={"x-api-key": "wly_whatever"}).status_code == 401
     assert client.put("/signin", json={"enabled": False, "current": "x"}).status_code == 400
+
+# ---------- API keys on an encrypted household ----------
+def make_key(client, result, scope="write", name="script"):
+    """As js/vault/session.js does: a key with a secret, and the household key locked under it."""
+    import os
+    secret = os.urandom(32)
+    raw = "wly_" + secret.hex()
+    wrap = vc.lock(vc.hkdf(secret, "wally api key v1"), result["secret"], result["vault_id"])
+    r = client.post("/api-keys", json={"name": name, "scope": scope, "key": raw, "wrap": wrap})
+    assert r.status_code == 200, r.text
+    return raw
+
+def plain_rows() -> int:
+    conn = sqlite3.connect(database.DB_PATH)
+    try:
+        return sum(conn.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for t in conversion.PLAIN)
+    finally:
+        conn.close()
+
+def test_an_api_key_reads_an_encrypted_household(encrypted):
+    client, alex, ana, result, before = encrypted
+    key = {"x-api-key": make_key(client, result)}
+    plain = TestClient(client.app)
+    rows = plain.get("/ledger", headers=key).json()["rows"]
+    assert len(rows) == 6
+    names = {t["name"] for t in plain.get("/transactions", headers=key).json()}
+    assert {"Mercadona", "Farmacia Sant Jordi", "Dentist", "AMAZON MKTPLACE 99"} <= names
+    assert "Kids" in plain.get("/categories", headers=key).json()
+    assert plain.get("/summary/monthly", headers=key).status_code == 200
+    # Nothing it opened is left behind in the clear
+    assert plain_rows() == 0
+    # Signed in in a browser, the same routes still answer from the browser only
+    assert client.get("/transactions").status_code == 409
+
+def test_an_api_key_changes_an_encrypted_household_as_a_browser_would(encrypted):
+    client, alex, ana, result, before = encrypted
+    b = Browser(client, alex, PASS)
+    b.house, b.vault_id = result["house"], result["vault_id"]
+    key = {"x-api-key": make_key(client, result)}
+    plain = TestClient(client.app)
+    r = plain.post("/transactions", json={"name": "Bakery", "category": "Groceries", "amount": "3.20", "date": TODAY}, headers=key)
+    assert r.status_code == 200, r.text
+    tx = r.json()
+    recs = b.all()
+    rid = tx["id"].replace("-", "")
+    v, obj = recs[rid]
+    assert v == 1 and obj["k"] == "tx" and obj["name"] == "Bakery" and obj["cents"] == 320 and obj["created_by"] == alex
+    # A rename touches the category and every transaction in it, and nothing else
+    seq = client.get("/vault/changes?since=0").json()["seq"]
+    r = plain.put("/categories/Healthcare", json={"name": "Health"}, headers=key)
+    assert r.status_code == 200, r.text
+    changed = client.get(f"/vault/changes?since={seq}").json()["records"]
+    opened = [b.house.open(c["id"], c["v"], c["ct"]) if c["ct"] else None for c in changed]
+    assert {o["name"] for o in opened if o and o["k"] == "tx"} == {"Farmacia Sant Jordi"}
+    assert any(o and o["k"] == "cat" and o["name"] == "Health" for o in opened)
+    assert any(c["ct"] is None for c in changed)  # the old name, deleted
+    # Deleting is a deletion the browsers see
+    assert plain.delete(f"/transactions/{tx['id']}", headers=key).status_code == 200
+    assert b.all()[rid][1] is None if rid in b.all() else True
+    assert plain_rows() == 0
+
+def test_charges_added_by_a_key_are_the_ones_a_browser_would_add(encrypted):
+    client, alex, ana, result, before = encrypted
+    key = {"x-api-key": make_key(client, result)}
+    plain = TestClient(client.app)
+    r = plain.post("/recurring", json={"name": "Gym", "category": "Health", "amount": "30", "frequency": "monthly", "startDate": "2026-08-01"}, headers=key)
+    assert r.status_code == 200, r.text
+    rule_id = r.json()["id"]
+    b = Browser(client, alex, PASS)
+    b.house = result["house"]
+    made = sorted((o["date"], rid) for rid, (_, o) in b.all().items() if o and o["k"] == "tx" and o["recurringID"] == rule_id)
+    assert made and all(rid == str(b.house.occurrence_id(rule_id, on)).replace("-", "") for on, rid in made)
+
+def test_a_read_key_only_reads_and_keys_end_when_deleted(encrypted):
+    client, alex, ana, result, before = encrypted
+    raw = make_key(client, result, scope="read")
+    plain = TestClient(client.app)
+    assert plain.get("/transactions", headers={"x-api-key": raw}).status_code == 200
+    r = plain.post("/transactions", json={"name": "x", "category": "Groceries", "amount": "1", "date": TODAY}, headers={"x-api-key": raw})
+    assert r.status_code == 403
+    # A key can't make or delete keys
+    assert plain.post("/api-keys", json={"name": "more"}, headers={"x-api-key": raw}).status_code in (403, 400)
+    kid = client.get("/api-keys").json()[0]["id"]
+    assert plain.delete(f"/api-keys/{kid}", headers={"x-api-key": raw}).status_code == 403
+    assert client.delete(f"/api-keys/{kid}").status_code == 200
+    assert plain.get("/transactions", headers={"x-api-key": raw}).status_code == 401
+
+def test_a_lock_that_opens_nothing_is_refused(encrypted):
+    import os
+    client, alex, ana, result, before = encrypted
+    secret = os.urandom(32)
+    raw = "wly_" + secret.hex()
+    # Locked under the wrong key, and locking the wrong household key
+    bad = vc.lock(os.urandom(32), result["secret"], result["vault_id"])
+    assert client.post("/api-keys", json={"name": "x", "key": raw, "wrap": bad}).status_code == 400
+    wrong = vc.lock(vc.hkdf(secret, "wally api key v1"), os.urandom(32), result["vault_id"])
+    assert client.post("/api-keys", json={"name": "x", "key": raw, "wrap": wrong}).status_code == 400
+
+def test_keys_keep_working_when_encryption_is_turned_off(encrypted):
+    client, alex, ana, result, before = encrypted
+    raw = make_key(client, result)
+    b = Browser(client, alex, PASS)
+    b.house, b.vault_id = result["house"], result["vault_id"]
+    turn_off(client, b)
+    plain = TestClient(client.app)
+    assert len(plain.get("/ledger", headers={"x-api-key": raw}).json()["rows"]) == 6
+    conn = sqlite3.connect(database.DB_PATH)
+    assert conn.execute("SELECT COUNT(*) FROM apikeys WHERE wrap IS NOT NULL").fetchone()[0] == 0
+    conn.close()
 
 def test_engine_and_defaults_stay_off_after_restart(encrypted, make_client):
     client, alex, *_ = encrypted
@@ -509,7 +620,11 @@ def test_required_saves_nothing_in_the_clear_and_stays_on(make_client, monkeypat
     r = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "1", "date": TODAY})
     assert r.status_code == 409 and "encrypted" in r.json()["detail"]
     assert client.get("/transactions").status_code == 200
+    # Keys open the data while a call runs: only when the host allows it
     assert client.post("/api-keys", json={"name": "phone"}).status_code == 400
+    monkeypatch.setenv("WALLY_API_KEYS", "on")
+    assert client.post("/api-keys", json={"name": "phone"}).status_code == 200
+    monkeypatch.delenv("WALLY_API_KEYS")
     assert client.put("/signin", json={"enabled": True, "password": PASS}).status_code == 200
     client.headers.pop("x-wally-person")
     assert client.put("/signin", json={"enabled": False, "current": PASS}).status_code == 400

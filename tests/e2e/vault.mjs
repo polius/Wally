@@ -83,6 +83,8 @@ async function device({ width = 1280, height = 860, clock } = {}) {
 const shot = async (page, name) => { if (SHOTS) { await page.waitForTimeout(300); await page.screenshot({ path: join(SHOTS, name + ".png") }); } };
 const appShown = (page, timeout = 15000) => page.waitForSelector("#app:not([hidden])", { timeout }).then(() => true, () => false);
 const gateShown = (page, text, timeout = 15000) => page.waitForFunction((t) => !document.getElementById("gate").hidden && document.getElementById("gate").innerText.includes(t), text, { timeout }).then(() => true, () => false);
+// Back at sign-in: their face and name, and the password field
+const atPassword = (page, name, timeout = 15000) => page.waitForFunction((n) => !document.getElementById("gate").hidden && document.getElementById("si-in") && document.getElementById("gate-h").textContent === n, name, { timeout }).then(() => true, () => false);
 const noErrors = (page, what) => ok(page.errors.length === 0, what + ": no console errors" + (page.errors.length ? " — " + page.errors.join(" | ") : ""));
 /* Run in the page, with core.js and the vault session, the same module instances the app uses */
 const inPage = (page, fn, arg) => page.evaluate(async ([src, a]) => {
@@ -365,11 +367,11 @@ try {
   await alex1.click('[data-act="others"]');
   await alex1.waitForTimeout(500);
   await alex2.evaluate(() => window.dispatchEvent(new Event("focus")));
-  ok(await gateShown(alex2, "Hi, Alex", 15000) || await gateShown(alex2, "Who is signing in", 2000), "signed out elsewhere: the phone is back at sign-in");
+  ok(await atPassword(alex2, "Alex", 15000) || await gateShown(alex2, "Who is signing in", 2000), "signed out elsewhere: the phone is back at sign-in");
   ok(!(await hasKeys(alex2)), "and its key and copy are gone");
   for (const [pg, name] of [[ana0, "Ana’s first browser"], [ana1, "Ana’s second browser"]]) {
     await pg.evaluate(() => window.dispatchEvent(new Event("focus")));
-    ok(await gateShown(pg, "Hi, Ana", 15000), "signed out elsewhere: " + name + " is back at sign-in");
+    ok(await atPassword(pg, "Ana", 15000), "signed out elsewhere: " + name + " is back at sign-in");
     ok(!(await hasKeys(pg)), "and its key is gone");
   }
   await ana0.context().close();
@@ -439,14 +441,14 @@ try {
   const sess = await inPage(alex3, async ({ core }) => core.GET("/sessions"));
   ok(sess.length === 1 && sess[0].current, "every other browser is signed out on the server");
   await alex1.evaluate(() => window.dispatchEvent(new Event("focus")));
-  ok(await gateShown(alex1, "Hi, Alex", 15000), "Alex’s other browser is back at sign-in");
+  ok(await atPassword(alex1, "Alex", 15000), "Alex’s other browser is back at sign-in");
   await ana1.evaluate(() => window.dispatchEvent(new Event("focus")));
-  ok(await gateShown(ana1, "Hi, Ana", 15000), "and so is Ana’s");
+  ok(await atPassword(ana1, "Ana", 15000), "and so is Ana’s");
   // Forgot password from the password step: the same recovery key
   await alex1.click("#si-forgot");
   ok(await gateShown(alex1, "Use your recovery key"), "Forgot password asks for the recovery key too");
   await alex1.click("#vg-back");
-  ok(await gateShown(alex1, "Hi, Alex"), "Back to sign in");
+  ok(await atPassword(alex1, "Alex"), "Back to sign in");
   // Ana: the new password, and a code from the same secret
   await signIn(ana1, ANA, HP2);
   await ana1.waitForSelector(".w-sicode", { timeout: 15000 });

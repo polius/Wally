@@ -12,7 +12,7 @@ from . import database
 from .database import create_db_and_tables, STATE
 from .demo import generate_demo
 from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault, kit
-from .services import conversion
+from .services import conversion, sealed_view
 from .services.vault import load_state, purge_tombstones, required
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
@@ -94,6 +94,8 @@ app.add_middleware(
 # With encryption on, the household's data is sealed records the server can't read: these answer
 # from the browser instead (js/vault/local.js), and the server says so if asked
 PLAIN_DATA = re.compile(r"^/(transactions|ledger|recurring|categories|tags|summary|import|rules)(/|$)|^/people/(\d+/usage|\d+/from-tag|from-tags?)(/|$)|^/backups/(.+/restore|upload)$")
+# What an API key can't do while Wally is encrypted: backups are sealed files, put back from the app
+KEYS_NEVER = re.compile(r"^/backups/")
 # While encryption is being turned on or off, the household is read-only except for these
 DURING_PAUSE = re.compile(r"^/(vault/convert/|logout|login|vault/kdf|auth/status)")
 
@@ -124,13 +126,18 @@ async def guards(request: Request, call_next):
     if paused and request.method not in ("GET", "HEAD", "OPTIONS") and not DURING_PAUSE.match(path):
         doing = "encrypting Wally" if paused["direction"] == "on" else "turning off encryption"
         return JSONResponse({"detail": {"message": f"{paused['by']} is {doing}. Back in a minute.", "paused": paused}}, status_code=503)
-    if STATE.get("vault") and PLAIN_DATA.match(path):
+    raw_key = request.headers.get("x-api-key")
+    sealed = bool(STATE.get("vault") and PLAIN_DATA.match(path))
+    if sealed and not (raw_key and not KEYS_NEVER.match(path)):
         return JSONResponse({"detail": "Wally is encrypted: this data is kept by your browser, not the server."}, status_code=409)
     if required() and not STATE.get("vault") and PLAIN_DATA.match(path) and request.method not in ("GET", "HEAD", "OPTIONS"):
         # Nothing is saved in the clear on a server that promises to encrypt everything
         return JSONResponse({"detail": "This server keeps every household encrypted. Turn on encryption in Settings › Privacy first."}, status_code=409)
     STATE["inflight"] = STATE.get("inflight", 0) + 1
     try:
+        if sealed:
+            # An API key on an encrypted household: the data opened for this call alone
+            return await sealed_view.serve(request, call_next, raw_key)
         return await call_next(request)
     finally:
         STATE["inflight"] -= 1

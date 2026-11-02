@@ -1,6 +1,7 @@
 import os
 import time
 import hashlib
+import hmac
 import json
 import secrets
 from dataclasses import dataclass
@@ -43,6 +44,7 @@ class Actor:
     person_id: int | None
     via: str  # "session", "key" or "open" (sign-in is off, so it is on trust)
     session_id: str | None = None
+    scope: str = "write"  # an API key's: "read" or "write"
 
 def is_https(request: Request) -> bool:
     """Auto-detect if the request was made over HTTPS using the X-Forwarded-Proto header."""
@@ -184,16 +186,32 @@ def _session_actor(db: Session, request: Request) -> Actor | None:
         db.commit()
     return Actor(person_id=row.person_id, via="session", session_id=row.id)
 
-def _key_actor(db: Session, raw_key: str) -> Actor | None:
+def hash_key(raw_key: str) -> str:
+    """Keys made since 2.0 hold 32 random bytes: a fast hash is enough, and keeps every call quick"""
+    return "sha256:" + hashlib.sha256(raw_key.encode()).hexdigest()
+
+def find_key(db: Session, raw_key: str) -> ApiKeys | None:
+    """The API key this is, noting when it was last used"""
     prefix = raw_key[:8]
     candidates = db.exec(select(ApiKeys).where((ApiKeys.prefix == prefix) | (ApiKeys.prefix == ""))).all()
     for ak in candidates:
-        if check_password(raw_key, ak.key_hash):
-            ak.last_used = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-            db.add(ak)
-            db.commit()
-            return Actor(person_id=ak.person_id, via="key")
+        ok = hmac.compare_digest(ak.key_hash, hash_key(raw_key)) if ak.key_hash.startswith("sha256:") else check_password(raw_key, ak.key_hash)
+        if ok:
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            # At most once a minute, and never while the database is being converted
+            if ak.last_used != now[:-2] + "00" and not STATE.get("conversion"):
+                ak.last_used = now[:-2] + "00"
+                db.add(ak)
+                db.commit()
+            return ak
     return None
+
+def key_actor(ak: ApiKeys) -> Actor:
+    return Actor(person_id=ak.person_id, via="key", scope=ak.scope or "write")
+
+def _key_actor(db: Session, raw_key: str) -> Actor | None:
+    ak = find_key(db, raw_key)
+    return key_actor(ak) if ak else None
 
 def _open_actor(db: Session, request: Request) -> Actor:
     """Sign-in is off: the browser says who is using it, and that is taken on trust."""
@@ -206,14 +224,22 @@ def _open_actor(db: Session, request: Request) -> Actor:
 def vault_on() -> bool:
     return bool(STATE.get("vault"))
 
+READS = ("GET", "HEAD", "OPTIONS")
+
 def identify(db: Session, request: Request) -> Actor | None:
+    # An encrypted household's data, opened for this call by its key (services/sealed_view.py)
+    view = getattr(request.state, "view", None)
+    if view is not None:
+        return view.actor
     raw_key = request.headers.get("x-api-key")
-    if raw_key and vault_on():
-        # The server cannot read an encrypted household's data, so a script with a key has nothing to use
-        raise HTTPException(status_code=401, detail="API keys are off while encryption is on.")
     if raw_key:
+        from ..services.vault import api_keys_allowed
+        if not api_keys_allowed():
+            raise HTTPException(status_code=401, detail="API keys are off on this server.")
         actor = _key_actor(db, raw_key)
         if actor:
+            if actor.scope == "read" and request.method not in READS:
+                raise HTTPException(status_code=403, detail="This key can only read.")
             return actor
         if flag(db, "LOGIN_PAGE"):
             raise HTTPException(status_code=401, detail="Invalid API key")

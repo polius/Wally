@@ -64,6 +64,7 @@ async function hkdf(ikm, info, length = 32) {
   const base = await subtle().importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
   return new Uint8Array(await subtle().deriveBits({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc.encode(info) }, base, length * 8));
 }
+export function hkdfBytes(ikm, info) { return hkdf(ikm, info); }
 /* Browsers keep WebCrypto for HTTPS (and localhost). Encryption needs it; signing in with a login
    key does not, so a household that turned encryption off still signs in over plain HTTP. */
 export function secure() { return !!(globalThis.crypto && crypto.subtle && globalThis.isSecureContext !== false); }

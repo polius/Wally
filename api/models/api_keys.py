@@ -13,9 +13,17 @@ class ApiKeys(SQLModel, table=True):
     person_id: int | None = Field(default=None, index=True)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
     last_used: str | None = Field(default=None)
+    # "read": GET only. "write": read and change, as every key could before scopes.
+    scope: str = Field(default="write")
+    # With encryption on: the household key, locked by the browser under the secret in this key
+    wrap: str | None = Field(default=None)
 
 class ApiKeyCreate(SQLModel):
     name: str = Field(default="", max_length=60)
+    scope: str = Field(default="write")
+    # With encryption on, the browser makes the key and locks the household key under it
+    key: str | None = Field(default=None)
+    wrap: str | None = Field(default=None)
 
 class ApiKeyPublic(SQLModel):
     id: str
@@ -24,3 +32,4 @@ class ApiKeyPublic(SQLModel):
     person_id: int | None
     created_at: str
     last_used: str | None
+    scope: str

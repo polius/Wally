@@ -4,6 +4,7 @@ import sqlite3
 from datetime import date
 from pathlib import Path
 from sqlalchemy import event, inspect
+from fastapi import Request
 from sqlmodel import Session, SQLModel, create_engine
 
 log = logging.getLogger("wally")
@@ -52,7 +53,14 @@ def create_db_and_tables():
     import_models()
     migrate_db()
 
-def get_session():
+def get_session(request: Request = None):
+    # An API key on an encrypted household: the data this call may use, opened for it alone
+    view = getattr(request.state, "view", None) if request is not None else None
+    if view is not None:
+        # Not closed here: FastAPI may close it after the response, while the view is saving. The
+        # view closes its connection when the call is done (services/sealed_view.py).
+        yield view.session()
+        return
     with Session(engine) as session:
         yield session
 
@@ -134,6 +142,12 @@ def _step_1(conn, today: date):
 
 STEPS = {1: _step_1}
 
+def _add_columns():
+    """Columns added during 2.0's development, for a database made by an earlier build of it"""
+    with engine.begin() as conn:
+        _add_column(conn, "apikeys", "scope", "scope VARCHAR NOT NULL DEFAULT 'write'")
+        _add_column(conn, "apikeys", "wrap", "wrap VARCHAR")
+
 def _version() -> str:
     try:
         from .main import VERSION
@@ -171,6 +185,7 @@ def migrate_db():
 
     if version >= SCHEMA_VERSION:
         SQLModel.metadata.create_all(engine)
+        _add_columns()
         return
 
     from .util import today as household_today
@@ -191,6 +206,7 @@ def migrate_db():
             upgrade.verify(before, upgrade.snapshot(conn), today)
         # New tables (people, sessions, rules)
         SQLModel.metadata.create_all(engine)
+        _add_columns()
         with engine.connect() as conn:
             if conn.exec_driver_sql("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise upgrade.UpgradeCheckFailed("SQLite's integrity check failed")

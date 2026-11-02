@@ -74,7 +74,7 @@ function render() {
     html += group(t("How it works"), [
       gi(ico("lock"), t("Your password is the key"), t("The household password opens the data on your devices. The server never sees it.")),
       gi(ico("file"), t("A new Emergency Kit"), t("Turning it on makes a new one for the household, to print and keep. The old one stops working.")),
-      gi(ico("alert"), t("What changes"), t("API keys stop working and sign-in can’t be turned off. Whoever runs the server can no longer reset a password.")),
+      gi(ico("alert"), t("What changes"), t("Sign-in can’t be turned off, and whoever runs the server can no longer reset a password. API keys made before stop working: make new ones.")),
     ]);
   }
   paint(box, html);
@@ -117,7 +117,7 @@ function turnOn() {
       '<ul class="w-slist">' +
       "<li>" + t("You get a new Emergency Kit, and the old one stops working. It’s the only way back in if you forget the password: whoever runs the server can’t help any more.") + "</li>" +
       "<li>" + t("Everyone keeps signing in with the same password. Other browsers ask for it once, to unlock.") + "</li>" +
-      "<li>" + t("API keys stop working, and sign-in can’t be turned off.") + "</li>" +
+      "<li>" + t("Sign-in can’t be turned off. API keys made before stop working: make new ones afterwards.") + "</li>" +
       "<li>" + t("Wally is read-only for everyone for about a minute.") + "</li>" +
       (list.length ? "<li>" + tn(list.length, "The {n} backup on the server is in the clear, so it’s deleted. Download it first if you want it:", "The {n} backups on the server are in the clear, so they’re deleted. Download them first if you want them:") +
         ' <span class="w-sbackups">' + list.map((b) => '<a href="/api/backups/' + encodeURIComponent(b.name) + '" download>' + esc(b.name) + " · " + size(b.size) + "</a>").join("") + "</span></li>" : "") +

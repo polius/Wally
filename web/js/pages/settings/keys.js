@@ -1,9 +1,10 @@
 /* Settings › API keys: create (shown once), list with owner and last use, delete;
    and how to add from a phone's lock screen with an iOS Shortcut or Android HTTP Shortcuts. */
+import * as core from "../../core.js";
 import { t, esc, state, GET, POST, DEL, pname, expCats, icon, TODAY } from "../../core.js";
 import { openDialog, toast, errorToast, empty } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { group, gi, ico, trashBtn, parseUtc, dayLabel, ago, copyText, counts, paint } from "./common.js";
+import { group, gi, ico, trashBtn, parseUtc, dayLabel, ago, copyText, counts, paint, field, passwordInput } from "./common.js";
 
 let box = null;
 let keys = null;
@@ -36,11 +37,15 @@ function request(placeholders) {
   return "POST " + location.origin + "/api/transactions\nX-API-Key: " + t("your key") + "\nContent-Type: application/json\n\n" + body;
 }
 
+const sealed = () => !!(state.status && state.status.vault && state.status.vault.on);
+let scope = "write";
+
 function render() {
-  if (state.status && state.status.vault && state.status.vault.on) {
-    // The server can't read an encrypted household, so a script with a key would have nothing to read or add to
-    paint(box, group(t("API keys"), [gi(ico("shield"), t("Off while Wally is encrypted"),
-      t("Scripts and phone shortcuts talk to the server, and the server can’t read or add to an encrypted household. Turn off encryption in Settings › Privacy to use them."))]));
+  const v = (state.status && state.status.vault) || {};
+  if (v.api_keys === false) {
+    // WALLY_ENCRYPTION=required: a key would let the server open the data while a call runs
+    paint(box, group(t("API keys"), [gi(ico("shield"), t("Off on this server"),
+      t("Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs."))]));
     return;
   }
   const signin = state.status && state.status.signin;
@@ -49,12 +54,15 @@ function render() {
   else if (failed) rows = [empty("alert", t("API keys can’t be listed"), esc(failed))];
   else rows = keys.map((k) => {
     const used = parseUtc(k.last_used), made = parseUtc(k.created_at);
-    const parts = ["<code>" + esc(k.prefix) + "…</code>", esc(pname(k.person_id)), t("created {date}", { date: made ? dayLabel(made) : "" }), used ? t("last used {when}", { when: ago(used) }) : t("never used")];
+    const parts = ["<code>" + esc(k.prefix) + "…</code>", k.scope === "read" ? t("Read only") : t("Read and write"), esc(pname(k.person_id)), t("created {date}", { date: made ? dayLabel(made) : "" }), used ? t("last used {when}", { when: ago(used) }) : t("never used")];
     return gi(ico("key"), esc(k.name || t("Unnamed key")), parts.join(" · "), trashBtn(t("Delete {name}", { name: k.name || t("Unnamed key") }), ' data-act="delete" data-id="' + esc(k.id) + '" data-k="del:' + esc(k.id) + '"'));
   });
   if (keys && !keys.length && !failed) rows = [empty("key", t("No API keys yet"), t("A key lets a script, a spreadsheet or a phone shortcut add and read transactions."))];
   rows.push('<div class="w-gi w-gadd"><span class="w-ico">' + icon("plus") + '</span><div class="w-inline"><input class="w-mini w-addin" id="key-name" placeholder="' + esc(t("What is this key for?")) +
-    '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off"></div><button type="button" class="w-btn ghost" data-act="create" data-k="create">' + t("Create key") + "</button></div>");
+    '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off">' +
+    '<select class="w-mini" id="key-scope" aria-label="' + esc(t("What the key can do")) + '">' +
+    [["write", t("Read and write")], ["read", t("Read only")]].map(([v2, l]) => '<option value="' + v2 + '"' + (scope === v2 ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
+    '</div><button type="button" class="w-btn ghost" data-act="create" data-k="create">' + t("Create key") + "</button></div>");
   const example = 'curl -H "X-API-Key: wly_…" \\\n  "' + location.origin + "/api/transactions/between?from=" + TODAY.slice(0, 8) + "01&to=" + TODAY + '"';
   paint(box,
     (signin ? "" : '<div class="w-explain"><p>' + t("Sign-in is off, so anyone who can reach Wally can use the API, with or without a key. A key still tells Wally who added what. Turn on sign-in in {link} to require one.",
@@ -82,19 +90,44 @@ async function onClick(ev) {
 async function create() {
   const input = box.querySelector("#key-name");
   const name = input.value.trim();
+  scope = box.querySelector("#key-scope").value;
   if (!name) { toast(t("Say what the key is for first")); input.focus(); return; }
+  if (sealed()) return createSealed(name);
   try {
-    const k = await POST("/api-keys", { name });
-    await load();
-    openDialog({
-      title: t("Copy your new key"),
-      body: "<p>" + t("It is shown only this once. Put it where the tool that uses it can read it.") + "</p>" +
-        '<div class="w-keybox"><code id="key-raw">' + esc(k.key) + '</code><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>",
-      ok: t("Done"),
-      noCancel: true,
-      onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied"))),
-    });
+    show(await POST("/api-keys", { name, scope }));
   } catch (e) { errorToast(e); }
+}
+
+/* Encrypted: the browser makes the key and locks the household key under it, so it needs the password */
+function createSealed(name) {
+  openDialog({
+    title: t("Create {name}", { name: esc(name) }),
+    body: "<p>" + t("Wally is encrypted. While a call made with this key runs, the server opens the data it needs, then forgets it. What’s stored stays encrypted.") + "</p>" +
+      field(t("Household password"), passwordInput("key-pw", "current-password")),
+    ok: t("Create key"),
+    onOk: async (root) => {
+      const pw = root.querySelector("#key-pw").value;
+      if (!pw) throw new Error(t("Enter your password first."));
+      const s = await import("../../vault/session.js");
+      s.bind(core);
+      const k = await s.makeApiKey(pw, name, scope);
+      setTimeout(() => show(k), 0);
+    },
+  });
+}
+
+async function show(k) {
+  scope = "write";
+  if (box) box.querySelector("#key-name").value = "";
+  await load();
+  openDialog({
+    title: t("Copy your new key"),
+    body: "<p>" + t("It is shown only this once. Put it where the tool that uses it can read it.") + "</p>" +
+      '<div class="w-keybox"><code id="key-raw">' + esc(k.key) + '</code><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>",
+    ok: t("Done"),
+    noCancel: true,
+    onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied"))),
+  });
 }
 
 function remove(id) {

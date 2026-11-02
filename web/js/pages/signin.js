@@ -57,7 +57,7 @@ const signOutLink = () => '<button type="button" class="w-link w-silink" data-si
 function wireSignOut() { const b = root.querySelector("[data-signout-gate]"); if (b) b.addEventListener("click", signOutNow); }
 
 /* ======================= sign in ======================= */
-const si = { step: "who", p: null, rec: false, err: "", wait: 0 };
+const si = { step: "who", p: null, rec: false, err: "", wait: 0, shake: false };
 let countdown = null;
 
 function startSignin() {
@@ -75,14 +75,13 @@ function go(step, p) {
   renderSignin();
 }
 
+/* Like a Mac's login window: no card. Whoever is signing in picks their face; then their face, their
+   name and one password field, with the arrow that sends it inside the field. Mistakes shake the
+   field and are said under it, in a space kept for them so nothing moves. */
 function renderSignin() {
   const s = si.step, name = si.p ? esc(pname(si.p)) : "";
   if (s === "who") {
-    paint(card(mark() + head(t("Who is signing in?"), t("Everyone uses the household password")) +
-      '<div class="w-profiles" role="list">' + state.people.map((p) =>
-        '<div role="listitem"><button type="button" class="w-prof" data-prof="' + p.id + '">' + bigAv(String(p.id)) + "<span>" + esc(p.name) + "</span></button></div>").join("") + "</div>" +
-      '<span class="w-hint">' + t("Wally remembers the last person on this browser") + "</span>"));
-    root.querySelectorAll("[data-prof]").forEach((b) => b.addEventListener("click", () => go("pw", b.dataset.prof)));
+    paint(facePicker(t("Who is signing in?"), "", "", (b) => go("pw", b.dataset.prof)), ".w-who");
     return;
   }
   if (s === "nokit") {
@@ -94,37 +93,46 @@ function renderSignin() {
     return;
   }
   const code = s === "code", household = s === "household", bad = !!si.err && !si.wait;
-  let top, field, links;
+  const face = household ? '<span class="w-mark w-lockmark" aria-hidden="true"></span>' : av(si.p, "w-lockav");
+  let title, sub = "", input, links;
   if (code) {
-    top = bigAv(si.p) + head(t("Two-step sign-in"), si.rec ? t("Enter one of your recovery codes") : t("Enter the 6-digit code from your authenticator app"));
-    field = si.rec
+    title = t("Two-step sign-in");
+    sub = si.rec ? t("Enter one of your recovery codes") : t("Enter the 6-digit code from your authenticator app");
+    input = si.rec
       ? '<input id="si-in" class="w-sicode" placeholder="xxxx-xxxx" aria-label="' + esc(t("Recovery code")) + '" autocomplete="off" autocapitalize="off" spellcheck="false"'
       : '<input id="si-in" class="w-sicode" placeholder="123 456" aria-label="' + esc(t("6-digit code")) + '" inputmode="numeric" pattern="[0-9 ]*" autocomplete="one-time-code" maxlength="7"';
-    field = '<div class="w-input' + (bad ? " err" : "") + '">' + field + ' aria-invalid="' + bad + '" aria-describedby="si-msg"></div>';
-    links = '<div class="w-silinks"><button type="button" class="w-link w-silink" id="si-alt">' + (si.rec ? t("Use the authenticator app") : t("Use a recovery code")) + "</button>" +
-      '<button type="button" class="w-link w-silink" id="si-nophone">' + t("No phone or codes?") + "</button></div>";
+    input += ' aria-invalid="' + bad + '" aria-describedby="si-msg">';
+    links = '<button type="button" class="w-link w-silink" id="si-alt">' + (si.rec ? t("Use the authenticator app") : t("Use a recovery code")) + "</button>" +
+      '<button type="button" class="w-link w-silink" id="si-nophone">' + t("No phone or codes?") + "</button>";
   } else {
-    top = household ? mark() + head(t("Sign in"), t("Enter the household password")) : bigAv(si.p) + head(t("Hi, {name}", { name }), t("Enter the household password"));
-    field = (household ? "" : '<input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>') +
-      '<div class="w-input' + (bad ? " err" : "") + '"><input type="password" id="si-in" placeholder="' + esc(t("Password")) + '" aria-label="' + esc(t("Password")) + '" aria-invalid="' + bad + '" aria-describedby="si-msg" autocomplete="current-password">' + eye("si-in") + "</div>";
-    links = '<div class="w-silinks">' + (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
-      '<button type="button" class="w-link w-silink" id="si-forgot">' + t("Forgot password?") + "</button></div>";
+    // Nobody to pick yet (just upgraded from 1.x): Wally's mark, and what to type. Otherwise the name says it all.
+    title = household ? t("Sign in") : name;
+    sub = household ? t("Enter the household password") : "";
+    input = (household ? "" : '<input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>') +
+      '<input type="password" id="si-in" placeholder="' + esc(t("Household password")) + '" aria-label="' + esc(t("Household password")) + '" aria-invalid="' + bad + '" aria-describedby="si-msg" autocomplete="current-password">' + eye("si-in");
+    links = (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
+      '<button type="button" class="w-link w-silink" id="si-forgot">' + t("Forgot password?") + "</button>";
   }
   const msg = si.wait ? waitText() : si.err;
   // Said where the password is typed, so everyone knows who can read their data
-  const sealed = !code && status.vault && status.vault.on ? '<p class="w-hint w-sienc">' + icon("lock") + t("End-to-end encrypted: whoever runs this server can’t read your data.") + "</p>" : "";
-  paint(card(top + '<form id="si-form" class="w-siform" novalidate>' + field +
-    '<p class="w-err" id="si-msg" role="alert"' + (msg ? "" : " hidden") + ">" + msg + "</p>" +
-    '<button class="w-btn primary w-submit" type="submit" id="si-go"' + (si.wait ? " disabled" : "") + ">" + t("Sign in") + "</button></form>" + links + sealed), "#si-in");
+  const sealed = !code && status.vault && status.vault.on ? '<p class="w-sienc">' + icon("lock") + t("End-to-end encrypted: whoever runs this server can’t read your data.") + "</p>" : "";
+  const shake = si.shake;
+  si.shake = false;
+  paint('<main class="w-lock" aria-labelledby="gate-h">' +
+    '<div class="w-lockhero">' + face + '<h1 id="gate-h">' + title + "</h1>" + (sub ? "<p>" + sub + "</p>" : "") + "</div>" +
+    '<form id="si-form" class="w-lockform" novalidate><div class="w-lockfield' + (bad ? " err" : "") + (shake ? " shake" : "") + '">' + input +
+      '<button class="w-lockgo" type="submit" id="si-go" aria-label="' + esc(t("Sign in")) + '"' + (si.wait ? " disabled" : "") + ">" + icon("right") + "</button></div>" +
+      '<p class="w-lockmsg" id="si-msg" role="alert">' + msg + "</p></form>" +
+    '<div class="w-locklinks">' + links + "</div>" + sealed + "</main>", "#si-in");
   wireEyes();
-  const input = root.querySelector("#si-in");
-  root.querySelector("#si-form").addEventListener("submit", (ev) => { ev.preventDefault(); submitSignin(input.value); });
+  const input0 = root.querySelector("#si-in");
+  root.querySelector("#si-form").addEventListener("submit", (ev) => { ev.preventDefault(); submitSignin(input0.value); });
   if (code) {
     root.querySelector("#si-alt").addEventListener("click", () => { si.rec = !si.rec; go("code"); });
     // Encrypted: the Emergency Kit stands in for two-step. Otherwise a one-time password from the server turns it off.
     root.querySelector("#si-nophone").addEventListener("click", forgot);
     // The code goes as soon as the sixth digit is typed or pasted
-    if (!si.rec) input.addEventListener("input", () => { if (input.value.replace(/\D/g, "").length === 6) submitSignin(input.value); });
+    if (!si.rec) input0.addEventListener("input", () => { if (input0.value.replace(/\D/g, "").length === 6) submitSignin(input0.value); });
   } else {
     const not = root.querySelector("#si-not");
     if (not) not.addEventListener("click", () => go("who", null));
@@ -145,7 +153,7 @@ function startWait(seconds) {
     si.wait = 0;
     const go = root.querySelector("#si-go");
     if (go) go.disabled = false;
-    if (msg) { msg.textContent = ""; msg.hidden = true; }
+    if (msg) msg.textContent = "";
   }, 1000);
 }
 
@@ -153,7 +161,7 @@ let sending = false;
 async function submitSignin(value) {
   if (sending || si.wait) return;
   const code = si.step === "code";
-  if (!value.trim()) { si.err = code ? t("Enter the code first.") : t("Enter your password first."); renderSignin(); return; }
+  if (!value.trim()) { si.err = code ? t("Enter the code first.") : t("Enter your password first."); si.shake = true; renderSignin(); return; }
   sending = true;
   busy(root.querySelector("#si-go"), true);
   try {
@@ -190,6 +198,7 @@ function loginError(e, code) {
     // The last wrong try starts the wait straight away. The tries left aren't counted out loud.
     if (!d.tries_left) return startWait(30);
     si.err = what;
+    si.shake = true;
     return renderSignin();
   }
   if (code && e.status === 401) { si.step = "pw"; si.err = t("That took too long. Sign in again."); return renderSignin(); }
@@ -218,14 +227,34 @@ function forgot() {
 /* ======================= who is using this browser (sign-in off) ======================= */
 /* A profile picker: big faces, one tap. Arrows move between them; the choice is remembered here. */
 function renderWho() {
+  paint(facePicker(t("Who’s using Wally?"), t("Wally remembers you on this browser and notes who adds each transaction."), t("No password needed while sign-in is off."), (b) => {
+    write("wally.person", b.dataset.prof);
+    finish();
+  }), ".w-who");
+}
+/* Big faces, one tap: they come in one after another, and the chosen one comes forward while
+   the rest step back. Arrows move between them. */
+function facePicker(title, sub, foot, onPick) {
   const people = state.people;
-  paint('<main class="w-who" aria-labelledby="gate-h" tabindex="-1">' +
-    '<div class="w-whohead"><h1 id="gate-h">' + t("Who’s using Wally?") + "</h1><p>" + t("Wally remembers you on this browser and notes who adds each transaction.") + "</p></div>" +
+  setTimeout(() => wirePicker(onPick));
+  return '<main class="w-who" aria-labelledby="gate-h" tabindex="-1">' +
+    '<div class="w-whohead"><h1 id="gate-h">' + title + "</h1>" + (sub ? "<p>" + sub + "</p>" : "") + "</div>" +
     '<ul class="w-wholist' + (people.length > 4 ? " many" : "") + '">' + people.map((p, i) =>
-      '<li style="--i:' + i + '"><button type="button" class="w-whop" data-prof="' + p.id + '">' + av(String(p.id), "w-whoav") + '<span class="w-whon">' + esc(p.name) + "</span></button></li>").join("") + "</ul>" +
-    '<p class="w-whofoot">' + t("No password needed while sign-in is off.") + "</p></main>", ".w-who");
-  const box = root.querySelector(".w-who"), btns = [...box.querySelectorAll("[data-prof]")];
-  btns.forEach((b) => b.addEventListener("click", () => pick(b)));
+      '<li style="--i:' + i + '"><button type="button" class="w-whop w-prof" data-prof="' + p.id + '">' + av(String(p.id), "w-whoav") + '<span class="w-whon">' + esc(p.name) + "</span></button></li>").join("") + "</ul>" +
+    (foot ? '<p class="w-whofoot">' + foot + "</p>" : "") + "</main>";
+}
+function wirePicker(onPick) {
+  const box = root.querySelector(".w-who");
+  if (!box || box.dataset.wired) return;
+  box.dataset.wired = "1";
+  const btns = [...box.querySelectorAll("[data-prof]")];
+  btns.forEach((b) => b.addEventListener("click", () => {
+    if (box.classList.contains("picked")) return;
+    b.classList.add("on");
+    box.classList.add("picked");
+    // A moment for the chosen face to come forward, unless motion is turned down
+    setTimeout(() => onPick(b), matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+  }));
   box.addEventListener("keydown", (ev) => {
     const i = btns.indexOf(document.activeElement), rtl = document.documentElement.dir === "rtl";
     const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 1, ArrowUp: -1 }[ev.key];
@@ -237,14 +266,6 @@ function renderWho() {
     ev.preventDefault();
     btns[to].focus();
   });
-  function pick(b) {
-    if (box.classList.contains("picked")) return;
-    write("wally.person", b.dataset.prof);
-    b.classList.add("on");
-    box.classList.add("picked");
-    // A moment for the chosen face to come forward, unless motion is turned down
-    setTimeout(finish, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
-  }
 }
 
 /* ======================= saving the household's Emergency Kit ======================= */
@@ -288,18 +309,36 @@ async function copy(text, btn) {
 }
 
 /* ======================= first run, and the upgrade from 1.x ======================= */
-/* Both use the same three-step card: a header with the steps, a body, and Back / Continue. */
-function onbFrame(steps, at, body, foot, skip) {
-  const stepper = steps.length > 1 ? '<ol class="w-steps">' +
-    steps.map((x, i) => '<li class="' + (i === at ? "on" : i < at ? "done" : "") + '"' + (i === at ? ' aria-current="step"' : "") + "><span>" + (i < at ? icon("check") : i + 1) + '</span><em>' + x + "</em></li>").join("") + "</ol>" : "";
-  // Skip sits with the button it stands in for, not up in the header
-  if (skip) foot = foot.replace('<button type="button" class="w-btn primary" id="onb-next">', '<button type="button" class="w-link w-onbskip" id="onb-skip">' + t("Skip") + '</button><button type="button" class="w-btn primary" id="onb-next">');
-  return '<main class="w-onb" aria-labelledby="gate-h">' + (stepper ? '<div class="w-onbh"><span class="w-mark" role="img" aria-label="Wally"></span>' + stepper + "</div>" : "") +
-    '<div class="w-onbb">' + body + '<p class="w-err" id="onb-err" role="alert" hidden></p></div><div class="w-onbfoot">' + foot + "</div></main>";
+/* Every step has the same shape, as a phone's setup does: Back and how far along at the top, a
+   symbol, one title and a sentence or two on why, what to do, then one button, with "Not now" under
+   it when the step can wait. Steps come in from the side; a step drawn again (a name added, the
+   language changed) doesn't move. */
+let onbShown = "";
+function onbFrame(o) {
+  const dots = o.count > 1 ? '<ol class="w-onbdots" aria-label="' + esc(t("Step {n} of {total}", { n: o.at + 1, total: o.count })) + '">' +
+    Array.from({ length: o.count }, (_, i) => '<li class="' + (i === o.at ? "on" : i < o.at ? "done" : "") + '"></li>').join("") + "</ol>" : "<span></span>";
+  const top = '<div class="w-onbtop">' + (o.back ? '<button type="button" class="w-onbback" id="onb-back">' + icon("left") + "<span>" + t("Back") + "</span></button>" : "<span></span>") + dots + "<span></span></div>";
+  const ico = o.ico === "mark" ? '<span class="w-mark w-onbmark" aria-hidden="true"></span>' : '<span class="w-onbico">' + icon(o.ico) + "</span>";
+  const foot = '<div class="w-onbfoot">' +
+    (o.next ? '<button type="button" class="w-btn primary" id="onb-next"' + (o.nextOff ? " disabled" : "") + ">" + o.next + "</button>" : "") +
+    (o.alt ? '<button type="button" class="w-link w-onbalt" id="onb-skip">' + o.alt + "</button>" : "") + "</div>";
+  const enter = o.key !== onbShown;
+  onbShown = o.key;
+  return '<main class="w-onb' + (enter ? " enter" : "") + '" aria-labelledby="gate-h">' + top +
+    '<div class="w-onbb"><div class="w-onbhero">' + ico + '<h1 id="gate-h">' + o.title + "</h1>" + (o.sub ? '<p class="w-onbp">' + o.sub + "</p>" : "") + "</div>" +
+    (o.body || "") + '<p class="w-err" id="onb-err" role="alert" hidden></p></div>' + foot + "</main>";
 }
 function onbError(msg) { const e = root.querySelector("#onb-err"); if (e) { e.innerHTML = msg || ""; e.hidden = !msg; } }
-const backBtn = () => '<button type="button" class="w-btn ghost" id="onb-back">' + t("Back") + "</button>";
-const nextBtn = (label) => '<button type="button" class="w-btn primary" id="onb-next">' + label + "</button>";
+/* Encrypting, step by step, under the button */
+function progress() {
+  const prog = root.querySelector("#onb-prog");
+  return (step, n, total) => {
+    if (!prog) return;
+    prog.hidden = false;
+    prog.textContent = { keys: t("Making keys from your password…"), pause: t("Pausing Wally for everyone…"), seal: t("Encrypting {n} of {total}…"), check: t("Reading everything back to compare…"), switch: t("Switching to the new file…") }[step]
+      .replace("{n}", String(n || 0)).replace("{total}", String(total || 0));
+  };
+}
 
 /* The people rows, shared by first run and the upgrade */
 function initialOf(name) { const c = [...String(name || "").trim()][0]; return c ? c.toLocaleUpperCase(LANG) : ""; }
@@ -344,13 +383,46 @@ async function createPeople(names) {
   return out;
 }
 
-/* ---------- first run: Basics, People, Privacy, Your data ---------- */
-/* Privacy asks who runs the server once sign-in is on: when it's someone else, Wally is encrypted
-   now, before there is anything to encrypt. With WALLY_ENCRYPTION=required it isn't a question. */
-const onb = { step: 0, names: [""], people: [], pw: false, data: "add", currency: null, who: "", secret: "", plainKit: "", kit: "", qr: "", saved: false, sealed: false };
+/* What encrypting means, in everyday words: the same list whether it's chosen or required */
+function whatItMeans(others) {
+  return '<ul class="w-onbmeans">' +
+    "<li>" + icon("key") + "<span><b>" + t("Your password is the key.") + "</b> " + t("Nobody can reset it for you, not even whoever runs the server.") + "</span></li>" +
+    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("One for the household, to print or keep in a password manager. It gets you back in if you forget the password.") + "</span></li>" +
+    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone uses the same password.") + "</b> " + t("Each person types it once on their own phone or computer.") + "</span></li>" : "") + "</ul>";
+}
+/* The household's Emergency Kit: the recovery key, its QR code, and a tick before going on */
+function kitBody(key, qr, saved, note) {
+  return '<div class="w-kit">' + qr + keyGroups(key) + "</div>" +
+    '<div class="w-silinks"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
+    '<label class="w-sichk w-onbtick"><input type="checkbox" id="onb-saved"' + (saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>" +
+    (note ? '<p class="w-hint w-onbnote">' + note + "</p>" : "");
+}
+function wireKit(key, onTick) {
+  root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(key));
+  root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(key, ev.currentTarget));
+  root.querySelector("#onb-saved").addEventListener("change", (ev) => {
+    onTick(ev.target.checked);
+    root.querySelector("#onb-next").disabled = !ev.target.checked;
+  });
+}
+function pwFields(id, label, value, confirm) {
+  return '<div class="w-onbfields"><div class="w-input"><input type="password" id="' + id + '" placeholder="' + esc(label) + '" aria-label="' + esc(label) + '" autocomplete="' + (confirm ? "new-password" : "current-password") + '" value="' + esc(value || "") + '">' + eye(id) + "</div>" +
+    (confirm ? '<div class="w-input"><input type="password" id="' + id + '2" placeholder="' + esc(t("Confirm password")) + '" aria-label="' + esc(t("Confirm password")) + '" autocomplete="new-password" value="' + esc(value || "") + '"></div>' : "") + "</div>";
+}
+
+/* ---------- first run: Welcome, People, Password, Encrypt, Emergency Kit, Your data ---------- */
+/* One question a step. The password is kept in memory until the Encrypt step, where it is saved
+   and, unless that waits, becomes the key to the household's data. Over plain HTTP browsers can't
+   encrypt: that step is left out and the kit is made with the password. With
+   WALLY_ENCRYPTION=required, neither the password nor encrypting can wait. */
+// pw: a password, unless "Not now" says otherwise, so the dots count its steps from the start
+const onb = { step: 0, names: [""], people: [], pw: true, secret: "", pwSaved: false, data: "add", currency: null, plainKit: "", kit: "", qr: "", saved: false, sealed: false };
 const mustEncrypt = () => !!(status.vault && status.vault.required);
 const canEncrypt = () => !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
-function onbSteps() { return ["basics", "people", ...(onb.pw || mustEncrypt() ? ["privacy"] : []), "data"]; }
+function onbSteps() {
+  const pw = onb.pw || mustEncrypt();
+  return ["basics", "people", "password", ...(pw && (canEncrypt() || mustEncrypt()) ? ["encrypt"] : []), ...(pw ? ["kit"] : []), "data"];
+}
 
 async function startWelcome() {
   if (mustEncrypt()) onb.pw = true;
@@ -359,139 +431,83 @@ async function startWelcome() {
 }
 function renderWelcome() {
   const keys = onbSteps(), k = keys[onb.step];
-  const labels = { basics: t("Basics"), people: t("People"), privacy: t("Privacy"), data: t("Your data") };
-  let body, foot;
+  const others = onb.people.length > 1 || onb.names.filter((n) => n.trim()).length > 1;
+  const o = { key: "onb-" + k, count: keys.length, at: onb.step, back: onb.step > 0 };
+  let focus = "#onb-next";
   if (k === "basics") {
     const c = onb.currency;
     const sample = new Intl.NumberFormat(LANG, { minimumFractionDigits: 2 }).format(12);
     const sel = c && c.currencies.find((x) => x.name === c.selected), sym = sel ? sel.symbol : "€";
-    body = '<h1 id="gate-h">' + t("Welcome to Wally") + '</h1><p class="w-onbp">' + t("Wally keeps track of what your household spends and earns. Your data stays on this server.") + "</p>" +
-      '<div class="w-onbf">' +
+    Object.assign(o, { ico: "mark", title: t("Welcome to Wally"), sub: t("Keep track of what your household spends and earns. Your data stays on this server."), next: t("Continue") });
+    o.body = '<div class="w-onbf">' +
       '<label class="w-onbrow"><span>' + t("Language") + '</span><select class="w-mini" id="onb-lang">' + LANGUAGES.map(([code, n]) => '<option value="' + code + '"' + (code === LANG ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></label>" +
       (c ? '<label class="w-onbrow"><span>' + t("Currency") + '</span><select class="w-mini" id="onb-cur">' + c.currencies.map((x) => '<option value="' + esc(x.name) + '"' + (x.name === c.selected ? " selected" : "") + ">" + esc(x.name) + " · " + esc(x.symbol) + "</option>").join("") + "</select></label>" +
-        '<div class="w-onbrow"><span id="onb-pos-l">' + t("Symbol") + '</span><div class="w-seg sm" id="onb-pos" role="group" aria-labelledby="onb-pos-l">' +
+        '<div class="w-onbrow"><span id="onb-pos-l">' + t("Symbol") + '</span><div class="w-seg" id="onb-pos" role="group" aria-labelledby="onb-pos-l">' +
         [["left", sym + sample], ["right", sample + " " + sym]].map(([v, l]) => '<button type="button" data-v="' + v + '" aria-pressed="' + (c.position === v) + '">' + esc(l) + "</button>").join("") + "</div></div>" : "") +
       "</div>";
-    foot = "<span></span>" + nextBtn(t("Continue"));
   } else if (k === "people") {
-    const locked = mustEncrypt();
-    body = '<h1 id="gate-h">' + t("Who shares this household?") + '</h1><p class="w-onbp">' + t("Each person gets their own view. Costs you share are split between you.") + "</p>" +
-      peopleRows(onb.names, onb.people) +
-      (onb.people.length ? "" : '<div class="w-onbf w-onbpw"><div class="w-onbrow"><span id="onb-pw-l">' + t("Password") + '</span><span class="w-inline w-nowrap"><button type="button" class="w-switch" role="switch" id="onb-pw" aria-checked="' + onb.pw + '" aria-labelledby="onb-pw-l"' + (locked ? " disabled" : "") + "></button>" +
-        '<input class="w-mini" type="password" id="onb-pwd" placeholder="' + esc(t("Choose a password")) + '" aria-label="' + esc(t("Password")) + '" autocomplete="new-password"' + (onb.pw ? "" : " hidden") + "></span></div>" +
-        '<p class="w-hint">' + (locked ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
-          : onb.pw ? t("Wally asks for it when it opens. Everyone in the household uses this one password.") : t("Off: anyone who can reach this server can open Wally. Turn it on in Settings › Sign-in at any time.")) + "</p></div>") +
-      '<p class="w-hint">' + t("Living alone? Keep just yourself. The person switch then stays hidden.") + "</p>";
-    foot = backBtn() + nextBtn(t("Continue"));
-  } else if (k === "privacy") {
-    ({ body, foot } = privacyStep());
+    Object.assign(o, { ico: "users", title: t("Who shares this household?"), sub: t("Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you."), next: t("Continue") });
+    o.body = peopleRows(onb.names, onb.people) + (onb.people.length ? "" : '<p class="w-hint w-onbnote">' + t("Living alone? Just add yourself.") + "</p>");
+    if (!onb.people.length) focus = "[data-name]";
+  } else if (k === "password") {
+    const must = mustEncrypt();
+    Object.assign(o, { ico: "lock", title: t("Create a household password"), next: t("Continue"), alt: must ? "" : t("Not now"),
+      sub: others ? t("Wally asks for it when it opens. Everyone in the household uses this one password.") : t("Wally asks for it when it opens.") });
+    o.body = pwFields("onb-pwd", t("Password"), onb.secret, true) +
+      '<p class="w-hint w-onbnote">' + (must ? t("Needed on this server: your password is the key to your data. At least 8 characters.")
+        : t("At least 8 characters. Without a password, anyone who can reach this server can open Wally.")) + "</p>";
+    focus = "#onb-pwd";
+  } else if (k === "encrypt") {
+    const must = mustEncrypt(), secure = canEncrypt();
+    Object.assign(o, { ico: "shield", back: o.back && !onb.pwSaved,
+      title: must ? t("This server encrypts your data") : t("Encrypt your data"),
+      sub: must ? t("Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.")
+        : t("Everything is locked on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money."),
+      next: secure ? t("Encrypt") : "", alt: must ? "" : t("Not now") });
+    o.body = (secure ? whatItMeans(others) : '<p class="w-err">' + t("This needs a secure connection. Open Wally at its https:// address to finish setting up.") + "</p>") +
+      (must ? "" : '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Privacy.") + "</p>") +
+      '<p class="w-hint w-onbprog" id="onb-prog" aria-live="polite" hidden></p>';
+  } else if (k === "kit") {
+    Object.assign(o, { ico: "file", back: false, title: t("Save the household’s Emergency Kit"), next: t("Continue"), nextOff: !onb.saved,
+      sub: onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
+        : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
+    o.body = kitBody(onb.kit, onb.qr, onb.saved, onb.sealed || canEncrypt() ? "" : t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Privacy."));
+    focus = "#onb-dl";
   } else {
-    body = '<h1 id="gate-h">' + t("Bring your data") + '</h1><p class="w-onbp">' + t("You can always import more later from Settings.") + "</p>" +
-      '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
+    // No going back into the kit: it was shown once, and ticked
+    Object.assign(o, { ico: "io", back: o.back && !onb.kit, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
+    o.body = '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
       [["import", "io", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
        ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([key, ic, b, sm]) =>
         '<button type="button" class="w-choice" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '" aria-pressed="' + (onb.data === key) + '"><span class="w-ico">' + icon(ic) + "</span><b>" + b + "</b><small>" + sm + "</small></button>").join("") + "</div>";
-    foot = (onb.kit ? "<span></span>" : backBtn()) + nextBtn(onb.data === "import" ? t("Choose a file") : t("Open Wally"));
   }
-  paint(onbFrame(keys.map((x) => labels[x]), onb.step, body, foot, k === "basics" || k === "data"), k === "people" && !onb.people.length ? "[data-name]" : k === "privacy" && !onb.who && !onb.kit && !mustEncrypt() ? "[data-who]" : "#onb-next");
-  wireWelcome();
+  paint(onbFrame(o), focus);
+  wireEyes();
+  wireWelcome(k);
 }
-
-/* What encrypting means, in everyday words: the same list whether it's chosen or required */
-function whatItMeans(others) {
-  return '<ul class="w-onbmeans">' +
-    "<li>" + icon("lock") + "<span><b>" + t("Your password is the key.") + "</b> " + t("Nobody can reset it for you, not even whoever runs the server.") + "</span></li>" +
-    "<li>" + icon("file") + "<span><b>" + t("You save an Emergency Kit.") + "</b> " + t("One for the household, to print or keep in a password manager. It gets you back in if you forget the password.") + "</span></li>" +
-    (others ? "<li>" + icon("users") + "<span><b>" + t("Everyone uses the same password.") + "</b> " + t("Each person types it once on their own phone or computer.") + "</span></li>" : "") +
-    "<li>" + icon("phone") + "<span><b>" + t("Phone shortcuts and API keys are off.") + "</b> " + t("They talk to the server, and the server can’t read your data.") + "</span></li></ul>";
-}
-function privacyStep() {
-  const others = onb.people.length > 1;
-  // The household's Emergency Kit: made with the password, or anew as Wally was encrypted
-  if (onb.kit) {
-    const body = '<h1 id="gate-h">' + t("Save the household’s Emergency Kit") + '</h1><p class="w-onbp">' +
-      (onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
-        : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")) + "</p>" +
-      '<div class="w-kit">' + onb.qr + keyGroups(onb.kit) + "</div>" +
-      '<div class="w-silinks w-onbkit"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div>" +
-      '<label class="w-sichk"><input type="checkbox" id="onb-saved"' + (onb.saved ? " checked" : "") + ">" + t("I saved my Emergency Kit somewhere safe") + "</label>";
-    return { body, foot: "<span></span>" + nextBtn(t("Continue")) };
-  }
-  const secure = canEncrypt();
-  if (mustEncrypt()) {
-    const body = '<h1 id="gate-h">' + t("This server encrypts your data") + '</h1><p class="w-onbp">' +
-      t("Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.") + "</p>" +
-      (secure ? whatItMeans(others) : '<p class="w-err">' + t("This needs a secure connection. Open Wally at its https:// address to finish setting up.") + "</p>") +
-      '<p class="w-hint" id="onb-prog" aria-live="polite" hidden></p>';
-    return { body, foot: backBtn() + (secure ? nextBtn(t("Encrypt and continue")) : "") };
-  }
-  const choice = (key, title, sub, extra) =>
-    '<button type="button" class="w-choice" role="radio" data-who="' + key + '" aria-checked="' + (onb.who === key) + '" aria-pressed="' + (onb.who === key) + '"' + (extra || "") + ">" +
-    '<span class="w-ico">' + icon(key === "else" ? "shield" : "users") + "</span><b>" + title + "</b><small>" + sub + "</small></button>";
-  const body = '<h1 id="gate-h">' + t("Who runs this server?") + '</h1><p class="w-onbp">' +
-    t("Wally keeps your household’s money on a server. Whoever runs it can open the files on it, so Wally can lock everything first.") + "</p>" +
-    '<div class="w-choices two" role="radiogroup" aria-labelledby="gate-h">' +
-    choice("me", t("Me, or someone here"), t("Wally works as usual. Whoever runs the server can read your data, and that’s you.")) +
-    choice("else", t("Someone else") + ' <span class="w-badge">' + t("Recommended") + "</span>",
-      secure ? t("Wally locks everything on your devices before it’s saved. The server stores only what it can’t read.") : t("Needs a secure connection: open Wally at its https:// address to choose this."), secure ? "" : " disabled") +
-    "</div>" +
-    (onb.who === "else" ? '<p class="w-onbp w-onbmeanh">' + t("What changes:") + "</p>" + whatItMeans(others) : "") +
-    '<p class="w-hint">' + t("You can change this later in Settings › Privacy.") + "</p>" +
-    '<p class="w-hint" id="onb-prog" aria-live="polite" hidden></p>';
-  return { body, foot: backBtn() + nextBtn(onb.who === "else" ? t("Encrypt and continue") : t("Continue")) };
-}
-/* Encrypt the new household now: there is almost nothing yet, so it takes a moment */
-async function savePrivacy() {
-  if (onb.kit) {
-    if (!onb.saved) { onbError(t("Save your Emergency Kit first, then tick the box.")); return false; }
-    onb.secret = "";
-    return true;
-  }
-  if (!mustEncrypt()) {
-    if (!onb.who) { onbError(t("Choose who runs this server.")); return false; }
-    if (onb.who === "me") {
-      // Not encrypted: the kit made with the password
-      onb.secret = "";
-      onb.kit = onb.plainKit;
-      onb.plainKit = "";
-      onb.qr = await (await import("../vault/kit.js")).qrSvg(onb.kit);
-      renderWelcome();
-      return false;
-    }
-  }
-  const prog = root.querySelector("#onb-prog");
-  const say = (step, n, total) => {
-    if (!prog) return;
-    prog.hidden = false;
-    prog.textContent = { keys: t("Making keys from your password…"), pause: t("Pausing Wally for everyone…"), seal: t("Encrypting {n} of {total}…"), check: t("Reading everything back to compare…"), switch: t("Switching to the new file…") }[step]
-      .replace("{n}", String(n || 0)).replace("{total}", String(total || 0));
-  };
-  const session = await vs();
-  state.me = String(onb.people[0].id);
-  const r = await session.turnOn(onb.secret, say);
-  onb.secret = "";
-  // Encrypting replaced the kit made with the password
-  onb.plainKit = "";
-  onb.kit = r.recoveryKey;
-  onb.sealed = true;
-  onb.qr = await (await import("../vault/kit.js")).qrSvg(r.recoveryKey);
-  renderWelcome();
-  return false;
-}
-function wireWelcome() {
-  const keys = onbSteps(), k = keys[onb.step];
+function wireWelcome(k) {
   const next = root.querySelector("#onb-next"), back = root.querySelector("#onb-back"), skip = root.querySelector("#onb-skip");
-  if (back) back.addEventListener("click", () => { if (k === "people") readNames(onb.names); onb.step--; renderWelcome(); });
-  if (skip) skip.addEventListener("click", () => (k === "basics" ? (onb.step = 1, renderWelcome()) : openWally("skip")));
+  const go = (by) => { onb.step += by; renderWelcome(); };
+  const keep = () => { if (k === "people") readNames(onb.names); if (k === "password") onb.secret = root.querySelector("#onb-pwd").value; };
+  if (back) back.addEventListener("click", () => { keep(); go(-1); });
+  if (skip) skip.addEventListener("click", async () => {
+    busy(skip, true);
+    try {
+      if (k === "password") { onb.pw = false; onb.secret = ""; return go(1); }
+      // Encrypting can wait: the password is saved, and the kit made with it is the household's
+      if (k === "encrypt") { await savePassword(); await plainKitNow(); return go(1); }
+    } catch (e) { onbError(apiMessage(e)); busy(skip, false); }
+  });
   if (next) next.addEventListener("click", async () => {
     busy(next, true);
     try {
       if (k === "basics") await saveBasics();
       else if (k === "people") { if (!(await savePeople())) return busy(next, false); }
-      else if (k === "privacy") { if (!(await savePrivacy())) return busy(root.querySelector("#onb-next"), false); }
+      else if (k === "password") { if (!(await choosePassword())) return busy(next, false); }
+      else if (k === "encrypt") await encryptNow();
+      else if (k === "kit") { if (!onb.saved) return busy(next, false); }
       else return openWally(onb.data);
-      onb.step++;
-      renderWelcome();
+      go(1);
     } catch (e) {
       const prog = root.querySelector("#onb-prog");
       if (prog) prog.hidden = true;
@@ -499,6 +515,8 @@ function wireWelcome() {
       busy(next, false);
     }
   });
+  if (k === "password") root.querySelectorAll("#onb-pwd, #onb-pwd2").forEach((i) => i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); next.click(); } }));
+  if (k === "kit") wireKit(onb.kit, (on) => { onb.saved = on; onbError(""); });
   const lang = root.querySelector("#onb-lang");
   if (lang) lang.addEventListener("change", async () => {
     try { await PUT("/language/" + lang.value); } catch (e) { return onbError(apiMessage(e)); }
@@ -512,16 +530,8 @@ function wireWelcome() {
     onb.currency.position = b.dataset.v;
     root.querySelectorAll("#onb-pos button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   }));
-  const pw = root.querySelector("#onb-pw:not([disabled])");
-  if (pw) pw.addEventListener("click", () => { readNames(onb.names); onb.pw = !onb.pw; renderWelcome(); root.querySelector(onb.pw ? "#onb-pwd" : "#onb-pw").focus(); });
   wireNames(onb.names, () => renderWelcome());
   root.querySelectorAll("[data-onb-data]").forEach((b) => b.addEventListener("click", () => { onb.data = b.dataset.onbData; renderWelcome(); root.querySelector('[data-onb-data="' + onb.data + '"]').focus(); }));
-  root.querySelectorAll("[data-who]:not([disabled])").forEach((b) => b.addEventListener("click", () => { onb.who = b.dataset.who; onbError(""); renderWelcome(); root.querySelector('[data-who="' + onb.who + '"]').focus(); }));
-  if (onb.kit && k === "privacy") {
-    root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(onb.kit));
-    root.querySelector("#onb-copy").addEventListener("click", (ev) => copy(onb.kit, ev.currentTarget));
-    root.querySelector("#onb-saved").addEventListener("change", (ev) => { onb.saved = ev.target.checked; onbError(""); });
-  }
 }
 async function saveBasics() {
   const c = onb.currency;
@@ -532,23 +542,51 @@ async function saveBasics() {
 async function savePeople() {
   if (onb.people.length) return true;
   readNames(onb.names);
-  const password = onb.pw ? root.querySelector("#onb-pwd").value : "";
-  if (onb.pw && password.length < 8) { onbError(t("Use at least 8 characters.")); root.querySelector("#onb-pwd").focus(); return false; }
   const people = await createPeople(onb.names);
   if (!people) return false;
   onb.people = people;
   // The first person is whoever is setting Wally up, on this browser
   write("wally.person", String(people[0].id));
   write(LAST, String(people[0].id));
-  if (password) {
-    const r = await PUT("/signin", { enabled: true, password });
-    state.status.signin = true;
-    // Shown on the next step, unless encrypting there makes a new one
-    onb.plainKit = r.kit || "";
-    // Kept in memory for the next step only, where it may become the household's key
-    onb.secret = password;
-  }
   return true;
+}
+/* Checked here, kept in memory, saved on the next step. Where browsers can't encrypt, saved now. */
+async function choosePassword() {
+  const a = root.querySelector("#onb-pwd"), b = root.querySelector("#onb-pwd2");
+  if (a.value.length < 8) { onbError(t("Use at least 8 characters.")); a.focus(); return false; }
+  if (a.value !== b.value) { onbError(t("The passwords don’t match.")); b.focus(); return false; }
+  onb.pw = true;
+  onb.secret = a.value;
+  if (!onbSteps().includes("encrypt")) { await savePassword(); await plainKitNow(); }
+  return true;
+}
+async function savePassword() {
+  if (onb.pwSaved) return;
+  const r = await PUT("/signin", { enabled: true, password: onb.secret });
+  state.status.signin = true;
+  onb.pwSaved = true;
+  // The kit made with the password: the household's, unless encrypting makes a new one
+  onb.plainKit = r.kit || "";
+}
+/* Not encrypted: the kit made with the password */
+async function plainKitNow() {
+  onb.secret = "";
+  onb.kit = onb.plainKit;
+  onb.plainKit = "";
+  onb.qr = await (await import("../vault/kit.js")).qrSvg(onb.kit);
+}
+/* Encrypt the new household now: there is almost nothing yet, so it takes a moment */
+async function encryptNow() {
+  await savePassword();
+  const session = await vs();
+  state.me = String(onb.people[0].id);
+  const r = await session.turnOn(onb.secret, progress());
+  onb.secret = "";
+  // Encrypting replaced the kit made with the password
+  onb.plainKit = "";
+  onb.kit = r.recoveryKey;
+  onb.sealed = true;
+  onb.qr = await (await import("../vault/kit.js")).qrSvg(r.recoveryKey);
 }
 async function openWally(choice) {
   try { await PUT("/config", { onboarded: true }); } catch (e) { return onbError(apiMessage(e)); }
@@ -556,9 +594,12 @@ async function openWally(choice) {
 }
 
 /* ---------- after the upgrade from 1.x: there is data, but no people yet ---------- */
-const up = { step: 0, names: [""], people: [], tags: [], picks: {}, preview: null, remove: true };
+/* People, then tags if there are any, then encrypting where sign-in is on and browsers can,
+   then the household's Emergency Kit. The 1.x password is asked again to encrypt: signing in
+   reloaded Wally, and nothing keeps it. */
+const up = { step: 0, names: [""], people: [], tags: null, picks: {}, preview: null, remove: true, kit: "", qr: "", saved: false, sealed: false };
 
-function startPeople() { if (status.upgrade) return startReport(); renderUpgrade(); }
+function startPeople() { if (status.upgrade) return startReport(); startUpgrade(); }
 
 /* Welcome to 2.0 first: what's new, and that the data came across */
 async function startReport() {
@@ -571,47 +612,92 @@ async function startReport() {
     // Whoever upgraded is about to pick themselves on this browser: not shown to them again
     w.rememberHere();
     status.upgrade = null;
-    renderUpgrade();
+    startUpgrade();
   });
 }
+/* The tags first, so the steps are known from the start */
+async function startUpgrade() {
+  if (up.tags === null) { try { up.tags = await GET("/tags"); } catch (e) { up.tags = []; } }
+  renderUpgrade();
+}
 function upgradeSteps() {
-  const steps = [t("People")];
-  if (up.tags.length || !up.people.length) steps.push(t("Tags"));
+  const steps = ["people"];
+  if (up.tags.length) steps.push("tags");
+  if (status.signin && canEncrypt() && (!sealed() || up.sealed)) steps.push("encrypt");
+  if (status.signin && (!status.kit || up.kit)) steps.push("kit");
   return steps;
 }
 function renderUpgrade() {
-  const s = up.step, kind = s === 0 ? "people" : "tags";
-  let body, foot;
+  const steps = upgradeSteps(), kind = steps[up.step];
+  const o = { key: "up-" + kind, count: steps.length, at: up.step, back: up.step > 0 };
+  let focus = "#onb-next";
   if (kind === "people") {
-    body = '<h1 id="gate-h">' + t("Who uses Wally?") + '</h1><p class="w-onbp">' + t("Wally now keeps track of who spent what. Everything already in Wally stays shared.") + "</p>" +
-      peopleRows(up.names, up.people);
-    foot = "<span></span>" + nextBtn(t("Continue"));
-  } else {
-    body = '<h1 id="gate-h">' + t("Tagged with someone’s name?") + '</h1><p class="w-onbp">' + t("Those transactions become theirs. Everything else stays shared.") + "</p>" +
-      '<div class="w-onbtags">' + up.people.map((p) => '<div class="w-onbtagrow"><span class="w-onbtagwho">' + av(String(p.id)) + "<span><b>" + esc(p.name) + '</b><small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></span>" +
+    Object.assign(o, { ico: "users", title: t("Who’s in your household?"), next: t("Continue"),
+      sub: t("Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.") });
+    o.body = peopleRows(up.names, up.people) + (up.people.length ? "" : '<p class="w-hint w-onbnote">' + t("Everything already in Wally starts out shared by the household.") + "</p>");
+    if (!up.people.length) focus = "[data-name]";
+  } else if (kind === "tags") {
+    const example = "#" + (Object.values(up.picks)[0] || up.tags[0]);
+    Object.assign(o, { ico: "tag", title: t("Did you tag personal expenses?"), next: t("Continue"), alt: t("Skip"),
+      sub: t("If you marked what one person spent with a tag, like {tag}, choose it here. Those transactions become theirs, and everything else stays shared.", { tag: "<b>" + esc(example) + "</b>" }) });
+    o.body = '<div class="w-onbtags">' + up.people.map((p) => '<div class="w-onbtagrow"><span class="w-onbtagwho">' + av(String(p.id)) + "<span><b>" + esc(p.name) + '</b><small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span></span>" +
         '<select class="w-mini" data-tagfor="' + p.id + '" aria-label="' + esc(t("Tag for {name}", { name: p.name })) + '"><option value="">' + t("No tag") + "</option>" +
         up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></div>").join("") + "</div>" +
-      '<p class="w-hint" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
-      '<label class="w-sichk"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label>";
-    foot = backBtn() + nextBtn(t("Continue"));
+      '<p class="w-hint w-onbnote" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
+      '<label class="w-sichk w-onbtick"><input type="checkbox" id="up-rm"' + (up.remove ? " checked" : "") + ">" + t("Remove the tag from those transactions") + "</label>";
+    focus = "select";
+  } else if (kind === "encrypt") {
+    Object.assign(o, { ico: "shield", title: t("Encrypt your data"), next: t("Encrypt"), alt: t("Not now"),
+      sub: t("Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.") });
+    o.body = whatItMeans(up.people.length > 1) +
+      '<p class="w-onblabel">' + t("To start, enter the household password.") + "</p>" + pwFields("up-pw", t("Household password"), "", false) +
+      '<p class="w-hint w-onbnote">' + t("You can turn it off later in Settings › Privacy.") + "</p>" +
+      '<p class="w-hint w-onbprog" id="onb-prog" aria-live="polite" hidden></p>';
+    focus = "#up-pw";
+  } else {
+    Object.assign(o, { ico: "file", back: false, title: t("Save the household’s Emergency Kit"), next: t("Open Wally"), nextOff: !up.saved,
+      sub: up.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
+        : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
+    o.body = kitBody(up.kit, up.qr, up.saved, "");
+    focus = "#onb-dl";
   }
-  // At most two short steps: no stepper
-  paint(onbFrame([], s, body, foot, kind === "tags"), kind === "people" && !up.people.length ? "[data-name]" : kind === "tags" ? "select" : "#onb-next");
-  wireNames(up.names, () => renderUpgrade());
-  root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
-    if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
+  paint(onbFrame(o), focus);
+  wireEyes();
+  wireUpgrade(kind);
+}
+function wireUpgrade(kind) {
+  const next = root.querySelector("#onb-next"), back = root.querySelector("#onb-back"), skip = root.querySelector("#onb-skip");
+  // Back keeps everything as it was left: the people are already added, the tags are applied when leaving their step
+  if (back) back.addEventListener("click", () => { if (kind === "people") readNames(up.names); up.step--; renderUpgrade(); });
+  if (kind === "people") wireNames(up.names, () => renderUpgrade());
+  if (kind === "tags") {
+    root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
+      if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
+      markTaken();
+      previewTags();
+    }));
     markTaken();
-    previewTags();
-  }));
-  if (kind === "tags") { markTaken(); if (!up.preview) previewTags(); }
-  const rm = root.querySelector("#up-rm");
-  if (rm) rm.addEventListener("change", () => { up.remove = rm.checked; });
-  const skip = root.querySelector("#onb-skip"), back = root.querySelector("#onb-back");
-  if (skip) skip.addEventListener("click", () => { up.picks = {}; up.preview = null; upgradeNext(); });
-  // Back keeps everything as it was left: the people are already added, the tags are applied only at the end
-  if (back) back.addEventListener("click", () => { up.step--; renderUpgrade(); });
-  const next = root.querySelector("#onb-next");
+    if (!up.preview) previewTags();
+    root.querySelector("#up-rm").addEventListener("change", (ev) => { up.remove = ev.target.checked; });
+  }
+  if (kind === "kit") {
+    wireKit(up.kit, (on) => { up.saved = on; onbError(""); });
+    next.addEventListener("click", () => { if (up.saved) finish(up.sealed); });
+    return;
+  }
+  if (skip) skip.addEventListener("click", async () => {
+    busy(skip, true);
+    try {
+      if (kind === "tags") { up.picks = {}; up.preview = null; return upgradeNext(); }
+      // Not encrypted: the household still needs its kit, made now
+      await makePlainKit();
+      upgradeNext();
+    } catch (e) { onbError(apiMessage(e)); busy(skip, false); }
+  });
+  const pw = root.querySelector("#up-pw");
+  if (pw) pw.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); next.click(); } });
   next.addEventListener("click", async () => {
+    if (kind === "encrypt" && !pw.value) { onbError(t("Enter your password first.")); return pw.focus(); }
     busy(next, true);
     try {
       if (kind === "people") {
@@ -621,16 +707,22 @@ function renderUpgrade() {
           if (!people) return busy(next, false);
           up.people = people;
           await becomeYou(people[0]);
-          try { up.tags = await GET("/tags"); } catch (e) { up.tags = []; }
-          // A tag with someone's name is most likely theirs
+          // A tag with someone's name, or their first name, is most likely theirs
           for (const p of people) {
-            const tag = up.tags.find((g) => g.toLocaleLowerCase() === p.name.trim().toLocaleLowerCase());
-            if (tag) up.picks[p.id] = tag;
+            const full = p.name.trim().toLocaleLowerCase(LANG), first = full.split(/\s+/)[0];
+            const tag = up.tags.find((g) => g.toLocaleLowerCase(LANG) === full) || up.tags.find((g) => g.toLocaleLowerCase(LANG) === first);
+            if (tag && !Object.values(up.picks).includes(tag)) up.picks[p.id] = tag;
           }
         }
-      } else await applyTags();
+      } else if (kind === "tags") await applyTags();
+      else if (kind === "encrypt") await encryptUpgrade(pw.value);
       upgradeNext();
-    } catch (e) { onbError(apiMessage(e)); busy(next, false); }
+    } catch (e) {
+      const prog = root.querySelector("#onb-prog");
+      if (prog) prog.hidden = true;
+      onbError(kind === "encrypt" && e.status === 401 ? t("That password isn’t right.") : apiMessage(e));
+      busy(next, false);
+    }
   });
 }
 /* This browser is whoever typed their name on the "You" row: with sign-in on, the sign-in made with
@@ -644,10 +736,31 @@ async function applyTags() {
   const tags = pickedTags();
   if (Object.keys(tags).length) await POST("/people/from-tags", { tags, remove_tag: up.remove });
   up.picks = {};
+  up.preview = null;
+}
+async function encryptUpgrade(password) {
+  const session = await vs();
+  state.me = String(up.people[0].id);
+  const r = await session.turnOn(password, progress());
+  up.sealed = true;
+  up.kit = r.recoveryKey;
+  up.qr = await (await import("../vault/kit.js")).qrSvg(up.kit);
+}
+/* Not encrypting: the kit, as whoever signs in first after the upgrade would make it */
+async function makePlainKit() {
+  if (status.kit) return;
+  try {
+    up.kit = (await POST("/kit", {}, { quiet401: true })).key;
+  } catch (e) {
+    // Someone else in the household saved it a moment ago
+    if (e.status === 409) { status.kit = true; return; }
+    throw e;
+  }
+  up.qr = await (await import("../vault/kit.js")).qrSvg(up.kit);
 }
 function upgradeNext() {
   up.step++;
-  if (up.step >= upgradeSteps().length) return finish();
+  if (up.step >= upgradeSteps().length) return finish(up.sealed);
   renderUpgrade();
 }
 function pickedTags() {
@@ -661,13 +774,17 @@ function markTaken() {
     o.disabled = !!o.value && Object.entries(up.picks).some(([id, g]) => g === o.value && id !== sel.dataset.tagfor);
   }));
 }
+/* How many become theirs, and what a few of them are, so it's plain what the tag meant */
 function tagCountText(p) {
-  if (!up.picks[p.id]) return "";
+  if (!up.picks[p.id]) return t("Nothing changes for {name}", { name: esc(p.name) });
   if (!up.preview) return t("Counting…");
-  return tn(up.preview.counts[p.id] || 0, "{n} transaction becomes {name}’s", "{n} transactions become {name}’s", { name: esc(p.name) });
+  const n = up.preview.counts[p.id] || 0;
+  const seen = (up.preview.examples || {})[p.id] || [];
+  return tn(n, "{n} transaction becomes theirs", "{n} transactions become theirs") +
+    (seen.length ? '<span class="w-onbseen">' + seen.map(esc).join(", ") + (n > seen.length ? "…" : "") + "</span>" : "");
 }
 function sharedText() {
-  return up.preview && up.preview.shared ? tn(up.preview.shared, "{n} transaction has more than one of these tags and stays shared", "{n} transactions have more than one of these tags and stay shared") : "";
+  return up.preview && up.preview.shared ? tn(up.preview.shared, "{n} transaction is tagged for more than one person, so it stays shared.", "{n} transactions are tagged for more than one person, so they stay shared.") : "";
 }
 // Counted together, as they will be converted: a transaction with two people's tags stays shared
 let previewSeq = 0;

@@ -150,6 +150,19 @@ export async function newRecoveryKey(password) {
     return key;
   } finally { s.secret.fill(0); }
 }
+/* An API key for an encrypted household: 32 random bytes, and the household key locked under them.
+   The server keeps the lock and a hash of the key, so a call with the key opens the data for that
+   call alone (api/services/sealed_view.py). The key is shown once. */
+export async function makeApiKey(password, name, scope) {
+  const s = await secretFrom(password);
+  const bytes = C.random(32);
+  try {
+    const key = "wly_" + C.hex(bytes);
+    const unlock = await crypto.subtle.importKey("raw", await C.hkdfBytes(bytes, "wally api key v1"), { name: "AES-GCM" }, false, ["encrypt"]);
+    const wrap = await C.lock(unlock, s.secret, s.vaultId);
+    return await quiet("POST", "/api-keys", { name, scope, key, wrap });
+  } finally { s.secret.fill(0); bytes.fill(0); }
+}
 /* A new household password. With encryption on, the household key is locked under it again. */
 export async function changePassword(current, next) {
   const encrypted = !!(core.state.status && core.state.status.vault && core.state.status.vault.on);

@@ -89,7 +89,7 @@ Access Wally at: [http://localhost](http://localhost)
 - **People**: each person's money, and shared costs split evenly, by income or by hand.
 - **Month in review** on the 1st, and a command bar (⌘K).
 - **One password for the household**: pick your name, type the password. Optional two-step sign-in, one code for everyone's phone. Sign-in is optional, as before.
-- **End-to-end encryption**, optional: your devices encrypt everything before it reaches the server, so whoever runs it can't read it. See [below](#end-to-end-encryption).
+- **End-to-end encryption**, on by default with a password: your devices encrypt everything before it reaches the server, so whoever runs it can't read it. See [below](#end-to-end-encryption).
 - **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
 - **Backups** every night, in the data folder.
 - **Installs on your phone's home screen** and opens full screen. Light and dark, 13 languages.
@@ -124,7 +124,8 @@ Wally supports the following environment variables:
 | --- | --- | --- |
 | DEMO | true | Pre-loads the app with sample data for a household of two. Nothing is kept. |
 | TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Appearance**. |
-| WALLY_ENCRYPTION | required | For running Wally for someone else: every household is end-to-end encrypted from setup, and encryption and sign-in can't be turned off, so you can't read their data. Needs HTTPS. Ignored with DEMO. |
+| WALLY_ENCRYPTION | required | For running Wally for someone else: every household is end-to-end encrypted from setup, and encryption and sign-in can't be turned off, so you can't read their data. Needs HTTPS. API keys are off, unless WALLY_API_KEYS is on. Ignored with DEMO. |
+| WALLY_API_KEYS | on | With WALLY_ENCRYPTION=required: allow API keys. While a call with a key runs, the server opens the data that call needs (see [API keys while encrypted](#api-keys-while-encrypted)). |
 
 ## Forgot your password
 
@@ -142,15 +143,21 @@ This doesn't work while the household is encrypted: then nobody can open the dat
 
 ## End-to-end encryption
 
-When you set Wally up with a password, it asks **who runs this server**. Answer *someone else* and Wally is encrypted right then, before anything is saved. You can also turn it on later in **Settings › Privacy** (sign-in must be on, and Wally must be opened over HTTPS: browsers only encrypt on secure pages). If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household without asking, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
+When you set Wally up with a password, it is encrypted right then, before anything is saved: one button, with **Skip** beside it. Upgrading from 1.x offers the same step. Browsers only encrypt on secure pages, so over plain HTTP (`http://192.168.1.20`) Wally isn't encrypted and the setup says so; open it over HTTPS and turn it on later in **Settings › Privacy** (sign-in must be on). `localhost` counts as secure. If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household without Skip, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
 
 - **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
 - **The password**: the household password is the key. Your browser turns it into keys (Argon2id) and never sends it, and each browser asks for it once. Everyone keeps using the same password; nobody needs a code to join.
 - **The Emergency Kit**: turning encryption on gives the household a new one; its recovery key also opens the household key, in your browser. **Forgot password** works as above, and it's the only way back in: whoever runs the server can't turn sign-in off. Turning encryption off gives you a new kit again.
 - **If nobody can get in** (the password forgotten and the kit lost), the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
-- **Off while encrypted**: API keys and phone shortcuts (the server can't read or add to the data), and turning sign-in off.
+- **Off while encrypted**: turning sign-in off. API keys and phone shortcuts keep working: see below. Keys made before turning encryption on stop working; make new ones.
 - **Turning it on or off** builds a new database file next to the old one, checks it, and only then switches. Wally is read-only for about a minute. If Wally or the browser stops half-way, the old file is used, untouched. Turning it on deletes backups made before, which are in the clear; download them first if you want them.
 - **Limits**: the server sends the web app, so someone who controls the server could change it to capture a password the next time it is typed. It can also delete records or bring back old ones. End-to-end encryption protects what is stored, not a server that is actively attacking you.
+
+### API keys while encrypted
+
+The API works the same whether Wally is encrypted or not: every endpoint, read and write. A key made while Wally is encrypted is made by your browser, after the household password: 32 random bytes, with the household key locked under them. The server keeps that lock and a hash of the key, never the key.
+
+When a call with the key uses the household's data, the server opens the household key with it, opens the records in memory, answers the call, seals and saves anything it changed (all or nothing, and refused if a browser changed the same record at that moment), then forgets everything it opened. Stored data stays encrypted: a stolen disk or backup opens nothing, and deleting the key deletes its lock. While a call runs, though, the server holds the household key, so a server that is actively attacking you could catch it at the next call, just as it could change the web app to catch the password. Keys can be **read only** or **read and write**. Removing people and restoring backups are done in the app.
 
 ## Data Import / Export
 
@@ -168,7 +175,7 @@ Wally 2.0 exports add `person`, `paid_by`, `shares` and `note`.
 
 ## API
 
-Wally's API is documented at http://localhost/api/docs. Create a key in **Settings › API keys** and send it as the `X-API-Key` header. What you add with a key is added by the person who made it. Settings also shows how to add expenses from your phone's lock screen with a shortcut.
+Wally's API is documented at http://localhost/api/docs. Create a key in **Settings › API keys**, read only or read and write, and send it as the `X-API-Key` header. It works the same when Wally is encrypted ([how](#api-keys-while-encrypted)). What you add with a key is added by the person who made it. Settings also shows how to add expenses from your phone's lock screen with a shortcut.
 
 ## Development
 

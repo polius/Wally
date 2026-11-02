@@ -162,7 +162,8 @@ def _build_next(direction: str):
         conn.execute("PRAGMA busy_timeout = 5000")
         conn.execute("ATTACH DATABASE ? AS old", (str(database.DB_PATH),))
         conn.execute("BEGIN")
-        for table in KEEP:
+        # API keys stay when encryption is turned off; turned on, they can't open the new household key
+        for table in KEEP + (["apikeys"] if direction == "off" else []):
             old_cols = {r[1] for r in conn.execute(f'PRAGMA old.table_info("{table}")').fetchall()}
             if not old_cols:
                 continue
@@ -170,6 +171,8 @@ def _build_next(direction: str):
             names = ", ".join(f'"{c}"' for c in cols)
             conn.execute(f'INSERT INTO main."{table}" ({names}) SELECT {names} FROM old."{table}"')
         conn.execute("DELETE FROM main.appconfig WHERE key IN ('VAULT_ID', 'VAULT_SEQ', 'VAULT_FLOOR', 'ENCRYPTION_OFF')")
+        if direction == "off":
+            conn.execute("UPDATE main.apikeys SET wrap = NULL")
         conn.execute("COMMIT")
         conn.execute("DETACH DATABASE old")
     finally:

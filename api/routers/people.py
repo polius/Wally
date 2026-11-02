@@ -139,6 +139,9 @@ def delete_person(
         raise HTTPException(status_code=400, detail="Move their transactions to someone still here.")
 
     if STATE.get("vault"):
+        if actor.via == "key":
+            # Their transactions move in the browser, which can open them
+            raise HTTPException(status_code=409, detail="While Wally is encrypted, remove people in Settings › People.")
         from ..services import vault as records
         with records.WRITE_LOCK:
             result = {"seq": 0, "versions": {}, "skipped": []}
@@ -189,8 +192,11 @@ def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool) -> dict:
         if not db.get(Person, person_id):
             raise HTTPException(status_code=404, detail="This person does not exist.")
     counts = {person_id: 0 for person_id in tags.values()}
+    # A few of each person's, newest first, so it's plain what the tag meant
+    examples = {person_id: [] for person_id in tags.values()}
     shared = 0
-    for row in [*db.exec(select(Transaction)).all(), *db.exec(select(RecurringTransaction)).all()]:
+    newest = select(Transaction).order_by(Transaction.date.desc(), Transaction.created_date.desc())
+    for row in [*db.exec(newest).all(), *db.exec(select(RecurringTransaction)).all()]:
         found = [tag for tag in (row.tags or []) if tag in tags]
         if not found:
             continue
@@ -201,12 +207,15 @@ def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool) -> dict:
             row.paid_by = None
             if isinstance(row, Transaction):
                 counts[row.person_id] += 1
+                seen = examples[row.person_id]
+                if row.name and row.name not in seen and len(seen) < 3:
+                    seen.append(row.name)
         elif isinstance(row, Transaction):
             shared += 1
         if remove_tag:
             row.tags = [g for g in row.tags if g not in found]
         db.add(row)
-    return {"counts": counts, "shared": shared}
+    return {"counts": counts, "shared": shared, "examples": examples}
 
 @router.post("/people/{person_id}/from-tag")
 def from_tag(

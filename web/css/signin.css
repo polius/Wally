@@ -1,6 +1,9 @@
 /* Sign-in and the other full-screen steps before the app (#gate): a centred card on
    desktop, the whole screen on a phone. Base pieces (.w-signcard, .w-sihead, .w-onb…) are in wally.css. */
-.w-gate{position:fixed;inset:0;z-index:20;overflow-y:auto;overscroll-behavior:contain;background:var(--w-canvas);display:grid;place-items:center;padding:32px 16px;padding-top:calc(32px + env(safe-area-inset-top,0px))}
+.w-gate{position:fixed;inset:0;z-index:20;overflow-y:auto;overscroll-behavior:contain;background:var(--w-canvas);display:grid;place-items:start center;padding:32px 16px;padding-top:calc(32px + env(safe-area-inset-top,0px))}
+/* Centred with auto margins, not place-items: a card taller than the window then starts at the top
+   and scrolls, instead of losing its top above the screen where scrolling can't reach */
+.w-gate > *{margin-block:auto}
 .has-banner .w-gate{top:34px}
 .w-gate:not([hidden]){animation:w-fade 300ms var(--ease)}
 /* Room between the mark, the heading and the form, and a form that is easy to hit */
@@ -10,10 +13,6 @@
 .w-gate .w-sihead h1{font-size:var(--fs-large);font-weight:600;letter-spacing:-.03em;line-height:1.2;text-wrap:balance}
 .w-gate .w-sihead p{text-wrap:pretty}
 .w-av.xl{width:64px;height:64px;font-size:var(--fs-large)}
-.w-gate .w-profiles{flex-wrap:wrap;gap:14px 18px}
-.w-gate .w-prof{padding:8px;border-radius:var(--r-card);min-width:88px;color:var(--w-ink)}
-.w-gate .w-prof:hover{background:var(--w-fill)}
-.w-gate .w-prof:focus-visible .w-av{box-shadow:0 0 0 3px var(--w-accent)}
 .w-siform{display:grid;gap:14px;width:100%;margin-top:4px}
 .w-gate .w-input input{height:46px;font-size:var(--fs-sub)}
 .w-gate .w-eye{top:10px}
@@ -70,6 +69,56 @@
 }
 @media (max-width:767px) and (max-height:640px){.w-who{--who-av:80px;gap:32px}}
 
+/* Signing in, as a Mac's login window: no card. A face, a name, one rounded field with the arrow
+   inside it. A mistake shakes the field; its message has a place kept for it, so nothing moves. */
+/* Grouped, not evenly spaced: who (face and name), then a clear break, then the field with its message and links.
+   Bottom padding lifts it a little above the middle, where the eye expects it. */
+.w-lock{--who-hl:rgba(255,255,255,.6);--who-sh:rgba(20,22,27,.16);width:min(340px,100%);display:grid;justify-items:center;text-align:center;padding:24px 0 calc(24px + 8vh)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}}
+:root[data-theme="dark"] .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}
+.w-lockhero{display:grid;justify-items:center;animation:w-whoin .5s var(--ease) both}
+.w-lockhero h1{margin-top:16px;font-size:28px;font-weight:650;letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
+.w-lockhero p{margin-top:6px;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
+.w-av.w-lockav{width:104px;height:104px;font-size:42px;font-weight:600;letter-spacing:-.03em;
+  background-image:linear-gradient(165deg,var(--who-hl),transparent 62%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 12px 30px -14px var(--who-sh)}
+.w-lockmark{width:88px;height:88px}
+.w-lockform{width:100%;display:grid;margin-top:36px;animation:w-whoin .5s var(--ease) both;animation-delay:80ms}
+.w-lockfield{display:flex;align-items:center;gap:2px;height:50px;padding-inline:20px 7px;border-radius:25px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:0 1px 2px rgba(20,22,27,.05);transition:border-color .15s,box-shadow .15s}
+.w-lockfield:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 4px var(--w-accent-soft)}
+.w-lockfield.err{border-color:var(--w-bad)}
+.w-lockfield.err:focus-within{box-shadow:0 0 0 4px color-mix(in srgb,var(--w-bad) 18%,transparent)}
+.w-lockfield input:not(.w-sr){flex:1;min-width:0;height:100%;border:0;background:none;outline:none;padding:0;font:inherit;font-size:var(--fs-body);color:var(--w-ink)}
+.w-lockfield input::placeholder{color:var(--w-ink3)}
+.w-lockfield input.w-sicode{text-align:start;letter-spacing:.18em}
+.w-gate .w-lockfield .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%}
+.w-lockgo{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--w-accent);color:var(--w-on-accent);transition:opacity .15s,transform .15s,background-color .15s}
+.w .w-lockgo svg.i,.w-lockgo svg.i{width:18px;height:18px;stroke-width:2.4}
+[dir="rtl"] .w-lockgo svg.i{transform:scaleX(-1)}
+.w-lockgo:hover{filter:brightness(1.08)}
+.w-lockgo:active{transform:scale(.92)}
+/* Dim until there is something to send */
+.w-lockfield:has(input:placeholder-shown) .w-lockgo{opacity:.35}
+.w-lockgo:disabled{background:var(--w-fill2);color:var(--w-ink3);cursor:not-allowed}
+.w-lockgo[aria-busy="true"]{position:relative;opacity:1!important}
+.w-lockgo[aria-busy="true"] svg{opacity:0}
+.w-lockgo[aria-busy="true"]::after{content:"";position:absolute;inset:9px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:w-spin .7s linear infinite}
+@keyframes w-spin{to{transform:rotate(360deg)}}
+.w-lockmsg{margin:8px 0 0;min-height:1.45em;font-size:var(--fs-foot);line-height:1.45;color:var(--w-bad);text-wrap:pretty}
+.w-locklinks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 24px;margin-top:2px}
+.w-gate .w-locklinks .w-silink{color:var(--w-ink2)}
+.w-gate .w-locklinks .w-silink:hover{color:var(--w-ink)}
+.w-lock .w-sienc{margin-top:28px}
+.shake{animation:w-shake .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes w-shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@media (prefers-reduced-motion:reduce){.shake,.w-lockhero,.w-lockform{animation:none}}
+@media (max-width:767px){
+  .w-lock{min-height:100%;align-content:start;padding:calc(12vh + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));width:100%}
+  .w-av.w-lockav{width:92px;height:92px;font-size:38px}
+  .w-lockfield{height:52px}
+  .w-gate .w-locklinks .w-silink{min-height:44px}
+}
+
 /* Two-step setup */
 .w-tsteps{list-style:none;margin:0;padding:0;counter-reset:ts;display:grid;gap:18px;width:100%;text-align:start}
 .w-tsteps > li{display:grid;gap:10px;counter-increment:ts;padding-inline-start:30px;position:relative}
@@ -82,47 +131,64 @@
 .w-codes code{font:500 var(--fs-sub) ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:var(--w-ink)}
 .w-gate .w-btn .i{width:15px;height:15px}
 
-/* First run and the upgrade */
-.w-gate .w-onb{width:min(660px,100%)}
-/* The steps: numbered, joined by a line that fills in as they are done */
-.w-gate .w-onbh{padding:20px 40px;gap:28px}
-.w-gate .w-steps{gap:12px;font-size:var(--fs-sub);min-width:0}
-.w-gate .w-steps li{gap:9px;white-space:nowrap}
-.w-gate .w-steps li + li::before{content:"";width:32px;height:2px;border-radius:1px;background:var(--w-line);margin-inline-end:3px}
-.w-gate .w-steps li.done + li::before{background:var(--w-accent)}
-.w-gate .w-steps span{width:26px;height:26px;font-size:var(--fs-foot);font-weight:600;flex:none}
-.w-gate .w-steps li.done{color:var(--w-ink2)}
-.w-gate .w-steps em{font-style:normal}
-.w-gate .w-steps span .i{width:13px;height:13px;stroke-width:2.4}
-.w-gate .w-onbb{min-height:320px;padding:36px 40px 20px;gap:14px}
-.w-gate .w-onbb h1{font-size:var(--fs-large);font-weight:600;letter-spacing:-.03em;line-height:1.2}
-.w-gate .w-onbp{font-size:var(--fs-sub);line-height:1.55;margin:-4px 0 10px}
-.w-gate .w-onbf{gap:18px}
-.w-gate .w-onbb .w-mini{height:38px;font-size:var(--fs-sub);border-radius:var(--r-ctl);padding:0 12px}
-.w-gate .w-onbb > .w-err{margin-top:8px}
-.w-onbskip{margin-inline-start:auto;font-size:var(--fs-foot);min-height:32px;padding:4px 8px;border-radius:var(--r-ctl)}
-.w-gate .w-onbf label,.w-gate .w-onbrow{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:center;font-size:var(--fs-foot)}
-.w-gate .w-onbrow > span:first-child{color:var(--w-ink3)}
-.w-gate .w-onbf select.w-mini{max-width:280px;width:100%}
-.w-onbname{display:flex;gap:6px;align-items:center}
-.w-onbname .w-mini{width:220px;max-width:100%;height:36px}
-.w-gate #onb-add{display:inline-flex;align-items:center;gap:6px;justify-self:start;font-size:var(--fs-foot);min-height:32px}
-.w-gate #onb-add .i{width:14px;height:14px}
-.w-onbpw{margin-top:6px}
-.w-nowrap{flex-wrap:nowrap!important}
-.w-onbpw .w-mini{width:200px;height:34px}
+/* First run and the upgrade: one shape for every step, as a phone's setup has.
+   Back and the dots at the top; a symbol, the title and why; what to do; one wide button, and
+   "Not now" under it. A new step comes in from the side. */
+.w-gate .w-onb{width:min(520px,100%);display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
+/* Nothing inside may widen the card: long text wraps or ends in "…" */
+.w-gate .w-onbb{grid-template-columns:minmax(0,1fr)}
+.w-gate .w-onbb > *{min-width:0}
+.w-onbtop{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:52px;padding:10px 14px 0}
+.w-onbback{justify-self:start;display:inline-flex;align-items:center;gap:2px;min-height:36px;padding:0 10px 0 4px;border-radius:var(--r-ctl);color:var(--w-accent-ink);font-size:var(--fs-sub);font-weight:500}
+.w-onbback:hover{background:var(--w-accent-soft)}
+.w-onbback svg.i{width:18px;height:18px;stroke-width:2.2}
+[dir="rtl"] .w-onbback svg.i{transform:scaleX(-1)}
+.w-onbdots{display:flex;gap:7px;margin:0;padding:0;list-style:none}
+.w-onbdots li{width:7px;height:7px;border-radius:4px;background:var(--w-fill2);transition:width .3s var(--ease),background-color .3s var(--ease)}
+.w-onbdots li.done{background:color-mix(in srgb,var(--w-accent) 40%,transparent)}
+.w-onbdots li.on{width:20px;background:var(--w-accent)}
+.w-gate .w-onbb{padding:14px 48px 8px;gap:14px;min-height:0}
+.w-onbhero{display:grid;justify-items:center;text-align:center;gap:10px;margin-bottom:10px}
+.w-onbico{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent);margin-bottom:6px}
+.w .w-onbico svg.i,.w-onbico svg.i{width:30px;height:30px;stroke-width:1.6}
+.w-onbmark{width:60px;height:60px;margin-bottom:6px}
+.w-gate .w-onbhero h1{font-size:26px;font-weight:650;letter-spacing:-.025em;line-height:1.2;text-wrap:balance}
+.w-gate .w-onbp{font-size:var(--fs-sub);line-height:1.5;max-width:400px;text-wrap:pretty}
+.w-onbp b{color:var(--w-ink);font-weight:600}
+.w-gate .w-onbf{gap:14px}
+.w-gate .w-onbb .w-mini{height:40px;font-size:var(--fs-sub);border-radius:var(--r-ctl);padding:0 12px}
+.w-gate .w-onbb > .w-err{margin:0}
+.w-gate .w-onbf label,.w-gate .w-onbrow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:center;font-size:var(--fs-sub)}
+.w-gate .w-onbrow > span:first-child{color:var(--w-ink2)}
+.w-gate .w-onbf select.w-mini{width:100%}
+.w-gate .w-onbrow .w-seg{justify-self:start}
+.w-gate .w-onbrow .w-seg button{padding:6px 14px;font-size:var(--fs-sub)}
+.w-onbnote{text-align:center;text-wrap:pretty}
+.w-onbprog{text-align:center}
+.w-gate .w-onbtick{justify-self:center;margin-top:2px;font-size:var(--fs-sub);color:var(--w-ink)}
+.w-gate .w-onbtick input{width:17px;height:17px}
+.w-onblabel{font-size:var(--fs-sub);font-weight:600;margin-top:8px}
+.w-onbfields{display:grid;gap:10px}
+.w-gate .w-onbfields input{padding-inline-end:44px}
+.w-gate .w-onbfoot{padding:20px 48px 28px}
+.w-gate .w-onbfoot .w-btn{width:100%;height:46px;font-size:var(--fs-sub);border-radius:12px}
+.w-onbalt{justify-self:center;font-size:var(--fs-sub);min-height:40px;padding:4px 12px;border-radius:var(--r-ctl)}
 .w-gate .w-switch{cursor:pointer}
-.w-gate .w-switch::before{content:"";position:absolute;inset:-12px -6px}
 .w-choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .w-gate .w-choice{text-align:start;min-height:130px}
 .w-gate .w-choice .w-ico{background:var(--w-fill);color:var(--w-ink2)}
-.w-gate .w-onbfoot{gap:10px;padding:18px 40px;align-items:center}
-.w-gate .w-onbfoot .w-btn{height:42px;padding:0 22px;font-size:var(--fs-sub)}
-.w-onbppl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.w-onbppl li{display:flex;align-items:center;gap:10px;font-weight:500}
-.w-onbppl .w-av{width:28px;height:28px;font-size:var(--fs-foot)}
-.w-onbwho{display:flex;align-items:center;gap:8px;color:var(--w-ink)!important;font-weight:500}
-.w-gate .w-sichk{margin-top:4px}
+.w-gate .w-choice[aria-checked="true"] .w-ico{background:var(--w-accent);color:var(--w-on-accent)}
+.w-onbppl{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.w-onbppl li{display:flex;align-items:center;gap:12px;font-weight:500;font-size:var(--fs-sub)}
+.w-onbppl .w-av{width:34px;height:34px;font-size:var(--fs-sub)}
+.w-onbppl + .w-hint{text-align:center}
+.w-onb.enter .w-onbb{animation:w-onbin .38s var(--ease) both}
+.w-onb.enter .w-onbhero > :first-child{animation:w-onbpop .45s var(--ease) both}
+@keyframes w-onbin{from{opacity:0;transform:translateX(18px)}}
+[dir="rtl"] .w-onb.enter .w-onbb{animation-name:w-onbinr}
+@keyframes w-onbinr{from{opacity:0;transform:translateX(-18px)}}
+@keyframes w-onbpop{from{opacity:0;transform:scale(.8)}}
+@media (prefers-reduced-motion:reduce){.w-onb.enter .w-onbb,.w-onb.enter .w-onbhero > :first-child{animation:none}}
 
 /* Phone: the whole screen, no card */
 @media (max-width:767px){
@@ -131,27 +197,22 @@
   .w-gate .w-signcard .w-submit{height:52px;font-size:var(--fs-sub)}
   .w-gate .w-input input{height:52px;font-size:var(--fs-body)}
   .w-gate .w-eye{top:13px}
-  .w-gate .w-prof{min-width:96px;min-height:44px}
   .w-silink{min-height:44px}
-  .w-gate .w-onb{width:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-rows:auto 1fr auto}
-  .w-gate .w-onbh{padding:14px 20px;padding-top:calc(14px + env(safe-area-inset-top,0px));gap:16px}
-  .w-gate .w-steps{gap:8px}
-  .w-gate .w-steps li + li::before{width:16px}
-  .w-gate .w-steps li:not(.on) em{display:none}
-  .w-gate .w-onbb{padding:28px 20px 12px;min-height:0}
+  .w-gate .w-onb{width:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;background:var(--w-canvas)}
+  .w-onbtop{padding:calc(8px + env(safe-area-inset-top,0px)) 10px 0}
+  .w-onbback{min-height:44px}
+  .w-gate .w-onbb{padding:20px 24px 12px}
+  .w-gate .w-onbhero h1{font-size:24px}
   .w-gate .w-onbf label,.w-gate .w-onbrow{grid-template-columns:1fr;gap:6px}
-  .w-gate .w-onbf select.w-mini,.w-onbname .w-mini,.w-onbpw .w-mini,.w-gate .w-onbb .w-mini{max-width:none;width:100%;height:44px;font-size:var(--fs-body)}
-  .w-gate .w-onbname{width:100%}
-  .w-gate .w-onbname .w-x{width:44px;height:44px;flex:none}
+  .w-gate .w-onbf select.w-mini,.w-gate .w-onbb .w-mini{max-width:none;width:100%;height:44px;font-size:var(--fs-body)}
   .w-choices.two{grid-template-columns:1fr}
   .w-gate .w-choice{min-height:0}
-  .w-gate .w-onbfoot{position:sticky;bottom:0;background:var(--w-panel);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px))}
-  .w-gate .w-onbfoot .w-btn{height:48px;padding:0 22px}
-  .w-onbskip{min-height:44px}
+  .w-gate .w-onbfoot{position:sticky;bottom:0;background:var(--w-canvas);padding:12px 24px calc(16px + env(safe-area-inset-bottom,0px))}
+  .w-gate .w-onbfoot .w-btn{height:50px}
+  .w-onbalt{min-height:44px}
   .w-codes code{font-size:var(--fs-sub)}
   .w-gate .w-seg button{min-height:44px;padding:0 14px}
 }
-.w-gate .w-onbf label.w-sichk{display:flex;grid-template-columns:none;justify-self:start}
 
 /* ---------- encryption: the recovery key, codes, the Emergency Kit ---------- */
 .w-sikey{width:100%;resize:none;border:0;background:none;outline:none;font:500 var(--fs-sub)/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--w-ink);text-align:center;padding:10px 4px;direction:ltr}
@@ -165,13 +226,10 @@
 .w-gate .w-silinks .w-btn svg.i{width:15px;height:15px}
 
 /* First run: what encrypting means, the kit and the codes */
-.w-onbmeans{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:12px}
-.w-onbmeans li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-align:start}
-.w-onbmeans li svg.i{width:18px;height:18px;margin-top:1px;color:var(--w-accent)}
+.w-onbmeans{list-style:none;margin:0;padding:16px 18px;display:grid;gap:14px;border-radius:var(--r-card);background:var(--w-panel2);border:1px solid var(--w-line2)}
+.w-onbmeans li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;align-items:start;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-align:start}
+.w-onbmeans li svg.i{width:20px;height:20px;margin-top:1px;color:var(--w-accent)}
 .w-onbmeans b{color:var(--w-ink);font-weight:600}
-.w-onbmeanh{margin-top:6px;font-weight:600;color:var(--w-ink)}
-.w-onbh2{font-size:var(--fs-sub);font-weight:600;margin-top:10px}
-.w-onbkit{justify-content:flex-start}
 .w-onbf .w-keybox{flex:1;min-width:0}
 .w-onbf .w-keybox code{letter-spacing:.06em;direction:ltr}
 .w-choice[disabled]{opacity:.55;cursor:not-allowed}
@@ -206,13 +264,15 @@
 .w-onbadd svg.i{width:16px;height:16px}
 .w-onbppl .w-badge{margin-inline-start:2px}
 /* A tag for each person: who, how many become theirs, and the tag */
-.w-onbtags{display:grid;margin-top:6px;border-top:1px solid var(--w-line2)}
+.w-onbtags{display:grid;grid-template-columns:minmax(0,1fr);margin-top:6px;border-top:1px solid var(--w-line2)}
 .w-onbtagrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--w-line2)}
-.w-onbtagwho{display:flex;align-items:center;gap:12px;min-width:0}
+.w-onbtagwho{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.w-onbtagwho > span{min-width:0}
 .w-onbtagwho .w-av{width:38px;height:38px;font-size:16px;flex:none}
 .w-onbtagwho b{display:block;font-size:var(--fs-sub);font-weight:600}
-.w-onbtagwho small{display:block;font-size:var(--fs-foot);color:var(--w-ink2);min-height:1.3em}
-.w-onbtagrow select.w-mini{width:190px;flex:none;height:40px}
+.w-onbtagwho small{display:block;font-size:var(--fs-foot);color:var(--w-ink2);min-height:1.3em;overflow-wrap:anywhere}
+.w-onbseen{display:block;color:var(--w-ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-onbtagrow select.w-mini{width:160px;flex:none;height:40px}
 .w-gate .w-onbb > .w-hint{margin-top:4px}
 @media (max-width:560px){
   .w-onbtagrow{flex-wrap:wrap}

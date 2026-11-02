@@ -1,5 +1,6 @@
 """The recurring engine: rules become transactions on the server, once per rule and date."""
 import asyncio
+import contextvars
 import logging
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -12,6 +13,10 @@ from ..util import today as household_today, household_tz
 log = logging.getLogger("wally")
 
 MAX_STEPS = 100_000
+
+# While an API key works on an encrypted household: the id the browsers give a rule's charge on a
+# date, so a charge added here and the same one added by a browser are one (services/sealed_view.py)
+OCCURRENCE_ID = contextvars.ContextVar("occurrence_id", default=None)
 
 def occurrence(rule: RecurringTransaction, n: int) -> date:
     """The nth date of a rule, counted from its start so the day never drifts.
@@ -52,7 +57,10 @@ def next_date(rule: RecurringTransaction, after: date) -> date | None:
     return None
 
 def make_transaction(rule: RecurringTransaction, on: date) -> Transaction:
+    ids = OCCURRENCE_ID.get()
+    extra = {"id": ids(str(rule.id), on.isoformat())} if ids else {}
     return Transaction(
+        **extra,
         name=rule.name,
         category=rule.category,
         tags=list(rule.tags or []),

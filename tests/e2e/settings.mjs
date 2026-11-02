@@ -378,7 +378,7 @@ await page.fill("#key-name", "Test script");
 await page.click('[data-act="create"]');
 await page.waitForSelector("#key-raw");
 const rawKey = (await page.textContent("#key-raw")).trim();
-ok(/^wly_[0-9a-f]{60}$/.test(rawKey), "the new key is shown once");
+ok(/^wly_[0-9a-f]{64}$/.test(rawKey), "the new key is shown once");
 await page.click("#dlg [data-copy]");
 await toastText(/Key copied/);
 await dlgOk(); await dlgClosed();

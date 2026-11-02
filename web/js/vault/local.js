@@ -919,22 +919,29 @@ function convertTags(d, map, removeTag) {
   for (const [tag, pid] of Object.entries(map)) tagsMap[tag.replace(/^#+/, "")] = Number(pid);
   for (const pid of new Set(Object.values(tagsMap))) if (!env.people().some((p) => p.id === pid)) throw fail(404, "This person does not exist.");
   const counts = Object.fromEntries(Object.values(tagsMap).map((p) => [p, 0]));
+  // A few of each person's, newest first, as the server gives them (api/routers/people.py)
+  const examples = Object.fromEntries(Object.values(tagsMap).map((p) => [p, []]));
+  const newest = (a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_date || "").localeCompare(String(a.created_date || ""));
   let shared = 0;
   for (const kind of ["tx", "rule"]) {
-    for (const row0 of d.all(kind)) {
+    for (const row0 of kind === "tx" ? [...d.all(kind)].sort(newest) : d.all(kind)) {
       const found = (row0.tags || []).filter((g) => g in tagsMap);
       if (!found.length) continue;
       const row = clone(row0);
       const owners = new Set(found.map((g) => tagsMap[g]));
       if (owners.size === 1) {
         row.person_id = [...owners][0]; row.shares = null; row.paid_by = null;
-        if (kind === "tx") counts[row.person_id]++;
+        if (kind === "tx") {
+          counts[row.person_id]++;
+          const seen = examples[row.person_id];
+          if (row.name && !seen.includes(row.name) && seen.length < 3) seen.push(row.name);
+        }
       } else if (kind === "tx") shared++;
       if (removeTag) row.tags = row.tags.filter((g) => !found.includes(g));
       d.put(kind, row);
     }
   }
-  return { counts, shared };
+  return { counts, shared, examples };
 }
 const people = {
   usage: (id) => serial(() => {

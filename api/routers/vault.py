@@ -83,7 +83,8 @@ def signed_in(actor: Actor = Depends(check_login)) -> Actor:
 def vault_status(db: Session) -> dict:
     """What /auth/status says about encryption."""
     vid = records.vault_id(db)
-    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail(), "required": records.required(), "kdf": bool(password_salt(db))}
+    out = {"on": bool(vid), "id": vid, "paused": conversion.paused_detail(), "required": records.required(), "kdf": bool(password_salt(db)),
+           "api_keys": records.api_keys_allowed()}
     if not vid:
         try:
             off = json.loads(config(db, "ENCRYPTION_OFF") or "null")
@@ -304,22 +305,23 @@ class PlainIn(BaseModel):
     id: str
     items: list[dict]
 
-def _import_item(nx: Session, item: dict):
+def import_item(nx: Session, item: dict):
+    """One opened record into its table. Returns the row added."""
     kind = item.get("k")
     try:
         if kind == "tx":
             cents = int(item["cents"])
             if cents <= 0:
                 raise ValueError("amount")
-            nx.add(Transaction(
+            row = Transaction(
                 id=UUID(item["id"]), name=item.get("name") or "", category=item["category"], tags=list(item.get("tags") or []),
                 amount=from_cents(cents), type=item["type"], date=date.fromisoformat(item["date"]), person_id=item.get("person_id"),
                 shares=item.get("shares") or None, paid_by=item.get("paid_by"), note=item.get("note") or "", recurringID=item.get("recurringID") or "",
                 created_date=_parse_dt(item.get("created_date")) or utcnow(), created_by=item.get("created_by"), import_ref=item.get("import_ref"),
                 source=item.get("source") or None, group_id=item.get("group_id"),
-            ))
+            )
         elif kind == "rule":
-            nx.add(RecurringTransaction(
+            row = RecurringTransaction(
                 id=UUID(item["id"]), name=item.get("name") or "", category=item["category"], tags=list(item.get("tags") or []),
                 amount=from_cents(int(item["cents"])), type=item["type"], startDate=date.fromisoformat(item["startDate"]),
                 endDate=date.fromisoformat(item["endDate"]) if item.get("endDate") else None, frequency=item["frequency"],
@@ -327,23 +329,25 @@ def _import_item(nx: Session, item: dict):
                 paid_by=item.get("paid_by"), about=bool(item.get("about")), note=item.get("note") or "", paused=bool(item.get("paused")),
                 last_run=date.fromisoformat(item["last_run"]) if item.get("last_run") else None, anchor_day=item.get("anchor_day"),
                 missed=item.get("missed") or None, created_date=_parse_dt(item.get("created_date")) or utcnow(),
-            ))
+            )
         elif kind == "cat":
-            nx.add(Category(name=item["name"]))
+            row = Category(name=item["name"])
             if item.get("color") is not None:
                 nx.add(CategoryColor(name=item["name"], color=int(item["color"])))
         elif kind == "tag":
-            nx.add(Tag(name=item["name"]))
+            row = Tag(name=item["name"])
         elif kind == "irule":
-            nx.add(ImportRule(
+            row = ImportRule(
                 match=item["match"], category=item["category"], person_id=item.get("person_id"), set_person=bool(item.get("set_person", True)),
                 uses=int(item.get("uses") or 0), learned=bool(item.get("learned")), position=int(item.get("position") or 0),
                 created_at=_parse_dt(item.get("created_at")) or utcnow(),
-            ))
+            )
         else:
             raise ValueError("kind")
     except (KeyError, ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=f"Not a valid {kind or 'item'}: {error}")
+    nx.add(row)
+    return row
 
 @router.post("/vault/convert/plain")
 def convert_plain(
@@ -356,7 +360,7 @@ def convert_plain(
         raise HTTPException(status_code=400, detail="Only when turning encryption off.")
     with conversion.next_session() as nx:
         for item in body.items:
-            _import_item(nx, item)
+            import_item(nx, item)
         try:
             nx.commit()
         except Exception as error:
