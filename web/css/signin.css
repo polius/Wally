@@ -77,12 +77,13 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}}
 :root[data-theme="dark"] .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}
 .w-lockhero{display:grid;justify-items:center;animation:w-whoin .5s var(--ease) both}
-.w-lockhero h1{margin-top:16px;font-size:28px;font-weight:650;letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
-.w-lockhero p{margin-top:6px;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
+.w-lockhero h1{margin-top:20px;font-size:28px;font-weight:650;letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
+.w-lockhero p{margin-top:8px;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
 .w-av.w-lockav{width:104px;height:104px;font-size:42px;font-weight:600;letter-spacing:-.03em;
   background-image:linear-gradient(165deg,var(--who-hl),transparent 62%);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 12px 30px -14px var(--who-sh)}
-.w-lockmark{width:88px;height:88px}
+/* The wallet is drawn edge to edge: 64px reads like the old padded 88px mark */
+.w-lockmark{width:64px;height:64px}
 .w-lockform{width:100%;display:grid;margin-top:36px;animation:w-whoin .5s var(--ease) both;animation-delay:80ms}
 .w-lockfield{display:flex;align-items:center;gap:2px;height:50px;padding-inline:20px 7px;border-radius:25px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:0 1px 2px rgba(20,22,27,.05);transition:border-color .15s,box-shadow .15s}
 .w-lockfield:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 4px var(--w-accent-soft)}
@@ -334,7 +335,7 @@
 .w-onbhero{gap:0;margin-bottom:0}
 .w-onbico{width:64px;height:64px;border-radius:16px;margin-bottom:0;color:var(--w-accent-ink)}
 .w .w-onbico svg.i,.w-onbico svg.i{width:30px;height:30px;stroke-width:1.7}
-.w-onbmark{width:72px;height:72px;margin-bottom:0}
+.w-onbmark{width:64px;height:64px;margin-bottom:0}
 .w-gate .w-onbhero h1{margin-top:22px;font-size:34px;font-weight:700;letter-spacing:-.035em;line-height:1.12}
 .w-gate .w-onbp{margin-top:10px;font-size:var(--fs-body);line-height:1.45;max-width:480px;color:var(--w-ink2)}
 .w-gate .w-onbb > :is(.w-gl,.w-kitbox){margin-top:32px}
