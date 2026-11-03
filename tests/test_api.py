@@ -601,6 +601,28 @@ def test_tags_into_people_together(couple):
     assert client.get("/recurring").json()[0]["person_id"] == alex
     assert client.post("/people/from-tags", json={"tags": {"ana": 999}}).status_code == 404
 
+def test_tags_into_people_with_the_rest(client):
+    # As 1.x leaves them: no people yet, so nobody's and no shares
+    tagged = expense(client, tags=["ana"])
+    plain = expense(client)
+    rule(client, startDate=TODAY)
+    alex = client.post("/people", json={"name": "Alex"}).json()["id"]
+    ana = client.post("/people", json={"name": "Ana"}).json()["id"]
+    client.headers["x-wally-person"] = str(alex)
+    # Made in 2.0: a split someone chose, and one shared evenly, stay as they are
+    split = expense(client, shares={str(alex): 700, str(ana): 300})
+    even = expense(client)
+    body = {"tags": {"ana": ana}, "rest": alex, "remove_tag": False}
+    preview = client.post("/people/from-tags/preview", json=body).json()
+    # The rest: the plain one and the charge the rule made today
+    assert preview["counts"] == {str(ana): 1} and preview["rest"] == 2
+    client.post("/people/from-tags", json=body)
+    t = {x["id"]: x for x in client.get("/transactions").json()}
+    assert t[tagged["id"]]["person_id"] == ana and t[plain["id"]]["person_id"] == alex
+    assert all(t[x["id"]]["person_id"] is None and t[x["id"]]["shares"] == x["shares"] for x in (split, even))
+    assert client.get("/recurring").json()[0]["person_id"] == alex
+    assert client.post("/people/from-tags", json={"tags": {}, "rest": 999}).status_code == 404
+
 # ---------- settings and backups ----------
 def test_config_validates(client):
     assert client.put("/config", json={"savings_target": 120}).status_code == 400

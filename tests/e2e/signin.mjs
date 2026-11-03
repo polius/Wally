@@ -603,7 +603,8 @@ try {
     ok((await (await fetch(v1.base + "/api/auth/status")).json()).kit === null, "upgrade: no kit yet");
     await page.click("#si-forgot");
     await page.waitForSelector("#si-back");
-    ok((await gateText(page)).includes("There is no Emergency Kit yet") && (await gateText(page)).includes("only whoever runs the server can help") && !(await gateText(page)).includes("signin_off"), "upgrade: forgot says there is no kit yet and who can help; the command is in the README");
+    ok((await gateText(page)).includes("There is no Emergency Kit yet") && (await page.textContent(".w-cmd code")) === "docker exec wally python3 -m api.signin_off" && await page.locator("#cmd-copy").count() === 1,
+      "upgrade: forgot says there is no kit yet, with the command that turns sign-in off, to copy");
     await shot(page, "upgrade-forgot");
     await page.click("#si-back");
     await page.waitForSelector("#si-forgot");
@@ -640,7 +641,7 @@ try {
     ok(picked.join() === "alex,ana", "upgrade: the tag with each person’s name is picked (" + picked + ")");
     ok(await page.$eval(`[data-tagfor="${ids[0]}"] option[value="ana"]`, (o) => o.disabled), "upgrade: a tag picked for Ana is greyed out for Alex");
     // The count only, without the examples under it
-    const counts = () => page.$$eval("[id^=tagn-]", (l) => l.map((e) => (e.hidden ? "" : e.id === "tagn-shared" ? e.textContent : e.firstChild ? e.firstChild.textContent : "")).join(" / "));
+    const counts = () => page.$$eval("[id^=tagn-]:not(#tagn-rest)", (l) => l.map((e) => (e.hidden ? "" : e.id === "tagn-shared" ? e.textContent : e.firstChild ? e.firstChild.textContent : "")).join(" / "));
     await page.waitForFunction(() => document.getElementById("tagn-shared").textContent);
     ok((await counts()) === "1 transaction becomes theirs / 3 transactions become theirs / 1 transaction is tagged for more than one person, so it stays shared.",
       "upgrade: counted together, a transaction with both tags stays shared (" + (await counts()) + ")");
@@ -658,9 +659,19 @@ try {
     // Back: nothing is lost, and the tags are applied only at the end
     await page.click("#onb-back");
     await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Who’s in your household?"));
-    ok((await page.$$eval(".w-onbppl li > span:not(.w-av):not(.w-badge)", (l) => l.map((x) => x.textContent.trim()))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, and no Back on the first step");
+    ok((await page.$$eval("[data-name]", (l) => l.map((x) => x.value))).join() === "Alex,Ana" && !(await page.$("#onb-back")), "upgrade: back on People, the people already added, still editable, and no Back on the first step");
+    // Someone added on the way back is saved on Continue, and removing them again takes them away
+    await page.click("#onb-add");
+    await page.fill('[data-name="2"]', "Sam");
     await page.click("#onb-next");
     await page.waitForSelector("[data-tagfor]");
+    ok(await page.locator("[data-tagfor]").count() === 3 && (await page.evaluate(() => fetch("/api/people").then((r) => r.json()))).length === 3, "upgrade: back on People, someone added joins the household");
+    await page.click("#onb-back");
+    await page.waitForSelector('[data-drop="2"]');
+    await page.click('[data-drop="2"]');
+    await page.click("#onb-next");
+    await page.waitForSelector("[data-tagfor]");
+    ok(await page.locator("[data-tagfor]").count() === 2 && (await page.evaluate(() => fetch("/api/people").then((r) => r.json()))).map((x) => x.name).join() === "Alex,Ana", "upgrade: and removed again, they leave it");
     ok((await page.$$eval("[data-tagfor]", (l) => l.map((s) => s.value))).join() === "alex,ana", "upgrade: back on Tags, the picks are as they were left");
     await page.click("#onb-next");
     // Encrypting is offered, chosen by default, with Not now under it
@@ -717,10 +728,11 @@ try {
     await page.click("#wel-go");
     await page.waitForSelector("[data-name]");
     await page.fill('[data-name="0"]', "Alex");
+    ok((await page.textContent("#up-note")) === "Everything already in Wally becomes yours.", "upgrade, on their own: everything becomes theirs");
     await page.click("#onb-next");
-    await page.waitForSelector("[data-tagfor]");
-    await page.click("#onb-skip");
+    // On their own, the tags have nobody else to go to: no step for them
     await page.waitForSelector("#up-pw");
+    ok(!(await page.locator("[data-tagfor]").count()) && await page.locator(".w-onbdots li").count() === 3, "upgrade, on their own: no tags step, three dots");
     await page.click("#onb-next");
     ok((await page.textContent("#onb-err")).includes("Enter your password first"), "upgrade, encrypting: the password first");
     await page.fill("#up-pw", "not-it-at-all");
@@ -739,6 +751,8 @@ try {
     ok(est.vault.on && !!est.kit && est.me.name === "Alex", "upgrade, encrypting: encrypted, with its kit, as Alex");
     const n = await page.evaluate(async () => (await import("/js/core.js")).state.tx.length);
     ok(n > 0 && await page.evaluate(async () => (await import("/js/core.js")).vaultOn()), "upgrade, encrypting: every transaction opens on this browser (" + n + ")");
+    const mine = await page.evaluate(async () => { const c = await import("/js/core.js"); return c.state.tx.every((x) => x.p === c.state.me); });
+    ok(mine, "upgrade, on their own: every transaction is Alex’s, settled before encrypting");
     noErrors(page, "upgrade, encrypting");
     await page.context().close();
   }

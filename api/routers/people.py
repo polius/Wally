@@ -29,6 +29,9 @@ class FromTags(BaseModel):
     # Tag to person, all at once, as after the upgrade from 1.x
     tags: dict[str, int]
     remove_tag: bool = True
+    # Everything still shared without any of the tags becomes this person's: the household's only
+    # person after the upgrade, or whoever the untagged expenses were for
+    rest: int | None = None
 
 @router.get("/people", response_model=list[PersonPublic])
 def read_people(
@@ -185,22 +188,29 @@ def from_tag_preview(
     count = sum(1 for t in db.exec(select(Transaction.tags)).all() if t and tag in t)
     return {"tag": tag, "count": count}
 
-def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool) -> dict:
+def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool, rest: int | None = None) -> dict:
     """Turn tags into people: what has one of the tags becomes that person's, recurring rules
     included, so their next charges are theirs too. What has tags of two or more of them stays
-    shared. The caller commits, or rolls back for a preview."""
+    shared. With rest, what has none of the tags and is shared evenly, as everything from 1.x is,
+    becomes that person's; a split someone chose stays as it is. The caller commits, or rolls back
+    for a preview."""
     tags = {tag.lstrip("#"): person_id for tag, person_id in tags.items()}
-    for person_id in set(tags.values()):
+    for person_id in set(tags.values()) | ({rest} if rest is not None else set()):
         if not db.get(Person, person_id):
             raise HTTPException(status_code=404, detail="This person does not exist.")
     counts = {person_id: 0 for person_id in tags.values()}
     # A few of each person's, newest first, so it's plain what the tag meant
     examples = {person_id: [] for person_id in tags.values()}
-    shared = 0
+    shared = rested = 0
     newest = select(Transaction).order_by(Transaction.date.desc(), Transaction.created_date.desc())
     for row in [*db.exec(newest).all(), *db.exec(select(RecurringTransaction)).all()]:
         found = [tag for tag in (row.tags or []) if tag in tags]
         if not found:
+            if rest is not None and row.person_id is None and not row.shares and row.paid_by is None:
+                row.person_id = rest
+                if isinstance(row, Transaction):
+                    rested += 1
+                db.add(row)
             continue
         owners = {tags[tag] for tag in found}
         if len(owners) == 1:
@@ -217,7 +227,7 @@ def convert_tags(db: Session, tags: dict[str, int], remove_tag: bool) -> dict:
         if remove_tag:
             row.tags = [g for g in row.tags if g not in found]
         db.add(row)
-    return {"counts": counts, "shared": shared, "examples": examples}
+    return {"counts": counts, "shared": shared, "examples": examples, "rest": rested}
 
 @router.post("/people/{person_id}/from-tag")
 def from_tag(
@@ -235,7 +245,7 @@ def from_tags_preview(
     body: FromTags,
     db: Annotated[Session, Depends(get_session)],
 ):
-    result = convert_tags(db, body.tags, body.remove_tag)
+    result = convert_tags(db, body.tags, body.remove_tag, body.rest)
     db.rollback()
     return result
 
@@ -244,6 +254,6 @@ def from_tags(
     body: FromTags,
     db: Annotated[Session, Depends(get_session)],
 ):
-    result = convert_tags(db, body.tags, body.remove_tag)
+    result = convert_tags(db, body.tags, body.remove_tag, body.rest)
     db.commit()
     return {"ok": True, **result}

@@ -3,7 +3,7 @@
    "who is using this browser".
    app.js decides which one comes first (nextGate) and calls mountGate; done() reloads Wally. */
 import * as core from "../core.js";
-import { t, tn, esc, state, GET, POST, PUT, av, pname, person, icon, loadLanguage, LANGUAGES, LANG, PCOLORS } from "../core.js";
+import { t, tn, esc, state, GET, POST, PUT, DEL, av, pname, pcolor, person, icon, loadLanguage, LANGUAGES, LANG, PCOLORS } from "../core.js";
 import { trapFocus } from "../ui.js";
 
 let root = null;      // #gate
@@ -87,8 +87,9 @@ function renderSignin() {
   if (s === "nokit") {
     // Upgraded from 1.x and nobody has signed in since: there is no Emergency Kit yet. The server command is in the README.
     paint('<main class="w-lock wide" aria-labelledby="gate-h"><div class="w-lockhero"><span class="w-mark w-lockmark" aria-hidden="true"></span><h1 id="gate-h">' + t("There is no Emergency Kit yet") + "</h1><p>" +
-      t("Wally 1 had none, so only whoever runs the server can help: they can turn sign-in off, then you turn it on again with a new password.") + "</p></div>" +
+      t("Wally 1 didn’t make one. Whoever runs the server can turn sign-in off by running this on it:") + "</p></div>" + serverFix() +
       '<div class="w-locklinks"><button type="button" class="w-link w-silink acc" id="si-back" data-autofocus>' + t("Back to sign in") + "</button></div></main>");
+    wireServerFix();
     root.querySelector("#si-back").addEventListener("click", () => go(si.p ? "pw" : "household"));
     return;
   }
@@ -299,6 +300,15 @@ function renderKit() {
 /* The kit as a designed PDF, made in this browser: the key never leaves it */
 async function downloadKit(key) { (await import("../vault/kit.js")).downloadKitPdf(key); }
 
+/* Locked out with no kit and no encryption: the command that turns sign-in off, as in the README, to copy.
+   Each word kept whole, so a narrow screen breaks it at a space, never inside "-m" */
+const SIGNIN_OFF = "docker exec wally python3 -m api.signin_off";
+function serverFix() {
+  return '<div class="w-lockcmd"><div class="w-lockfield w-cmd"><code translate="no">' + SIGNIN_OFF.split(" ").map((w) => "<span>" + esc(w) + "</span>").join(" ") + "</code>" +
+    '<button type="button" class="w-cmdcopy" id="cmd-copy" aria-label="' + esc(t("Copy the command")) + '">' + t("Copy") + "</button></div>" +
+    '<p class="w-lockhint">' + t("Then open Wally and turn sign-in on again in Settings › Sign-in & Privacy, with a new password.") + "</p></div>";
+}
+function wireServerFix() { const b = root.querySelector("#cmd-copy"); if (b) b.addEventListener("click", () => copy(SIGNIN_OFF, b)); }
 async function copy(text, btn) {
   try { await navigator.clipboard.writeText(text); } catch (e) { return; }
   const before = btn.innerHTML;
@@ -312,9 +322,12 @@ async function copy(text, btn) {
    it when the step can wait. Steps come in from the side; a step drawn again (a name added, the
    language changed) doesn't move. */
 let onbShown = "";
+function onbDots(count, at) {
+  return count > 1 ? '<ol class="w-onbdots" aria-label="' + esc(t("Step {n} of {total}", { n: at + 1, total: count })) + '">' +
+    Array.from({ length: count }, (_, i) => '<li class="' + (i === at ? "on" : i < at ? "done" : "") + '"></li>').join("") + "</ol>" : "<span></span>";
+}
 function onbFrame(o) {
-  const dots = o.count > 1 ? '<ol class="w-onbdots" aria-label="' + esc(t("Step {n} of {total}", { n: o.at + 1, total: o.count })) + '">' +
-    Array.from({ length: o.count }, (_, i) => '<li class="' + (i === o.at ? "on" : i < o.at ? "done" : "") + '"></li>').join("") + "</ol>" : "<span></span>";
+  const dots = onbDots(o.count, o.at);
   const top = '<div class="w-onbtop">' + (o.back ? '<button type="button" class="w-onbback" id="onb-back">' + icon("left") + "<span>" + t("Back") + "</span></button>" : "<span></span>") + dots + "<span></span></div>";
   const ico = o.ico === "mark" ? '<span class="w-mark w-onbmark" aria-hidden="true"></span>' : '<span class="w-onbico">' + icon(o.ico) + "</span>";
   const foot = '<div class="w-onbfoot">' +
@@ -340,43 +353,50 @@ function progress() {
 
 /* The people rows, shared by first run and the upgrade */
 function initialOf(name) { const c = [...String(name || "").trim()][0]; return c ? c.toLocaleUpperCase(LANG) : ""; }
-function faceOf(name, i) { const c = initialOf(name); return '<span class="w-av c' + PCOLORS[i % 8] + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
-function peopleRows(names, created) {
+// Someone already saved keeps their colour; a new row shows the colour it will most likely get
+function faceColor(i, ids) { return ids && ids[i] ? pcolor(String(ids[i])) : PCOLORS[i % 8]; }
+function faceOf(name, i, ids) { const c = initialOf(name); return '<span class="w-av c' + faceColor(i, ids) + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
+/* Still editable after Continue: going back adds, renames or removes people, saved on the next Continue */
+function peopleRows(names, ids) {
   // One group of rows, as in Contacts: a face that fills in as the name is typed, the name, then You or a red minus
-  if (created.length) {
-    return '<ul class="w-gl w-onbgl w-onbppl">' + created.map((p) => '<li class="w-gr">' + av(String(p.id)) + '<span class="k">' + esc(p.name) + "</span>" + (p.id === created[0].id ? '<span class="w-badge">' + t("You") + "</span>" : "") + "</li>").join("") + "</ul>" +
-      '<p class="w-glf">' + t("Names can be changed later in Settings › People.") + "</p>";
-  }
   return '<div class="w-gl w-onbgl w-onbpl" id="onb-names">' + names.map((n, i) =>
-    '<div class="w-gr w-onbper">' + faceOf(n, i) +
+    '<div class="w-gr w-onbper">' + faceOf(n, i, ids) +
     '<input class="w-onbpin" data-name="' + i + '" value="' + esc(n) + '" maxlength="40" placeholder="' + esc(i === 0 ? t("Your name") : t("Name")) + '" autocomplete="' + (i === 0 ? "name" : "off") + '" aria-label="' + esc(i === 0 ? t("Your name") : t("Name of person {n}", { n: i + 1 })) + '">' +
     (i === 0 ? '<span class="w-badge">' + t("You") + "</span>"
       : '<button type="button" class="w-onbdrop" data-drop="' + i + '" aria-label="' + esc(t("Remove person {n}", { n: i + 1 })) + '">' + icon("minus") + "</button>") + "</div>").join("") +
     '<button type="button" class="w-gr add w-onbadd" id="onb-add"><span class="w-onbaddi">' + icon("plus") + "</span>" + t("Add someone") + "</button></div>";
 }
 function readNames(names) { root.querySelectorAll("[data-name]").forEach((i) => { names[+i.dataset.name] = i.value; }); }
-function wireNames(names, rerender) {
+function wireNames(names, ids, rerender) {
   const add = root.querySelector("#onb-add");
-  if (add) add.addEventListener("click", () => { readNames(names); names.push(""); rerender(); const list = root.querySelectorAll("[data-name]"); list[list.length - 1].focus(); });
-  root.querySelectorAll("[data-drop]").forEach((b) => b.addEventListener("click", () => { readNames(names); names.splice(+b.dataset.drop, 1); rerender(); }));
+  if (add) add.addEventListener("click", () => { readNames(names); names.push(""); ids.push(null); rerender(); const list = root.querySelectorAll("[data-name]"); list[list.length - 1].focus(); });
+  root.querySelectorAll("[data-drop]").forEach((b) => b.addEventListener("click", () => { readNames(names); names.splice(+b.dataset.drop, 1); ids.splice(+b.dataset.drop, 1); rerender(); }));
   root.querySelectorAll("[data-name]").forEach((i) => {
     i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); root.querySelector("#onb-next").click(); } });
     // The face fills in as the name is typed
-    i.addEventListener("input", () => { const f = root.querySelector('[data-av="' + i.dataset.name + '"]'); if (f) f.outerHTML = faceOf(i.value, +i.dataset.name); });
+    i.addEventListener("input", () => { const f = root.querySelector('[data-av="' + i.dataset.name + '"]'); if (f) f.outerHTML = faceOf(i.value, +i.dataset.name, ids); });
   });
 }
-/* Adds everyone typed; returns the people created, or null after showing why not */
-async function createPeople(names) {
-  const clean = names.map((n) => n.trim()).filter(Boolean);
-  if (!clean.length) { onbError(t("Add your own name first.")); root.querySelector("[data-name]").focus(); return null; }
-  const seen = new Set();
-  for (const n of clean) {
-    const k = n.toLocaleLowerCase(LANG);
-    if (seen.has(k)) { onbError(t("Two people are called {name}. Give each a different name.", { name: esc(n) })); return null; }
+/* Saves the names as they stand: new rows are added, changed ones renamed, and people whose row was
+   removed or emptied leave. ids[i] is who row i already is. Returns the people in row order, or null
+   after showing why not. Nothing is encrypted yet, so removing someone just makes theirs shared. */
+async function syncPeople(names, ids) {
+  const rows = names.map((n, i) => ({ name: n.trim(), id: ids[i] || null }));
+  if (!rows[0] || !rows[0].name) { onbError(t("Add your own name first.")); root.querySelector("[data-name]").focus(); return null; }
+  const kept = rows.filter((r) => r.name), seen = new Set();
+  for (const r of kept) {
+    const k = r.name.toLocaleLowerCase(LANG);
+    if (seen.has(k)) { onbError(t("Two people are called {name}. Give each a different name.", { name: esc(r.name) })); return null; }
     seen.add(k);
   }
+  const was = new Map(state.people.map((p) => [p.id, p]));
+  // Leaving first, then renames, so a name that was someone else's is free again
+  for (const p of state.people) if (!kept.some((r) => r.id === p.id)) await DEL("/people/" + p.id, { move_to: null });
+  for (const r of kept) if (r.id && was.get(r.id) && was.get(r.id).name !== r.name) await PUT("/people/" + r.id, { name: r.name });
   const out = [];
-  for (const name of clean) out.push(await POST("/people", { name }));
+  for (const r of kept) out.push(r.id ? Object.assign({}, was.get(r.id), { name: r.name }) : await POST("/people", { name: r.name }));
+  names.splice(0, names.length, ...kept.map((r) => r.name));
+  ids.splice(0, ids.length, ...out.map((p) => p.id));
   state.people = out;
   return out;
 }
@@ -432,7 +452,7 @@ function currencyLabel(x) {
    encrypt: that step is left out and the kit is made with the password. With
    WALLY_ENCRYPTION=required, neither the password nor encrypting can wait. */
 // pw: a password, unless "Not now" says otherwise, so the dots count its steps from the start
-const onb = { step: 0, names: [""], people: [], pw: true, secret: "", pwSaved: false, data: "add", currency: null, plainKit: "", kit: "", qr: "", saved: false, sealed: false };
+const onb = { step: 0, names: [""], ids: [null], people: [], pw: true, secret: "", pwSaved: false, data: "add", currency: null, plainKit: "", kit: "", qr: "", saved: false, sealed: false };
 const mustEncrypt = () => !!(status.vault && status.vault.required);
 const canEncrypt = () => !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
 function onbSteps() {
@@ -464,8 +484,8 @@ function renderWelcome() {
       "</div>";
   } else if (k === "people") {
     Object.assign(o, { ico: "users", title: t("Who shares this household?"), sub: t("Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you."), next: t("Continue") });
-    o.body = peopleRows(onb.names, onb.people) + (onb.people.length ? "" : '<p class="w-glf">' + t("Living alone? Just add yourself.") + "</p>");
-    if (!onb.people.length) focus = "[data-name]";
+    o.body = peopleRows(onb.names, onb.ids) + '<p class="w-glf">' + t("Living alone? Just add yourself.") + "</p>";
+    focus = "[data-name]";
   } else if (k === "password") {
     const must = mustEncrypt();
     Object.assign(o, { ico: "lock", title: t("Create a household password"), next: t("Continue"), alt: must ? "" : t("Not now"),
@@ -547,7 +567,7 @@ function wireWelcome(k) {
     onb.currency.position = b.dataset.v;
     root.querySelectorAll("#onb-pos button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   }));
-  wireNames(onb.names, () => renderWelcome());
+  wireNames(onb.names, onb.ids, () => renderWelcome());
   root.querySelectorAll("[data-onb-data]").forEach((b) => b.addEventListener("click", () => { onb.data = b.dataset.onbData; renderWelcome(); root.querySelector('[data-onb-data="' + onb.data + '"]').focus(); }));
 }
 async function saveBasics() {
@@ -557,11 +577,12 @@ async function saveBasics() {
   await PUT("/currency/position/" + c.position);
 }
 async function savePeople() {
-  if (onb.people.length) return true;
   readNames(onb.names);
-  const people = await createPeople(onb.names);
+  const first = !onb.people.length;
+  const people = await syncPeople(onb.names, onb.ids);
   if (!people) return false;
   onb.people = people;
+  if (!first) return true;
   // The first person is whoever is setting Wally up, on this browser
   write("wally.person", String(people[0].id));
   write(LAST, String(people[0].id));
@@ -614,7 +635,10 @@ async function openWally(choice) {
 /* People, then tags if there are any, then encrypting where sign-in is on and browsers can,
    then the household's Emergency Kit. The 1.x password is asked again to encrypt: signing in
    reloaded Wally, and nothing keeps it. */
-const up = { step: 0, names: [""], people: [], tags: null, picks: {}, preview: null, remove: true, kit: "", qr: "", saved: false, sealed: false };
+const up = { step: 0, names: [""], ids: [null], people: [], tags: null, picks: {}, rest: "", solo: false, preview: null, remove: true, kit: "", qr: "", saved: false, sealed: false };
+/* On their own, everything from 1.x becomes theirs, with nothing to ask: decided by the names typed, until people exist */
+const upSolo = () => up.names.filter((n) => n.trim()).length <= 1;
+const upNote = () => upSolo() ? t("Everything already in Wally becomes yours.") : t("Everything already in Wally starts out shared by the household.");
 
 function startPeople() { if (status.upgrade) return startReport(); startUpgrade(); }
 
@@ -639,7 +663,7 @@ async function startUpgrade() {
 }
 function upgradeSteps() {
   const steps = ["people"];
-  if (up.tags.length) steps.push("tags");
+  if (up.tags.length && !upSolo()) steps.push("tags");
   if (status.signin && canEncrypt() && (!sealed() || up.sealed)) steps.push("encrypt");
   if (status.signin && (!status.kit || up.kit)) steps.push("kit");
   return steps;
@@ -651,18 +675,23 @@ function renderUpgrade() {
   if (kind === "people") {
     Object.assign(o, { ico: "users", title: t("Who’s in your household?"), next: t("Continue"),
       sub: t("Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.") });
-    o.body = peopleRows(up.names, up.people) + (up.people.length ? "" : '<p class="w-glf">' + t("Everything already in Wally starts out shared by the household.") + "</p>");
-    if (!up.people.length) focus = "[data-name]";
+    o.body = peopleRows(up.names, up.ids) + '<p class="w-glf" id="up-note" aria-live="polite">' + upNote() + "</p>";
+    focus = "[data-name]";
   } else if (kind === "tags") {
     const example = "#" + (Object.values(up.picks)[0] || up.tags[0]);
     Object.assign(o, { ico: "tag", title: t("Did you tag personal expenses?"), next: t("Continue"), alt: t("Not now"),
-      sub: t("If you marked what one person spent with a tag, like {tag}, choose it here. Those transactions become theirs, and everything else stays shared.", { tag: "<b>" + esc(example) + "</b>" }) });
+      sub: t("If you marked what one person spent with a tag, like {tag}, choose it here. Those transactions become theirs. Everything else stays shared, or goes to whoever you choose.", { tag: "<b>" + esc(example) + "</b>" }) });
     // Each person is a row; their tag opens a short list, as a row in iOS Settings does
     o.body = '<div class="w-gl w-onbgl w-onbtags">' + up.people.map((p) =>
         '<label class="w-gr w-grpick w-onbtagrow">' + av(String(p.id)) + '<span class="k">' + esc(p.name) + '<small id="tagn-' + p.id + '" aria-live="polite">' + tagCountText(p) + "</small></span>" +
         '<span class="v" data-tagv="' + p.id + '">' + (up.picks[p.id] ? "#" + esc(up.picks[p.id]) : t("No tag")) + "</span>" + icon("right", "chev") +
         '<select data-tagfor="' + p.id + '" aria-label="' + esc(t("Tag for {name}", { name: p.name })) + '"><option value="">' + t("No tag") + "</option>" +
-        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></label>").join("") + "</div>" +
+        up.tags.map((g) => '<option value="' + esc(g) + '"' + (up.picks[p.id] === g ? " selected" : "") + ">#" + esc(g) + "</option>").join("") + "</select></label>").join("") +
+      // What has none of the tags: shared, or one person's
+      '<label class="w-gr w-grpick w-onbtagrow"><span data-restav>' + av(up.rest || "shared") + '</span><span class="k">' + t("Everything else") + '<small id="tagn-rest" aria-live="polite">' + restText() + "</small></span>" +
+        '<span class="v" data-restv>' + esc(restName()) + "</span>" + icon("right", "chev") +
+        '<select data-rest aria-label="' + esc(t("Who everything else belongs to")) + '"><option value="">' + t("Shared") + "</option>" +
+        up.people.map((p) => '<option value="' + p.id + '"' + (up.rest === String(p.id) ? " selected" : "") + ">" + esc(p.name) + "</option>").join("") + "</select></label></div>" +
       '<p class="w-glf" id="tagn-shared" aria-live="polite"' + (sharedText() ? "" : " hidden") + ">" + sharedText() + "</p>" +
       '<div class="w-gl w-onbgl"><label class="w-gr" for="up-rm"><span class="k">' + t("Remove the tag from those transactions") + '</span><button type="button" class="w-switch" role="switch" id="up-rm" aria-checked="' + !!up.remove + '"></button></label></div>';
     focus = "#onb-next";
@@ -689,7 +718,17 @@ function wireUpgrade(kind) {
   const next = root.querySelector("#onb-next"), back = root.querySelector("#onb-back"), skip = root.querySelector("#onb-skip");
   // Back keeps everything as it was left: the people are already added, the tags are applied when leaving their step
   if (back) back.addEventListener("click", () => { if (kind === "people") readNames(up.names); up.step--; renderUpgrade(); });
-  if (kind === "people") wireNames(up.names, () => renderUpgrade());
+  if (kind === "people") {
+    wireNames(up.names, up.ids, () => renderUpgrade());
+    root.querySelectorAll("[data-name]").forEach((i) => i.addEventListener("input", () => {
+      const was = upSolo();
+      readNames(up.names);
+      if (was === upSolo()) return;
+      const note = root.querySelector("#up-note"), dots = root.querySelector(".w-onbtop > :nth-child(2)");
+      if (note) note.textContent = upNote();
+      if (dots) dots.outerHTML = onbDots(upgradeSteps().length, up.step);
+    }));
+  }
   if (kind === "tags") {
     root.querySelectorAll("[data-tagfor]").forEach((sel) => sel.addEventListener("change", () => {
       if (sel.value) up.picks[sel.dataset.tagfor] = sel.value; else delete up.picks[sel.dataset.tagfor];
@@ -698,6 +737,13 @@ function wireUpgrade(kind) {
       markTaken();
       previewTags();
     }));
+    const rest = root.querySelector("[data-rest]");
+    rest.addEventListener("change", () => {
+      up.rest = rest.value;
+      root.querySelector("[data-restv]").textContent = restName();
+      root.querySelector("[data-restav]").innerHTML = av(up.rest || "shared");
+      previewTags();
+    });
     markTaken();
     if (!up.preview) previewTags();
     const rm = root.querySelector("#up-rm");
@@ -711,10 +757,11 @@ function wireUpgrade(kind) {
   if (skip) skip.addEventListener("click", async () => {
     busy(skip, true);
     try {
-      if (kind === "tags") { up.picks = {}; up.preview = null; return upgradeNext(); }
+      if (kind === "tags") { up.picks = {}; up.rest = ""; up.preview = null; return await upgradeNext(); }
       // Not encrypted: the household still needs its kit, made now
+      await soloOwns();
       await makePlainKit();
-      upgradeNext();
+      await upgradeNext();
     } catch (e) { onbError(apiMessage(e)); busy(skip, false); }
   });
   const pw = root.querySelector("#up-pw");
@@ -724,22 +771,25 @@ function wireUpgrade(kind) {
     busy(next, true);
     try {
       if (kind === "people") {
-        if (!up.people.length) {
-          readNames(up.names);
-          const people = await createPeople(up.names);
-          if (!people) return busy(next, false);
-          up.people = people;
-          await becomeYou(people[0]);
-          // A tag with someone's name, or their first name, is most likely theirs
-          for (const p of people) {
-            const full = p.name.trim().toLocaleLowerCase(LANG), first = full.split(/\s+/)[0];
-            const tag = up.tags.find((g) => g.toLocaleLowerCase(LANG) === full) || up.tags.find((g) => g.toLocaleLowerCase(LANG) === first);
-            if (tag && !Object.values(up.picks).includes(tag)) up.picks[p.id] = tag;
-          }
+        readNames(up.names);
+        const before = up.people.map((p) => p.id);
+        const people = await syncPeople(up.names, up.ids);
+        if (!people) return busy(next, false);
+        up.people = people;
+        if (!before.length) await becomeYou(people[0]);
+        // Whoever left takes their picks with them
+        for (const id of Object.keys(up.picks)) if (!people.some((p) => String(p.id) === id)) delete up.picks[id];
+        if (up.rest && !people.some((p) => String(p.id) === up.rest)) up.rest = "";
+        up.preview = null;
+        // A tag with a newcomer's name, or their first name, is most likely theirs
+        for (const p of people.filter((x) => !before.includes(x.id))) {
+          const full = p.name.trim().toLocaleLowerCase(LANG), first = full.split(/\s+/)[0];
+          const tag = up.tags.find((g) => g.toLocaleLowerCase(LANG) === full) || up.tags.find((g) => g.toLocaleLowerCase(LANG) === first);
+          if (tag && !Object.values(up.picks).includes(tag)) up.picks[p.id] = tag;
         }
       } else if (kind === "tags") await applyTags();
-      else if (kind === "encrypt") await encryptUpgrade(pw.value);
-      upgradeNext();
+      else if (kind === "encrypt") { await soloOwns(); await encryptUpgrade(pw.value); }
+      await upgradeNext();
     } catch (e) {
       const prog = root.querySelector("#onb-prog");
       if (prog) prog.hidden = true;
@@ -757,8 +807,9 @@ async function becomeYou(me) {
 }
 async function applyTags() {
   const tags = pickedTags();
-  if (Object.keys(tags).length) await POST("/people/from-tags", { tags, remove_tag: up.remove });
+  if (Object.keys(tags).length || up.rest) await POST("/people/from-tags", { tags, remove_tag: up.remove, rest: up.rest ? Number(up.rest) : null });
   up.picks = {};
+  up.rest = "";
   up.preview = null;
 }
 async function encryptUpgrade(password) {
@@ -781,10 +832,20 @@ async function makePlainKit() {
   }
   up.qr = await (await import("../vault/kit.js")).qrSvg(up.kit);
 }
-function upgradeNext() {
+async function upgradeNext() {
   up.step++;
-  if (up.step >= upgradeSteps().length) return finish(up.sealed);
+  const next = upgradeSteps()[up.step];
+  // The kit has no way back, and after it Wally opens: who owns what is settled before either
+  if (!next || next === "kit") await soloOwns();
+  if (!next) return finish(up.sealed);
   renderUpgrade();
+}
+/* On their own, everything from 1.x is theirs, recurring rules included. Saved only where the steps
+   can no longer go back to the people, so adding someone there still finds it all shared. */
+async function soloOwns() {
+  if (up.solo || !upSolo() || up.people.length !== 1) return;
+  await POST("/people/from-tags", { tags: {}, rest: up.people[0].id, remove_tag: false });
+  up.solo = true;
 }
 function pickedTags() {
   const tags = {};
@@ -806,6 +867,12 @@ function tagCountText(p) {
   return tn(n, "{n} transaction becomes theirs", "{n} transactions become theirs") +
     (seen.length ? '<span class="w-onbseen">' + seen.map(esc).join(", ") + (n > seen.length ? "…" : "") + "</span>" : "");
 }
+function restName() { return up.rest ? pname(up.rest) : t("Shared"); }
+function restText() {
+  if (!up.rest) return t("Stays shared by the household");
+  if (!up.preview) return t("Counting…");
+  return tn(up.preview.rest || 0, "{n} transaction becomes theirs", "{n} transactions become theirs");
+}
 function sharedText() {
   return up.preview && up.preview.shared ? tn(up.preview.shared, "{n} transaction is tagged for more than one person, so it stays shared.", "{n} transactions are tagged for more than one person, so they stay shared.") : "";
 }
@@ -815,14 +882,16 @@ async function previewTags() {
   const seq = ++previewSeq, tags = pickedTags();
   up.preview = null;
   showCounts();
-  if (!Object.keys(tags).length) return;
+  if (!Object.keys(tags).length && !up.rest) return;
   try {
-    const r = await POST("/people/from-tags/preview", { tags, remove_tag: up.remove });
+    const r = await POST("/people/from-tags/preview", { tags, remove_tag: up.remove, rest: up.rest ? Number(up.rest) : null });
     if (seq === previewSeq) { up.preview = r; showCounts(); }
   } catch (e) { if (seq === previewSeq) onbError(apiMessage(e)); }
 }
 function showCounts() {
   for (const p of up.people) { const out = root.querySelector("#tagn-" + p.id); if (out) out.innerHTML = tagCountText(p); }
+  const rest = root.querySelector("#tagn-rest");
+  if (rest) rest.textContent = restText();
   const shared = root.querySelector("#tagn-shared");
   if (shared) { shared.textContent = sharedText(); shared.hidden = !shared.textContent; }
 }
@@ -886,8 +955,8 @@ function renderVault() {
     const sub = list.length
       ? t("Ask {names}: everyone in the household signs in with the same password.", { names: esc(new Intl.ListFormat(LANG, { type: "disjunction" }).format(list.map((p) => p.name))) })
       : sealed() ? t("Only your password or your recovery key can open this household’s data.")
-      : t("Whoever runs the server can turn sign-in off, then you turn it on again with a new password.");
-    html = lockScreen({ top: av(vg.p, "w-lockav"), title: t("Lost the Emergency Kit too?"), sub,
+      : t("Whoever runs the server can turn sign-in off by running this on it:");
+    html = lockScreen({ top: av(vg.p, "w-lockav"), title: t("Lost the Emergency Kit too?"), sub, form: list.length || sealed() ? "" : serverFix(),
       links: links(link("vg-rec", t("Use my recovery key"), true), vg.signedIn ? signOutLink() : link("vg-back", t("Back to sign in"))),
       note: sealed() ? t("Only the password or the recovery key can open your data. Not even whoever runs the server can.") : "" });
   } else if (s === "newpw") {
@@ -903,6 +972,7 @@ function renderVault() {
   paint(html, "#vg-in");
   wireEyes();
   wireSignOut();
+  wireServerFix();
   const on = (id, fn) => { const n = root.querySelector(id); if (n) n.addEventListener("click", fn); };
   const form = root.querySelector("#vg-form");
   if (form) form.addEventListener("submit", (ev) => { ev.preventDefault(); submitVault(); });

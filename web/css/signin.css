@@ -179,10 +179,6 @@
 .w-gate .w-choice{text-align:start;min-height:130px}
 .w-gate .w-choice .w-ico{background:var(--w-fill);color:var(--w-ink2)}
 .w-gate .w-choice[aria-checked="true"] .w-ico{background:var(--w-accent);color:var(--w-on-accent)}
-.w-onbppl{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.w-onbppl li{display:flex;align-items:center;gap:12px;font-weight:500;font-size:var(--fs-sub)}
-.w-onbppl .w-av{width:34px;height:34px;font-size:var(--fs-sub)}
-.w-onbppl + .w-hint{text-align:center}
 .w-onb.enter .w-onbb{animation:w-onbin .38s var(--ease) both}
 .w-onb.enter .w-onbhero > :first-child{animation:w-onbpop .45s var(--ease) both}
 @keyframes w-onbin{from{opacity:0;transform:translateX(18px)}}
@@ -263,7 +259,6 @@
 .w-onbadd{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:1.5px dashed var(--w-line);border-radius:12px;background:none;color:var(--w-accent-ink);font:inherit;font-size:var(--fs-sub);font-weight:600;cursor:pointer;transition:background-color .15s,border-color .15s}
 .w-onbadd:hover{background:var(--w-accent-soft);border-color:var(--w-accent-line)}
 .w-onbadd svg.i{width:16px;height:16px}
-.w-onbppl .w-badge{margin-inline-start:2px}
 /* A tag for each person: who, how many become theirs, and the tag */
 .w-onbtags{display:grid;grid-template-columns:minmax(0,1fr);margin-top:6px;border-top:1px solid var(--w-line2)}
 .w-onbtagrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--w-line2)}
@@ -364,8 +359,8 @@
 .w .w-gr.w-grpick > select{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;cursor:pointer;font-size:16px}
 .w-grpick:has(select:focus-visible){outline:2px solid var(--w-accent);outline-offset:-2px}
 /* People: one group of rows */
-.w-onbpl,.w-onbppl{gap:0;margin:0;padding:0;list-style:none}
-.w-onbper .w-av,.w-onbppl .w-av{width:34px;height:34px;font-size:15px}
+.w-onbpl{gap:0;margin:0;padding:0;list-style:none}
+.w-onbper .w-av{width:34px;height:34px;font-size:15px}
 .w-onbpin{height:auto;padding:0;border:0;border-radius:0;background:none;font-size:var(--fs-body)}
 .w-onbpin:focus{box-shadow:none}
 .w-onbdrop{width:22px;height:22px;border-radius:50%;background:var(--w-bad);color:#fff;display:grid;place-items:center;flex:none}
@@ -375,7 +370,6 @@
 .w-onbadd:hover{background:var(--w-fill);border:0}
 .w-onbaddi{width:34px;display:grid;place-items:center;flex:none}
 .w .w-onbaddi svg.i{width:20px;height:20px}
-.w-onbppl .w-gr .k{font-weight:400}
 /* Passwords: two rows of one group */
 .w-gate .w-onbfields .w-gr{min-height:52px}
 /* Typed passwords as large, spaced dots */
@@ -490,8 +484,25 @@
 .w-lock.wide .w-lockmsg:empty{display:none}
 .w-lock.wide .w-locklinks .w-silink{font-size:15px;font-weight:400;padding-inline:0}
 .w-lock.wide .w-lockform + .w-locklinks{margin-top:9px}
-.w-lock.wide .w-lockhero + .w-locklinks{margin-top:9px}
-.w-lock.wide .w-lockhero + .w-locklinks:has(+ .w-lnote){margin-top:17px}
+/* A message with no field: the paragraph is the content, so it gets room under the title, and the
+   link the room a field would take, not the 9px it keeps from a field above it */
+.w-lock.wide .w-lockhero:has(+ .w-locklinks) h1 + p{margin-top:12px}
+/* and the width to read it: in Catalan or German the title stays on one line, the paragraph in three */
+.w-lock.wide:has(> .w-lockhero + .w-locklinks){width:min(480px,100%)}
+.w-lock.wide .w-lockhero:has(+ .w-locklinks) p{max-width:460px}
+/* The command to turn sign-in off: wider still, so it fits on one line, in a field like the password's with Copy inside */
+.w-lock.wide:has(> .w-lockcmd){width:min(540px,100%)}
+.w-lock.wide .w-lockhero:has(+ .w-lockcmd) h1 + p{margin-top:12px;max-width:500px}
+.w-lockcmd{width:100%;margin-top:24px}
+.w-lock.wide .w-lockfield.w-cmd{height:auto;min-height:52px;padding:7px 7px 7px 20px;gap:12px}
+.w-cmd code{flex:1;min-width:0;text-align:start;font:500 14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);overflow-wrap:normal;word-break:keep-all;direction:ltr;unicode-bidi:isolate}
+.w-cmd code span{white-space:nowrap}
+.w-cmdcopy{flex:none;height:38px;padding-inline:16px;border:0;border-radius:19px;background:var(--w-accent-soft);color:var(--w-accent-ink);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.w-cmdcopy:hover{filter:brightness(.97)}
+.w-cmdcopy:focus-visible{outline:2px solid var(--w-accent);outline-offset:2px}
+.w-lockhint{margin-top:12px;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
+.w-lock.wide .w-lockcmd + .w-locklinks{margin-top:24px}
+.w-lock.wide .w-lockhero + .w-locklinks{margin-top:24px}
 .w-lock.wide .w-sienc.w-lnote{margin-top:29px}
 @media (min-width:768px){
   .w-lock.wide{padding:24px 0}
@@ -504,8 +515,10 @@
   .w-lock.wide{width:100%;padding-top:calc(120px + env(safe-area-inset-top,0px));padding-inline:25px}
   /* The key centred under its code, the last group too */
   .w-kitbox .w-kitkey{display:flex;flex-wrap:wrap;justify-content:center;max-width:calc(19 * (1ch + .04em) + 1px)}
-  .w-lock.wide .w-lockform + .w-locklinks,.w-lock.wide .w-lockhero + .w-locklinks{margin-top:3px}
-  .w-lock.wide .w-lockhero + .w-locklinks:has(+ .w-lnote){margin-top:11px}
+  .w-lock.wide .w-lockform + .w-locklinks{margin-top:3px}
+  .w-lock.wide .w-lockhero + .w-locklinks{margin-top:18px}
+  .w-lock.wide .w-lockcmd + .w-locklinks{margin-top:18px}
+  .w-lockcmd{margin-top:20px}
   .w-lock.wide .w-sienc.w-lnote{margin-top:23px}
 }
 /* fine spacing, checked against the mockups */

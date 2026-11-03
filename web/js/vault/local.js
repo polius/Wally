@@ -923,19 +923,27 @@ function respread(item, removed, left, moveTo) {
   }
   return item;
 }
-function convertTags(d, map, removeTag) {
+function convertTags(d, map, removeTag, rest) {
   const tagsMap = {};
   for (const [tag, pid] of Object.entries(map)) tagsMap[tag.replace(/^#+/, "")] = Number(pid);
-  for (const pid of new Set(Object.values(tagsMap))) if (!env.people().some((p) => p.id === pid)) throw fail(404, "This person does not exist.");
+  rest = rest === undefined || rest === null ? null : Number(rest);
+  for (const pid of new Set([...Object.values(tagsMap), ...(rest === null ? [] : [rest])])) if (!env.people().some((p) => p.id === pid)) throw fail(404, "This person does not exist.");
   const counts = Object.fromEntries(Object.values(tagsMap).map((p) => [p, 0]));
   // A few of each person's, newest first, as the server gives them (api/routers/people.py)
   const examples = Object.fromEntries(Object.values(tagsMap).map((p) => [p, []]));
   const newest = (a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_date || "").localeCompare(String(a.created_date || ""));
-  let shared = 0;
+  let shared = 0, rested = 0;
   for (const kind of ["tx", "rule"]) {
     for (const row0 of kind === "tx" ? [...d.all(kind)].sort(newest) : d.all(kind)) {
       const found = (row0.tags || []).filter((g) => g in tagsMap);
-      if (!found.length) continue;
+      if (!found.length) {
+        // The rest, shared evenly, becomes one person's (api/routers/people.py)
+        if (rest !== null && row0.person_id === null && !(row0.shares && Object.keys(row0.shares).length) && (row0.paid_by === null || row0.paid_by === undefined)) {
+          d.put(kind, Object.assign(clone(row0), { person_id: rest }));
+          if (kind === "tx") rested++;
+        }
+        continue;
+      }
       const row = clone(row0);
       const owners = new Set(found.map((g) => tagsMap[g]));
       if (owners.size === 1) {
@@ -950,7 +958,7 @@ function convertTags(d, map, removeTag) {
       d.put(kind, row);
     }
   }
-  return { counts, shared, examples };
+  return { counts, shared, examples, rest: rested };
 }
 const people = {
   usage: (id) => serial(() => {
@@ -983,8 +991,8 @@ const people = {
   tagPreview: (tag) => serial(() => { const g = String(tag || "").replace(/^#+/, ""); return { tag: g, count: new Draft().all("tx").filter((t) => (t.tags || []).includes(g)).length }; }),
   fromTag: (id, body) => run((d) => { const r = convertTags(d, { [body.tag]: Number(id) }, body.remove_tag !== false); return { ok: true, count: r.counts[Number(id)] }; }),
   fromTags: (body, preview) => preview
-    ? serial(() => convertTags(new Draft(), body.tags || {}, body.remove_tag !== false))
-    : run((d) => Object.assign({ ok: true }, convertTags(d, body.tags || {}, body.remove_tag !== false))),
+    ? serial(() => convertTags(new Draft(), body.tags || {}, body.remove_tag !== false, body.rest))
+    : run((d) => Object.assign({ ok: true }, convertTags(d, body.tags || {}, body.remove_tag !== false, body.rest))),
 };
 
 /* ---------- the routes ---------- */
