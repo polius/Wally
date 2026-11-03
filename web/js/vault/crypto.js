@@ -4,7 +4,7 @@
    household password ──Argon2id (64 MiB, 3 passes, one salt per household)──▶ master
      master ──HKDF "wally login v1"──▶ login key: sent at sign-in instead of the password
      master ──HKDF "wally unlock v1"─▶ unlock key: never leaves the browser; opens the household key
-   recovery key (52 characters) ──HKDF──▶ its own login key and unlock key, the same way
+   recovery key (48 characters) ──HKDF──▶ its own login key and unlock key, the same way
    household secret (32 random bytes, one per household)
      ──HKDF "wally record key v1"──▶ AES-256-GCM key for records
      ──HKDF "wally id key v1"──────▶ HMAC key for ids that must be the same on every device
@@ -213,18 +213,20 @@ function fromBase32(text, bits) {
 function clean(text) { return String(text || "").toUpperCase().replace(/[\s\-_.]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1"); }
 async function checkByte(bytes) { return new Uint8Array(await subtle().digest("SHA-256", bytes))[0]; }
 
-/* 31 random bytes and a check byte: 52 characters, shown in 13 groups of 4 */
+/* 29 random bytes (232 bits) and a check byte: 48 characters, shown in 12 groups of 4, three even rows.
+   Kits made before 2.0 shipped hold 52 (31 random bytes and a check byte); those still work. */
+const KEY_SIZES = { 48: 29, 52: 31 };
 export async function newRecoveryKey() {
-  const body = random(31);
-  return toBase32(concat(body, new Uint8Array([await checkByte(body)])), 52).match(/.{4}/g).join("-");
+  const body = random(29);
+  return toBase32(concat(body, new Uint8Array([await checkByte(body)])), 48).match(/.{4}/g).join("-");
 }
 /* The key's bytes, or null when it was mistyped */
 export async function parseRecoveryKey(text) {
-  const s = clean(text);
-  if (s.length !== 52) return null;
-  const r = fromBase32(s, 256);
+  const s = clean(text), n = KEY_SIZES[s.length];
+  if (!n) return null;
+  const r = fromBase32(s, (n + 1) * 8);
   if (!r) return null;
-  return r.bytes[31] === (await checkByte(r.bytes.subarray(0, 31))) ? r.bytes : null;
+  return r.bytes[n] === (await checkByte(r.bytes.subarray(0, n))) ? r.bytes : null;
 }
 export async function fromRecoveryKey(bytes) {
   return { login: hex(await hkdf(bytes, "wally recovery login v1")), unlock: await aesKey(await hkdf(bytes, "wally recovery unlock v1")) };

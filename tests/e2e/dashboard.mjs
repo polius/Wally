@@ -74,7 +74,7 @@ try {
   ok((await text(page, "#s-eye")) === "Everyday spending", "the headline is everyday spending");
   const left = await page.locator(".s-left > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   const right = await page.locator(".s-right > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
-  ok(left === "hero,cats,upcoming,recent", "the month on the left: " + left);
+  ok(left === "hero,cats,recent,upcoming", "the month on the left: " + left);
   ok(right === "notice,people,kept,year", "the context on the right: " + right);
   ok(await page.locator('[data-w="recent"]').isVisible() && await page.locator("#s-recent .s-row").count() <= 4, "Recent on desktop too, four at most");
   ok(await page.locator('[data-w="savings"]').count() === 0, "This year replaces Savings");
@@ -262,7 +262,7 @@ try {
       ok(await p.locator(".s-title").isVisible() && await p.locator(".s-steps").isVisible() && await p.locator(".s-head .w-pswitch").isVisible() && await p.locator(".w-hadd").isHidden(), "phone: the period title with ‹ ›, the person menu top right, Add in the tab bar");
       ok(await p.evaluate(() => { const e = document.getElementById("s-title"); return e.scrollWidth <= e.clientWidth; }), "phone: the month's name fits");
       const order = await p.evaluate(() => [...document.querySelectorAll(".s-grid [data-w]")].filter((n) => !n.hidden).sort((x, y) => x.getBoundingClientRect().top - y.getBoundingClientRect().top).map((n) => n.dataset.w).join(","));
-      ok(/^hero,(notice,)?cats,upcoming,recent,people,kept,year$/.test(order), "phone: one column in reading order: " + order);
+      ok(/^hero,(notice,)?cats,recent,upcoming,people,kept,year$/.test(order), "phone: one column in reading order: " + order);
       ok(await p.locator("#tabbar .w-tabpill a").count() === 4 && await p.locator("#tabbar .w-tabadd").isVisible(), "phone: four tabs and a separate ＋");
       ok(await p.locator('[data-w="recent"]').isVisible() && await p.locator("#s-recent .s-row").count() > 0 && await p.locator("#s-recent .s-row").count() <= 4, "phone: Recent, four rows");
       ok(/Today|Yesterday|day/.test(await text(p, "#s-recent .s-row small")), "phone: Recent says when in words: " + await text(p, "#s-recent .s-row small"));

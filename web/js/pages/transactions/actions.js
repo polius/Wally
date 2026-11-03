@@ -1,6 +1,6 @@
 /* Transactions: changing them. Delete with Undo, bulk changes with Undo and CSV export.
    Every change updates the ledger held in the browser and then calls refresh(). */
-import { state, t, tn, esc, f, GET, PUT, POST, DEL, toApi, upsertTx, removeTx, reloadLedger, pname, person, TODAY } from "../../core.js";
+import { state, t, tn, esc, f, GET, PUT, POST, DEL, toApi, upsertTx, removeTx, reloadLedger, pname, person, TODAY, icon } from "../../core.js";
 import { toast, errorToast, confirmDialog } from "../../ui.js";
 import { refresh } from "../../shell.js";
 
@@ -55,7 +55,7 @@ export async function bulkDelete(list) {
   if (list.length > 1) {
     const total = list.reduce((s, x) => s + x.a, 0);
     const ok = await confirmDialog(esc(tn(list.length, "Delete {n} transaction?", "Delete {n} transactions?")),
-      esc(t("{amount} in total. You can undo for a few seconds afterwards.", { amount: f(total) })), esc(t("Delete {n}", { n: list.length })), true);
+      esc(t("{amount} in total. You can undo for a few seconds afterwards.", { amount: f(total) })), esc(t("Delete {n}", { n: list.length })), true, '<span class="w-alead red">' + icon("trash") + "</span>");
     if (!ok) return false;
   }
   try {

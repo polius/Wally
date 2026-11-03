@@ -1,16 +1,15 @@
 {
- "#{name} already exists. The two are merged.": "#{name}はすでにあります。2つを統合します。",
  "#{name} is already a tag": "#{name}はすでにタグとしてあります",
+ "#{name} is already a tag. Merge this one into it instead.": "#{name}はすでにタグとしてあります。代わりにこのタグをそこに統合してください。",
  "+ tag": "+ タグ",
  "+ tag, like #holiday": "+ タグ（例：#旅行）",
- "1 · Scan it with an authenticator app": "1 · 認証アプリでスキャン",
- "2 · Type the code it shows": "2 · 表示されたコードを入力",
  "6-digit code": "6桁のコード",
  "A bit less than usual ({amount}).": "いつもより少し少なめです（{amount}）。",
  "A bit more than usual ({amount}).": "いつもより少し多めです（{amount}）。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "子ども、ルームメイトなど、費用を分け合う人です。メンバーごとに専用の画面があります。",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "子ども、ルームメイトなど、費用を分け合う人です。世帯のパスワードでログインします。",
  "A code from an authenticator app, the same on everyone’s phone.": "認証アプリのコードです。全員のスマホに同じコードが表示されます。",
+ "A currency that isn’t listed": "リストにない通貨",
  "A file left from turning encryption on.": "暗号化をオンにしたときに残ったファイルです。",
  "A home or lock screen shortcut, with the free app.": "無料アプリで、ホーム画面やロック画面にショートカットを置きます。",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "キーを使うと、スクリプトやスプレッドシート、スマホのショートカットから取引を追加・読み取りできます。キーは作成時に一度だけ表示されます。",
@@ -20,6 +19,7 @@
  "A weekend day costs": "週末1日あたり",
  "A yearly bill: {amount}.": "年1回の固定費：{amount}。",
  "API docs": "APIドキュメント",
+ "API key": "APIキー",
  "API keys": "APIキー",
  "API keys can’t be listed": "APIキーを読み込めません",
  "About the same as {month}": "{month}とほぼ同じ",
@@ -36,7 +36,6 @@
  "Add a part": "内訳を追加",
  "Add a person": "メンバーを追加",
  "Add a phone": "スマホを追加",
- "Add a phone?": "スマホを追加しますか？",
  "Add a repeating expense": "定期的な支出を追加",
  "Add a tag": "タグを追加",
  "Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you.": "まずはあなたから、お金を使う人を全員追加してください。各自に自分の画面があり、共有の費用はみんなで分けられます。",
@@ -81,6 +80,8 @@
  "All": "すべて",
  "All categories are hidden. Click one in the legend to show it.": "すべてのカテゴリが非表示です。凡例をクリックすると表示されます。",
  "All currencies": "すべての通貨",
+ "All icons": "すべてのアイコン",
+ "All icons need a connection. Try again in a moment.": "すべてのアイコンを表示するには接続が必要です。しばらくしてからもう一度お試しください。",
  "All months": "すべての月",
  "All shared": "すべて共有",
  "All time": "全期間",
@@ -95,6 +96,7 @@
  "Amounts are shown in {name} now": "金額を{name}で表示します",
  "Amounts hidden": "金額を非表示にしました",
  "Amounts shown": "金額を表示しました",
+ "Amounts will look like {amount}.": "金額は{amount}のように表示されます。",
  "And {n} more": {
   "other": "ほか{n}件"
  },
@@ -102,9 +104,10 @@
  "Android: HTTP Shortcuts": "Android：HTTP Shortcuts",
  "Any": "指定なし",
  "Any bank export works, and files from Wally v1 and 2.0. Nothing is written until you confirm the preview.": "どの銀行のエクスポートでも、Wally v1・2.0のファイルでも使えます。プレビューを確認するまで何も保存されません。",
- "Anyone who can open this address will see and change your finances. The password and two-step are removed.": "このアドレスを開ける人は誰でも、家計を見たり変更したりできます。パスワードと2段階認証は削除されます。",
+ "Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed.": "このアドレスを開ける人なら誰でも、家計を見たり変更したりできるようになります。パスワードと緊急キットは削除されます。",
+ "Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.": "このアドレスを開ける人なら誰でも、家計を見たり変更したりできるようになります。パスワード、2段階認証、緊急キットは削除されます。",
+ "Anyone with this key can open your Wally, even with two-step sign-in on.": "このキーがあれば、2段階認証がオンでも誰でもWallyを開けます。",
  "Anyone with this key can open your Wally, even with two-step sign-in on. Making a new kit in Settings › Sign-in & Privacy stops this one working.": "このキーがあれば、2段階認証がオンでも誰でもWallyを開けます。設定 › ログインとプライバシーで新しいキットを作成すると、このキーは使えなくなります。",
- "Anything using this key stops working. This can’t be undone.": "このキーを使っているものは動かなくなります。この操作は取り消せません。",
  "Appearance": "外観",
  "Ask for a password": "パスワードを要求",
  "Ask {names}: everyone in the household signs in with the same password.": "{names}に聞いてください。世帯の全員が同じパスワードでログインします。",
@@ -113,8 +116,7 @@
  "Assign {amount} more": "あと{amount}を割り当て",
  "At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.": "8文字以上。全員の古いパスワードがこれに置き換わり、ほかのすべてのブラウザで新しいパスワードが求められます。",
  "At least 8 characters. Without a password, anyone who can reach this server can open Wally.": "8文字以上。パスワードがないと、このサーバーにアクセスできる人は誰でもWallyを開けます。",
- "At least {n} characters.": "{n}文字以上。",
- "At least {n} characters. Every other browser is signed out: tell everyone the new password.": "{n}文字以上。ほかのブラウザはすべてログアウトされます。全員に新しいパスワードを伝えてください。",
+ "At least {n} characters": "{n}文字以上",
  "Auto": "自動",
  "Average day": "1日の平均",
  "Average {amount}": "平均 {amount}",
@@ -132,6 +134,8 @@
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "固定費や給料は期日に追加され、値上がりするとWallyが気づきます。",
  "Blue": "青",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "画面共有のときに金額をすべてぼかします。{key}で切り替えます。",
+ "Both new passwords match": "2つの新しいパスワードが一致しています",
+ "Both passwords match": "2つのパスワードが一致",
  "Bring your data": "データの取り込み",
  "Browsers": "ブラウザ",
  "Browsers only encrypt on secure pages: open Wally at its https:// address.": "ブラウザは安全なページでしか暗号化しません。https:// のアドレスで Wally を開いてください。",
@@ -221,7 +225,6 @@
  "Delete #{name}": "#{name}を削除",
  "Delete #{name}?": "#{name}を削除しますか？",
  "Delete Key": "キーを削除",
- "Delete Tag": "タグを削除",
  "Delete bill": "固定費を削除",
  "Delete bill and its {n} transaction": {
   "other": "固定費と{n}件の取引を削除"
@@ -314,6 +317,7 @@
  "Enter an amount": "金額を入力",
  "Enter one of your recovery codes": "リカバリーコードを1つ入力してください",
  "Enter the 6-digit code from your authenticator app": "認証アプリの6桁のコードを入力してください",
+ "Enter the 6-digit code it shows": "表示された6桁のコードを入力",
  "Enter the code first.": "先にコードを入力してください。",
  "Enter the household password": "世帯のパスワードを入力してください",
  "Enter what it was for": "何に使ったかを入力",
@@ -326,7 +330,7 @@
  "Every category was close to usual.": "どのカテゴリもいつもどおりでした。",
  "Every day": "毎日",
  "Every month": "毎月",
- "Every transaction with #{tag} becomes that person’s own, and stops being shared.": "#{tag}が付いた取引はすべてその人のものになり、共有ではなくなります。",
+ "Every other browser is signed out: tell everyone the new password.": "ほかのブラウザはすべてサインアウトされます。新しいパスワードを全員に伝えてください。",
  "Every week": "毎週",
  "Every year": "毎年",
  "Every {n} day": {
@@ -346,7 +350,6 @@
  "Everyday spending: {amount} by {date}": "日々の支出：{date}までに{amount}",
  "Everyone": "全員",
  "Everyone in the household sees the new name.": "世帯の全員に新しい名前が表示されます。",
- "Everyone in the household signs in with this password. You stay signed in on this browser.": "世帯の全員がこのパスワードでログインします。このブラウザではログインしたままになります。",
  "Everyone in the household uses the same password.": "世帯の全員が同じパスワードを使います。",
  "Everyone uses the same password.": "全員が同じパスワードを使います。",
  "Everything already in Wally starts out shared by the household.": "すでにWallyにあるデータは、最初は世帯の共有になります。",
@@ -396,7 +399,8 @@
  "I saved it somewhere safe": "安全な場所に保管しました",
  "I saved the Emergency Kit somewhere safe": "緊急キットを安全な場所に保存しました",
  "Icon": "アイコン",
- "If no phone is at hand, each code signs someone in once. Keep them with the household’s papers. They replace any earlier codes.": "スマホが手元にないとき、各コードで1人が1回ログインできます。世帯の大切な書類と一緒に保管してください。以前のコードはすべて置き換えられます。",
+ "Icon for {name}": "{name}のアイコン",
+ "If no phone is at hand, each code signs someone in once.": "スマホが手元にないとき、各コードで1回ログインできます。",
  "If you forget the password": "パスワードを忘れた場合",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally can’t show it again.": "パスワードを忘れたときや、2段階認証のコードを受け取れないときは、このリカバリーキーで再びログインできます。Wallyはもう一度表示できません。",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.": "パスワードを忘れたときや、2段階認証のコードを受け取れないときは、このリカバリーキーで再びログインできます。Wallyは読める形でコピーを保管しないため、もう一度表示することはできません。",
@@ -427,29 +431,37 @@
  "Income and spending by month in {range}": "{range}の月別の収入と支出",
  "Income vs spending": "収入と支出",
  "It": "この項目",
+ "It can read what’s in Wally and change it, like adding transactions.": "Wallyの内容を読み取り、取引の追加などの変更もできます。",
+ "It can read what’s in Wally, but not change anything.": "Wallyの内容を読み取れますが、変更はできません。",
+ "It has never been used. This can’t be undone.": "このキーは一度も使用されていません。この操作は取り消せません。",
  "It is removed from {n} transaction. The transaction stays.": {
   "other": "{n}件の取引からタグを外します。取引は残ります。"
  },
  "It started in the past, so {n} more up to today is added too.": {
   "other": "開始日が過去なので、今日までの{n}件も追加されます。"
  },
- "Its {n} transaction and its recurring rules move there, and {name} goes away.": {
-  "other": "{n}件の取引と定期ルールがそこに移動し、{name}はなくなります。"
+ "It was last used {when}. Anything using it stops working, and this can’t be undone.": "最終使用：{when}。このキーを使っているものは動作しなくなります。この操作は取り消せません。",
+ "Its {n} recurring rule moves to {to}.": {
+  "other": "{n}件の定期ルールは{to}に移動します。"
  },
- "Its {n} transaction gets the tag you pick, and #{name} goes away.": {
-  "other": "{n}件の取引に選んだタグが付き、#{name}はなくなります。"
+ "Its {n} transaction becomes {name}’s own, no longer shared.": {
+  "other": "{n}件の取引は共有ではなくなり、{name}個人のものになります。"
  },
- "Its {n} transaction moves there, and {name} goes away.": {
-  "other": "{n}件の取引がそこに移動し、{name}はなくなります。"
+ "Its {n} transaction gets #{to} instead.": {
+  "other": "{n}件の取引には代わりに#{to}が付きます。"
  },
- "Its {n} transaction moves to another category.": {
-  "other": "{n}件の取引は別のカテゴリに移動します。"
+ "Its {n} transaction gets the new name.": {
+  "other": "{n}件の取引に新しい名前が反映されます。"
  },
- "It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too.": "世帯の緊急キットに記載されています。4文字ずつ区切られた52文字の英数字です。2段階認証がなくても使えます。",
+ "Its {n} transaction moves to {to}.": {
+  "other": "{n}件の取引は{to}に移動します。"
+ },
+ "It’s on the household’s Emergency Kit: letters and digits in groups of four. It works without two-step sign-in too.": "世帯の緊急キットに記載されています。4文字ずつ区切られた英数字です。2段階認証がなくても使えます。",
  "It’s shown only this once. Put it where the tool that uses it can read it.": "表示されるのはこの1回だけです。このキーを使うツールが読み取れる場所に保存してください。",
  "Keep Editing": "編集を続ける",
  "Keep it with your passport: it opens Wally if the password is forgotten.": "パスポートと一緒に保管してください。パスワードを忘れたときにWallyを開けます。",
  "Keep once": "1件にまとめる",
+ "Keep them with the household’s papers. Wally can’t show them again, and any earlier codes stop working.": "世帯の大切な書類と一緒に保管してください。Wallyはもう一度表示できません。以前のコードは使えなくなります。",
  "Keep track of what your household spends and earns. Your data stays on this server.": "世帯の支出と収入を記録しましょう。データはこのサーバーに保存されます。",
  "Keep {n} once": {
   "other": "{n}件を1件にまとめる"
@@ -481,6 +493,7 @@
  "Line {n}: {why}": "{n}行目：{why}",
  "List": "リスト",
  "Living alone? Just add yourself.": "一人暮らしなら、自分だけ追加すればOKです。",
+ "Loading…": "読み込み中…",
  "Lock when Wally closes": "Wallyを閉じたらロック",
  "Lost it too?": "それもなくしましたか？",
  "Lost the Emergency Kit too?": "緊急キットもなくしましたか？",
@@ -488,6 +501,7 @@
  "MM/DD/YYYY": "MM/DD/YYYY",
  "Made {date}": "{date}に作成",
  "Made {date}.": "{date}に作成。",
+ "Make": "メンバーにする",
  "Make #{tag} a Person": "#{tag}をメンバーにする",
  "Make New Codes": "新しいコードを作成",
  "Make New Kit": "新しいキットを作成",
@@ -557,6 +571,7 @@
  "Next: {dates}": "次回：{dates}",
  "No bills": "固定費なし",
  "No connection. {name} is kept on this device and sent when Wally is back.": "接続できません。{name}はこのデバイスに保存され、Wallyに接続できたら送信されます。",
+ "No icons match “{q}”.": "「{q}」に一致するアイコンはありません。",
  "No income in the last three months, so evenly": "過去3か月に収入がないため均等に",
  "No matches": "一致なし",
  "No month to review yet": "ふりかえる月はまだありません",
@@ -575,6 +590,7 @@
  "No tag": "タグなし",
  "No tags": "タグなし",
  "No tags yet": "タグはまだありません",
+ "No transactions have #{tag}.": "#{tag}が付いた取引はありません。",
  "No transactions have this tag.": "このタグが付いた取引はありません。",
  "No transactions match “{q}”": "「{q}」に一致する取引はありません",
  "No transactions use it.": "使っている取引はありません。",
@@ -699,7 +715,6 @@
  "Preview {n} row": {
   "other": "{n}行をプレビュー"
  },
- "Previous": "前へ",
  "Previous month": "前月",
  "Previous period": "前の期間",
  "Previous year": "前年",
@@ -714,7 +729,6 @@
  "Reading everything back to compare…": "比較のためすべてを読み直しています…",
  "Received": "受け取り",
  "Recent": "最近",
- "Recovery Codes": "リカバリーコード",
  "Recovery code": "リカバリーコード",
  "Recovery codes": "リカバリーコード",
  "Recovery key": "リカバリーキー",
@@ -757,6 +771,7 @@
  "Save": "保存",
  "Save password": "パスワードを保存",
  "Save the household’s Emergency Kit": "世帯の緊急キットを保存",
+ "Save the recovery codes": "リカバリーコードを保存",
  "Saved {name}": "{name}を保存しました",
  "Saved {name} and the {n} transaction it made": {
   "other": "{name}と、作成済みの{n}件の取引を保存しました"
@@ -766,16 +781,19 @@
  "Saved {name}. The change starts {date}.": "{name}を保存しました。変更は{date}から適用されます。",
  "Saved. It is still waiting to be sent.": "保存しました。送信待ちです。",
  "Say what the key is for first": "先にキーの用途を入力してください",
+ "Scan this code with an authenticator app": "このコードを認証アプリでスキャン",
  "Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.": "新しいスマホの認証アプリでスキャンしてください。ほかの全員と同じコードが表示されます。",
  "Search": "検索",
  "Search currencies": "通貨を検索",
  "Search every month": "すべての月を検索",
+ "Search icons": "アイコンを検索",
  "Search in": "検索範囲",
  "Search looks in names, categories, tags and amounts. Clear the filters to search everything.": "名前、カテゴリ、タグ、金額を検索します。すべてを検索するにはフィルタをクリアしてください。",
  "Search time zones": "タイムゾーンを検索",
  "Search transactions": "取引を検索",
  "Search transactions for “{q}”": "「{q}」で取引を検索",
  "Search {n} currencies": "{n}種類の通貨を検索",
+ "Search {n} icons": "{n}個のアイコンを検索",
  "Search, jump, or type “12 coffee” to add": "検索・移動、または「12 コーヒー」と入力して追加",
  "Security": "セキュリティ",
  "See all": "すべて表示",
@@ -809,12 +827,17 @@
  "Show money for": "表示するメンバー",
  "Show password": "パスワードを表示",
  "Show rows": "行を表示",
+ "Show the two-step code?": "2段階認証コードを表示しますか？",
  "Show {n} more": "さらに{n}件を表示",
  "Showing": "表示中",
+ "Sign Out": "ログアウト",
  "Sign in": "ログイン",
  "Sign out": "ログアウト",
  "Sign out of other browsers": "ほかのブラウザからログアウト",
  "Sign out of this browser": "このブラウザからログアウト",
+ "Sign out of {n} other browser?": {
+  "other": "ほかの{n}個のブラウザからログアウトしますか？"
+ },
  "Sign-in": "ログイン",
  "Sign-in & Privacy": "ログインとプライバシー",
  "Sign-in is off": "ログインはオフです",
@@ -850,6 +873,7 @@
  "Starts": "開始日",
  "Step {n} of {total}": "ステップ{n}/{total}",
  "Still to come": "これから",
+ "Suggested": "おすすめ",
  "Summary": "概要",
  "Sunday": "日曜日",
  "Switch person": "人を切り替える",
@@ -876,6 +900,7 @@
  "The first month": "最初の月",
  "The household": "世帯",
  "The icon is picked from the name.": "アイコンは名前から自動で選ばれます。",
+ "The icon is picked from the name. You can change it later.": "アイコンは名前から自動で選ばれます。あとで変更できます。",
  "The last date must be after {date}.": "最終日は{date}より後にしてください。",
  "The new one again": "新しいパスワード（確認）",
  "The old codes stop working. You see the new ones once.": "古いコードは使えなくなります。新しいコードは一度だけ表示されます。",
@@ -883,7 +908,6 @@
  "The others owe {payer} {amount} for this.": "ほかのメンバーは{payer}に{amount}を返す必要があります。",
  "The password alone will open Wally again for everyone, and the recovery codes stop working.": "全員がパスワードだけでWallyを開けるようになり、リカバリーコードは使えなくなります。",
  "The passwords don’t match.": "パスワードが一致しません。",
- "The request": "リクエスト",
  "The same again": "前回と同じ",
  "The same as {what}": "{what}と同じ",
  "The second best month of the last {n}.": "過去{n}か月で2番目に良い月です。",
@@ -900,6 +924,9 @@
  "The {n} backup on the server is in the clear, so it’s deleted:": {
   "other": "サーバー上の{n}件のバックアップは暗号化されていないため、削除されます："
  },
+ "The {n} code left stops working. You see the new ones once.": {
+  "other": "残りの{n}個のコードは使えなくなります。新しいコードは一度だけ表示されます。"
+ },
  "The {n} it already made changes too.": {
   "other": "作成済みの{n}件も変更されます。"
  },
@@ -911,13 +938,15 @@
  },
  "Their part of shared costs goes to whoever paid.": "共有の支出のこの人の負担分は、支払った人に移ります。",
  "Their share of shared costs": "共有の支出の負担分",
- "Their transactions and recurring rules move to the person you pick.": "この人の取引と定期ルールは、選んだメンバーに移ります。",
  "Theme": "テーマ",
  "Then": "その後",
+ "Then #{name} goes away. A merge can’t be undone.": "統合すると#{name}はなくなります。統合は取り消せません。",
  "Then nobody can open the data, not even whoever runs the server. Keep the kit somewhere safe.": "その場合、サーバーを管理している人も含め、誰もデータを開けません。キットは安全な場所に保管してください。",
+ "Then {name} goes away. A merge can’t be undone.": "統合すると{name}はなくなります。統合は取り消せません。",
  "There is no Emergency Kit yet": "緊急キットはまだありません",
  "They still know the household password.": "この人は世帯のパスワードを知ったままです。",
  "This browser": "このブラウザ",
+ "This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.": "このブラウザはログインしたままで、ほかのブラウザではパスワードが求められます。次に、緊急キットを保存します。",
  "This file has no rows.": "このファイルには行がありません。",
  "This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.": "この世帯は暗号化されていて、ブラウザは安全なページでしか暗号化しません。https:// のアドレスで Wally を開いてください。",
  "This month": "今月",
@@ -1000,7 +1029,6 @@
  "Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.": "Wally 2.0では、すべてのデータに保存前にあなたのデバイス上で鍵をかけられます。サーバーには読めないデータだけが保管されるため、サーバーを管理している人でもあなたのお金の情報は見られません。",
  "Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.": "Wally 2.0では、支出ごとに誰のものかがわかります。まずはあなたから、Wallyを使う人を全員追加してください。",
  "Wally address": "Wallyのアドレス",
- "Wally adds it to the list. It never converts amounts.": "Wallyはリストに追加します。金額は換算しません。",
  "Wally asks for it when it opens.": "Wallyを開くときに求められます。",
  "Wally asks for it when it opens. Everyone in the household uses this one password.": "Wallyを開くときに求められます。世帯の全員がこの1つのパスワードを使います。",
  "Wally can’t be reached": "Wallyに接続できません",
@@ -1042,6 +1070,9 @@
  "Whoever runs the server can turn sign-in off, then you turn it on again with a new password. The README explains how.": "サーバーを管理している人がログインをオフにしたあと、新しいパスワードでもう一度オンにしてください。方法はREADMEに書かれています。",
  "Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs.": "このサーバーを管理している人は、サーバーが世帯のデータを決して読めないように設定しています。キーがあると、呼び出しの実行中にデータを読めてしまいます。",
  "Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.": "このサーバーを管理している人の設定により、Wallyは保存する前にお使いのデバイス上ですべてに鍵をかけます。管理している人は世帯のお金の記録を読めません。金額も名前もカテゴリーも、一つも読めません。",
+ "Whoever uses it needs the household password to open Wally there again.": {
+  "other": "そのブラウザでもう一度Wallyを開くには、世帯のパスワードが必要になります。"
+ },
  "Whose": "誰の",
  "Whose money": "誰のお金",
  "Who’s in your household?": "世帯のメンバーは？",
@@ -1059,6 +1090,7 @@
  "You can always import more later from Settings.": "あとから設定でいつでも取り込めます。",
  "You can turn it off later in Settings › Sign-in & Privacy.": "あとから設定 › ログインとプライバシーでオフにできます。",
  "You get a new Emergency Kit next. Sign-in stays on, and API keys need to be made again.": "次に新しい緊急キットが作成されます。ログインはオンのままで、APIキーは作り直す必要があります。",
+ "You have {n} keys, the most each person can have. Delete one first.": "キーが{n}個あり、1人あたりの上限に達しています。先に1つ削除してください。",
  "You kept {amount}. A few things worth knowing.": "{amount} 貯まりました。知っておくとよいことがいくつかあります。",
  "You overspent {amount}. A few things worth knowing.": "{amount} 使いすぎました。知っておくとよいことがいくつかあります。",
  "You save an Emergency Kit.": "緊急キットを保存します。",
@@ -1108,7 +1140,6 @@
  "on track for {amount} by {date}": "{date}には{amount}の見込み",
  "on {date}": "{date}",
  "on {day}": "{day}",
- "or write it here": "またはここに記入",
  "over {amount}": "{amount}超",
  "overspent": "使いすぎ",
  "overspent since January": "1月からの使いすぎ",
@@ -1174,6 +1205,7 @@
  "{category}, usually {person}, about {amount}": "{category}、いつもは{person}、約{amount}",
  "{category}, {amount} less": "{category}、{amount}減",
  "{category}, {amount} more": "{category}、{amount}増",
+ "{code} is already in the list.": "{code}はすでにリストにあります。",
  "{from} to {to}": "{from}〜{to}",
  "{from} to {to}. That is {year} a year.": "{from}から{to}に。年間で{year}です。",
  "{from} – {to}": "{from}〜{to}",
@@ -1188,6 +1220,7 @@
  "{name} goes up {amount}": "{name}が{amount}値上がりします",
  "{name} is already a category": "{name}はすでにカテゴリとしてあります",
  "{name} is already a category. Merge this one into it instead.": "{name}はすでにカテゴリとしてあります。代わりにこのカテゴリをそこに統合してください。",
+ "{name} is already in the household.": "{name}はすでに世帯のメンバーです。",
  "{name} is due on {date}": "{name}は{date}が期日です",
  "{name} is encrypting Wally.": "{name}がWallyを暗号化しています。",
  "{name} is turning off encryption.": "{name}が暗号化をオフにしています。",
@@ -1220,6 +1253,15 @@
  "{name}, {date}": "{name}、{date}",
  "{name}: {amount}": "{name}：{amount}",
  "{name}’s part": "{name}の分",
+ "{name}’s {n} recurring rule becomes shared.": {
+  "other": "{name}の{n}件の定期ルールは共有になります。"
+ },
+ "{name}’s {n} recurring rule moves to {to}.": {
+  "other": "{name}の{n}件の定期ルールは{to}に移動します。"
+ },
+ "{name}’s {n} transaction becomes shared.": {
+  "other": "{name}の{n}件の取引は共有になります。"
+ },
  "{name}’s {n} transaction moves to {to}.": {
   "other": "{name}の{n}件の取引は{to}に移動します。"
  },
@@ -1310,9 +1352,6 @@
  },
  "{n} transaction for {name}": {
   "other": "{name}の取引{n}件"
- },
- "{n} transaction has #{tag}. It becomes {name}’s.": {
-  "other": "{n}件の取引に#{tag}が付いています。{name}のものになります。"
  },
  "{n} transaction is tagged for more than one person, so it stays shared.": {
   "other": "{n}件の取引は複数の人のタグが付いているため、共有のままです。"

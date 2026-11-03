@@ -875,7 +875,7 @@ function renderVault() {
       note: t("End-to-end encrypted: whoever runs this server can’t read your data.") });
   } else if (s === "recover") {
     html = lockScreen({ top: keyIcon(), title: t("Use your recovery key"),
-      sub: t("It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too."),
+      sub: t("It’s on the household’s Emergency Kit: letters and digits in groups of four. It works without two-step sign-in too."),
       form: '<form id="vg-form" class="w-lockform" novalidate><div class="w-lockfield key' + (bad ? " err" : "") + shake + '">' +
         '<textarea id="vg-in" class="w-sikey" rows="1" placeholder="XXXX-XXXX-XXXX-XXXX-…" aria-label="' + esc(t("Recovery key")) + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-invalid="' + bad + '" aria-describedby="vg-msg">' + esc(vg.text) + "</textarea>" +
         goBtn(t("Continue")) + "</div>" + msgP + "</form>",

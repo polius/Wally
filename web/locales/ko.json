@@ -1,16 +1,15 @@
 {
- "#{name} already exists. The two are merged.": "#{name} 태그가 이미 있어요. 두 태그를 합쳤어요.",
  "#{name} is already a tag": "#{name} 태그가 이미 있어요",
+ "#{name} is already a tag. Merge this one into it instead.": "#{name} 태그가 이미 있어요. 대신 이 태그를 거기에 합치세요.",
  "+ tag": "+ 태그",
  "+ tag, like #holiday": "+ 태그 (예: #휴가)",
- "1 · Scan it with an authenticator app": "1 · 인증 앱으로 스캔",
- "2 · Type the code it shows": "2 · 표시된 코드 입력",
  "6-digit code": "6자리 코드",
  "A bit less than usual ({amount}).": "평소보다 조금 적어요({amount}).",
  "A bit more than usual ({amount}).": "평소보다 조금 많아요({amount}).",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 구성원마다 자기 화면이 따로 있어요.",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 가구 공용 비밀번호로 로그인해요.",
  "A code from an authenticator app, the same on everyone’s phone.": "인증 앱의 코드로, 모두의 휴대폰에 같은 코드가 표시돼요.",
+ "A currency that isn’t listed": "목록에 없는 통화",
  "A file left from turning encryption on.": "암호화를 켤 때 남은 파일이에요.",
  "A home or lock screen shortcut, with the free app.": "무료 앱으로 홈 화면이나 잠금 화면에 바로가기를 만들어요.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "키가 있으면 스크립트, 스프레드시트, 휴대폰 바로가기에서 거래를 추가하고 읽을 수 있어요. 키는 만들 때 한 번만 표시돼요.",
@@ -20,6 +19,7 @@
  "A weekend day costs": "주말 하루 지출",
  "A yearly bill: {amount}.": "연 1회 고정 지출: {amount}.",
  "API docs": "API 문서",
+ "API key": "API 키",
  "API keys": "API 키",
  "API keys can’t be listed": "API 키 목록을 불러올 수 없어요",
  "About the same as {month}": "{month} 수준과 비슷해요",
@@ -36,7 +36,6 @@
  "Add a part": "항목 추가",
  "Add a person": "구성원 추가",
  "Add a phone": "휴대폰 추가",
- "Add a phone?": "휴대폰을 추가할까요?",
  "Add a repeating expense": "반복 지출 추가",
  "Add a tag": "태그 추가",
  "Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you.": "나부터 시작해 돈을 쓰는 사람을 모두 추가하세요. 각자 자기 화면이 있고, 함께 쓴 비용은 서로 나눠요.",
@@ -81,6 +80,8 @@
  "All": "전체",
  "All categories are hidden. Click one in the legend to show it.": "모든 카테고리가 숨겨져 있어요. 범례에서 카테고리를 클릭하면 표시돼요.",
  "All currencies": "모든 통화",
+ "All icons": "모든 아이콘",
+ "All icons need a connection. Try again in a moment.": "모든 아이콘을 보려면 연결이 필요해요. 잠시 후 다시 시도해 주세요.",
  "All months": "모든 달",
  "All shared": "모두 나눴어요",
  "All time": "전체 기간",
@@ -95,6 +96,7 @@
  "Amounts are shown in {name} now": "이제 금액을 {name} 단위로 표시해요",
  "Amounts hidden": "금액 숨김",
  "Amounts shown": "금액 표시",
+ "Amounts will look like {amount}.": "금액이 {amount}처럼 표시돼요.",
  "And {n} more": {
   "other": "외 {n}건"
  },
@@ -102,9 +104,10 @@
  "Android: HTTP Shortcuts": "Android: HTTP Shortcuts",
  "Any": "전체",
  "Any bank export works, and files from Wally v1 and 2.0. Nothing is written until you confirm the preview.": "어떤 은행 내보내기 파일이든, Wally v1과 2.0 파일도 쓸 수 있어요. 미리보기를 확인하기 전에는 아무것도 저장되지 않아요.",
- "Anyone who can open this address will see and change your finances. The password and two-step are removed.": "이 주소를 열 수 있는 사람은 누구나 가계를 보고 바꿀 수 있어요. 비밀번호와 2단계 인증은 제거돼요.",
+ "Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed.": "이 주소를 열 수 있는 사람은 누구나 가계 기록을 보고 바꿀 수 있어요. 비밀번호와 긴급 키트는 삭제돼요.",
+ "Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.": "이 주소를 열 수 있는 사람은 누구나 가계 기록을 보고 바꿀 수 있어요. 비밀번호, 2단계 인증, 긴급 키트는 삭제돼요.",
+ "Anyone with this key can open your Wally, even with two-step sign-in on.": "이 키가 있으면 2단계 인증이 켜져 있어도 누구나 Wally를 열 수 있어요.",
  "Anyone with this key can open your Wally, even with two-step sign-in on. Making a new kit in Settings › Sign-in & Privacy stops this one working.": "이 키가 있으면 2단계 인증이 켜져 있어도 누구나 Wally를 열 수 있어요. 설정 › 로그인 및 개인정보 보호에서 새 키트를 만들면 이 키는 더 이상 쓸 수 없어요.",
- "Anything using this key stops working. This can’t be undone.": "이 키를 쓰던 것은 더 이상 작동하지 않아요. 이 작업은 되돌릴 수 없어요.",
  "Appearance": "화면",
  "Ask for a password": "비밀번호 묻기",
  "Ask {names}: everyone in the household signs in with the same password.": "{names} 님에게 물어보세요. 가구 구성원 모두 같은 비밀번호로 로그인해요.",
@@ -113,8 +116,7 @@
  "Assign {amount} more": "{amount} 더 배분하세요",
  "At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.": "8자 이상. 모두의 기존 비밀번호를 대신하며, 다른 모든 브라우저에서 새 비밀번호를 물어봐요.",
  "At least 8 characters. Without a password, anyone who can reach this server can open Wally.": "8자 이상. 비밀번호가 없으면 이 서버에 접속할 수 있는 사람은 누구나 Wally를 열 수 있어요.",
- "At least {n} characters.": "{n}자 이상이어야 해요.",
- "At least {n} characters. Every other browser is signed out: tell everyone the new password.": "{n}자 이상. 다른 모든 브라우저는 로그아웃돼요. 모두에게 새 비밀번호를 알려 주세요.",
+ "At least {n} characters": "{n}자 이상",
  "Auto": "자동",
  "Average day": "하루 평균",
  "Average {amount}": "평균 {amount}",
@@ -132,6 +134,8 @@
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "고정 지출과 급여는 기한이 되면 추가되고, 가격이 오르면 Wally가 알아차려요.",
  "Blue": "파랑",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "화면을 공유할 때 모든 숫자를 흐리게 가려요. {key}로 켜고 끌 수 있어요.",
+ "Both new passwords match": "새 비밀번호 두 개가 일치해요",
+ "Both passwords match": "두 비밀번호 일치",
  "Bring your data": "데이터 가져오기",
  "Browsers": "브라우저",
  "Browsers only encrypt on secure pages: open Wally at its https:// address.": "브라우저는 보안 페이지에서만 암호화해요. https:// 주소로 Wally를 여세요.",
@@ -221,7 +225,6 @@
  "Delete #{name}": "#{name} 삭제",
  "Delete #{name}?": "#{name} 태그를 삭제할까요?",
  "Delete Key": "키 삭제",
- "Delete Tag": "태그 삭제",
  "Delete bill": "고정 지출 삭제",
  "Delete bill and its {n} transaction": {
   "other": "고정 지출 및 거래 {n}건 삭제"
@@ -314,6 +317,7 @@
  "Enter an amount": "금액 입력",
  "Enter one of your recovery codes": "복구 코드 중 하나를 입력하세요",
  "Enter the 6-digit code from your authenticator app": "인증 앱의 6자리 코드를 입력하세요",
+ "Enter the 6-digit code it shows": "표시된 6자리 코드 입력",
  "Enter the code first.": "먼저 코드를 입력하세요.",
  "Enter the household password": "가구 공용 비밀번호를 입력하세요",
  "Enter what it was for": "어디에 썼는지 입력하세요",
@@ -326,7 +330,7 @@
  "Every category was close to usual.": "모든 카테고리가 평소와 비슷했어요.",
  "Every day": "매일",
  "Every month": "매월",
- "Every transaction with #{tag} becomes that person’s own, and stops being shared.": "#{tag} 태그가 달린 모든 거래가 그 사람의 거래가 되고, 더 이상 공동 지출이 아니게 돼요.",
+ "Every other browser is signed out: tell everyone the new password.": "다른 브라우저는 모두 로그아웃돼요. 모두에게 새 비밀번호를 알려 주세요.",
  "Every week": "매주",
  "Every year": "매년",
  "Every {n} day": {
@@ -346,7 +350,6 @@
  "Everyday spending: {amount} by {date}": "일상 지출: {date}까지 {amount}",
  "Everyone": "모두",
  "Everyone in the household sees the new name.": "가구 구성원 모두에게 새 이름이 보여요.",
- "Everyone in the household signs in with this password. You stay signed in on this browser.": "가구 구성원 모두 이 비밀번호로 로그인해요. 이 브라우저에서는 로그인 상태가 유지돼요.",
  "Everyone in the household uses the same password.": "가구 구성원 모두 같은 비밀번호를 사용해요.",
  "Everyone uses the same password.": "모두 같은 비밀번호를 사용해요.",
  "Everything already in Wally starts out shared by the household.": "Wally에 이미 있는 기록은 처음에는 모두 가구의 공동 지출이에요.",
@@ -396,7 +399,8 @@
  "I saved it somewhere safe": "안전한 곳에 보관했어요",
  "I saved the Emergency Kit somewhere safe": "긴급 키트를 안전한 곳에 저장했어요",
  "Icon": "아이콘",
- "If no phone is at hand, each code signs someone in once. Keep them with the household’s papers. They replace any earlier codes.": "휴대폰이 없을 때 코드 하나로 한 사람이 한 번 로그인할 수 있어요. 가구의 중요 서류와 함께 보관하세요. 이전 코드는 모두 대체돼요.",
+ "Icon for {name}": "{name} 아이콘",
+ "If no phone is at hand, each code signs someone in once.": "휴대폰이 없을 때 코드 하나로 한 번 로그인할 수 있어요.",
  "If you forget the password": "비밀번호를 잊어버린 경우",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally can’t show it again.": "비밀번호를 잊었거나 2단계 인증 코드를 받을 수 없을 때 이 복구 키로 다시 들어올 수 있어요. Wally는 이 키를 다시 보여 줄 수 없어요.",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.": "비밀번호를 잊었거나 2단계 인증 코드를 받을 수 없을 때 이 복구 키로 다시 들어올 수 있어요. Wally는 읽을 수 있는 사본을 보관하지 않으므로 다시 보여 줄 수 없어요.",
@@ -427,29 +431,37 @@
  "Income and spending by month in {range}": "{range} 월별 수입과 지출",
  "Income vs spending": "수입 대 지출",
  "It": "이 항목",
+ "It can read what’s in Wally and change it, like adding transactions.": "Wally의 내용을 읽고, 거래 추가처럼 내용을 바꿀 수도 있어요.",
+ "It can read what’s in Wally, but not change anything.": "Wally의 내용을 읽을 수 있지만 아무것도 바꿀 수 없어요.",
+ "It has never been used. This can’t be undone.": "한 번도 사용되지 않았어요. 이 작업은 되돌릴 수 없어요.",
  "It is removed from {n} transaction. The transaction stays.": {
   "other": "거래 {n}건에서 태그가 빠져요. 거래는 그대로 남아요."
  },
  "It started in the past, so {n} more up to today is added too.": {
   "other": "과거에 시작해서 오늘까지의 {n}건도 함께 추가돼요."
  },
- "Its {n} transaction and its recurring rules move there, and {name} goes away.": {
-  "other": "거래 {n}건과 반복 규칙이 그쪽으로 옮겨지고, {name} 항목은 사라져요."
+ "It was last used {when}. Anything using it stops working, and this can’t be undone.": "마지막 사용: {when}. 이 키를 쓰는 모든 것이 더 이상 작동하지 않으며, 이 작업은 되돌릴 수 없어요.",
+ "Its {n} recurring rule moves to {to}.": {
+  "other": "반복 규칙 {n}개가 {to} 카테고리로 옮겨져요."
  },
- "Its {n} transaction gets the tag you pick, and #{name} goes away.": {
-  "other": "거래 {n}건에 선택한 태그가 달리고, #{name} 태그는 사라져요."
+ "Its {n} transaction becomes {name}’s own, no longer shared.": {
+  "other": "거래 {n}건이 더 이상 공동이 아닌 {name} 님의 거래가 돼요."
  },
- "Its {n} transaction moves there, and {name} goes away.": {
-  "other": "거래 {n}건이 그쪽으로 옮겨지고, {name} 항목은 사라져요."
+ "Its {n} transaction gets #{to} instead.": {
+  "other": "거래 {n}건에는 대신 #{to} 태그가 달려요."
  },
- "Its {n} transaction moves to another category.": {
-  "other": "거래 {n}건이 다른 카테고리로 옮겨져요."
+ "Its {n} transaction gets the new name.": {
+  "other": "거래 {n}건에 새 이름이 적용돼요."
  },
- "It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too.": "가구의 긴급 키트에 있어요. 네 자씩 묶인 영문자와 숫자 52자예요. 2단계 인증 없이도 쓸 수 있어요.",
+ "Its {n} transaction moves to {to}.": {
+  "other": "거래 {n}건이 {to} 카테고리로 옮겨져요."
+ },
+ "It’s on the household’s Emergency Kit: letters and digits in groups of four. It works without two-step sign-in too.": "가구의 긴급 키트에 있어요. 네 자씩 묶인 영문자와 숫자예요. 2단계 인증 없이도 쓸 수 있어요.",
  "It’s shown only this once. Put it where the tool that uses it can read it.": "이번 한 번만 표시돼요. 이 키를 쓰는 도구가 읽을 수 있는 곳에 넣어 두세요.",
  "Keep Editing": "계속 편집하기",
  "Keep it with your passport: it opens Wally if the password is forgotten.": "여권과 함께 보관하세요. 비밀번호를 잊었을 때 Wally를 열 수 있어요.",
  "Keep once": "하나만 남기기",
+ "Keep them with the household’s papers. Wally can’t show them again, and any earlier codes stop working.": "가구의 중요한 서류와 함께 보관하세요. Wally는 다시 보여 줄 수 없고, 이전 코드는 더 이상 쓸 수 없어요.",
  "Keep track of what your household spends and earns. Your data stays on this server.": "가구의 지출과 수입을 기록하세요. 데이터는 이 서버에 그대로 남아요.",
  "Keep {n} once": {
   "other": "{n}건은 하나만 남기기"
@@ -481,6 +493,7 @@
  "Line {n}: {why}": "{n}행: {why}",
  "List": "목록",
  "Living alone? Just add yourself.": "혼자 사나요? 나만 추가하면 돼요.",
+ "Loading…": "불러오는 중…",
  "Lock when Wally closes": "Wally를 닫으면 잠금",
  "Lost it too?": "그것도 잃어버렸나요?",
  "Lost the Emergency Kit too?": "긴급 키트도 잃어버렸나요?",
@@ -488,6 +501,7 @@
  "MM/DD/YYYY": "MM/DD/YYYY",
  "Made {date}": "{date}에 만듦",
  "Made {date}.": "{date}에 만들었어요.",
+ "Make": "만들기",
  "Make #{tag} a Person": "#{tag} 태그를 구성원으로 만들기",
  "Make New Codes": "새 코드 만들기",
  "Make New Kit": "새 키트 만들기",
@@ -557,6 +571,7 @@
  "Next: {dates}": "다음: {dates}",
  "No bills": "고정 지출 없음",
  "No connection. {name} is kept on this device and sent when Wally is back.": "연결이 끊겼어요. {name} 항목은 이 기기에 보관했다가 Wally에 다시 연결되면 보내요.",
+ "No icons match “{q}”.": "‘{q}’와 일치하는 아이콘이 없어요.",
  "No income in the last three months, so evenly": "최근 3개월 수입이 없어서 균등하게",
  "No matches": "일치하는 항목 없음",
  "No month to review yet": "아직 돌아볼 달이 없어요",
@@ -575,6 +590,7 @@
  "No tag": "태그 없음",
  "No tags": "태그 없음",
  "No tags yet": "아직 태그가 없어요",
+ "No transactions have #{tag}.": "#{tag} 태그가 달린 거래가 없어요.",
  "No transactions have this tag.": "이 태그가 달린 거래가 없어요.",
  "No transactions match “{q}”": "“{q}” 검색 결과가 없어요",
  "No transactions use it.": "사용하는 거래가 없어요.",
@@ -699,7 +715,6 @@
  "Preview {n} row": {
   "other": "{n}행 미리보기"
  },
- "Previous": "이전",
  "Previous month": "이전 달",
  "Previous period": "이전 기간",
  "Previous year": "이전 해",
@@ -714,7 +729,6 @@
  "Reading everything back to compare…": "비교하기 위해 모두 다시 읽는 중…",
  "Received": "받은 금액",
  "Recent": "최근",
- "Recovery Codes": "복구 코드",
  "Recovery code": "복구 코드",
  "Recovery codes": "복구 코드",
  "Recovery key": "복구 키",
@@ -757,6 +771,7 @@
  "Save": "저장",
  "Save password": "비밀번호 저장",
  "Save the household’s Emergency Kit": "가구의 긴급 키트를 저장하세요",
+ "Save the recovery codes": "복구 코드 저장",
  "Saved {name}": "{name} 저장했어요",
  "Saved {name} and the {n} transaction it made": {
   "other": "{name} 및 이 규칙으로 생성된 거래 {n}건을 저장했어요"
@@ -766,16 +781,19 @@
  "Saved {name}. The change starts {date}.": "{name} 저장했어요. 변경 사항은 {date}부터 적용돼요.",
  "Saved. It is still waiting to be sent.": "저장했어요. 아직 전송 대기 중이에요.",
  "Say what the key is for first": "먼저 키의 용도를 입력하세요",
+ "Scan this code with an authenticator app": "이 코드를 인증 앱으로 스캔",
  "Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.": "새 휴대폰의 인증 앱으로 스캔하세요. 다른 모든 사람과 같은 코드가 표시돼요.",
  "Search": "검색",
  "Search currencies": "통화 검색",
  "Search every month": "모든 달에서 검색",
+ "Search icons": "아이콘 검색",
  "Search in": "검색 범위",
  "Search looks in names, categories, tags and amounts. Clear the filters to search everything.": "이름, 카테고리, 태그, 금액에서 검색해요. 전체를 검색하려면 필터를 지우세요.",
  "Search time zones": "시간대 검색",
  "Search transactions": "거래 검색",
  "Search transactions for “{q}”": "거래에서 “{q}” 검색",
  "Search {n} currencies": "통화 {n}개 검색",
+ "Search {n} icons": "아이콘 {n}개 검색",
  "Search, jump, or type “12 coffee” to add": "검색, 이동, 또는 “12 커피”를 입력해 추가",
  "Security": "보안",
  "See all": "모두 보기",
@@ -809,12 +827,17 @@
  "Show money for": "표시 대상",
  "Show password": "비밀번호 보기",
  "Show rows": "행 표시",
+ "Show the two-step code?": "2단계 인증 코드를 표시할까요?",
  "Show {n} more": "{n}개 더 보기",
  "Showing": "보기 대상",
+ "Sign Out": "로그아웃",
  "Sign in": "로그인",
  "Sign out": "로그아웃",
  "Sign out of other browsers": "다른 브라우저에서 로그아웃",
  "Sign out of this browser": "이 브라우저에서 로그아웃",
+ "Sign out of {n} other browser?": {
+  "other": "다른 브라우저 {n}개에서 로그아웃할까요?"
+ },
  "Sign-in": "로그인",
  "Sign-in & Privacy": "로그인 및 개인정보 보호",
  "Sign-in is off": "로그인 꺼짐",
@@ -850,6 +873,7 @@
  "Starts": "시작",
  "Step {n} of {total}": "{total}단계 중 {n}단계",
  "Still to come": "남은 예정",
+ "Suggested": "추천",
  "Summary": "요약",
  "Sunday": "일요일",
  "Switch person": "사람 바꾸기",
@@ -876,6 +900,7 @@
  "The first month": "첫 달",
  "The household": "가구",
  "The icon is picked from the name.": "아이콘은 이름에 맞춰 자동으로 골라져요.",
+ "The icon is picked from the name. You can change it later.": "아이콘은 이름에 맞춰 자동으로 골라져요. 나중에 바꿀 수 있어요.",
  "The last date must be after {date}.": "마지막 날짜는 {date} 이후여야 해요.",
  "The new one again": "새 비밀번호 확인",
  "The old codes stop working. You see the new ones once.": "기존 코드는 더 이상 쓸 수 없어요. 새 코드는 한 번만 표시돼요.",
@@ -883,7 +908,6 @@
  "The others owe {payer} {amount} for this.": "다른 구성원이 {payer} 님에게 {amount} 갚아야 해요.",
  "The password alone will open Wally again for everyone, and the recovery codes stop working.": "다시 모두가 비밀번호만으로 Wally를 열 수 있고, 복구 코드는 더 이상 쓸 수 없어요.",
  "The passwords don’t match.": "비밀번호가 일치하지 않아요.",
- "The request": "요청",
  "The same again": "똑같이 한 번 더",
  "The same as {what}": "{what}와 같음",
  "The second best month of the last {n}.": "최근 {n}개월 중 두 번째로 좋은 달이에요.",
@@ -900,6 +924,9 @@
  "The {n} backup on the server is in the clear, so it’s deleted:": {
   "other": "서버의 백업 {n}개는 암호화되지 않아서 삭제돼요:"
  },
+ "The {n} code left stops working. You see the new ones once.": {
+  "other": "남은 코드 {n}개는 더 이상 쓸 수 없어요. 새 코드는 한 번만 보여 줘요."
+ },
  "The {n} it already made changes too.": {
   "other": "이미 생성된 {n}건도 함께 바뀌어요."
  },
@@ -911,13 +938,15 @@
  },
  "Their part of shared costs goes to whoever paid.": "공동 지출 중 이 구성원의 몫은 결제한 사람에게 넘어가요.",
  "Their share of shared costs": "공동 지출 중 이 구성원의 몫",
- "Their transactions and recurring rules move to the person you pick.": "이 구성원의 거래와 반복 규칙은 선택한 사람에게 옮겨져요.",
  "Theme": "테마",
  "Then": "그다음",
+ "Then #{name} goes away. A merge can’t be undone.": "그러면 #{name} 태그는 사라져요. 합치기는 되돌릴 수 없어요.",
  "Then nobody can open the data, not even whoever runs the server. Keep the kit somewhere safe.": "그러면 서버 관리자를 포함해 아무도 데이터를 열 수 없어요. 키트를 안전한 곳에 보관하세요.",
+ "Then {name} goes away. A merge can’t be undone.": "그러면 {name} 카테고리는 사라져요. 합치기는 되돌릴 수 없어요.",
  "There is no Emergency Kit yet": "아직 긴급 키트가 없어요",
  "They still know the household password.": "이 구성원은 여전히 가구 공용 비밀번호를 알고 있어요.",
  "This browser": "이 브라우저",
+ "This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.": "이 브라우저는 로그인 상태가 유지되고, 다른 브라우저에서는 모두 비밀번호를 물어봐요. 다음으로 긴급 키트를 저장해요.",
  "This file has no rows.": "이 파일에는 행이 없어요.",
  "This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.": "이 가구는 암호화되어 있고, 브라우저는 보안 페이지에서만 암호화해요. https:// 주소로 Wally를 여세요.",
  "This month": "이번 달",
@@ -1000,7 +1029,6 @@
  "Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.": "Wally 2.0은 모든 데이터를 저장하기 전에 내 기기에서 잠글 수 있어요. 서버에는 읽을 수 없는 데이터만 남으므로, 서버 관리자도 내 돈 정보를 볼 수 없어요.",
  "Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.": "Wally 2.0은 각 지출이 누구의 것인지 알아요. 나부터 시작해 Wally를 쓰는 사람을 모두 추가하세요.",
  "Wally address": "Wally 주소",
- "Wally adds it to the list. It never converts amounts.": "Wally가 목록에 추가해요. 금액은 환산하지 않아요.",
  "Wally asks for it when it opens.": "Wally를 열 때 이 비밀번호를 물어봐요.",
  "Wally asks for it when it opens. Everyone in the household uses this one password.": "Wally를 열 때 이 비밀번호를 물어봐요. 가구 구성원 모두 이 비밀번호 하나를 사용해요.",
  "Wally can’t be reached": "Wally에 연결할 수 없어요",
@@ -1042,6 +1070,9 @@
  "Whoever runs the server can turn sign-in off, then you turn it on again with a new password. The README explains how.": "서버 관리자가 로그인을 끄면, 새 비밀번호로 다시 켜세요. 방법은 README에 나와 있어요.",
  "Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs.": "이 서버의 관리자는 서버가 가구 데이터를 절대 읽을 수 없도록 정했어요. 키가 있으면 호출이 실행되는 동안 읽을 수 있게 돼요.",
  "Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.": "이 서버 관리자가 Wally가 저장하기 전에 내 기기에서 모든 것을 잠그도록 설정했어요. 관리자는 가구의 돈 기록을 읽을 수 없어요. 금액, 이름, 카테고리 하나도요.",
+ "Whoever uses it needs the household password to open Wally there again.": {
+  "other": "그 브라우저에서 Wally를 다시 열려면 가구 공용 비밀번호가 필요해요."
+ },
  "Whose": "누구의",
  "Whose money": "누구의 돈",
  "Who’s in your household?": "가구 구성원은 누구인가요?",
@@ -1059,6 +1090,7 @@
  "You can always import more later from Settings.": "나중에 설정에서 언제든 더 가져올 수 있어요.",
  "You can turn it off later in Settings › Sign-in & Privacy.": "나중에 설정 › 로그인 및 개인정보 보호에서 끌 수 있어요.",
  "You get a new Emergency Kit next. Sign-in stays on, and API keys need to be made again.": "이어서 새 긴급 키트를 받아요. 로그인은 켜진 채로 유지되고, API 키는 다시 만들어야 해요.",
+ "You have {n} keys, the most each person can have. Delete one first.": "키가 {n}개 있어요. 한 사람이 가질 수 있는 최대 개수예요. 먼저 하나를 삭제하세요.",
  "You kept {amount}. A few things worth knowing.": "{amount} 남겼어요. 알아 둘 만한 것이 몇 가지 있습니다.",
  "You overspent {amount}. A few things worth knowing.": "{amount} 초과 지출했어요. 알아 둘 만한 것이 몇 가지 있습니다.",
  "You save an Emergency Kit.": "긴급 키트를 저장해요.",
@@ -1108,7 +1140,6 @@
  "on track for {amount} by {date}": "{date}까지 {amount} 예상",
  "on {date}": "{date}에",
  "on {day}": "{day}에",
- "or write it here": "또는 여기에 적으세요",
  "over {amount}": "{amount} 초과",
  "overspent": "초과 지출",
  "overspent since January": "1월부터 초과 지출",
@@ -1174,6 +1205,7 @@
  "{category}, usually {person}, about {amount}": "{category}, 보통 {person} 님, 약 {amount}",
  "{category}, {amount} less": "{category}, {amount} 감소",
  "{category}, {amount} more": "{category}, {amount} 증가",
+ "{code} is already in the list.": "{code} 통화가 이미 목록에 있어요.",
  "{from} to {to}": "{from}~{to}",
  "{from} to {to}. That is {year} a year.": "{from} → {to}. 연간 {year} 규모예요.",
  "{from} – {to}": "{from} – {to}",
@@ -1188,6 +1220,7 @@
  "{name} goes up {amount}": "{name} {amount} 인상 예정",
  "{name} is already a category": "{name} 카테고리가 이미 있어요",
  "{name} is already a category. Merge this one into it instead.": "{name} 카테고리가 이미 있어요. 대신 이 카테고리를 거기에 합치세요.",
+ "{name} is already in the household.": "{name} 님은 이미 가구 구성원이에요.",
  "{name} is due on {date}": "{name} {date} 예정",
  "{name} is encrypting Wally.": "{name} 님이 Wally를 암호화하는 중이에요.",
  "{name} is turning off encryption.": "{name} 님이 암호화를 끄는 중이에요.",
@@ -1220,6 +1253,15 @@
  "{name}, {date}": "{name}, {date}",
  "{name}: {amount}": "{name}: {amount}",
  "{name}’s part": "{name} 님 몫",
+ "{name}’s {n} recurring rule becomes shared.": {
+  "other": "{name} 님의 반복 규칙 {n}개가 공동으로 바뀌어요."
+ },
+ "{name}’s {n} recurring rule moves to {to}.": {
+  "other": "{name} 님의 반복 규칙 {n}개가 {to} 님에게 옮겨져요."
+ },
+ "{name}’s {n} transaction becomes shared.": {
+  "other": "{name} 님의 거래 {n}건이 공동 거래로 바뀌어요."
+ },
  "{name}’s {n} transaction moves to {to}.": {
   "other": "{name} 님의 거래 {n}건이 {to} 님에게 옮겨져요."
  },
@@ -1310,9 +1352,6 @@
  },
  "{n} transaction for {name}": {
   "other": "{name} 님의 거래 {n}건"
- },
- "{n} transaction has #{tag}. It becomes {name}’s.": {
-  "other": "거래 {n}건에 #{tag} 태그가 있어요. {name} 님의 거래가 돼요."
  },
  "{n} transaction is tagged for more than one person, so it stays shared.": {
   "other": "거래 {n}건은 여러 사람의 태그가 달려 있어 공동으로 남아요."

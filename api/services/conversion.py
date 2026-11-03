@@ -32,7 +32,7 @@ PAUSE_SECONDS = int(os.getenv("WALLY_PAUSE_SECONDS", "120"))
 # Copied to the new file either way: who is here, how they sign in, the household's settings
 KEEP = ["person", "sessiontoken", "appconfig", "currency"]
 # The household's data in the clear
-PLAIN = ["transaction", "recurringtransaction", "category", "categorycolor", "tag", "importrule"]
+PLAIN = ["transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "importrule"]
 VAULT_CONFIG = ("VAULT_ID", "VAULT_SEQ", "VAULT_FLOOR")
 
 _next_engine = None

@@ -243,6 +243,7 @@ export const state = {
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
   colors: {},            // {category: 1 to 8, or null for income}: each category keeps its color
+  icons: {},             // {category: icon id} for the categories whose icon someone picked
   tags: [],
   irules: [],
   prefs: {},
@@ -321,8 +322,8 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags, colors] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/colors"),
+  const [status, people, ledger, rules, config, currency, categories, tags, colors, icons] = await Promise.all([
+    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/colors"), GET("/categories/icons"),
   ]);
   state.status = status;
   state.people = people;
@@ -334,6 +335,7 @@ export async function loadAll() {
   state.currency = { symbol: sel ? sel.symbol : currency.selected, position: currency.position, selected: currency.selected, currencies: currency.currencies };
   state.categories = categories;
   state.colors = colors || {};
+  state.icons = icons || {};
   paintColors();
   state.tags = tags;
   const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
@@ -351,20 +353,22 @@ export async function loadExtras() {
 }
 /* Categories and their colors, after a change in Settings or an import */
 export async function reloadCategories() {
-  const [categories, colors] = await Promise.all([GET("/categories"), GET("/categories/colors")]);
+  const [categories, colors, icons] = await Promise.all([GET("/categories"), GET("/categories/colors"), GET("/categories/icons")]);
   state.categories = categories;
   state.colors = colors || {};
+  state.icons = icons || {};
   paintColors();
 }
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
 /* Another device saved something: read it all again from this device's copy */
 export async function reloadAll() {
-  const [ledger, rules, categories, colors, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/colors"), GET("/tags"), GET("/rules")]);
+  const [ledger, rules, categories, colors, icons, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/colors"), GET("/categories/icons"), GET("/tags"), GET("/rules")]);
   state.tx = ledger.rows.map(fromRow);
   setStart();
   state.rules = rules.map(fromRule);
   state.categories = categories;
   state.colors = colors || {};
+  state.icons = icons || {};
   paintColors();
   state.tags = tags;
   state.irules = irules;
@@ -437,20 +441,51 @@ const ICONS = [
   ["savings", /saving|ahorro|estalvi|épargne|sparen|rispar|poupan|invest|inversi|сбереж|инвест|储蓄|投资|貯金|投資|저축|투자|बचत|निवेश|ادخار|استثمار/i],
   ["tax", /tax|impuesto|impost|impôt|steuer|tasse|налог|税|세금|कर|ضريبة/i],
 ];
+/* The Lucide icon each of Wally's own stands for: the picker finds it by Lucide's words, and doesn't
+   show Lucide's copy of one that looks the same. The ten drawn for Wally only lend their words. */
+export const CAT_LUCIDE = {
+  sofa: "sofa", droplet: "droplet", flame: "flame", wifi: "wifi", phone: "smartphone", wrench: "wrench", coffee: "coffee", pizza: "pizza",
+  wine: "wine", beer: "beer", cake: "cake-slice", apple: "apple", car: "car", fuel: "fuel", bus: "bus", train: "train-front", bike: "bike",
+  palm: "tree-palm", parking: "square-letter-p", cart: "shopping-cart", shirt: "shirt", scissors: "scissors", glasses: "glasses",
+  package: "package", laptop: "laptop", gift: "gift", pill: "pill", stethoscope: "stethoscope", dumbbell: "dumbbell", kids: "baby",
+  dog: "dog", cat: "cat", pet: "paw-print", film: "film", music: "eighth-notes", gamepad: "gamepad-2", tv: "tv", camera: "camera",
+  book: "book-open", palette: "palette", wallet: "wallet", savings: "piggy-bank", card: "credit-card", banknote: "banknote", tax: "landmark",
+  briefcase: "briefcase", receipt: "receipt", education: "graduation-cap", handheart: "hand-heart", flower: "flower-2", leaf: "leaf",
+  umbrella: "umbrella", sparkles: "sparkles", star: "star",
+  rent: "house", food: "utensils", groceries: "shopping-basket", utilities: "zap", travel: "plane", shopping: "shopping-bag",
+  healthcare: "heart", entertainment: "ticket", income: "arrow-down-to-line", misc: "ellipsis",
+};
+export const OWN_DRAWN = new Set(["rent", "food", "groceries", "utilities", "travel", "shopping", "healthcare", "entertainment", "income", "misc"]);
+/* Wally's own icons whose words (in any of the app's languages) are in what was typed */
+export function iconsFor(q) { return ICONS.filter(([, re]) => re.test(q)).map(([id]) => id); }
 export function catIcon(name) {
   for (const [icon, re] of ICONS) if (re.test(name || "")) return icon;
   return "misc";
 }
 export function cat(name) {
-  if (!CAT[name]) CAT[name] = { n: name, c: colorOf(name), i: catIcon(name) };
+  if (!CAT[name]) CAT[name] = { n: name, c: colorOf(name), i: iconOf(name) };
   return CAT[name];
 }
+/* The icon someone picked in Settings, or the one the name suggests */
+function iconOf(name) { const i = (state.icons || {})[name]; return i && (CAT_ICONS.includes(i) || /^l-[a-z0-9-]+$/.test(i)) ? i : catIcon(name); }
+/* Every icon a category can have, eight to a row: home, food, getting around, shopping, health and
+   family, free time, money and work, the rest */
+export const CAT_ICONS = [
+  "rent", "sofa", "utilities", "droplet", "flame", "wifi", "phone", "wrench",
+  "groceries", "food", "coffee", "pizza", "wine", "beer", "cake", "apple",
+  "car", "fuel", "bus", "train", "bike", "travel", "palm", "parking",
+  "shopping", "cart", "shirt", "scissors", "glasses", "package", "laptop", "gift",
+  "healthcare", "pill", "stethoscope", "dumbbell", "kids", "dog", "cat", "pet",
+  "entertainment", "film", "music", "gamepad", "tv", "camera", "book", "palette",
+  "income", "wallet", "savings", "card", "banknote", "tax", "briefcase", "receipt",
+  "education", "handheart", "flower", "leaf", "umbrella", "sparkles", "star", "misc",
+];
 function colorOf(name) {
   const c = state.colors[name];
   if (c >= 1 && c <= 9) return c;
   return isIncomeCat(name) ? 0 : 9;
 }
-export function paintColors() { Object.keys(CAT).forEach((k) => { CAT[k].c = colorOf(k); }); }
+export function paintColors() { Object.keys(CAT).forEach((k) => { CAT[k].c = colorOf(k); CAT[k].i = iconOf(k); }); }
 /* Expense categories, biggest spender in the range first (colors don't follow the rank) */
 export function rerank(a, b, sc) {
   const totalsBy = byCat(a, b, sc);
@@ -465,10 +500,13 @@ export function isIncomeCat(name) {
 }
 export function expCats() { return state.categories.filter((c) => !isIncomeCat(c)); }
 export function cc(c) { return "var(--c" + cat(c).c + ")"; }
-export function icon(id, cls) { return '<svg class="i ' + (cls || "") + '" aria-hidden="true"><use href="#i-' + id + '"/></svg>'; }
+export function icon(id, cls) { return '<svg class="i ' + (cls || "") + '" aria-hidden="true"><use href="' + iconHref(id) + '"/></svg>'; }
+/* Wally's own icons are in the page; "l-" + a name is one of Lucide's, from a file read the first time one is shown */
+export const LIB = "/icons/lucide.svg";
+export function iconHref(id) { return id.startsWith("l-") ? LIB + "#" + id.slice(2) : "#i-" + id; }
 export function tile(c, size, col) {
   col = col || cc(c);
-  return '<span class="w-ico" style="background:color-mix(in srgb,' + col + " 15%,transparent);color:color-mix(in srgb," + col + " 82%,var(--w-ink))" + (size ? ";width:" + size + "px;height:" + size + "px" : "") + '"><svg class="i" aria-hidden="true"><use href="#i-' + cat(c).i + '"/></svg></span>';
+  return '<span class="w-ico" style="background:color-mix(in srgb,' + col + " 15%,transparent);color:color-mix(in srgb," + col + " 82%,var(--w-ink))" + (size ? ";width:" + size + "px;height:" + size + "px" : "") + '"><svg class="i" aria-hidden="true"><use href="' + iconHref(cat(c).i) + '"/></svg></span>';
 }
 
 /* Settings that matter to a figure */

@@ -1,16 +1,15 @@
 {
- "#{name} already exists. The two are merged.": "#{name} 已存在，两者已合并。",
  "#{name} is already a tag": "#{name} 已是标签",
+ "#{name} is already a tag. Merge this one into it instead.": "#{name} 已是标签。请改为将此标签合并到其中。",
  "+ tag": "+ 标签",
  "+ tag, like #holiday": "+ 标签，例如 #度假",
- "1 · Scan it with an authenticator app": "1 · 用身份验证器应用扫描",
- "2 · Type the code it shows": "2 · 输入它显示的验证码",
  "6-digit code": "6位验证码",
  "A bit less than usual ({amount}).": "略低于平常（{amount}）。",
  "A bit more than usual ({amount}).": "略高于平常（{amount}）。",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "孩子、室友，任何分摊开销的人。每位成员都有自己的视图。",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "孩子、室友，任何分摊开销的人。他们用家庭密码登录。",
  "A code from an authenticator app, the same on everyone’s phone.": "身份验证器应用中的验证码，每个人手机上的都一样。",
+ "A currency that isn’t listed": "未列出的货币",
  "A file left from turning encryption on.": "开启加密时留下的文件。",
  "A home or lock screen shortcut, with the free app.": "借助免费应用，在主屏幕或锁屏上添加快捷方式。",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "有了密钥，脚本、电子表格或手机快捷方式就能添加和读取交易。密钥只在创建时显示一次。",
@@ -20,6 +19,7 @@
  "A weekend day costs": "周末每天花费",
  "A yearly bill: {amount}.": "每年一次的账单：{amount}。",
  "API docs": "API 文档",
+ "API key": "API 密钥",
  "API keys": "API 密钥",
  "API keys can’t be listed": "无法列出 API 密钥",
  "About the same as {month}": "与{month}基本持平",
@@ -36,7 +36,6 @@
  "Add a part": "添加一项",
  "Add a person": "添加成员",
  "Add a phone": "添加手机",
- "Add a phone?": "添加手机？",
  "Add a repeating expense": "添加定期支出",
  "Add a tag": "添加标签",
  "Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you.": "从你自己开始，添加每一个会花钱的人。每个人都有自己的视图，共同开销会在你们之间分摊。",
@@ -81,6 +80,8 @@
  "All": "全部",
  "All categories are hidden. Click one in the legend to show it.": "所有分类均已隐藏。点击图例中的分类即可显示。",
  "All currencies": "所有货币",
+ "All icons": "全部图标",
+ "All icons need a connection. Try again in a moment.": "查看全部图标需要联网。请稍后再试。",
  "All months": "所有月份",
  "All shared": "全部共同",
  "All time": "全部时间",
@@ -95,6 +96,7 @@
  "Amounts are shown in {name} now": "金额现以{name}显示",
  "Amounts hidden": "已隐藏金额",
  "Amounts shown": "已显示金额",
+ "Amounts will look like {amount}.": "金额将显示为{amount}。",
  "And {n} more": {
   "other": "还有{n}项"
  },
@@ -102,9 +104,10 @@
  "Android: HTTP Shortcuts": "Android：HTTP Shortcuts",
  "Any": "任意",
  "Any bank export works, and files from Wally v1 and 2.0. Nothing is written until you confirm the preview.": "支持任何银行导出文件，以及 Wally v1 和 2.0 的文件。确认预览前不会写入任何数据。",
- "Anyone who can open this address will see and change your finances. The password and two-step are removed.": "任何能打开此地址的人都能查看和更改你的财务。密码和两步验证将被移除。",
+ "Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed.": "任何能打开此地址的人都能查看和更改你的财务。密码和应急包将被移除。",
+ "Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.": "任何能打开此地址的人都能查看和更改你的财务。密码、两步验证和应急包将被移除。",
+ "Anyone with this key can open your Wally, even with two-step sign-in on.": "任何持有此密钥的人都能打开你的 Wally，即使已开启两步验证。",
  "Anyone with this key can open your Wally, even with two-step sign-in on. Making a new kit in Settings › Sign-in & Privacy stops this one working.": "任何持有此密钥的人都能打开你的 Wally，即使已开启两步验证。在 设置 › 登录与隐私 中生成新的应急包后，此密钥即失效。",
- "Anything using this key stops working. This can’t be undone.": "所有使用此密钥的地方都将失效。此操作无法撤销。",
  "Appearance": "外观",
  "Ask for a password": "需要密码",
  "Ask {names}: everyone in the household signs in with the same password.": "问问{names}：家里每个人都用同一个密码登录。",
@@ -113,8 +116,7 @@
  "Assign {amount} more": "还需分配 {amount}",
  "At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.": "至少 8 个字符。它将替换所有人的旧密码：其他所有浏览器都会要求输入新密码。",
  "At least 8 characters. Without a password, anyone who can reach this server can open Wally.": "至少 8 个字符。没有密码的话，任何能访问此服务器的人都能打开 Wally。",
- "At least {n} characters.": "至少{n}个字符。",
- "At least {n} characters. Every other browser is signed out: tell everyone the new password.": "至少 {n} 个字符。其他所有浏览器都会退出登录：请把新密码告诉每个人。",
+ "At least {n} characters": "至少{n}个字符",
  "Auto": "自动",
  "Average day": "日均",
  "Average {amount}": "平均 {amount}",
@@ -132,6 +134,8 @@
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "账单和工资会在到期时添加，价格上涨时 Wally 也会注意到。",
  "Blue": "蓝色",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "模糊所有数字，方便共享屏幕。按 {key} 切换。",
+ "Both new passwords match": "两次输入的新密码一致",
+ "Both passwords match": "两次输入的密码一致",
  "Bring your data": "导入你的数据",
  "Browsers": "浏览器",
  "Browsers only encrypt on secure pages: open Wally at its https:// address.": "浏览器只在安全页面上加密：请通过 https:// 地址打开 Wally。",
@@ -221,7 +225,6 @@
  "Delete #{name}": "删除 #{name}",
  "Delete #{name}?": "删除 #{name}？",
  "Delete Key": "删除密钥",
- "Delete Tag": "删除标签",
  "Delete bill": "删除账单",
  "Delete bill and its {n} transaction": {
   "other": "删除账单及其{n}笔交易"
@@ -314,6 +317,7 @@
  "Enter an amount": "输入金额",
  "Enter one of your recovery codes": "输入你的一个恢复码",
  "Enter the 6-digit code from your authenticator app": "输入身份验证器应用中的6位验证码",
+ "Enter the 6-digit code it shows": "输入它显示的6位验证码",
  "Enter the code first.": "请先输入验证码。",
  "Enter the household password": "输入家庭密码",
  "Enter what it was for": "填写用途",
@@ -326,7 +330,7 @@
  "Every category was close to usual.": "所有分类都与平常相近。",
  "Every day": "每天",
  "Every month": "每月",
- "Every transaction with #{tag} becomes that person’s own, and stops being shared.": "所有带 #{tag} 的交易都将归此人所有，不再是共同支出。",
+ "Every other browser is signed out: tell everyone the new password.": "其他浏览器都会退出登录：请把新密码告诉每个人。",
  "Every week": "每周",
  "Every year": "每年",
  "Every {n} day": {
@@ -346,7 +350,6 @@
  "Everyday spending: {amount} by {date}": "日常支出：截至{date} {amount}",
  "Everyone": "所有人",
  "Everyone in the household sees the new name.": "家里每个人都会看到新名称。",
- "Everyone in the household signs in with this password. You stay signed in on this browser.": "家里每个人都用这个密码登录。你在此浏览器上保持登录。",
  "Everyone in the household uses the same password.": "家里每个人都使用同一个密码。",
  "Everyone uses the same password.": "所有人都使用同一个密码。",
  "Everything already in Wally starts out shared by the household.": "Wally 中已有的所有内容，一开始都是全家共同的。",
@@ -396,7 +399,8 @@
  "I saved it somewhere safe": "我已妥善保存",
  "I saved the Emergency Kit somewhere safe": "我已将应急包保存在安全的地方",
  "Icon": "图标",
- "If no phone is at hand, each code signs someone in once. Keep them with the household’s papers. They replace any earlier codes.": "手机不在身边时，每个恢复码可让一个人登录一次。请与家中的重要文件放在一起。它们会取代之前的所有恢复码。",
+ "Icon for {name}": "{name} 的图标",
+ "If no phone is at hand, each code signs someone in once.": "手机不在身边时，每个恢复码可供一人登录一次。",
  "If you forget the password": "如果忘记密码",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally can’t show it again.": "如果你忘记密码或无法获取两步验证码，这个恢复密钥可以让你重新进入。Wally 无法再次显示它。",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.": "如果你忘记密码或无法获取两步验证码，这个恢复密钥可以让你重新进入。Wally 不保留任何它能读取的副本，因此无法再次显示。",
@@ -427,29 +431,37 @@
  "Income and spending by month in {range}": "{range}每月收入和支出",
  "Income vs spending": "收入与支出",
  "It": "它",
+ "It can read what’s in Wally and change it, like adding transactions.": "可以读取 Wally 中的内容并进行更改，例如添加交易。",
+ "It can read what’s in Wally, but not change anything.": "可以读取 Wally 中的内容，但不能做任何更改。",
+ "It has never been used. This can’t be undone.": "此密钥从未使用过。此操作无法撤销。",
  "It is removed from {n} transaction. The transaction stays.": {
   "other": "将从{n}笔交易中移除。交易本身会保留。"
  },
  "It started in the past, so {n} more up to today is added too.": {
   "other": "它的开始日期在过去，因此截至今天的{n}笔也会一并添加。"
  },
- "Its {n} transaction and its recurring rules move there, and {name} goes away.": {
-  "other": "其{n}笔交易和定期规则将转移过去，{name}将被移除。"
+ "It was last used {when}. Anything using it stops working, and this can’t be undone.": "最近使用于{when}。使用它的一切都将停止工作，且此操作无法撤销。",
+ "Its {n} recurring rule moves to {to}.": {
+  "other": "此分类的{n}条定期规则将移至{to}。"
  },
- "Its {n} transaction gets the tag you pick, and #{name} goes away.": {
-  "other": "其{n}笔交易将改用你选择的标签，#{name} 将被移除。"
+ "Its {n} transaction becomes {name}’s own, no longer shared.": {
+  "other": "此标签的{n}笔交易将归{name}个人，不再共同承担。"
  },
- "Its {n} transaction moves there, and {name} goes away.": {
-  "other": "其{n}笔交易将转移过去，{name}将被移除。"
+ "Its {n} transaction gets #{to} instead.": {
+  "other": "此标签的{n}笔交易将改为带有 #{to}。"
  },
- "Its {n} transaction moves to another category.": {
-  "other": "其{n}笔交易将转移到其他分类。"
+ "Its {n} transaction gets the new name.": {
+  "other": "此标签的{n}笔交易将使用新名称。"
  },
- "It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too.": "它就在家庭应急包上：52 个字母和数字，每四个一组。即使没有两步验证也能使用。",
+ "Its {n} transaction moves to {to}.": {
+  "other": "此分类的{n}笔交易将移至{to}。"
+ },
+ "It’s on the household’s Emergency Kit: letters and digits in groups of four. It works without two-step sign-in too.": "它就在家庭应急包上：字母和数字，每四个一组。即使没有两步验证也能使用。",
  "It’s shown only this once. Put it where the tool that uses it can read it.": "它只显示这一次。请把它放在使用它的工具能读取的地方。",
  "Keep Editing": "继续编辑",
  "Keep it with your passport: it opens Wally if the password is forgotten.": "请与护照放在一起：忘记密码时，它可以打开 Wally。",
  "Keep once": "只保留一次",
+ "Keep them with the household’s papers. Wally can’t show them again, and any earlier codes stop working.": "请和家里的重要文件放在一起。Wally 无法再次显示它们，之前的恢复码都将失效。",
  "Keep track of what your household spends and earns. Your data stays on this server.": "记录你家的支出和收入。你的数据保存在这台服务器上。",
  "Keep {n} once": {
   "other": "{n}笔只保留一次"
@@ -481,6 +493,7 @@
  "Line {n}: {why}": "第{n}行：{why}",
  "List": "列表",
  "Living alone? Just add yourself.": "一个人住？只添加你自己即可。",
+ "Loading…": "正在加载…",
  "Lock when Wally closes": "关闭 Wally 时锁定",
  "Lost it too?": "也丢失了？",
  "Lost the Emergency Kit too?": "应急包也丢了？",
@@ -488,6 +501,7 @@
  "MM/DD/YYYY": "月/日/年",
  "Made {date}": "生成于{date}",
  "Made {date}.": "生成于{date}。",
+ "Make": "设为成员",
  "Make #{tag} a Person": "将 #{tag} 设为成员",
  "Make New Codes": "生成新恢复码",
  "Make New Kit": "生成新应急包",
@@ -557,6 +571,7 @@
  "Next: {dates}": "下次：{dates}",
  "No bills": "没有账单",
  "No connection. {name} is kept on this device and sent when Wally is back.": "无网络连接。{name}已保存在此设备上，Wally 恢复连接后会自动发送。",
+ "No icons match “{q}”.": "没有与“{q}”匹配的图标。",
  "No income in the last three months, so evenly": "最近三个月没有收入，因此平均分摊",
  "No matches": "没有匹配项",
  "No month to review yet": "还没有可回顾的月份",
@@ -575,6 +590,7 @@
  "No tag": "无标签",
  "No tags": "没有标签",
  "No tags yet": "还没有标签",
+ "No transactions have #{tag}.": "没有交易带有 #{tag}。",
  "No transactions have this tag.": "没有交易使用此标签。",
  "No transactions match “{q}”": "没有与“{q}”匹配的交易",
  "No transactions use it.": "没有交易使用它。",
@@ -699,7 +715,6 @@
  "Preview {n} row": {
   "other": "预览{n}行"
  },
- "Previous": "上一个",
  "Previous month": "上个月",
  "Previous period": "上一周期",
  "Previous year": "上一年",
@@ -714,7 +729,6 @@
  "Reading everything back to compare…": "正在读回所有数据进行比对…",
  "Received": "已收到",
  "Recent": "最近",
- "Recovery Codes": "恢复码",
  "Recovery code": "恢复码",
  "Recovery codes": "恢复码",
  "Recovery key": "恢复密钥",
@@ -757,6 +771,7 @@
  "Save": "保存",
  "Save password": "保存密码",
  "Save the household’s Emergency Kit": "保存家庭应急包",
+ "Save the recovery codes": "保存恢复码",
  "Saved {name}": "已保存{name}",
  "Saved {name} and the {n} transaction it made": {
   "other": "已保存{name}及其生成的{n}笔交易"
@@ -766,16 +781,19 @@
  "Saved {name}. The change starts {date}.": "已保存{name}。更改从{date}开始生效。",
  "Saved. It is still waiting to be sent.": "已保存，仍在等待发送。",
  "Say what the key is for first": "请先说明密钥的用途",
+ "Scan this code with an authenticator app": "用身份验证器应用扫描此二维码",
  "Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.": "用新手机上的身份验证器应用扫描此码。它显示的验证码和其他人的一样。",
  "Search": "搜索",
  "Search currencies": "搜索货币",
  "Search every month": "搜索所有月份",
+ "Search icons": "搜索图标",
  "Search in": "搜索范围",
  "Search looks in names, categories, tags and amounts. Clear the filters to search everything.": "搜索范围包括名称、分类、标签和金额。清除筛选即可搜索全部内容。",
  "Search time zones": "搜索时区",
  "Search transactions": "搜索交易",
  "Search transactions for “{q}”": "搜索“{q}”相关交易",
  "Search {n} currencies": "搜索 {n} 种货币",
+ "Search {n} icons": "搜索 {n} 个图标",
  "Search, jump, or type “12 coffee” to add": "搜索、跳转，或输入“12 咖啡”来添加",
  "Security": "安全",
  "See all": "查看全部",
@@ -809,12 +827,17 @@
  "Show money for": "显示谁的资金",
  "Show password": "显示密码",
  "Show rows": "显示行",
+ "Show the two-step code?": "显示两步验证码？",
  "Show {n} more": "再显示{n}项",
  "Showing": "显示",
+ "Sign Out": "退出登录",
  "Sign in": "登录",
  "Sign out": "退出登录",
  "Sign out of other browsers": "退出其他浏览器",
  "Sign out of this browser": "在此浏览器上退出登录",
+ "Sign out of {n} other browser?": {
+  "other": "在其他{n}个浏览器上退出登录？"
+ },
  "Sign-in": "登录",
  "Sign-in & Privacy": "登录与隐私",
  "Sign-in is off": "登录已关闭",
@@ -850,6 +873,7 @@
  "Starts": "开始",
  "Step {n} of {total}": "第 {n} 步，共 {total} 步",
  "Still to come": "尚未到来",
+ "Suggested": "推荐",
  "Summary": "摘要",
  "Sunday": "周日",
  "Switch person": "切换成员",
@@ -876,6 +900,7 @@
  "The first month": "第一个月",
  "The household": "全家",
  "The icon is picked from the name.": "图标根据名称自动选择。",
+ "The icon is picked from the name. You can change it later.": "图标根据名称自动选择，之后可以更改。",
  "The last date must be after {date}.": "最后日期必须晚于{date}。",
  "The new one again": "再次输入新密码",
  "The old codes stop working. You see the new ones once.": "旧恢复码将失效。新恢复码只显示一次。",
@@ -883,7 +908,6 @@
  "The others owe {payer} {amount} for this.": "其他人为此欠{payer} {amount}。",
  "The password alone will open Wally again for everyone, and the recovery codes stop working.": "所有人仅凭密码即可再次打开 Wally，恢复码将失效。",
  "The passwords don’t match.": "两次输入的密码不一致。",
- "The request": "请求",
  "The same again": "再来一笔同样的",
  "The same as {what}": "与{what}相同",
  "The second best month of the last {n}.": "最近{n}个月中第二好的一个月。",
@@ -900,6 +924,9 @@
  "The {n} backup on the server is in the clear, so it’s deleted:": {
   "other": "服务器上的{n}个备份未加密，因此将被删除："
  },
+ "The {n} code left stops working. You see the new ones once.": {
+  "other": "剩余的{n}个恢复码将失效。新的恢复码只显示一次。"
+ },
  "The {n} it already made changes too.": {
   "other": "已生成的{n}笔也会一并更改。"
  },
@@ -911,13 +938,15 @@
  },
  "Their part of shared costs goes to whoever paid.": "其应分摊的共同支出将归于付款人。",
  "Their share of shared costs": "其在共同支出中的份额",
- "Their transactions and recurring rules move to the person you pick.": "其交易和定期规则将转移给你选择的成员。",
  "Theme": "主题",
  "Then": "之后",
+ "Then #{name} goes away. A merge can’t be undone.": "之后 #{name} 将不复存在。合并无法撤销。",
  "Then nobody can open the data, not even whoever runs the server. Keep the kit somewhere safe.": "那样就没有人能打开数据，服务器管理员也不行。请妥善保管应急包。",
+ "Then {name} goes away. A merge can’t be undone.": "之后{name}将不复存在。合并无法撤销。",
  "There is no Emergency Kit yet": "还没有应急包",
  "They still know the household password.": "他们仍然知道家庭密码。",
  "This browser": "此浏览器",
+ "This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.": "此浏览器保持登录；其他浏览器都需要输入密码。接下来，请保存应急包。",
  "This file has no rows.": "此文件没有数据行。",
  "This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.": "这个家庭的数据已加密，而浏览器只在安全页面上加密。请通过 https:// 地址打开 Wally。",
  "This month": "本月",
@@ -1000,7 +1029,6 @@
  "Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.": "Wally 2.0 可以在保存前把所有内容锁在你的设备上。服务器只保存它无法读取的内容，所以连服务器管理员也看不到你的财务。",
  "Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.": "Wally 2.0 知道每笔支出属于谁。从你自己开始，添加所有使用 Wally 的人。",
  "Wally address": "Wally 地址",
- "Wally adds it to the list. It never converts amounts.": "Wally 会将它添加到列表中，但从不换算金额。",
  "Wally asks for it when it opens.": "Wally 打开时会要求输入。",
  "Wally asks for it when it opens. Everyone in the household uses this one password.": "Wally 打开时会要求输入。家里每个人都使用这一个密码。",
  "Wally can’t be reached": "无法连接 Wally",
@@ -1042,6 +1070,9 @@
  "Whoever runs the server can turn sign-in off, then you turn it on again with a new password. The README explains how.": "服务器管理员可以关闭登录，然后你再用新密码重新开启。README 中有具体说明。",
  "Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs.": "服务器管理员选择了让服务器永远无法读取你家庭的数据，而密钥会在调用运行期间允许它读取。",
  "Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.": "这台服务器的管理员已做好设置：Wally 会先在你的设备上把一切锁好再保存。管理员无法读取你家庭的账目：任何金额、名称或类别都看不到。",
+ "Whoever uses it needs the household password to open Wally there again.": {
+  "other": "在那里再次打开 Wally 需要输入家庭密码。"
+ },
  "Whose": "归属",
  "Whose money": "谁的钱",
  "Who’s in your household?": "你家有哪些成员？",
@@ -1059,6 +1090,7 @@
  "You can always import more later from Settings.": "之后随时可以在设置中导入更多。",
  "You can turn it off later in Settings › Sign-in & Privacy.": "之后可在 设置 › 登录与隐私 中关闭。",
  "You get a new Emergency Kit next. Sign-in stays on, and API keys need to be made again.": "接下来你会得到新的应急包。登录保持开启，API 密钥需要重新创建。",
+ "You have {n} keys, the most each person can have. Delete one first.": "你已有{n}个密钥，已达每人上限。请先删除一个。",
  "You kept {amount}. A few things worth knowing.": "你结余了 {amount}。有几点值得了解。",
  "You overspent {amount}. A few things worth knowing.": "你超支了 {amount}。有几点值得了解。",
  "You save an Emergency Kit.": "你会保存一份应急包。",
@@ -1108,7 +1140,6 @@
  "on track for {amount} by {date}": "预计到{date}为 {amount}",
  "on {date}": "{date}",
  "on {day}": "{day}",
- "or write it here": "或写在这里",
  "over {amount}": "超过 {amount}",
  "overspent": "超支",
  "overspent since January": "自一月起超支",
@@ -1174,6 +1205,7 @@
  "{category}, usually {person}, about {amount}": "{category}，通常为{person}，约 {amount}",
  "{category}, {amount} less": "{category}，少 {amount}",
  "{category}, {amount} more": "{category}，多 {amount}",
+ "{code} is already in the list.": "{code} 已在列表中。",
  "{from} to {to}": "{from}至{to}",
  "{from} to {to}. That is {year} a year.": "从 {from} 变为 {to}，相当于每年 {year}。",
  "{from} – {to}": "{from} – {to}",
@@ -1188,6 +1220,7 @@
  "{name} goes up {amount}": "{name}将涨价 {amount}",
  "{name} is already a category": "{name}已是分类",
  "{name} is already a category. Merge this one into it instead.": "{name}已是分类。请改为将此分类合并到其中。",
+ "{name} is already in the household.": "{name}已是家庭成员。",
  "{name} is due on {date}": "{name}将于{date}到期",
  "{name} is encrypting Wally.": "{name}正在加密 Wally。",
  "{name} is turning off encryption.": "{name}正在关闭加密。",
@@ -1220,6 +1253,15 @@
  "{name}, {date}": "{name}，{date}",
  "{name}: {amount}": "{name}：{amount}",
  "{name}’s part": "{name}的份额",
+ "{name}’s {n} recurring rule becomes shared.": {
+  "other": "{name}的{n}条定期规则将改为共同承担。"
+ },
+ "{name}’s {n} recurring rule moves to {to}.": {
+  "other": "{name}的{n}条定期规则将转移给{to}。"
+ },
+ "{name}’s {n} transaction becomes shared.": {
+  "other": "{name}的{n}笔交易将改为共同承担。"
+ },
  "{name}’s {n} transaction moves to {to}.": {
   "other": "{name}的{n}笔交易将转移给{to}。"
  },
@@ -1310,9 +1352,6 @@
  },
  "{n} transaction for {name}": {
   "other": "{name}的{n}笔交易"
- },
- "{n} transaction has #{tag}. It becomes {name}’s.": {
-  "other": "{n}笔交易带有 #{tag}，将归{name}所有。"
  },
  "{n} transaction is tagged for more than one person, so it stays shared.": {
   "other": "{n}笔交易标记了不止一个人，因此仍为共同支出。"

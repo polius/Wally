@@ -4,7 +4,7 @@
    The layout and its sections are in dashboard/summary.js; this file wires the page. */
 import { state, t, esc, icon, rerank, TODAY, ym, monthName } from "../core.js";
 import { navigate, headActions } from "../shell.js";
-import { hideTip, empty } from "../ui.js";
+import { hideTip, empty, stepLabels } from "../ui.js";
 import { view, loadRange, setMode, setMonth, stepMonth, canStep, steps, rangeOf, goTx, openRange, MODES } from "./dashboard/range.js";
 import { summaryHtml, renderSummary, periodMenu, toggleCats } from "./dashboard/summary.js";
 
@@ -16,8 +16,8 @@ function header() {
   return '<header class="w-head s-head"><div class="s-titlew">' +
     '<button type="button" class="s-title" data-menu="period" aria-haspopup="menu" aria-expanded="false"><span id="s-title"></span>' + icon("down") + "</button>" +
     '<div class="w-menu s-pmenu" id="s-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' +
-    '<div class="s-steps" id="s-steps"><button type="button" class="s-stepb" data-step="-1" aria-label="' + esc(t("Previous")) + '">' + icon("left") + "</button>" +
-    '<button type="button" class="s-stepb" data-step="1" aria-label="' + esc(t("Next")) + '">' + icon("right") + "</button></div>" + headActions() + "</header>";
+    '<div class="s-steps w-steps" id="s-steps"><button type="button" class="s-stepb" data-step="-1">' + icon("left") + "</button>" +
+    '<button type="button" class="s-stepb" data-step="1">' + icon("right") + "</button></div>" + headActions() + "</header>";
 }
 function emptyHtml() {
   return '<header class="w-head s-head"><div class="s-titlew"><h3 class="s-title">' + t("Summary") + "</h3></div>" + headActions() + "</header>" +
@@ -42,9 +42,13 @@ function render() {
   const r = rangeOf();
   rerank(r.start, r.end, "all");
   $("s-title").innerHTML = titleOf(r);
+  // Every month, with and without its year, so ‹ › don't move as the name gets longer or shorter
+  // A month with its year, or any long name, is set smaller on phones
+  $("s-title").parentNode.classList.toggle("s-long", !!$("s-title").querySelector("span") || $("s-title").textContent.length > 12);
   $("s-title").parentNode.setAttribute("aria-label", t("Period: {range}", { range: $("s-title").textContent }));
   $("s-pmenu").innerHTML = periodMenu();
   $("s-steps").hidden = !steps();
+  stepLabels($("s-steps"), view.mode === "year");
   $("s-steps").querySelector('[data-step="-1"]').disabled = !canStep(-1);
   $("s-steps").querySelector('[data-step="1"]').disabled = !canStep(1);
   renderSummary(r);

@@ -50,6 +50,26 @@ export function gate(root, ready) {
   root.addEventListener("click", () => setTimeout(check2, 0));
   check2();
 }
+/* A name sheet: the action waits for a name it can take, and the footnote under the field says why it waits.
+   why(name) → "" when the name is fine, else the reason (shown in red when it's a clash). An empty field only
+   explains itself once it has been typed in: a new, empty field needs no complaint. */
+export function nameGate(root, id, why) {
+  const ok = root.querySelector("[data-dlg-ok]"), input = root.querySelector("#" + id), note = root.querySelector("#" + id + "-note");
+  const base = note ? note.innerHTML : "";
+  let typed = false;
+  const upd = () => {
+    const name = input.value.trim();
+    const reason = name ? why(name) : typed ? t("Type a name first") : "";
+    ok.disabled = !name || !!reason;
+    if (!note) return;
+    note.innerHTML = reason || base;
+    note.classList.toggle("w-glfbad", !!(name && reason));
+  };
+  input.addEventListener("input", () => { typed = true; upd(); });
+  upd();
+}
+/* The same name, whatever its capitals */
+export const sameName = (a, b) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
 const PHONE = matchMedia("(max-width:767px)");
 export function phone() { return PHONE.matches; }
 

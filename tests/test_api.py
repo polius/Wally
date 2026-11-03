@@ -278,10 +278,24 @@ def test_two_step_is_one_for_the_household(couple):
     client.post("/logout")
     assert login(client, alex).json()["code_needed"] is False
 
+def test_recovery_keys_of_both_sizes_are_read():
+    from api.services import kit
+    new = kit.new_key()
+    assert len(new.replace("-", "")) == 48 and kit.normalize(new.lower().replace("-", " ")) == new.replace("-", "")
+    # A kit made before 2.0 shipped: 52 characters, 31 random bytes and a check byte
+    import hashlib, secrets
+    body = secrets.token_bytes(31)
+    old = kit._base32(body + hashlib.sha256(body).digest()[:1], 52)
+    assert kit.normalize("-".join(old[i:i + 4] for i in range(0, 52, 4))) == old
+    # One character off fails the check byte; a length in between is never a key
+    assert kit.normalize(old[:-1] + ("0" if old[-1] != "0" else "1")) is None
+    assert kit.normalize(new[:-5]) is None
+
 def test_the_emergency_kit_gets_in_without_the_password_or_two_step(couple):
     client, alex, ana = couple
     kit = turn_on_signin(client, alex, ana)
-    assert len(kit) == 64 and kit.count("-") == 12
+    # Twelve groups of four: three even rows on the kit
+    assert len(kit) == 59 and kit.count("-") == 11
     login(client, alex)
     two_step(client)
     other = TestClient(client.app)
@@ -489,7 +503,7 @@ def test_category_colors_are_assigned_once_and_kept(couple):
     assert client.get("/categories/colors").json()["Food"] == 2
     # Settings can change it, and a rename keeps it
     assert client.put("/categories/Food", json={"color": 6}).json()["color"] == 6
-    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "color": 6}
+    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "color": 6, "icon": None}
     assert client.get("/categories/colors").json()["Eating out"] == 6
     assert client.put("/categories/Rent", json={"color": 12}).status_code == 422
     # Past eight colors, the rest are grey
@@ -497,6 +511,28 @@ def test_category_colors_are_assigned_once_and_kept(couple):
         expense(client, category=f"Extra {i}", amount="1.00")
     assert sorted(client.get("/categories/colors").json().values(), key=lambda v: v or 0).count(9) >= 1
     assert "Food" not in client.get("/categories").json()
+
+def test_category_icon_is_picked_kept_and_given_back(couple):
+    client, *_ = couple
+    expense(client, category="Snacks")
+    # None picked: the app picks one from the name
+    assert client.get("/categories/icons").json() == {}
+    assert client.put("/categories/Snacks", json={"icon": "cake"}).json()["icon"] == "cake"
+    assert client.get("/categories/icons").json() == {"Snacks": "cake"}
+    # Only an icon's id
+    assert client.put("/categories/Snacks", json={"icon": "<svg>"}).status_code == 422
+    assert client.put("/categories/Snacks", json={"icon": "l-square-arrow-out-up-right"}).status_code == 200
+    assert client.put("/categories/Snacks", json={"icon": "cake"}).status_code == 200
+    # A rename keeps it, a color change leaves it alone
+    assert client.put("/categories/Snacks", json={"name": "Treats", "color": 4}).json() == {"name": "Treats", "color": 4, "icon": "cake"}
+    assert client.get("/categories/icons").json() == {"Treats": "cake"}
+    # "" goes back to the name's icon
+    assert client.put("/categories/Treats", json={"icon": ""}).json()["icon"] is None
+    assert client.get("/categories/icons").json() == {}
+    # A new category can come with one, and deleting it takes the icon too
+    assert client.post("/categories", json={"name": "Vet", "icon": "dog"}).json() == {"name": "Vet", "color": None, "icon": "dog"}
+    assert client.delete("/categories/Vet").status_code == 200
+    assert client.get("/categories/icons").json() == {}
 
 def test_rename_tag_into_existing_merges(couple):
     client, *_ = couple

@@ -89,8 +89,8 @@ try {
 
   const get = (side, path) => (side === "P" ? p("GET", path) : local("GET", path));
   async function state(side) {
-    const [led, rules, cats, colors, tags, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/colors", "/tags", "/rules"].map((x) => get(side, x)));
-    return { led: led.data, rules: rules.data, cats: cats.data, colors: colors.data, tags: tags.data, irules: irules.data };
+    const [led, rules, cats, colors, icons, tags, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/colors", "/categories/icons", "/tags", "/rules"].map((x) => get(side, x)));
+    return { led: led.data, rules: rules.data, cats: cats.data, colors: colors.data, icons: icons.data, tags: tags.data, irules: irules.data };
   }
   /* New transactions and rules since the last step get labels from what they are, the same on both sides */
   function labelNew(side, st, op) {
@@ -118,7 +118,8 @@ try {
     const rules = st.rules.map((r) => ({ ...r, id: name(side, r.id), amount: Math.round(Number(r.amount) * 100), created_date: undefined })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const irules = st.irules.map((r) => ({ match: r.match, category: r.category, person_id: r.person_id, set_person: r.set_person, uses: r.uses, learned: r.learned, position: r.position }));
     const colors = Object.fromEntries(Object.entries(st.colors).sort());
-    return JSON.stringify({ rows, rules, cats: st.cats, colors, tags: st.tags, irules });
+    const icons = Object.fromEntries(Object.entries(st.icons).sort());
+    return JSON.stringify({ rows, rules, cats: st.cats, colors, icons, tags: st.tags, irules });
   }
   const sortKeys = (v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : Array.isArray(v) ? v.map(sortKeys) : v);
   function normBody(side, body) {
@@ -219,7 +220,12 @@ try {
   await both("", "POST", "/categories", { name: "Kids", color: 3 });
   await both("", "POST", "/categories", { name: "Kids" });
   await both("", "PUT", "/categories/Kids", { color: 5 });
+  await both("", "PUT", "/categories/Kids", { icon: "Not an icon" }, { anyMessage: true });
+  await both("", "PUT", "/categories/Food", { icon: "pizza" });
   await both("", "PUT", "/categories/Food", { name: "Eating out" });
+  await both("", "GET", "/categories/icons");
+  await both("", "PUT", "/categories/Eating%20out", { icon: "" });
+  await both("", "PUT", "/categories/Eating%20out", { icon: "coffee", color: 2 });
   await both("", "PUT", "/categories/Eating%20out", { name: "Groceries" });
   await both("", "GET", "/categories/Eating%20out/usage");
   await both("", "DELETE", "/categories/Eating%20out", undefined, { anyMessage: false });

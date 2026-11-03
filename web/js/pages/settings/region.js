@@ -1,7 +1,7 @@
 /* Settings › Language & Region: the language, the household's currency and where its symbol goes, the first
    day of the week and the time zone. Currency, week and time zone open their own lists:
    /settings/region/currency, /week, /timezone (and /language on a phone, where it is a list too). */
-import { t, esc, state, f, num, dlabY, TODAY, GET, POST, PUT, DEL, LANGUAGES, LANG, icon } from "../../core.js";
+import { t, esc, state, f, num, dlabY, TODAY, GET, POST, PUT, DEL, LANGUAGES, LANG, icon, symbol } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { gl, gr, addRow, check, minus, fieldRow, gate, phone, val, paint, segK as seg } from "./common.js";
@@ -155,28 +155,47 @@ async function pickCurrency(name) {
     toast(t("Amounts are shown in {name} now", { name }));
   } catch (e) { errorToast(e); }
 }
+/* Edit a currency, or add one that isn't listed. A code already in the list is said under the fields, and the action waits. */
 function editCurrency(c) {
   const inUse = c && c.name === state.currency.selected;
+  const all = state.currency.currencies || [];
+  const taken = (code) => !!code && all.some((x) => x.name === code && (!c || x.name !== c.name));
+  // What an amount looks like with the symbol typed
+  const looks = (sym) => f(1234.56).replace(symbol(), sym);
+  const base = c ? (inUse ? t("The symbol shows next to every amount. In use, so it can’t be deleted.") : t("The symbol shows next to every amount.")) : t("The symbol shows next to every amount.");
+  const note = (r) => {
+    const code = val(r, "cu-name").toUpperCase(), sym = val(r, "cu-sym");
+    if (taken(code)) return t("{code} is already in the list.", { code });
+    if (!c && sym) return t("Amounts will look like {amount}.", { amount: looks(sym) });
+    return base;
+  };
+  const name = c ? longName(c.name) || c.name : "";
   openDialog({
     kind: "sheet",
-    title: c ? esc(longName(c.name) || c.name) : t("New Currency"),
+    title: c ? esc(name.charAt(0).toLocaleUpperCase(LANG) + name.slice(1)) : t("New Currency"),
+    top: c ? "" : '<span class="w-secico">' + icon("globe") + '</span><b class="w-shtitle w-sht20">' + t("A currency that isn’t listed") + '</b><p class="w-mw360">' + t("Wally shows every amount in one currency and never converts.") + "</p>",
     body: c
       ? '<div class="w-gl"><label class="w-gr"><span class="k">' + t("Code") + '</span><input id="cu-name" class="w-end" value="' + esc(c.name) + '" maxlength="8" autocapitalize="characters" autocomplete="off"></label><label class="w-gr"><span class="k">' + t("Symbol") + '</span><input id="cu-sym" class="w-end" value="' + esc(c.symbol) + '" maxlength="6" autocomplete="off"></label></div>' +
-        '<p class="w-glf">' + (inUse ? t("The symbol shows next to every amount. In use, so it can’t be deleted.") : t("The symbol shows next to every amount.")) + "</p>"
+        '<p class="w-glf" id="cu-note" aria-live="polite">' + base + "</p>"
       : '<div class="w-gl"><label class="w-gr"><input id="cu-name" placeholder="' + esc(t("Code, like SEK")) + '" aria-label="' + esc(t("Code")) + '" maxlength="8" autocapitalize="characters" autocomplete="off" autofocus></label><label class="w-gr"><input id="cu-sym" placeholder="' + esc(t("Symbol, like kr")) + '" aria-label="' + esc(t("Symbol")) + '" maxlength="6" autocomplete="off"></label></div>' +
-        '<p class="w-glf">' + t("Wally adds it to the list. It never converts amounts.") + "</p>",
+        '<p class="w-glf" id="cu-note" aria-live="polite">' + base + "</p>",
     ok: c ? t("Save") : t("Add"),
     onOpen: (root) => {
-      gate(root, (r) => !!val(r, "cu-name") && !!val(r, "cu-sym"));
+      root.querySelector("#cu-note").classList.add("w-cunote");
+      root.addEventListener("input", () => { const n = root.querySelector("#cu-note"); n.textContent = note(root); n.classList.toggle("bad", taken(val(root, "cu-name").toUpperCase())); });
+      gate(root, (r) => {
+        const code = val(r, "cu-name").toUpperCase(), sym = val(r, "cu-sym");
+        return !!code && !!sym && !taken(code);
+      });
       // Editing one that exists: the fields wait for a tap (no keyboard pops up); Return saves
       if (c) queueMicrotask(() => root.querySelector("[data-dlg-ok]").focus());
     },
     onOk: async (root) => {
       const name = val(root, "cu-name").toUpperCase();
-      const symbol = val(root, "cu-sym");
-      if (!name || !symbol) throw new Error(t("Type a code and a symbol."));
-      if (c) await PUT("/currency/" + encodeURIComponent(c.name) + "/update", { name, symbol });
-      else await POST("/currency", { name, symbol });
+      const sym = val(root, "cu-sym");
+      if (!name || !sym) throw new Error(t("Type a code and a symbol."));
+      if (c) await PUT("/currency/" + encodeURIComponent(c.name) + "/update", { name, symbol: sym });
+      else await POST("/currency", { name, symbol: sym });
       await reloadCurrency();
       refresh({ currency: true });
       toast(c ? t("Saved {name}", { name }) : t("Added {name}", { name }));

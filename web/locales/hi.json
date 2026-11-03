@@ -1,16 +1,15 @@
 {
- "#{name} already exists. The two are merged.": "#{name} पहले से मौजूद है। दोनों को मिला दिया गया है।",
  "#{name} is already a tag": "#{name} पहले से एक टैग है",
+ "#{name} is already a tag. Merge this one into it instead.": "#{name} पहले से एक टैग है। इसके बजाय इसे उसमें मिला दें।",
  "+ tag": "+ टैग",
  "+ tag, like #holiday": "+ टैग, जैसे #छुट्टी",
- "1 · Scan it with an authenticator app": "1 · इसे ऑथेंटिकेटर ऐप से स्कैन करें",
- "2 · Type the code it shows": "2 · ऐप में दिखा कोड डालें",
  "6-digit code": "6 अंकों का कोड",
  "A bit less than usual ({amount}).": "आम तौर से थोड़ा कम ({amount})।",
  "A bit more than usual ({amount}).": "आम तौर से थोड़ा ज़्यादा ({amount})।",
  "A child, a flatmate, anyone who shares costs. Each person gets their own view.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। हर व्यक्ति को अपना अलग व्यू मिलता है।",
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। वे घर के पासवर्ड से साइन इन करते हैं।",
  "A code from an authenticator app, the same on everyone’s phone.": "ऑथेंटिकेटर ऐप का कोड, जो सबके फ़ोन पर एक ही होता है।",
+ "A currency that isn’t listed": "ऐसी मुद्रा जो सूची में नहीं है",
  "A file left from turning encryption on.": "एन्क्रिप्शन चालू करते समय बची एक फ़ाइल।",
  "A home or lock screen shortcut, with the free app.": "मुफ़्त ऐप से होम या लॉक स्क्रीन पर एक शॉर्टकट।",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "कुंजी से कोई स्क्रिप्ट, स्प्रेडशीट या फ़ोन शॉर्टकट लेन-देन जोड़ और पढ़ सकता है। यह बनते समय सिर्फ़ एक बार दिखती है।",
@@ -20,6 +19,7 @@
  "A weekend day costs": "वीकेंड के एक दिन का खर्च",
  "A yearly bill: {amount}.": "सालाना बिल: {amount}।",
  "API docs": "API दस्तावेज़",
+ "API key": "API कुंजी",
  "API keys": "API कुंजियाँ",
  "API keys can’t be listed": "API कुंजियों की सूची नहीं दिखाई जा सकती",
  "About the same as {month}": "{month} जितना ही",
@@ -36,7 +36,6 @@
  "Add a part": "हिस्सा जोड़ें",
  "Add a person": "व्यक्ति जोड़ें",
  "Add a phone": "फ़ोन जोड़ें",
- "Add a phone?": "फ़ोन जोड़ें?",
  "Add a repeating expense": "दोहराने वाला खर्च जोड़ें",
  "Add a tag": "टैग जोड़ें",
  "Add everyone who spends from it, starting with you. Each person gets their own view, and costs you share are split between you.": "खुद से शुरू करके, हर उस व्यक्ति को जोड़ें जो इसमें से खर्च करता है। हर व्यक्ति को अपना व्यू मिलता है, और साझा खर्च आपस में बँट जाते हैं।",
@@ -83,6 +82,8 @@
  "All": "सभी",
  "All categories are hidden. Click one in the legend to show it.": "सभी श्रेणियाँ छिपी हैं। दिखाने के लिए लेजेंड में किसी एक पर क्लिक करें।",
  "All currencies": "सभी मुद्राएँ",
+ "All icons": "सभी आइकन",
+ "All icons need a connection. Try again in a moment.": "सभी आइकन देखने के लिए कनेक्शन चाहिए। थोड़ी देर में फिर से कोशिश करें।",
  "All months": "सभी महीने",
  "All shared": "सभी साझा",
  "All time": "अब तक",
@@ -97,6 +98,7 @@
  "Amounts are shown in {name} now": "राशियाँ अब {name} में दिखाई जा रही हैं",
  "Amounts hidden": "राशियाँ छिपाई गईं",
  "Amounts shown": "राशियाँ दिखाई गईं",
+ "Amounts will look like {amount}.": "राशियाँ {amount} जैसी दिखेंगी।",
  "And {n} more": {
   "one": "और {n}",
   "other": "और {n}"
@@ -105,9 +107,10 @@
  "Android: HTTP Shortcuts": "Android: HTTP Shortcuts",
  "Any": "कोई भी",
  "Any bank export works, and files from Wally v1 and 2.0. Nothing is written until you confirm the preview.": "किसी भी बैंक का एक्सपोर्ट चलेगा, और Wally v1 व 2.0 की फ़ाइलें भी। प्रीव्यू की पुष्टि करने तक कुछ भी सेव नहीं होता।",
- "Anyone who can open this address will see and change your finances. The password and two-step are removed.": "जो भी यह पता खोल सकता है, वह आपका हिसाब देख और बदल सकेगा। पासवर्ड और दो-चरणीय साइन-इन हटा दिए जाएँगे।",
+ "Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed.": "जो भी यह पता खोल सकता है, वह आपके पैसों का हिसाब देख और बदल सकेगा। पासवर्ड और आपातकालीन किट हटा दिए जाएँगे।",
+ "Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.": "जो भी यह पता खोल सकता है, वह आपके पैसों का हिसाब देख और बदल सकेगा। पासवर्ड, दो-चरणीय साइन-इन और आपातकालीन किट हटा दिए जाएँगे।",
+ "Anyone with this key can open your Wally, even with two-step sign-in on.": "जिसके पास यह कुंजी है, वह आपका Wally खोल सकता है, दो-चरणीय साइन-इन चालू होने पर भी।",
  "Anyone with this key can open your Wally, even with two-step sign-in on. Making a new kit in Settings › Sign-in & Privacy stops this one working.": "जिसके पास यह कुंजी है, वह आपका Wally खोल सकता है, दो-चरणीय साइन-इन चालू होने पर भी। सेटिंग्स › साइन इन और गोपनीयता में नई किट बनाने पर यह काम करना बंद कर देगी।",
- "Anything using this key stops working. This can’t be undone.": "इस कुंजी का इस्तेमाल करने वाली हर चीज़ काम करना बंद कर देगी। इसे पहले जैसा नहीं किया जा सकता।",
  "Appearance": "दिखावट",
  "Ask for a password": "पासवर्ड माँगें",
  "Ask {names}: everyone in the household signs in with the same password.": "{names} से पूछें: घर में सभी एक ही पासवर्ड से साइन इन करते हैं।",
@@ -116,8 +119,7 @@
  "Assign {amount} more": "{amount} और बाँटें",
  "At least 8 characters. It replaces the old one for everyone: every other browser asks for the new one.": "कम से कम 8 अक्षर। यह सबके लिए पुराने पासवर्ड की जगह लेता है: बाकी हर ब्राउज़र नया पासवर्ड माँगेगा।",
  "At least 8 characters. Without a password, anyone who can reach this server can open Wally.": "कम से कम 8 अक्षर। पासवर्ड के बिना, जो भी इस सर्वर तक पहुँच सकता है, वह Wally खोल सकता है।",
- "At least {n} characters.": "कम से कम {n} अक्षर।",
- "At least {n} characters. Every other browser is signed out: tell everyone the new password.": "कम से कम {n} अक्षर। बाकी सभी ब्राउज़र से साइन आउट हो जाएगा: सबको नया पासवर्ड बता दें।",
+ "At least {n} characters": "कम से कम {n} अक्षर",
  "Auto": "ऑटो",
  "Average day": "औसत दिन",
  "Average {amount}": "औसत {amount}",
@@ -135,6 +137,8 @@
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "बिल और वेतन अपनी तय तारीख पर जुड़ते हैं, और कीमत बढ़ने पर Wally ध्यान देता है।",
  "Blue": "नीला",
  "Blurs every figure, for sharing your screen. {key} toggles it.": "स्क्रीन शेयर करते समय हर आँकड़ा धुंधला कर देता है। {key} से चालू/बंद करें।",
+ "Both new passwords match": "दोनों नए पासवर्ड मेल खाते हैं",
+ "Both passwords match": "दोनों पासवर्ड मेल खाते हैं",
  "Bring your data": "अपना डेटा लाएँ",
  "Browsers": "ब्राउज़र",
  "Browsers only encrypt on secure pages: open Wally at its https:// address.": "ब्राउज़र सिर्फ़ सुरक्षित पेजों पर एन्क्रिप्ट करते हैं: Wally को उसके https:// पते पर खोलें।",
@@ -225,7 +229,6 @@
  "Delete #{name}": "#{name} हटाएँ",
  "Delete #{name}?": "#{name} हटाएँ?",
  "Delete Key": "कुंजी हटाएँ",
- "Delete Tag": "टैग हटाएँ",
  "Delete bill": "बिल हटाएँ",
  "Delete bill and its {n} transaction": {
   "one": "बिल और उसका {n} लेन-देन हटाएँ",
@@ -325,6 +328,7 @@
  "Enter an amount": "राशि डालें",
  "Enter one of your recovery codes": "अपना कोई एक रिकवरी कोड डालें",
  "Enter the 6-digit code from your authenticator app": "अपने ऑथेंटिकेटर ऐप से 6 अंकों का कोड डालें",
+ "Enter the 6-digit code it shows": "ऐप में दिखा 6 अंकों का कोड डालें",
  "Enter the code first.": "पहले कोड डालें।",
  "Enter the household password": "घर का पासवर्ड डालें",
  "Enter what it was for": "बताएँ कि यह किसलिए था",
@@ -337,7 +341,7 @@
  "Every category was close to usual.": "हर श्रेणी सामान्य के आसपास रही।",
  "Every day": "हर दिन",
  "Every month": "हर महीने",
- "Every transaction with #{tag} becomes that person’s own, and stops being shared.": "#{tag} वाला हर लेन-देन उस व्यक्ति का अपना हो जाएगा, और साझा नहीं रहेगा।",
+ "Every other browser is signed out: tell everyone the new password.": "बाकी सभी ब्राउज़र साइन आउट हो जाते हैं: सबको नया पासवर्ड बता दें।",
  "Every week": "हर हफ़्ते",
  "Every year": "हर साल",
  "Every {n} day": {
@@ -361,7 +365,6 @@
  "Everyday spending: {amount} by {date}": "रोज़मर्रा का खर्च: {date} तक {amount}",
  "Everyone": "सभी",
  "Everyone in the household sees the new name.": "परिवार में सबको नया नाम दिखेगा।",
- "Everyone in the household signs in with this password. You stay signed in on this browser.": "घर में सभी इस पासवर्ड से साइन इन करते हैं। आप इस ब्राउज़र पर साइन इन रहेंगे।",
  "Everyone in the household uses the same password.": "परिवार में सब एक ही पासवर्ड इस्तेमाल करते हैं।",
  "Everyone uses the same password.": "सभी एक ही पासवर्ड इस्तेमाल करते हैं।",
  "Everything already in Wally starts out shared by the household.": "Wally में पहले से मौजूद सब कुछ शुरू में पूरे परिवार का साझा रहता है।",
@@ -413,7 +416,8 @@
  "I saved it somewhere safe": "मैंने इसे सुरक्षित जगह सेव कर लिया है",
  "I saved the Emergency Kit somewhere safe": "मैंने आपातकालीन किट किसी सुरक्षित जगह सेव कर ली है",
  "Icon": "आइकन",
- "If no phone is at hand, each code signs someone in once. Keep them with the household’s papers. They replace any earlier codes.": "फ़ोन पास न हो तो हर कोड से कोई एक बार साइन इन कर सकता है। इन्हें घर के कागज़ों के साथ रखें। ये पहले के सभी कोड की जगह ले लेते हैं।",
+ "Icon for {name}": "{name} का आइकन",
+ "If no phone is at hand, each code signs someone in once.": "फ़ोन पास न हो तो हर कोड से कोई एक बार साइन इन कर सकता है।",
  "If you forget the password": "अगर आप पासवर्ड भूल जाएँ",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally can’t show it again.": "अगर आप पासवर्ड भूल जाएँ या दो-चरणीय कोड न मिल पाए, तो यह रिकवरी कुंजी आपको वापस अंदर ले आती है। Wally इसे दोबारा नहीं दिखा सकता।",
  "If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.": "अगर आप पासवर्ड भूल जाएँ या दो-चरणीय कोड न मिल पाए, तो यह रिकवरी कुंजी आपको वापस अंदर ले आती है। Wally इसकी कोई पढ़ने लायक कॉपी नहीं रखता, इसलिए इसे दोबारा नहीं दिखा सकता।",
@@ -445,6 +449,9 @@
  "Income and spending by month in {range}": "{range} में महीने के हिसाब से आय और खर्च",
  "Income vs spending": "आय बनाम खर्च",
  "It": "यह",
+ "It can read what’s in Wally and change it, like adding transactions.": "यह Wally में मौजूद चीज़ें पढ़ सकती है और उन्हें बदल सकती है, जैसे लेन-देन जोड़ना।",
+ "It can read what’s in Wally, but not change anything.": "यह Wally में मौजूद चीज़ें पढ़ सकती है, पर कुछ भी बदल नहीं सकती।",
+ "It has never been used. This can’t be undone.": "इसका कभी इस्तेमाल नहीं हुआ। इसे पूर्ववत नहीं किया जा सकता।",
  "It is removed from {n} transaction. The transaction stays.": {
   "one": "इसे {n} लेन-देन से हटा दिया जाएगा। लेन-देन बना रहेगा।",
   "other": "इसे {n} लेन-देन से हटा दिया जाएगा। लेन-देन बने रहेंगे।"
@@ -453,27 +460,33 @@
   "one": "यह पहले शुरू हो चुका है, इसलिए आज तक का {n} और भी जोड़ा जाएगा।",
   "other": "यह पहले शुरू हो चुका है, इसलिए आज तक के {n} और भी जोड़े जाएँगे।"
  },
- "Its {n} transaction and its recurring rules move there, and {name} goes away.": {
-  "one": "इसका {n} लेन-देन और इसके आवर्ती नियम वहाँ चले जाएँगे, और {name} हट जाएगी।",
-  "other": "इसके {n} लेन-देन और आवर्ती नियम वहाँ चले जाएँगे, और {name} हट जाएगी।"
+ "It was last used {when}. Anything using it stops working, and this can’t be undone.": "आखिरी इस्तेमाल {when}। जो कुछ भी इसका इस्तेमाल करता है, वह काम करना बंद कर देगा, और इसे पूर्ववत नहीं किया जा सकता।",
+ "Its {n} recurring rule moves to {to}.": {
+  "one": "इसका {n} आवर्ती नियम {to} में चला जाएगा।",
+  "other": "इसके {n} आवर्ती नियम {to} में चले जाएँगे।"
  },
- "Its {n} transaction gets the tag you pick, and #{name} goes away.": {
-  "one": "इसके {n} लेन-देन पर आपका चुना टैग लग जाएगा, और #{name} हट जाएगा।",
-  "other": "इसके {n} लेन-देन पर आपका चुना टैग लग जाएगा, और #{name} हट जाएगा।"
+ "Its {n} transaction becomes {name}’s own, no longer shared.": {
+  "one": "इसका {n} लेन-देन अब साझा नहीं रहेगा, {name} का अपना हो जाएगा।",
+  "other": "इसके {n} लेन-देन अब साझा नहीं रहेंगे, {name} के अपने हो जाएँगे।"
  },
- "Its {n} transaction moves there, and {name} goes away.": {
-  "one": "इसका {n} लेन-देन वहाँ चला जाएगा, और {name} हट जाएगी।",
-  "other": "इसके {n} लेन-देन वहाँ चले जाएँगे, और {name} हट जाएगी।"
+ "Its {n} transaction gets #{to} instead.": {
+  "one": "इसके {n} लेन-देन पर अब #{to} लगेगा।",
+  "other": "इसके {n} लेन-देन पर अब #{to} लगेगा।"
  },
- "Its {n} transaction moves to another category.": {
-  "one": "इसका {n} लेन-देन दूसरी श्रेणी में चला जाएगा।",
-  "other": "इसके {n} लेन-देन दूसरी श्रेणी में चले जाएँगे।"
+ "Its {n} transaction gets the new name.": {
+  "one": "इसके {n} लेन-देन को नया नाम मिलेगा।",
+  "other": "इसके {n} लेन-देन को नया नाम मिलेगा।"
  },
- "It’s on the household’s Emergency Kit: 52 letters and digits in groups of four. It works without two-step sign-in too.": "यह परिवार की आपातकालीन किट पर है: चार-चार के समूहों में 52 अक्षर और अंक। यह दो-चरणीय साइन-इन के बिना भी काम करती है।",
+ "Its {n} transaction moves to {to}.": {
+  "one": "इसका {n} लेन-देन {to} में चला जाएगा।",
+  "other": "इसके {n} लेन-देन {to} में चले जाएँगे।"
+ },
+ "It’s on the household’s Emergency Kit: letters and digits in groups of four. It works without two-step sign-in too.": "यह परिवार की आपातकालीन किट पर है: चार-चार के समूहों में अक्षर और अंक। यह दो-चरणीय साइन-इन के बिना भी काम करती है।",
  "It’s shown only this once. Put it where the tool that uses it can read it.": "यह सिर्फ़ इसी बार दिखेगी। इसे वहाँ रखें जहाँ इसे इस्तेमाल करने वाला टूल पढ़ सके।",
  "Keep Editing": "बदलाव जारी रखें",
  "Keep it with your passport: it opens Wally if the password is forgotten.": "इसे अपने पासपोर्ट के साथ रखें: पासवर्ड भूल जाने पर यह Wally खोलती है।",
  "Keep once": "एक बार रखें",
+ "Keep them with the household’s papers. Wally can’t show them again, and any earlier codes stop working.": "इन्हें घर के ज़रूरी कागज़ों के साथ रखें। Wally इन्हें दोबारा नहीं दिखा सकता, और पहले के सभी कोड काम करना बंद कर देंगे।",
  "Keep track of what your household spends and earns. Your data stays on this server.": "आपका परिवार क्या खर्च करता है और क्या कमाता है, इसका हिसाब रखें। आपका डेटा इसी सर्वर पर रहता है।",
  "Keep {n} once": {
   "one": "{n} को एक बार रखें",
@@ -506,6 +519,7 @@
  "Line {n}: {why}": "पंक्ति {n}: {why}",
  "List": "सूची",
  "Living alone? Just add yourself.": "अकेले रहते हैं? बस खुद को जोड़ें।",
+ "Loading…": "लोड हो रहा है…",
  "Lock when Wally closes": "Wally बंद होने पर लॉक करें",
  "Lost it too?": "वह भी खो गया?",
  "Lost the Emergency Kit too?": "आपातकालीन किट भी खो गई?",
@@ -513,6 +527,7 @@
  "MM/DD/YYYY": "MM/DD/YYYY",
  "Made {date}": "{date} को बनाया गया",
  "Made {date}.": "{date} को बनाया गया।",
+ "Make": "बनाएँ",
  "Make #{tag} a Person": "#{tag} को व्यक्ति बनाएँ",
  "Make New Codes": "नए कोड बनाएँ",
  "Make New Kit": "नई किट बनाएँ",
@@ -584,6 +599,7 @@
  "Next: {dates}": "अगली: {dates}",
  "No bills": "कोई बिल नहीं",
  "No connection. {name} is kept on this device and sent when Wally is back.": "कनेक्शन नहीं है। {name} इस डिवाइस पर रखा गया है और Wally के वापस आने पर भेज दिया जाएगा।",
+ "No icons match “{q}”.": "“{q}” से मेल खाता कोई आइकन नहीं।",
  "No income in the last three months, so evenly": "पिछले तीन महीनों में कोई आय नहीं, इसलिए बराबर",
  "No matches": "कुछ नहीं मिला",
  "No month to review yet": "अभी समीक्षा के लिए कोई महीना नहीं",
@@ -602,6 +618,7 @@
  "No tag": "कोई टैग नहीं",
  "No tags": "कोई टैग नहीं",
  "No tags yet": "अभी कोई टैग नहीं",
+ "No transactions have #{tag}.": "किसी लेन-देन पर #{tag} नहीं है।",
  "No transactions have this tag.": "किसी लेन-देन पर यह टैग नहीं है।",
  "No transactions match “{q}”": "“{q}” से कोई लेन-देन मेल नहीं खाता",
  "No transactions use it.": "किसी लेन-देन में इसका इस्तेमाल नहीं हुआ।",
@@ -729,7 +746,6 @@
   "one": "{n} पंक्ति का प्रीव्यू देखें",
   "other": "{n} पंक्तियों का प्रीव्यू देखें"
  },
- "Previous": "पिछला",
  "Previous month": "पिछला महीना",
  "Previous period": "पिछली अवधि",
  "Previous year": "पिछला साल",
@@ -744,7 +760,6 @@
  "Reading everything back to compare…": "मिलान के लिए सब कुछ फिर से पढ़ा जा रहा है…",
  "Received": "मिला",
  "Recent": "हाल के",
- "Recovery Codes": "रिकवरी कोड",
  "Recovery code": "रिकवरी कोड",
  "Recovery codes": "रिकवरी कोड",
  "Recovery key": "रिकवरी कुंजी",
@@ -787,6 +802,7 @@
  "Save": "सेव करें",
  "Save password": "पासवर्ड सेव करें",
  "Save the household’s Emergency Kit": "घर की आपातकालीन किट सेव करें",
+ "Save the recovery codes": "रिकवरी कोड सेव करें",
  "Saved {name}": "{name} सेव हो गया",
  "Saved {name} and the {n} transaction it made": {
   "one": "{name} और उससे बना {n} लेन-देन सेव हो गया",
@@ -797,16 +813,19 @@
  "Saved {name}. The change starts {date}.": "{name} सेव हो गया। बदलाव {date} से लागू होगा।",
  "Saved. It is still waiting to be sent.": "सेव हो गया। अभी भेजा जाना बाकी है।",
  "Say what the key is for first": "पहले बताएँ कि यह कुंजी किसलिए है",
+ "Scan this code with an authenticator app": "इस कोड को ऑथेंटिकेटर ऐप से स्कैन करें",
  "Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.": "इसे नए फ़ोन पर ऑथेंटिकेटर ऐप से स्कैन करें। यह वही कोड दिखाएगा जो बाकी सबके फ़ोन पर दिखते हैं।",
  "Search": "खोजें",
  "Search currencies": "मुद्राएँ खोजें",
  "Search every month": "सभी महीनों में खोजें",
+ "Search icons": "आइकन खोजें",
  "Search in": "कहाँ खोजें",
  "Search looks in names, categories, tags and amounts. Clear the filters to search everything.": "खोज नाम, श्रेणी, टैग और राशि में होती है। हर जगह खोजने के लिए फ़िल्टर हटाएँ।",
  "Search time zones": "टाइम ज़ोन खोजें",
  "Search transactions": "लेन-देन खोजें",
  "Search transactions for “{q}”": "लेन-देन में “{q}” खोजें",
  "Search {n} currencies": "{n} मुद्राएँ खोजें",
+ "Search {n} icons": "{n} आइकन में खोजें",
  "Search, jump, or type “12 coffee” to add": "खोजें, सीधे जाएँ, या जोड़ने के लिए “12 चाय” लिखें",
  "Security": "सुरक्षा",
  "See all": "सब देखें",
@@ -842,12 +861,18 @@
  "Show money for": "किसका पैसा दिखाएँ",
  "Show password": "पासवर्ड दिखाएँ",
  "Show rows": "पंक्तियाँ दिखाएँ",
+ "Show the two-step code?": "दो-चरणीय कोड दिखाएँ?",
  "Show {n} more": "{n} और दिखाएँ",
  "Showing": "दिखाया जा रहा है",
+ "Sign Out": "साइन आउट करें",
  "Sign in": "साइन इन करें",
  "Sign out": "साइन आउट करें",
  "Sign out of other browsers": "दूसरे ब्राउज़र से साइन आउट करें",
  "Sign out of this browser": "इस ब्राउज़र से साइन आउट करें",
+ "Sign out of {n} other browser?": {
+  "one": "{n} दूसरे ब्राउज़र से साइन आउट करें?",
+  "other": "{n} दूसरे ब्राउज़रों से साइन आउट करें?"
+ },
  "Sign-in": "साइन इन",
  "Sign-in & Privacy": "साइन इन और गोपनीयता",
  "Sign-in is off": "साइन इन बंद है",
@@ -886,6 +911,7 @@
  "Starts": "शुरुआत",
  "Step {n} of {total}": "चरण {n} / {total}",
  "Still to come": "आना बाकी",
+ "Suggested": "सुझाए गए",
  "Summary": "सारांश",
  "Sunday": "रविवार",
  "Switch person": "व्यक्ति बदलें",
@@ -912,6 +938,7 @@
  "The first month": "पहला महीना",
  "The household": "परिवार",
  "The icon is picked from the name.": "आइकन नाम से चुना जाता है।",
+ "The icon is picked from the name. You can change it later.": "आइकन नाम से चुना जाता है। आप इसे बाद में बदल सकते हैं।",
  "The last date must be after {date}.": "आखिरी तारीख {date} के बाद की होनी चाहिए।",
  "The new one again": "नया पासवर्ड दोबारा",
  "The old codes stop working. You see the new ones once.": "पुराने कोड काम करना बंद कर देंगे। नए कोड सिर्फ़ एक बार दिखेंगे।",
@@ -919,7 +946,6 @@
  "The others owe {payer} {amount} for this.": "इसके लिए बाकी लोगों को {payer} को {amount} देने हैं।",
  "The password alone will open Wally again for everyone, and the recovery codes stop working.": "अब सबके लिए सिर्फ़ पासवर्ड से Wally खुल जाएगा, और रिकवरी कोड काम करना बंद कर देंगे।",
  "The passwords don’t match.": "पासवर्ड मेल नहीं खाते।",
- "The request": "अनुरोध",
  "The same again": "फिर से वही डालें",
  "The same as {what}": "{what} जितना ही",
  "The second best month of the last {n}.": "पिछले {n} महीनों में दूसरा सबसे अच्छा महीना।",
@@ -937,6 +963,10 @@
   "one": "सर्वर पर {n} बैकअप बिना एन्क्रिप्शन के है, इसलिए उसे हटाया जाएगा:",
   "other": "सर्वर पर {n} बैकअप बिना एन्क्रिप्शन के हैं, इसलिए उन्हें हटाया जाएगा:"
  },
+ "The {n} code left stops working. You see the new ones once.": {
+  "one": "बचा हुआ {n} कोड काम करना बंद कर देगा। नए कोड आपको सिर्फ़ एक बार दिखेंगे।",
+  "other": "बचे हुए {n} कोड काम करना बंद कर देंगे। नए कोड आपको सिर्फ़ एक बार दिखेंगे।"
+ },
  "The {n} it already made changes too.": {
   "one": "इससे पहले से बना {n} भी बदल जाएगा।",
   "other": "इससे पहले से बने {n} भी बदल जाएँगे।"
@@ -951,13 +981,15 @@
  },
  "Their part of shared costs goes to whoever paid.": "साझा खर्चों में उनका हिस्सा उसके पास जाएगा जिसने भुगतान किया।",
  "Their share of shared costs": "साझा खर्चों में उनका हिस्सा",
- "Their transactions and recurring rules move to the person you pick.": "उनके लेन-देन और आवर्ती नियम आपके चुने व्यक्ति के पास चले जाएँगे।",
  "Theme": "थीम",
  "Then": "फिर",
+ "Then #{name} goes away. A merge can’t be undone.": "इसके बाद टैग #{name} हट जाएगा। मिलाने को पूर्ववत नहीं किया जा सकता।",
  "Then nobody can open the data, not even whoever runs the server. Keep the kit somewhere safe.": "तब कोई भी डेटा नहीं खोल सकता, सर्वर चलाने वाला भी नहीं। किट को किसी सुरक्षित जगह रखें।",
+ "Then {name} goes away. A merge can’t be undone.": "इसके बाद श्रेणी {name} हट जाएगी। मिलाने को पूर्ववत नहीं किया जा सकता।",
  "There is no Emergency Kit yet": "अभी कोई आपातकालीन किट नहीं है",
  "They still know the household password.": "उन्हें अब भी घर का पासवर्ड पता है।",
  "This browser": "यह ब्राउज़र",
+ "This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.": "यह ब्राउज़र साइन इन रहेगा; बाकी हर ब्राउज़र पासवर्ड माँगेगा। इसके बाद आप आपातकालीन किट सेव करेंगे।",
  "This file has no rows.": "इस फ़ाइल में कोई पंक्ति नहीं है।",
  "This household is encrypted, and browsers only encrypt on secure pages. Open Wally at its https:// address.": "यह घर एन्क्रिप्टेड है, और ब्राउज़र केवल सुरक्षित पेजों पर एन्क्रिप्ट करते हैं। Wally को उसके https:// पते पर खोलें।",
  "This month": "इस महीने",
@@ -1041,7 +1073,6 @@
  "Wally 2.0 can lock everything on your devices before it’s saved. The server stores only what it can’t read, so not even whoever runs it can see your money.": "Wally 2.0 सेव होने से पहले सब कुछ आपके डिवाइस पर लॉक कर सकता है। सर्वर सिर्फ़ वही रखता है जिसे वह पढ़ नहीं सकता, इसलिए सर्वर चलाने वाला भी आपका पैसा नहीं देख सकता।",
  "Wally 2.0 knows whose each expense is. Add everyone who uses Wally, starting with you.": "Wally 2.0 जानता है कि हर खर्च किसका है। खुद से शुरू करके, Wally इस्तेमाल करने वाले सभी लोगों को जोड़ें।",
  "Wally address": "Wally का पता",
- "Wally adds it to the list. It never converts amounts.": "Wally इसे सूची में जोड़ देता है। यह रकम कभी नहीं बदलता।",
  "Wally asks for it when it opens.": "Wally खुलते समय इसे माँगता है।",
  "Wally asks for it when it opens. Everyone in the household uses this one password.": "Wally खुलते समय इसे माँगता है। घर में सभी यही एक पासवर्ड इस्तेमाल करते हैं।",
  "Wally can’t be reached": "Wally से कनेक्ट नहीं हो पा रहा",
@@ -1083,6 +1114,10 @@
  "Whoever runs the server can turn sign-in off, then you turn it on again with a new password. The README explains how.": "सर्वर चलाने वाला साइन इन बंद कर सकता है, फिर आप नए पासवर्ड के साथ इसे दोबारा चालू करें। README में तरीका बताया गया है।",
  "Whoever runs this server chose that it can never read your household’s data, and a key would let it while a call runs.": "इस सर्वर को चलाने वाले ने तय किया है कि सर्वर आपके घर का डेटा कभी न पढ़ सके, और कुंजी होने पर कॉल चलने के दौरान वह इसे पढ़ सकेगा।",
  "Whoever runs this server set it up so that Wally locks everything on your devices before it’s saved. They can’t read your household’s money: not one amount, name or category.": "इस सर्वर को चलाने वाले ने इसे ऐसे सेट किया है कि सेव होने से पहले Wally आपके डिवाइस पर ही सब कुछ लॉक कर दे। वे आपके घर के पैसों का हिसाब नहीं पढ़ सकते: न कोई रकम, न कोई नाम, न कोई श्रेणी।",
+ "Whoever uses it needs the household password to open Wally there again.": {
+  "one": "जो इसका इस्तेमाल करता है, उसे वहाँ Wally फिर से खोलने के लिए घर का पासवर्ड चाहिए होगा।",
+  "other": "जो इनका इस्तेमाल करते हैं, उन्हें वहाँ Wally फिर से खोलने के लिए घर का पासवर्ड चाहिए होगा।"
+ },
  "Whose": "किसका",
  "Whose money": "किसका पैसा",
  "Who’s in your household?": "आपके परिवार में कौन-कौन है?",
@@ -1100,6 +1135,7 @@
  "You can always import more later from Settings.": "आप बाद में कभी भी सेटिंग्स से और इंपोर्ट कर सकते हैं।",
  "You can turn it off later in Settings › Sign-in & Privacy.": "आप इसे बाद में सेटिंग्स › साइन इन और गोपनीयता में बंद कर सकते हैं।",
  "You get a new Emergency Kit next. Sign-in stays on, and API keys need to be made again.": "इसके बाद आपको नई आपातकालीन किट मिलेगी। साइन इन चालू रहेगा, और API कुंजियाँ दोबारा बनानी होंगी।",
+ "You have {n} keys, the most each person can have. Delete one first.": "आपके पास {n} कुंजियाँ हैं, जो हर व्यक्ति के लिए सबसे ज़्यादा है। पहले एक हटाएँ।",
  "You kept {amount}. A few things worth knowing.": "आपने {amount} बचाए। कुछ बातें जो जानने लायक हैं।",
  "You overspent {amount}. A few things worth knowing.": "आपने {amount} ज़्यादा खर्च किए। कुछ बातें जो जानने लायक हैं।",
  "You save an Emergency Kit.": "आप एक आपातकालीन किट सेव करते हैं।",
@@ -1151,7 +1187,6 @@
  "on track for {amount} by {date}": "{date} तक {amount} की ओर",
  "on {date}": "{date} को",
  "on {day}": "{day} को",
- "or write it here": "या इसे यहाँ लिखें",
  "over {amount}": "{amount} से ज़्यादा",
  "overspent": "ज़्यादा खर्च",
  "overspent since January": "जनवरी से ज़्यादा खर्च",
@@ -1220,6 +1255,7 @@
  "{category}, usually {person}, about {amount}": "{category}, आम तौर पर {person}, लगभग {amount}",
  "{category}, {amount} less": "{category}, {amount} कम",
  "{category}, {amount} more": "{category}, {amount} ज़्यादा",
+ "{code} is already in the list.": "{code} पहले से सूची में है।",
  "{from} to {to}": "{from} से {to}",
  "{from} to {to}. That is {year} a year.": "{from} से {to}। यानी साल में {year}।",
  "{from} – {to}": "{from} – {to}",
@@ -1234,6 +1270,7 @@
  "{name} goes up {amount}": "{name} {amount} बढ़ेगा",
  "{name} is already a category": "{name} पहले से एक श्रेणी है",
  "{name} is already a category. Merge this one into it instead.": "{name} पहले से एक श्रेणी है। इसके बजाय इसे उसमें मिला दें।",
+ "{name} is already in the household.": "{name} पहले से घर में शामिल है।",
  "{name} is due on {date}": "{name} {date} को देय है",
  "{name} is encrypting Wally.": "{name} Wally को एन्क्रिप्ट कर रहे हैं।",
  "{name} is turning off encryption.": "{name} एन्क्रिप्शन बंद कर रहे हैं।",
@@ -1268,6 +1305,18 @@
  "{name}, {date}": "{name}, {date}",
  "{name}: {amount}": "{name}: {amount}",
  "{name}’s part": "{name} का हिस्सा",
+ "{name}’s {n} recurring rule becomes shared.": {
+  "one": "{name} का {n} आवर्ती नियम साझा हो जाएगा।",
+  "other": "{name} के {n} आवर्ती नियम साझा हो जाएँगे।"
+ },
+ "{name}’s {n} recurring rule moves to {to}.": {
+  "one": "{name} का {n} आवर्ती नियम {to} के पास चला जाएगा।",
+  "other": "{name} के {n} आवर्ती नियम {to} के पास चले जाएँगे।"
+ },
+ "{name}’s {n} transaction becomes shared.": {
+  "one": "{name} का {n} लेन-देन साझा हो जाएगा।",
+  "other": "{name} के {n} लेन-देन साझा हो जाएँगे।"
+ },
  "{name}’s {n} transaction moves to {to}.": {
   "one": "{name} का {n} लेन-देन {to} के पास चला जाएगा।",
   "other": "{name} के {n} लेन-देन {to} के पास चले जाएँगे।"
@@ -1387,10 +1436,6 @@
  "{n} transaction for {name}": {
   "one": "{name} के लिए {n} लेन-देन",
   "other": "{name} के लिए {n} लेन-देन"
- },
- "{n} transaction has #{tag}. It becomes {name}’s.": {
-  "one": "{n} लेन-देन पर #{tag} है। यह {name} का हो जाएगा।",
-  "other": "{n} लेन-देन पर #{tag} है। ये {name} के हो जाएँगे।"
  },
  "{n} transaction is tagged for more than one person, so it stays shared.": {
   "one": "{n} लेन-देन पर एक से ज़्यादा लोगों का टैग है, इसलिए यह साझा रहेगा।",

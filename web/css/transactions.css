@@ -234,6 +234,7 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-head .w-pswitch-b > svg.i{display:none}
   .tx-head .s-title svg.i{width:20px;height:20px}
   .tx-head .s-title.tx-long{font-size:28px}
+  .tx-head .s-title.tx-long span span{font-size:.82em}
   .tx-brk{display:block;order:4;flex-basis:100%;height:0}
   .tx-searchw{order:5;flex:1;min-width:0}
   .tx-search,.tx-search:focus-within,.tx-head.searching .tx-search{width:100%;height:40px}
@@ -382,3 +383,20 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
 /* An empty household: the title alone, with Add (nothing to step through, search, filter or switch yet) */
 .tx-page.is-empty :is(.s-title > svg.i,.tx-step,.tx-vsw,.tx-searchw,.tx-fw,.tx-morew){display:none}
 .tx-page.is-empty .s-title{pointer-events:none}
+/* Wider screens: ‹ › sit at the start of the list's own tools, before List | Calendar, then the person menu and Add */
+@media (min-width:1024px){
+  .tx-head .w-hact{display:contents}
+  .tx-head .w-hact > *{order:3}
+  .tx-head .s-titlew{order:1;margin-inline-end:auto}
+  .tx-head .tx-step{order:2;margin-inline:0 6px}
+  .tx-head .w-hact > .w-pswitch{order:4;margin-inline-start:6px}
+  .tx-head .w-hact > .w-hadd{order:5}
+  /* Search gives way first when the window is narrow */
+  .tx-head .w-hact > .tx-searchw{flex:0 1 220px;min-width:120px}
+  .tx-head .tx-searchw .tx-search{width:100%}
+}
+@media (max-width:1023px) and (min-width:768px){
+  .tx-head .tx-step{margin-inline-start:auto}
+  .tx-head .w-pswitch{margin-inline-start:6px}
+}
+

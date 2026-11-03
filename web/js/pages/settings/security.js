@@ -260,16 +260,33 @@ function gate(root, test) {
   root.addEventListener("input", () => { upd(); dialogError(""); });
   upd();
 }
+/* A rule the new password has to meet: a grey circle, then a green check once it does */
+function rule(id, text) { return '<li data-rule="' + id + '"><span class="w-pwmark" aria-hidden="true">' + icon("check") + "</span><span>" + text + "</span></li>"; }
 function checkNew(pw) { if (pw.length < MIN) throw new Error(t("Use at least {n} characters.", { n: MIN })); }
+
+/* The rules for a new password tick as they're met, and the action waits for both */
+function pwRules(root, pwSel, repSel) {
+  const tick = () => {
+    const pw = root.querySelector(pwSel).value, rep = root.querySelector(repSel).value;
+    root.querySelector('[data-rule="len"]').classList.toggle("ok", pw.length >= MIN);
+    root.querySelector('[data-rule="same"]').classList.toggle("ok", pw.length > 0 && pw === rep);
+  };
+  root.addEventListener("input", tick);
+  tick();
+}
 
 function signinOn() {
   sheet({
     title: t("Turn On Sign-in"),
-    body: '<p class="w-shlead">' + t("Everyone in the household signs in with this password. You stay signed in on this browser.") + "</p>" +
-      '<div class="w-gl">' + pwRow("so-pw", t("Household password"), "new-password", true) + pwRow("so-rep", t("The same again"), "new-password") + "</div>" +
-      '<p class="w-glf">' + t("At least {n} characters.", { n: MIN }) + "</p>",
+    top: '<span class="w-secico">' + icon("lock") + '</span><b class="w-shtitle w-sht20">' + t("Household password") + "</b><p>" + t("Everyone in the household uses the same password.") + "</p>",
+    body: '<div class="w-gl">' + pwRow("so-pw", t("Household password"), "new-password", true) + pwRow("so-rep", t("The same again"), "new-password") + "</div>" +
+      '<ul class="w-pwrules" aria-live="polite">' + rule("len", t("At least {n} characters", { n: MIN })) + rule("same", t("Both passwords match")) + "</ul>" +
+      '<p class="w-glf">' + t("This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.") + "</p>",
     ok: t("Turn On"),
-    onOpen: (root) => gate(root, (r) => r.querySelector("#so-pw").value.length >= MIN && !!r.querySelector("#so-rep").value),
+    onOpen: (root) => {
+      pwRules(root, "#so-pw", "#so-rep");
+      gate(root, (r) => r.querySelector("#so-pw").value.length >= MIN && r.querySelector("#so-pw").value === r.querySelector("#so-rep").value);
+    },
     onOk: async (root) => {
       const pw = root.querySelector("#so-pw").value;
       checkNew(pw);
@@ -288,7 +305,8 @@ function signinOff() {
     id: "sf-pw",
     icon: "lock", danger: true,
     title: t("Turn off sign-in?"),
-    text: t("Anyone who can open this address will see and change your finances. The password and two-step are removed."),
+    text: S().two_step ? t("Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.")
+      : t("Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed."),
     ok: t("Turn Off"),
     onOk: async (pw) => {
       await checked("PUT", "/signin", { enabled: false, current: await proofOf(pw) });
@@ -304,11 +322,23 @@ function signinOff() {
 function changePassword() {
   sheet({
     title: t("Change Password"),
+    top: '<span class="w-secico">' + icon("lock") + '</span><b class="w-shtitle w-sht20">' + t("Household password") + "</b><p>" + t("Everyone in the household uses the same password.") + "</p>",
     body: '<div class="w-gl">' + pwRow("pw-cur", t("Current password"), "current-password", true) + "</div>" +
       '<div class="w-gl">' + pwRow("pw-new", t("New password"), "new-password") + pwRow("pw-rep", t("The new one again"), "new-password") + "</div>" +
-      '<p class="w-glf">' + t("At least {n} characters. Every other browser is signed out: tell everyone the new password.", { n: MIN }) + "</p>",
+      '<ul class="w-pwrules" aria-live="polite">' + rule("len", t("At least {n} characters", { n: MIN })) + rule("same", t("Both new passwords match")) + "</ul>" +
+      '<p class="w-glf">' + t("Every other browser is signed out: tell everyone the new password.") + "</p>",
     ok: t("Change"),
-    onOpen: (root) => gate(root, (r) => !!r.querySelector("#pw-cur").value && r.querySelector("#pw-new").value.length >= MIN && !!r.querySelector("#pw-rep").value),
+    onOpen: (root) => {
+      // The rules tick as they're met
+      const tick = () => {
+        const pw = root.querySelector("#pw-new").value, rep = root.querySelector("#pw-rep").value;
+        root.querySelector('[data-rule="len"]').classList.toggle("ok", pw.length >= MIN);
+        root.querySelector('[data-rule="same"]').classList.toggle("ok", pw.length > 0 && pw === rep);
+      };
+      root.addEventListener("input", tick);
+      tick();
+      gate(root, (r) => !!r.querySelector("#pw-cur").value && r.querySelector("#pw-new").value.length >= MIN && r.querySelector("#pw-new").value === r.querySelector("#pw-rep").value);
+    },
     onOk: async (root) => {
       const pw = root.querySelector("#pw-new").value;
       checkNew(pw);
@@ -343,11 +373,12 @@ export async function showKit(key, then) {
   const qr = await kit.qrSvg(key);
   sheet({
     title: "",
-    top: '<span class="w-secico">' + icon("file") + "</span><b class=\"w-shtitle\">" + t("Save the household’s Emergency Kit") + "</b><p>" +
+    top: '<span class="w-secico">' + icon("file") + '</span><b class="w-shtitle w-sht20">' + t("Save the household’s Emergency Kit") + "</b><p>" +
       t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally can’t show it again.") + "</p>",
     body: '<div class="w-seckey">' + qr + keyLines(key) + "</div>" +
       '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-save>' + icon("io") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>" +
-      '<div class="w-gl"><div class="w-gr"><span class="k" id="kit-saved-l">' + t("I saved it somewhere safe") + '</span><button type="button" class="w-switch" role="switch" id="kit-saved" aria-checked="false" aria-labelledby="kit-saved-l"></button></div></div>',
+      '<div class="w-gl"><div class="w-gr"><span class="k" id="kit-saved-l">' + t("I saved it somewhere safe") + '</span><button type="button" class="w-switch" role="switch" id="kit-saved" aria-checked="false" aria-labelledby="kit-saved-l"></button></div></div>' +
+      '<p class="w-glf">' + t("Anyone with this key can open your Wally, even with two-step sign-in on.") + "</p>",
     ok: t("Done"),
     noCancel: true,
     sticky: true,
@@ -383,9 +414,13 @@ async function qrCode(uri) {
   return '<svg class="w-qr" viewBox="-2 -2 ' + (n + 4) + " " + (n + 4) + '" shape-rendering="crispEdges" role="img" aria-label="' + esc(t("Setup code for the authenticator app")) + '"><rect x="-2" y="-2" width="' + (n + 4) + '" height="' + (n + 4) + '" fill="#fff"/><path fill="#111" d="' + d + '"/></svg>';
 }
 function scanBox(setup, svg) {
-  const spaced = setup.secret.match(/.{1,4}/g).join(" ");
-  return '<div class="w-seckey w-secscan">' + svg + '<div class="w-secsecret"><code id="ts-secret" translate="no">' + esc(spaced) + '</code><button type="button" class="w-link" data-copy>' + t("Copy") + "</button></div></div>";
+  // Groups of four in even rows; spaces between them, so a selection copies as one line
+  const groups = setup.secret.match(/.{1,4}/g);
+  return '<div class="w-seckey w-secscan">' + svg + '<div class="w-secsecret"><code id="ts-secret" translate="no">' + groups.map((g) => "<span>" + esc(g) + "</span>").join(" ") + '</code><button type="button" class="w-link" data-copy>' + t("Copy") + "</button></div></div>";
 }
+
+/* A step in a sheet, as on the Emergency Kit: its number in an accent circle, then what to do */
+function step(n, text) { return '<div class="w-shstep"><span class="w-shstepn" aria-hidden="true">' + num(n) + "</span><b>" + text + "</b></div>"; }
 
 async function twoStepOn() {
   let setup, svg;
@@ -397,9 +432,9 @@ async function twoStepOn() {
     title: t("Two-Step Sign-in"),
     wide: true,
     body: '<p class="w-shlead">' + t("One code for the household: everyone scans the same one, on their own phone.") + "</p>" +
-      '<div class="w-glh">' + t("1 · Scan it with an authenticator app") + "</div>" + scanBox(setup, svg) +
+      step(1, t("Scan this code with an authenticator app")) + scanBox(setup, svg) +
       '<p class="w-glf">' + t("Like 1Password, Google Authenticator or Aegis. Can’t scan? Type the key instead.") + "</p>" +
-      '<div class="w-glh">' + t("2 · Type the code it shows") + "</div>" +
+      step(2, t("Enter the 6-digit code it shows")) +
       '<div class="w-gl"><label class="w-gr"><input id="ts-code" placeholder="' + esc(t("6-digit code")) + '" aria-label="' + esc(t("6-digit code")) + '" inputmode="numeric" autocomplete="one-time-code" maxlength="7"></label>' +
       pwRow("ts-pw", t("Household password")) + "</div>",
     ok: t("Turn On"),
@@ -425,7 +460,7 @@ function twoStepShow() {
   passwordAlert({
     id: "ts-pw",
     icon: "phone",
-    title: t("Add a phone?"),
+    title: t("Show the two-step code?"),
     text: t("Wally shows the household’s two-step code again, to scan on another phone."),
     ok: t("Show Code"),
     onOk: async (pw) => {
@@ -433,10 +468,11 @@ function twoStepShow() {
       const svg = await qrCode(setup.uri);
       setTimeout(() => sheet({
         title: t("Add a Phone"),
-        body: '<p class="w-shlead">' + t("Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.") + "</p>" + scanBox(setup, svg),
+        body: '<p class="w-shlead">' + t("Scan this with the authenticator app on the new phone. It shows the same codes as everyone else’s.") + "</p>" + scanBox(setup, svg) +
+          '<p class="w-glf">' + t("Like 1Password, Google Authenticator or Aegis. Can’t scan? Type the key instead.") + "</p>",
         ok: t("Done"),
         noCancel: true,
-        onOpen: (r) => r.querySelector("[data-copy]").addEventListener("click", () => copyText(setup.secret, t("Key copied"))),
+        onOpen: (r) => { r.classList.add("w-sh480"); r.querySelector("[data-copy]").addEventListener("click", () => copyText(setup.secret, t("Key copied"))); },
       }), 0);
     },
   });
@@ -445,13 +481,16 @@ function twoStepShow() {
 function showCodes(codes, done) {
   const text = codes.join("\n");
   sheet({
-    title: t("Recovery Codes"),
-    body: '<p class="w-shlead">' + t("If no phone is at hand, each code signs someone in once. Keep them with the household’s papers. They replace any earlier codes.") + "</p>" +
-      '<div class="w-seckey"><div class="w-codes" id="rc-codes">' + codes.map((c) => "<span>" + esc(c) + "</span>").join("") + "</div></div>" +
-      '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-save>' + icon("io") + t("Download") + '</button><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>",
+    title: "",
+    top: '<span class="w-secico">' + icon("key") + '</span><b class="w-shtitle w-sht20">' + t("Save the recovery codes") + '</b><p class="w-mw360">' +
+      t("If no phone is at hand, each code signs someone in once.") + "</p>",
+    body: '<div class="w-seckey"><div class="w-codes" id="rc-codes">' + codes.map((c) => "<span>" + esc(c) + "</span>").join("") + "</div></div>" +
+      '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-save>' + icon("io") + t("Download") + '</button><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy") + "</button></div>" +
+      '<p class="w-glf">' + t("Keep them with the household’s papers. Wally can’t show them again, and any earlier codes stop working.") + "</p>",
     ok: t("Done"),
     noCancel: true,
     onOpen: (root) => {
+      root.classList.add("w-kitsheet");
       root.querySelector("[data-copy]").addEventListener("click", () => copyText(text, t("Codes copied")));
       root.querySelector("[data-save]").addEventListener("click", () => download("wally-recovery-codes.txt", t("Wally recovery codes") + "\n\n" + text + "\n"));
     },
@@ -480,7 +519,8 @@ function newCodes() {
     id: "ts-pw",
     icon: "file",
     title: t("Make new recovery codes?"),
-    text: t("The old codes stop working. You see the new ones once."),
+    text: codesLeft ? tn(codesLeft, "The {n} code left stops working. You see the new ones once.", "The {n} codes left stop working. You see the new ones once.")
+      : t("The old codes stop working. You see the new ones once."),
     ok: t("Make New Codes"),
     onOk: async (pw) => {
       const r = await checked("POST", "/two-step/recovery-codes", { password: await proofOf(pw) });
@@ -491,13 +531,21 @@ function newCodes() {
   });
 }
 
-async function signOutOthers() {
-  try {
-    const before = sessions ? sessions.filter((x) => !x.current).length : 0;
-    await DEL("/sessions/others");
-    await load();
-    toast(tn(before, "Signed out of {n} other browser", "Signed out of {n} other browsers"));
-  } catch (e) { errorToast(e); }
+function signOutOthers() {
+  const before = sessions ? sessions.filter((x) => !x.current).length : 0;
+  openDialog({
+    kind: "alert",
+    top: '<span class="w-alead red">' + icon("logout") + "</span>",
+    title: tn(before, "Sign out of {n} other browser?", "Sign out of {n} other browsers?"),
+    body: "<p>" + tn(before, "Whoever uses it needs the household password to open Wally there again.", "Whoever uses them needs the household password to open Wally there again.") + "</p>",
+    ok: t("Sign Out"),
+    danger: true,
+    onOk: async () => {
+      await DEL("/sessions/others");
+      await load();
+      toast(tn(before, "Signed out of {n} other browser", "Signed out of {n} other browsers"));
+    },
+  });
 }
 
 /* ---------- encryption ---------- */

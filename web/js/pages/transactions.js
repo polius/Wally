@@ -4,7 +4,7 @@
    on wide screens, a sheet on phones); a ••• menu (Select, export); Select mode for bulk changes, and a
    side panel with every field. */
 import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, couple } from "../core.js";
-import { hideTip, empty, trapFocus } from "../ui.js";
+import { hideTip, empty, trapFocus, stepLabels } from "../ui.js";
 import { headActions } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
 import { S, RANGES, parseQ, txRange, txFiltered, scopeLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering, recent, addRecent, clearRecent } from "./transactions/query.js";
@@ -95,7 +95,7 @@ function skeleton() {
     '<header class="w-head s-head tx-head" id="tx-head">' +
       '<div class="s-titlew"><button type="button" class="s-title" data-menu="period" aria-haspopup="menu" aria-expanded="false"><span id="tx-title" aria-live="polite"></span>' + icon("down") + "</button>" +
         '<div class="w-menu s-pmenu" id="tx-pmenu" role="menu" aria-label="' + esc(t("Period")) + '" hidden></div></div>' +
-      '<div class="tx-step" id="tx-step"><button type="button" data-act="prev" aria-label="' + esc(t("Previous")) + '">' + icon("left") + '</button><button type="button" data-act="next" aria-label="' + esc(t("Next")) + '">' + icon("right") + "</button></div>" +
+      '<div class="tx-step w-steps" id="tx-step"><button type="button" data-act="prev">' + icon("left") + '</button><button type="button" data-act="next">' + icon("right") + "</button></div>" +
       '<span class="tx-brk" aria-hidden="true"></span>' +
       headActions(extra) +
     "</header>" +
@@ -164,7 +164,7 @@ function renderHead(R, P) {
   const sub = T.month && T.sub === TODAY.slice(0, 4) && !T.fromQuery ? "" : T.sub;
   $("tx-title").innerHTML = esc(T.title) + (sub ? " <span>" + esc(sub) + "</span>" : "");
   $("tx-title").parentNode.setAttribute("aria-label", t("Period: {range}", { range: $("tx-title").textContent }));
-  $("tx-title").parentNode.classList.toggle("tx-long", $("tx-title").textContent.length > 12);
+  $("tx-title").parentNode.classList.toggle("tx-long", !!$("tx-title").querySelector("span") || $("tx-title").textContent.length > 12);
   // Five shortcuts; ‹ › step through the rest
   const [ty, tm] = ym(TODAY), last = ymAdd(ty, tm, -1), plain = !R.fromQuery;
   const isM = (q) => S.mode === "month" && S.ym[0] === q[0] && S.ym[1] === q[1];
@@ -175,6 +175,7 @@ function renderHead(R, P) {
   const cal = S.view === "cal", st = stepOk();
   const [pb, nb] = $("tx-step").querySelectorAll("button");
   pb.disabled = !st.prev; nb.disabled = !st.next;
+  stepLabels($("tx-step"), S.mode === "year");
   $("tx-step").hidden = R.fromQuery;
   $("tx-vsw").querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "cal") === cal)));
   $("tx-vsw").hidden = S.selMode;

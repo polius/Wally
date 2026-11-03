@@ -3,7 +3,7 @@
 import { t, tn, esc, state, av, num, icon, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym, pcolor, initial } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { gl, gr, addRow, hero, fieldRow, gate, phone, val, paint } from "./common.js";
+import { gl, gr, addRow, hero, fieldRow, nameGate, sameName, phone, val, paint } from "./common.js";
 import { setAction, openPane } from "../settings.js";
 
 let box = null;
@@ -186,15 +186,23 @@ async function reloadPeople() {
   if (state.status) state.status.people = state.people;
 }
 
+/* Two people can't share a name: the sheet says who has it already */
+function taken(self) {
+  return (name) => {
+    const other = state.people.find((x) => String(x.id) !== String(self) && sameName(x.name, name));
+    return other ? esc(t("{name} is already in the household.", { name: other.name })) : "";
+  };
+}
+
 function addPerson() {
   const signin = state.status && state.status.signin;
   openDialog({
     kind: "sheet",
     title: t("Add a Person"),
     body: fieldRow("np-name", "", t("Name"), ' maxlength="40" autofocus') +
-      '<p class="w-glf">' + (signin ? t("A child, a flatmate, anyone who shares costs. They sign in with the household password.") : t("A child, a flatmate, anyone who shares costs. Each person gets their own view.")) + "</p>",
+      '<p class="w-glf" id="np-name-note" aria-live="polite">' + (signin ? t("A child, a flatmate, anyone who shares costs. They sign in with the household password.") : t("A child, a flatmate, anyone who shares costs. Each person gets their own view.")) + "</p>",
     ok: t("Add"),
-    onOpen: (root) => { root.classList.add("w-sh420"); gate(root, (r) => !!val(r, "np-name")); },
+    onOpen: (root) => { root.classList.add("w-sh420"); nameGate(root, "np-name", taken()); },
     onOk: async (root) => {
       const name = val(root, "np-name");
       if (!name) throw new Error(t("Type their name."));
@@ -212,9 +220,9 @@ function renamePerson(id) {
   openDialog({
     kind: "sheet",
     title: t("Rename {name}", { name: esc(p.name) }),
-    body: fieldRow("rp-name", p.name, t("Name"), ' maxlength="40"') + '<p class="w-glf">' + t("Everyone in the household sees the new name.") + "</p>",
+    body: fieldRow("rp-name", p.name, t("Name"), ' maxlength="40"') + '<p class="w-glf" id="rp-name-note" aria-live="polite">' + t("Everyone in the household sees the new name.") + "</p>",
     ok: t("Done"),
-    onOpen: (root) => { root.classList.add("w-sh420"); root.querySelector("#rp-name").select(); gate(root, (r) => !!val(r, "rp-name")); },
+    onOpen: (root) => { root.classList.add("w-sh420"); root.querySelector("#rp-name").select(); nameGate(root, "rp-name", taken(id)); },
     onOk: async (root) => {
       const name = val(root, "rp-name");
       if (!name) throw new Error(t("Type their name."));
@@ -236,26 +244,36 @@ async function removePerson(id) {
   const heir = left.find((x) => String(x.id) === state.me) || left[0];
   const many = left.length >= 2 && (usage.own || usage.rules);
   const name = esc(p.name);
-  // Whole sentences, so every language can word each one its own way
-  const parts = [];
-  if (!usage.own && !usage.rules) parts.push(t("Their part of shared costs goes to whoever paid."));
-  else if (many) parts.push(t("Their transactions and recurring rules move to the person you pick."));
-  else {
-    parts.push(tn(usage.own, "{name}’s {n} transaction moves to {to}.", "{name}’s {n} transactions move to {to}.", { name, to: esc(heir.name) }));
-    if (usage.rules) parts.push(tn(usage.rules, "So does {n} recurring rule.", "So do {n} recurring rules."));
-  }
-  if (usage.shared) parts.push(t("Shared costs stay shared."));
-  parts.push(t("Nothing is deleted."));
-  if (state.status && state.status.signin) parts.push(t("They still know the household password."));
-  const text = parts.join(" ");
+  // Whole sentences, so every language can word each one its own way. With a choice, the sentence follows it.
+  const say = (to) => {
+    const parts = [];
+    const dest = to === "shared" ? null : person(to) || heir;
+    const vars = { name, to: dest ? esc(dest.name) : "" };
+    if (!usage.own && !usage.rules) parts.push(t("Their part of shared costs goes to whoever paid."));
+    else {
+      if (usage.own) parts.push(dest ? tn(usage.own, "{name}’s {n} transaction moves to {to}.", "{name}’s {n} transactions move to {to}.", vars)
+        : tn(usage.own, "{name}’s {n} transaction becomes shared.", "{name}’s {n} transactions become shared.", vars));
+      if (usage.rules) parts.push(usage.own ? tn(usage.rules, "So does {n} recurring rule.", "So do {n} recurring rules.")
+        : dest ? tn(usage.rules, "{name}’s {n} recurring rule moves to {to}.", "{name}’s {n} recurring rules move to {to}.", vars)
+          : tn(usage.rules, "{name}’s {n} recurring rule becomes shared.", "{name}’s {n} recurring rules become shared.", vars));
+    }
+    if (usage.shared) parts.push(t("Shared costs stay shared."));
+    parts.push(t("Nothing is deleted."));
+    if (state.status && state.status.signin) parts.push(t("They still know the household password."));
+    return parts.join(" ");
+  };
   const pick = many ? '<label class="w-pop2"><span>' + t("Move them to") + '</span><select id="rp-to">' + left.map((x) => '<option value="' + x.id + '"' + (x.id === heir.id ? " selected" : "") + ">" + esc(x.name) + "</option>").join("") +
     '<option value="shared">' + t("Shared") + "</option></select></label>" : "";
   openDialog({
     kind: "alert",
     top: av(String(p.id), "lg w-av48"),
     title: t("Remove {name}?", { name }),
-    body: "<p>" + text + "</p>" + pick,
-    onOpen: (root) => setTimeout(() => root.focus(), 0),
+    body: '<p id="rp-what">' + say(String(heir.id)) + "</p>" + pick,
+    onOpen: (root) => {
+      const sel = root.querySelector("#rp-to");
+      if (sel) sel.addEventListener("change", () => { root.querySelector("#rp-what").innerHTML = say(sel.value); });
+      setTimeout(() => root.focus(), 0);
+    },
     ok: phone() ? t("Remove {name}", { name }) : t("Remove"),
     danger: true,
     onOk: async (root) => {

@@ -1023,7 +1023,7 @@ function askApply(old, made, changes) {
         '<label class="w-gr"><span class="k">' + t("All, including past ones") + "<small>" +
           esc(tn(made, "The {n} it already made changes too.", "The {n} it already made change too.")) + "</small></span>" +
           '<input type="radio" name="add-apply" value="all"' + (startsLater ? "" : " checked") + "></label></div>",
-      ok: t("Save"),
+      ok: t("Change"),
       onOk: (root) => { done = true; const c = root.querySelector('input[name="add-apply"]:checked'); resolve(c ? c.value : "later"); },
     });
     const obs = new MutationObserver(() => { if ($("dlg").hidden) { obs.disconnect(); if (!done) resolve(null); } });

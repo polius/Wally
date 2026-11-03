@@ -79,14 +79,18 @@ def _unbase32(text: str, nbits: int) -> tuple[bytes, str]:
 def _clean(text: str) -> str:
     return "".join(c for c in text.upper() if c not in " -_.\n").replace("O", "0").replace("I", "1").replace("L", "1")
 
-def new_recovery_key() -> str:
-    body = os.urandom(31)
-    key = _base32(body + hashlib.sha256(body).digest()[:1], 52)
-    return "-".join(key[i:i + 4] for i in range(0, 52, 4))
+def new_recovery_key(chars: int = 48) -> str:
+    """48 characters (29 random bytes and a check byte); 52 is the size kits had before 2.0 shipped."""
+    n = {48: 29, 52: 31}[chars]
+    body = os.urandom(n)
+    key = _base32(body + hashlib.sha256(body).digest()[:1], chars)
+    return "-".join(key[i:i + 4] for i in range(0, chars, 4))
 
 def parse_recovery_key(text: str) -> bytes:
-    raw, _ = _unbase32(_clean(text), 256)
-    assert raw[31] == hashlib.sha256(raw[:31]).digest()[0], "recovery key check byte"
+    s = _clean(text)
+    n = {48: 29, 52: 31}[len(s)]
+    raw, _ = _unbase32(s, (n + 1) * 8)
+    assert raw[n] == hashlib.sha256(raw[:n]).digest()[0], "recovery key check byte"
     return raw
 
 def from_recovery_key(raw: bytes) -> tuple[str, bytes]:

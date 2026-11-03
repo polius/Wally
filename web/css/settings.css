@@ -6,11 +6,15 @@
 .w-setnav .grp{gap:2px}
 .w-setnav .grp > span{padding:0 10px 4px;font-weight:400;font-size:12px}
 .w-setnav a svg.i{width:16px;height:16px}
-.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;font-size:14px;white-space:nowrap;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
+.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;font-size:14px;line-height:1.3;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
 .w-setnav a:hover{color:var(--w-ink)}
 .w-setnav a[aria-current="page"]{background:var(--w-panel);color:var(--w-ink);box-shadow:0 0 0 1px var(--w-line)}
 .w-setnav a[aria-current="page"] svg{color:var(--w-accent)}
-.w-setnav a span{margin-inline-start:auto;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:400}
+/* A long name (Inicio de sesión y privacidad) takes a second line rather than running into the pane;
+   the value stays on one line, cut short if it must */
+.w-setnav a .l{flex:1 1 auto;min-width:0}
+.w-setnav a .v{flex:none;margin-inline-start:auto;max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:400}
+.w-setnav a .v:empty{display:none}
 .w-setnav button span{margin-left:0;margin-inline-start:auto}
 .w-setver{font-size:var(--fs-cap);color:var(--w-ink3);padding:4px 12px 0}
 .w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:56px}
@@ -90,8 +94,7 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
 .w-sym{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);font-size:12px;font-weight:600;color:var(--w-ink2);flex:none;overflow:hidden}
 /* Code and steps */
 .w-pane .w-code,.w-dialog .w-code{font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--w-panel);border-radius:var(--r-card);padding:14px 16px;white-space:pre;overflow:auto;color:var(--w-ink);border:0;margin:0}
-.w-dialog .w-code{background:var(--w-panel2);max-height:150px;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
-.w-dialog .w-code:hover,.w-dialog .w-code:focus{-webkit-mask-image:none;mask-image:none}
+.w-dialog .w-code{background:var(--w-panel2);white-space:pre-wrap;overflow-wrap:anywhere}
 .w-glh.w-glh2{display:flex;justify-content:space-between;align-items:baseline}
 .w-glh a{color:var(--w-accent-ink);text-decoration:none}
 .w-stepn{width:24px;height:24px;border-radius:50%;background:var(--w-accent-soft);color:var(--w-accent-ink);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none;align-self:flex-start;margin-top:1px}
@@ -101,8 +104,7 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
 .w-big-ico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
 .w-big-ico svg.i{width:30px;height:30px}
 /* An alert with its buttons one above the other (Delete, then Cancel) */
-.w-alert.w-stack{grid-template-columns:1fr}
-.w-alert.w-stack > .w-dlgx{order:4;margin-top:0}
+@media (max-width:767px){.w-alert.w-stack{grid-template-columns:1fr}.w-alert.w-stack > .w-dlgx{order:4;margin-top:0}}
 /* Deleting a category on a phone: a short sheet, where its transactions go as a row, a red Delete, Cancel */
 @media (max-width:767px){
   .w-alert.w-hsheet{background:var(--w-raised);border-radius:14px 14px 0 0;padding:10px 16px calc(30px + env(safe-area-inset-bottom,0px));gap:0}
@@ -269,7 +271,7 @@ label.w-btn{cursor:pointer;position:relative}
 @media (max-width:1023px){
   .w-set{grid-template-columns:200px minmax(0,1fr);gap:36px}
   /* A narrow list of panes, as on iPad: names only */
-  .w-setnav a span{display:none}
+  .w-setnav a .v{display:none}
 }
 @media (max-width:767px){
   .w-pwrap{max-width:none}
@@ -369,23 +371,25 @@ label.w-btn{cursor:pointer;position:relative}
 .w-alead.red{background:var(--w-bad-soft);color:var(--w-bad)}
 .w-alead svg.i{width:24px;height:24px}
 .w-afld{width:100%;height:32px;border:1px solid var(--w-line);border-radius:7px;background:var(--w-panel2);padding:0 10px;font:inherit;font-size:13px;color:var(--w-ink);margin-top:8px;outline:0}
-.w-afld:focus{border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
+/* The alert's field shows its caret, not a ring, like an iOS alert's field */
+.w-afld:focus,.w-afld:focus-visible{border-color:var(--w-line);box-shadow:none;outline:0}
 .w-falert .w-hint{font-size:var(--fs-foot);color:var(--w-ink2)}
 .w-falert .w-alg > .w-dlgok[disabled]{color:var(--w-on-accent);opacity:.45}
 .w-falert .w-alg > .w-dlgok.danger[disabled]{color:#fff}
 /* Sheets: a lead sentence, a picture and title on top, the key or codes in a card, two buttons */
-.w-shlead{text-align:center;font-size:var(--fs-foot);color:var(--w-ink2);padding:0 4px 4px!important}
+/* A sheet's opening sentence: the same size as what follows it, a quieter color */
+.w-shlead,.w-dialog p.w-shlead{text-align:center;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);padding:0 8px 4px!important;text-wrap:pretty}
 .w-shtop .w-shtitle{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:6px}
-.w-shtop p{font-size:14px;color:var(--w-ink2);max-width:400px}
+.w-shtop p,.w-dialog .w-shtop p{font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);max-width:400px;text-wrap:pretty}
 .w-seckey{background:var(--w-panel2);border-radius:14px;padding:16px;display:grid;justify-items:center;gap:12px}
 .w-seckey .w-qr{width:105px;height:105px;margin:0;color:#111;background:#fff;border:0;border-radius:10px;padding:8px;box-sizing:content-box}
 .w-seckey .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 10px;font:600 15px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;background:none;border:0;padding:0;color:var(--w-ink)}
 .w-seckey .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
 .w-seckey .w-codes{background:none;border:0;padding:0;width:100%;justify-items:center;font-size:var(--fs-sub)}
 .w-secscan{padding:14px}
-.w-secscan .w-qr{width:84px;height:84px}
-.w-secsecret{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;flex-wrap:wrap}
-.w-secsecret code{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);background:none;border:0;padding:0;letter-spacing:.04em;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}
+.w-secscan .w-qr{width:116px;height:116px}
+.w-secsecret{display:grid;justify-items:center;gap:6px;width:100%}
+.w-secsecret code{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 12px;font:600 13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);background:none;border:0;padding:0;letter-spacing:.04em;direction:ltr;unicode-bidi:isolate}
 .w-secsecret .w-link{font-size:14px;font-weight:500}
 .w-secbtns{display:flex;gap:10px;justify-content:center;margin:4px 0}
 .w-secbtns .w-btn{height:34px;border-radius:999px;font-size:14px;font-weight:600;padding:0 14px;gap:6px}
@@ -407,7 +411,7 @@ label.w-btn{cursor:pointer;position:relative}
   .w-pane .w-code .w-mbr{display:inline}
 }
 .w-dialog .w-gl > label.w-gr{min-height:46px;font-size:16px}
-.w-dialog .w-gl > label.w-gr:focus-within{box-shadow:inset 0 0 0 2px var(--w-accent);border-radius:10px}
+/* A field in a group shows its caret, not a ring, as in iOS and macOS Settings: the group stays one piece */
 .w-dialog .w-glh{padding-inline:16px}
 .w-dialog .w-glh ~ .w-glh{margin-top:10px}
 @media (max-width:767px){
@@ -429,8 +433,6 @@ label.w-btn{cursor:pointer;position:relative}
   .w-shtop .w-shtitle{font-size:22px}
   /* The kit and two-step sheets are tall: they rise to just under the top, like a full iOS sheet */
   .w-dialog.w-shfull{max-width:none;min-height:calc(100dvh - 48px)}
-  .w-secsecret{flex-wrap:nowrap;justify-content:space-between;align-items:flex-start}
-  .w-secsecret code{flex:1}
 }
 
 /* One vertical rhythm for every pane, whatever its blocks are (groups, drop zones, code, sections):
@@ -465,3 +467,67 @@ label.w-btn{cursor:pointer;position:relative}
   /* The large title sits close over the pane (its list adds 16px): 12px to the first group or label */
   .w-shead{margin-bottom:-4px}
 }
+/* Steps in a sheet (two-step sign-in): an accent circle with the number, the step in the sheet's own text size */
+.w-shstep{display:flex;align-items:center;gap:10px;padding:0 4px;margin-top:10px}
+.w-shstep:first-child{margin-top:0}
+.w-shstep b{font-size:var(--fs-sub);font-weight:600;color:var(--w-ink);line-height:1.3;text-wrap:balance}
+.w-shstepn{width:22px;height:22px;border-radius:50%;background:var(--w-accent);color:var(--w-on-accent,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.w-shb > .w-glf + .w-shstep{margin-top:16px}
+.w-shb > .w-shlead{margin-bottom:8px}
+/* Room under a step's title before what it asks for */
+.w-shb > .w-shstep + *{margin-top:4px}
+/* In dark mode the code's card sits on the same surface as the rows under it */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-dialog .w-seckey{background:#292B33}}
+:root[data-theme="dark"] .w-dialog .w-seckey{background:#292B33}
+@media (max-width:767px){.w-shstep b{font-size:var(--fs-body)}.w-shstepn{width:24px;height:24px;font-size:13px}}
+/* Change Password: the rules for the new one, ticked as they're met */
+.w-pwrules{list-style:none;margin:2px 0 0;padding:0 16px;display:grid;gap:6px}
+.w-pwrules li{display:flex;align-items:center;gap:8px;font-size:var(--fs-foot);color:var(--w-ink3);transition:color .15s}
+.w-pwmark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--w-ink3);display:grid;place-items:center;flex:none;transition:background-color .15s,border-color .15s}
+.w-pwmark svg.i{width:10px;height:10px;stroke-width:3;color:#fff;opacity:0}
+.w-pwrules li.ok{color:var(--w-ink2)}
+.w-pwrules li.ok .w-pwmark{background:var(--w-good,#2F9E44);border-color:transparent}
+.w-pwrules li.ok .w-pwmark svg.i{opacity:1}
+.w-pwrules + .w-glf{margin-top:6px}
+
+/* API keys: a Shortcut sheet's steps are sentences, so the number sits by the first line and the text is regular weight */
+.w-shstep.w-shstep2{align-items:flex-start}
+.w-shstep.w-shstep2 b{font-weight:500;text-wrap:pretty}
+.w-shstep2 .w-shstepn{margin-top:-1px}
+.w-shb > .w-shstep2 + .w-code{margin-top:4px}
+.w-shb > .w-code + .w-secbtns{margin:4px 0 2px}
+/* The key shown once sits in the same card as the Emergency Kit's */
+.w-seckey.w-keybox2 code{font-size:14px}
+/* People, Categories, Tags sheets: the item's own picture heads Merge and Make-a-Person; a footnote names a taken name in red */
+.w-shtop > .w-ico{width:64px;height:64px;border-radius:16px}
+.w-shtop > .w-ico svg.i{width:30px;height:30px}
+.w-glf.w-glfbad{color:var(--w-bad)}
+/* Currency sheets: the code reads in capitals as it's typed; a code already listed turns the footnote red */
+#cu-name:not(:placeholder-shown){text-transform:uppercase}
+.w-glf.w-cunote.bad{color:var(--w-bad)}
+/* In dark mode a request in a sheet sits on the same surface as the groups around it */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-dialog .w-code{background:#292B33}}
+:root[data-theme="dark"] .w-dialog .w-code{background:#292B33}
+/* New Key at the limit: why Create waits, in red under the group */
+.w-shb > .w-glf.w-keyfull{color:var(--w-bad);margin-top:-4px}
+/* A category's icon: the pick, big, in its color, and a search stay put; the icons scroll under them,
+   eight to a row, the pick in its color. A fixed height, so the sheet doesn't jump while searching. */
+.w-dialog.w-icdlg{display:flex;flex-direction:column;overflow:hidden;height:min(760px,calc(100vh - 40px))}
+.w-icdlg > .w-shb{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:start;padding-bottom:18px}
+.w-icdlg > .w-shtop{padding-bottom:4px}
+.w-icdlg .w-gsearch{margin:0;justify-self:stretch}
+.w-gsearch input:focus,.w-gsearch input:focus-visible{outline:none;box-shadow:none}
+.w-icprev{display:grid;place-items:center;margin:0 0 16px}
+.w-icprev .w-ico{width:64px;height:64px;border-radius:16px;background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
+.w-icprev svg.i{width:32px;height:32px;stroke-width:1.6}
+#ic-list{display:grid;align-content:start}
+#ic-list > .w-glh:first-child{margin-top:4px}
+#ic-list > .w-icgrp + .w-glh{margin-top:20px}
+.w-icgrp{display:grid;padding:9px 5px;background:var(--w-panel2);border-radius:var(--r-card)}
+/* Each block draws only on screen, and clips at its edges: 5px inside it keep the pick's ring whole */
+.w-icons{display:grid;grid-template-columns:repeat(8,1fr);gap:10px 6px;justify-items:center;padding:5px;content-visibility:auto;contain-intrinsic-block-size:auto 390px}
+.w-icons button{width:100%;max-width:40px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2)}
+.w-icons button svg.i{width:19px;height:19px}
+.w-icons button:hover{background:var(--w-fill2)}
+.w-icons button[aria-checked="true"]{background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink));box-shadow:0 0 0 2px var(--w-raised),0 0 0 4px color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
+.w-icnone{padding:28px 12px;text-align:center;color:var(--w-ink3);font-size:var(--fs-sub)}

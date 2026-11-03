@@ -1,5 +1,5 @@
 /* Transactions: Custom Range and Filter.
-   Custom Range is a sheet (Cancel · Custom Range · Done) with Starts and Ends rows over one month's calendar.
+   Custom Range is a sheet (Cancel · Custom Range · Done) with Starts and Ends rows; the month opens under the one being set.
    Filter is a popover under its button on wide screens and a sheet (Reset · Filter · Done) on phones;
    either way, changes apply as they are made. */
 import { state, t, tn, esc, f0, ds, dim, ym, ymAdd, TODAY, START, LANG, cc, couple, isIncomeCat, monthYear, wkOff, dows, icon, F } from "../../core.js";
@@ -42,11 +42,10 @@ export function openRangeSheet(apply) {
       '<button type="button" data-rm="1" aria-label="' + esc(t("Next month")) + '"' + (k >= ym(max)[0] * 12 + ym(max)[1] ? " disabled" : "") + ">" + icon("right") + "</button></span></div>" +
       '<div class="tx-rgrid" role="group" aria-label="' + esc(monthYear(y, m)) + '">' + h + "</div>";
   };
-  const body = () =>
-    '<div class="w-gl tx-rg">' +
-      '<button type="button" class="w-gr" data-end="a" aria-pressed="' + (end === "a") + '"><span class="k">' + esc(t("Starts")) + '</span><span class="v"><span class="tx-rv' + (end === "a" ? " on" : "") + '">' + esc(medium(a)) + "</span></span></button>" +
-      '<button type="button" class="w-gr" data-end="b" aria-pressed="' + (end === "b") + '"><span class="k">' + esc(t("Ends")) + '</span><span class="v"><span class="tx-rv' + (end === "b" ? " on" : "") + '">' + esc(medium(b)) + "</span></span></button>" +
-      '<div class="tx-rcal">' + grid() + "</div></div>" +
+  // As in Summary's Custom Range (and Calendar's Starts and Ends): the month opens under the row being set
+  const edge = (k) => '<button type="button" class="w-gr" data-end="' + k + '" aria-pressed="' + (end === k) + '"><span class="k">' + esc(k === "a" ? t("Starts") : t("Ends")) +
+    '</span><span class="v"><span class="tx-rv' + (end === k ? " on" : "") + '">' + esc(medium(k === "a" ? a : b)) + "</span></span></button>" + (end === k ? '<div class="tx-rcal">' + grid() + "</div>" : "");
+  const body = () => '<div class="w-gl tx-rg">' + edge("a") + edge("b") + "</div>" +
     '<p class="w-glf">' + esc(tn(daysBetween(a, b), "{n} day", "{n} days")) + "</p>";
   openDialog({
     kind: "sheet",

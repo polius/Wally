@@ -98,7 +98,7 @@ try {
   await page.waitForSelector(".w-kitkey", { timeout: 30000 });
   ok((await gate(page)).includes("Save the household’s Emergency Kit") && (await gate(page)).includes("Wally is encrypted."), "encrypted at once: the encrypted Emergency Kit follows, and only that one");
   const sealedKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-  ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(sealedKit), "a 52-character recovery key");
+  ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(sealedKit), "a 48-character recovery key, in 12 groups");
   ok(await page.locator("[data-code]").count() === 0 && !(await gate(page)).includes("code"), "one kit for the household, and no codes for anyone");
   ok(await page.locator("#onb-back").count() === 0, "there is no going back to before encrypting");
   await shot(page, "setup-kit");
@@ -328,7 +328,7 @@ try {
     await page.waitForSelector(".w-kitkey", { timeout: 15000 });
     ok((await gate(page)).includes("Your data isn’t encrypted: browsers only encrypt on secure pages.") && !(await page.locator("#onb-skip").count()), "plain http: no encrypting step; the kit says why it isn't encrypted");
     const httpKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-    ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(httpKit), "plain http: the kit is made at setup");
+    ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(httpKit), "plain http: the kit is made at setup");
     await page.click("#onb-saved");
     await page.click("#onb-next");
     await page.waitForSelector("[data-onb-data]");

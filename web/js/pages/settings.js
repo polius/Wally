@@ -116,7 +116,7 @@ function renderNav() {
   const cur = paneId || (wanted() || { id: FIRST }).id;
   nav.innerHTML = GROUPS.map(([label, ids]) => '<div class="grp"><span>' + label() + "</span>" + ids.map((id) => {
     const p = PANES[id], on = id === cur;
-    return '<a href="/settings/' + id + '" data-pane="' + id + '" data-k="pane:' + id + '"' + (on ? ' aria-current="page"' : "") + ">" + icon(p.icon) + p.label() + "<span>" + p.value() + "</span></a>";
+    return '<a href="/settings/' + id + '" data-pane="' + id + '" data-k="pane:' + id + '"' + (on ? ' aria-current="page"' : "") + ">" + icon(p.icon) + '<span class="l">' + p.label() + '</span><span class="v">' + p.value() + "</span></a>";
   }).join("") + "</div>").join("") + version();
 }
 

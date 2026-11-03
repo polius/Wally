@@ -168,8 +168,8 @@ button.s-title:hover{background:var(--w-fill)}
   .s-recapw{order:2}
   .s-sec[data-w="notice"]{order:3}
   .s-sec[data-w="cats"]{order:4}
-  .s-sec[data-w="upcoming"]{order:5}
-  .s-sec[data-w="recent"]{order:6}
+  .s-sec[data-w="recent"]{order:5}
+  .s-sec[data-w="upcoming"]{order:6}
   .s-sec[data-w="people"]{order:7}
   .s-sec[data-w="kept"]{order:8}
   .s-sec[data-w="year"]{order:9}
@@ -226,3 +226,10 @@ button.s-title:hover{background:var(--w-fill)}
 
 /* Hide amounts (H) also blurs this page's own figures */
 .w-hide #main[data-page=dashboard] :is(.s-big,.s-am,.s-proj b,.s-ch b,.s-keptn b,.s-yearsub b,.s-notice small,.s-person small,.s-recap small,.chart .lb,.chart .lb2,.chart .lbs){filter:blur(6px)}
+/* On phones a long title (a month of another year) is set smaller, as in Transactions, and never pushes the page wider */
+@media (max-width:767px){
+  .s-head:not(.tx-head) .s-title{max-width:100%}
+  .s-head:not(.tx-head) .s-title.s-long{font-size:28px}
+  .s-head:not(.tx-head) .s-title.s-long span span{font-size:.82em}
+  .w-head.s-head:not(.tx-head){min-width:0;max-width:100%}
+}

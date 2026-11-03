@@ -36,7 +36,7 @@ def plain_household(client):
     expense(client, name="Dentist", category="Therapy", amount="80.00", shares={str(alex): 2000, str(ana): 6000})
     rule(client, name="Netflix", amount="13.99", startDate="2026-08-27", paid_by=ana)
     client.post("/import/commit", json={"rows": [{"date": "2026-10-20", "name": "AMAZON MKTPLACE 99", "amount": "-15.20", "import_ref": "ref-1", "action": "add", "category": "Shopping"}]})
-    client.post("/categories", json={"name": "Kids", "color": 3})
+    client.post("/categories", json={"name": "Kids", "color": 3, "icon": "dog"})
     client.post("/tags", json={"name": "holiday"})
     r = client.put("/signin", json={"enabled": True, "password": PASS})
     assert r.status_code == 200, r.text
@@ -134,7 +134,7 @@ def test_turning_on_leaves_nothing_in_the_clear(encrypted):
     assert status["vault"]["on"] and status["vault"]["kdf"]
     # Every plain table is empty, and no plain backup or old file is left
     conn = sqlite3.connect(database.DB_PATH)
-    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "tag", "importrule"):
+    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "importrule"):
         assert conn.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] == 0, table
     assert conn.execute("SELECT COUNT(*) FROM record").fetchone()[0] == result["count"] == len(before)
     conn.close()
@@ -314,6 +314,20 @@ def turn_on_two_step(client) -> str:
     assert r.status_code == 200, r.text
     auth_router._last_counter["value"] = -1
     return setup["secret"]
+
+def test_an_old_52_character_kit_still_opens_the_household(encrypted):
+    """Kits printed before 2.0 shipped hold 52 characters; the key's bytes go through HKDF the same way."""
+    client, alex, ana, result, before = encrypted
+    old = vc.new_recovery_key(52)
+    assert len(old) == 64
+    rlogin, runlock = vc.from_recovery_key(vc.parse_recovery_key(old))
+    current = vc.from_password(PASS, client.get("/vault/kdf").json()["salt"])[0]
+    r = client.post("/kit", json={"recovery_login": rlogin, "recovery_wrap": vc.lock(runlock, result["secret"], result["vault_id"]), "current": current})
+    assert r.status_code == 200, r.text
+    other = TestClient(client.app)
+    r = other.post("/kit/recover", json={"person_id": alex, "login": rlogin})
+    assert r.status_code == 200, r.text
+    assert vc.unlock(runlock, r.json()["wrap"], r.json()["vault_id"]) == result["secret"]
 
 def test_the_emergency_kit_gets_in_without_two_step(encrypted):
     client, alex, ana, result, before = encrypted

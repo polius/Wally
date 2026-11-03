@@ -3,7 +3,7 @@
 import { t, tn, esc, state, f, GET, POST, PUT, DEL, icon, person, reloadLedger, av } from "../../core.js";
 import { openDialog, toast, errorToast, empty } from "../../ui.js";
 import { refresh } from "../../shell.js";
-import { gl, gr, addRow, hero, check, minus, fieldRow, gate, phone, toggle, val, paint } from "./common.js";
+import { gl, gr, addRow, hero, check, minus, fieldRow, nameGate, phone, toggle, val, paint } from "./common.js";
 import { setAction, openPane, replaceSub } from "../settings.js";
 
 let box = null;
@@ -84,9 +84,9 @@ function addTag() {
   openDialog({
     kind: "sheet",
     title: t("New Tag"),
-    body: fieldRow("tag-new", "", t("Name, like holiday"), ' maxlength="40" autofocus') + '<p class="w-glf">' + t("Tags cut across categories: a holiday has food, travel and shopping.") + "</p>",
+    body: fieldRow("tag-new", "", t("Name, like holiday"), ' maxlength="40" autofocus') + '<p class="w-glf" id="tag-new-note" aria-live="polite">' + t("Tags cut across categories: a holiday has food, travel and shopping.") + "</p>",
     ok: t("Add"),
-    onOpen: (root) => gate(root, (r) => !!clean(val(r, "tag-new"))),
+    onOpen: (root) => nameGate(root, "tag-new", (n) => { const g = clean(n); return !g ? t("Type a name first") : state.tags.includes(g) ? esc(t("#{name} is already a tag", { name: g })) : ""; }),
     onOk: async (root) => {
       const name = clean(val(root, "tag-new"));
       if (!name) throw new Error(t("Type a name first"));
@@ -99,37 +99,32 @@ function addTag() {
   });
 }
 
-/* Renaming into a tag that exists merges them, and says so */
+/* Another tag's name is refused, as for categories: Merge is the way to put two tags together */
 function rename(name) {
+  const n = state.tx.filter((tx) => tx.tags.includes("#" + name)).length;
   openDialog({
     kind: "sheet",
     title: t("Rename #{name}", { name: esc(name) }),
-    body: '<div class="w-gl"><label class="w-gr"><span class="w-hash">#</span><input id="tr-name" value="' + esc(name) + '" aria-label="' + esc(t("Name")) + '" maxlength="40" autocomplete="off"></label></div><p class="w-glf" id="tr-hint" aria-live="polite"></p>',
+    body: '<div class="w-gl"><label class="w-gr"><span class="w-hash">#</span><input id="tr-name" value="' + esc(name) + '" aria-label="' + esc(t("Name")) + '" maxlength="40" autocomplete="off"></label></div>' +
+      '<p class="w-glf" id="tr-name-note" aria-live="polite">' + (n ? tn(n, "Its {n} transaction gets the new name.", "Its {n} transactions get the new name.") : "") + "</p>",
     ok: t("Done"),
     onOpen: (root) => {
       root.classList.add("w-sh420");
-      const input = root.querySelector("#tr-name");
-      input.select();
-      gate(root, (r) => !!clean(val(r, "tr-name")));
-      input.addEventListener("input", () => {
-        const to = clean(input.value);
-        const clash = to !== name && state.tags.includes(to);
-        root.querySelector("#tr-hint").textContent = clash ? t("#{name} already exists. The two are merged.", { name: to }) : "";
-        root.querySelector("[data-dlg-ok]").textContent = clash ? t("Merge") : t("Done");
-      });
+      root.querySelector("#tr-name").select();
+      nameGate(root, "tr-name", (n) => { const to = clean(n); return !to ? t("Type a name first") : to !== name && state.tags.includes(to) ? esc(t("#{name} is already a tag. Merge this one into it instead.", { name: to })) : ""; });
     },
     onOk: async (root) => {
       const to = clean(root.querySelector("#tr-name").value);
       if (!to) throw new Error(t("Type a name first"));
       if (to === name) return;
-      const merging = state.tags.includes(to);
+      if (state.tags.includes(to)) throw new Error(t("#{name} is already a tag. Merge this one into it instead.", { name: esc(to) }));
       await PUT("/tags/" + encodeURIComponent(name), { name: to });
       moveLocally(name, to);
       const here = sub === name;
       if (here) sub = to;   // its page follows the new name
       await reloadTags();
       refresh({ tags: true });
-      toast(merging ? t("Merged #{from} into #{to}", { from: name, to }) : t("Renamed #{from} to #{to}", { from: name, to }));
+      toast(t("Renamed #{from} to #{to}", { from: name, to }));
       if (here) replaceSub(encodeURIComponent(to));
     },
   });
@@ -140,12 +135,15 @@ function merge(name) {
   const others = state.tags.filter((x) => x !== name);
   let pick = others[0];
   const n = state.tx.filter((tx) => tx.tags.includes("#" + name)).length;
+  // The header says what happens, with the number, and follows the tag picked
+  const what = () => n ? tn(n, "Its {n} transaction gets #{to} instead.", "Its {n} transactions get #{to} instead.", { to: esc(pick) }) : t("No transactions use it.");
   openDialog({
     kind: "sheet",
     title: t("Merge #{name}", { name: esc(name) }),
+    top: tagIco() + '<b class="w-shtitle w-sht20">#' + esc(name) + '</b><p id="tm-what" aria-live="polite">' + what() + "</p>",
     body: '<div class="w-glh">' + t("Merge into") + '</div><div class="w-gl" role="radiogroup" aria-label="' + esc(t("Merge into")) + '">' +
       others.map((x) => '<button type="button" class="w-gr" role="radio" data-to="' + esc(x) + '" aria-checked="' + (x === pick) + '"><span class="k">#' + esc(x) + "</span>" + check(x === pick) + "</button>").join("") + "</div>" +
-      '<p class="w-glf">' + tn(n, "Its {n} transaction gets the tag you pick, and #{name} goes away.", "Its {n} transactions get the tag you pick, and #{name} goes away.", { name: esc(name) }) + "</p>",
+      '<p class="w-glf">' + t("Then #{name} goes away. A merge can’t be undone.", { name: esc(name) }) + "</p>",
     ok: t("Merge"),
     onOpen(root) {
       root.classList.add("w-sh420");
@@ -154,6 +152,7 @@ function merge(name) {
         if (!b) return;
         pick = b.dataset.to;
         root.querySelectorAll("[data-to]").forEach((x) => { const on = x === b; x.setAttribute("aria-checked", String(on)); x.querySelector(".w-gck").outerHTML = check(on); });
+        root.querySelector("#tm-what").innerHTML = what();
       });
     },
     onOk: async () => {
@@ -174,7 +173,7 @@ function remove(name) {
     top: tagIco().replace("w-tagico", "w-tagico w-tag48"),
     title: t("Delete #{name}?", { name: esc(name) }),
     body: "<p>" + (n ? tn(n, "It is removed from {n} transaction. The transaction stays.", "It is removed from {n} transactions. The transactions stay.") : t("No transactions use it.")) + "</p>",
-    ok: phone() ? t("Delete Tag") : t("Delete"),
+    ok: phone() ? t("Delete #{name}", { name: esc(name) }) : t("Delete"),
     danger: true,
     onOk: async () => {
       await DEL("/tags/" + encodeURIComponent(name));
@@ -188,30 +187,24 @@ function remove(name) {
   });
 }
 
-/* Make this a person: every transaction with the tag becomes one person's own */
+/* Make this a person: every transaction with the tag becomes one person's own. The header says how many, and whose. */
 function fromTag(tag) {
   const owner = state.people.find((p) => p.name.toLocaleLowerCase() === tag.toLocaleLowerCase()) || person(state.me) || state.people[0];
-  let who = String(owner.id), count = 0;
+  let who = String(owner.id), count = state.tx.filter((tx) => tx.tags.includes("#" + tag)).length;
   const people = state.people.map((p) => '<button type="button" class="w-gr" role="radio" data-who="' + p.id + '" aria-checked="' + (String(p.id) === who) + '">' + av(String(p.id), "w-av26") + '<span class="k">' + esc(p.name) + "</span>" + check(String(p.id) === who) + "</button>").join("");
+  const what = () => count ? tn(count, "Its {n} transaction becomes {name}’s own, no longer shared.", "Its {n} transactions become {name}’s own, no longer shared.", { name: esc((person(who) || {}).name || "") })
+    : t("No transactions have #{tag}.", { tag: esc(tag) });
   openDialog({
     kind: "sheet",
     title: t("Make #{tag} a Person", { tag: esc(tag) }),
-    body: '<p class="w-shlead2">' + t("Every transaction with #{tag} becomes that person’s own, and stops being shared.", { tag: esc(tag) }) + "</p>" +
-      '<div class="w-glh">' + t("Person") + '</div><div class="w-gl" role="radiogroup" aria-label="' + esc(t("Person")) + '">' + people + "</div>" +
-      '<div class="w-gl"><div class="w-gr"><span class="k">' + t("Remove the tag afterwards") + "</span>" + toggle("ft-remove", true, t("Remove the tag afterwards")) + "</div></div>" +
-      '<p class="w-glf" id="ft-preview" aria-live="polite"></p>',
-    ok: t("Move"),
+    top: tagIco() + '<b class="w-shtitle w-sht20">#' + esc(tag) + '</b><p id="ft-what" aria-live="polite">' + what() + "</p>",
+    body: '<div class="w-glh">' + t("Person") + '</div><div class="w-gl" role="radiogroup" aria-label="' + esc(t("Person")) + '">' + people + "</div>" +
+      '<div class="w-gl"><div class="w-gr"><span class="k">' + t("Remove the tag afterwards") + "</span>" + toggle("ft-remove", true, t("Remove the tag afterwards")) + "</div></div>",
+    ok: t("Make"),
     onOpen: (root) => {
       root.classList.add("w-sh440");
-      const preview = async () => {
-        const out = root.querySelector("#ft-preview");
-        const p = person(who);
-        try {
-          const r = await GET("/people/from-tag/preview?tag=" + encodeURIComponent(tag));
-          count = r.count;
-          if (out.isConnected) out.innerHTML = tn(r.count, "{n} transaction has #{tag}. It becomes {name}’s.", "{n} transactions have #{tag}. They become {name}’s.", { tag: esc(tag), name: esc(p ? p.name : "") });
-        } catch (e) { if (out.isConnected) out.textContent = e.message; }
-      };
+      const ok = root.querySelector("[data-dlg-ok]");
+      const show = () => { root.querySelector("#ft-what").innerHTML = what(); ok.disabled = !count; };
       root.addEventListener("click", (ev) => {
         const sw = ev.target.closest("#ft-remove");
         if (sw) { sw.setAttribute("aria-checked", String(sw.getAttribute("aria-checked") !== "true")); return; }
@@ -219,9 +212,11 @@ function fromTag(tag) {
         if (!b) return;
         who = b.dataset.who;
         root.querySelectorAll("[data-who]").forEach((x) => { const on = x === b; x.setAttribute("aria-checked", String(on)); x.querySelector(".w-gck").outerHTML = check(on); });
-        preview();
+        show();
       });
-      preview();
+      show();
+      // The server's count is the one that moves
+      GET("/people/from-tag/preview?tag=" + encodeURIComponent(tag)).then((r) => { count = r.count; if (root.isConnected) show(); }).catch(() => { /* the local count stands */ });
     },
     onOk: async (root) => {
       if (!count) throw new Error(t("No transactions have this tag."));

@@ -13,6 +13,13 @@ export function moveTip(ev) {
   if (y + r.height > innerHeight - 8) y = Math.max(8, y - r.height - 28);
   el.style.left = x + "px"; el.style.top = y + "px";
 }
+/* ‹ › that step through time say what they step: on hover, and read out */
+export function stepLabels(box, year) {
+  const [p, n] = box.querySelectorAll("button");
+  const lp = year ? t("Previous year") : t("Previous month"), ln = year ? t("Next year") : t("Next month");
+  p.setAttribute("aria-label", lp); p.title = lp;
+  n.setAttribute("aria-label", ln); n.title = ln;
+}
 export function hideTip() { tip().classList.remove("on"); }
 export function row(k, v, sw) { return '<div class="r"><span>' + (sw ? '<i style="background:' + sw + '"></i>' : "") + k + "</span><b>" + v + "</b></div>"; }
 export function hover(node, html) {
@@ -165,10 +172,11 @@ export function initDialogs() {
     else trapFocus(w.firstChild, ev);
   });
 }
-export function confirmDialog(title, body, ok, danger) {
+/* A question as an alert; top is its picture (optional) */
+export function confirmDialog(title, body, ok, danger, top) {
   return new Promise((resolve) => {
     let done = false;
-    openDialog({ title, body: body ? "<p>" + body + "</p>" : "", ok, danger, onOk: () => { done = true; resolve(true); } });
+    openDialog({ title, top, body: body ? "<p>" + body + "</p>" : "", ok, danger, onOk: () => { done = true; resolve(true); } });
     const obs = new MutationObserver(() => { if ($("dlg").hidden) { obs.disconnect(); if (!done) resolve(false); } });
     obs.observe($("dlg"), { attributes: true, attributeFilter: ["hidden"] });
   });

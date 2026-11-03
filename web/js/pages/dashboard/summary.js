@@ -1,6 +1,6 @@
 /* Summary: how this month is going, where it's heading, then the details.
    Two columns on wide screens that fill independently: the month on the left (Everyday spending,
-   Categories, Coming up, Recent), the context on the right (the recap when one is ready, Worth noticing,
+   Categories, Recent, Coming up), the context on the right (the recap when one is ready, Worth noticing,
    The household, Kept each month, This year). On a phone the same cards stack in reading order (see
    dashboard.css). "Everyday" is everything except bills: transactions a recurring rule made.
    Clicks are handled in dashboard.js from data-* attributes. */
@@ -62,8 +62,8 @@ export function summaryHtml() {
         '<div class="cv s-chart" id="c-hero"></div><div id="s-heroempty" hidden></div>' +
       "</div></section>" +
       sec("cats", t("Categories"), '<span class="s-note" id="s-catsnote"></span>') +
-      sec("upcoming", t("Coming up"), seeAll("/recurring")) +
       sec("recent", t("Recent"), seeAll("/transactions")) +
+      sec("upcoming", t("Coming up"), seeAll("/recurring")) +
     "</div>" +
     '<div class="s-col s-right">' +
       '<div class="s-recapw" id="s-recapw"></div>' +

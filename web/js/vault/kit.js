@@ -1,5 +1,5 @@
-/* The household's Emergency Kit, as a PDF: one A4 page in black and grey (it prints the same on any
-   printer) with whose household it opens, the recovery key and its QR code, the Wally address when it
+/* The household's Emergency Kit, as a PDF: one A4 page in Wally's colors (its tints print as light grey
+   in black and white) with whose household it opens, the recovery key and its QR code, the Wally address when it
    works from other devices (a line to write it in otherwise), a line for the password, and how to use it.
 
    The page is drawn on a 300 dpi canvas with the browser's own text engine, so every language,
@@ -44,10 +44,15 @@ export function keyGroups(key) { return '<code class="w-kitkey" translate="no">'
 /* ---------- the page ---------- */
 const PX = 300 / 25.4;          // canvas pixels per millimetre, at 300 dpi
 const PAGE = { w: 210, h: 297 };
-const INK = "#111111", INK2 = "#444444", INK3 = "#6B6B6B", LINE = "#CCCCCC", RULE = "#999999";
+// Wally's own colors, light mode. The tints print as light grey on a black and white printer; the key and its
+// QR code stay near black, so they read and scan either way.
+const C = {
+  ink: "#1C1C1E", ink2: "#48484A", ink3: "#8E8E93", hint: "#AEAEB2", sep: "#D8D8DD",
+  accent: "#4F5BD5", accentInk: "#3D47B5", tint: "#EEF0FD", group: "#F2F2F7", warnBg: "#FFF4E2", warn: "#B4600A",
+};
 const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
-// Key rows: 5, 5 and 3 groups of four
-const ROWS = [[0, 5], [5, 10], [10, 13]];
+// Key rows: three even rows of four groups (a kit from before 2.0 shipped has 13 groups: 5, 5 and 3)
+const rowsOf = (n) => (n === 12 ? [[0, 4], [4, 8], [8, 12]] : [[0, 5], [5, 10], [10, n]]);
 
 function loadImage(src) {
   return new Promise((resolve) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => resolve(null); i.src = src; });
@@ -58,56 +63,66 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 
-/* Draws the kit in millimetres. Returns where each row of the key is, for the text layer. */
-async function drawKit(ctx, key, address) {
+/* Draws the kit in millimetres, its type at scale s (smaller when a language runs long).
+   extra is spare room added between the sections, so a short language still fills the page evenly.
+   Returns where each row of the key is, for the text layer, whether the page held it all, and the room left. */
+async function drawKit(ctx, key, address, s, logo, extra = 0) {
   const rtl = document.documentElement.dir === "rtl";
+  const cjk = /^(ja|zh|ko)/.test(LANG);
   const sans = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
-  const M = 16, W = PAGE.w - 2 * M;
-  // In millimetres from the start edge: mirrored for right-to-left languages
-  const X = (x, w = 0) => (rtl ? PAGE.w - x - w : x);
-  const font = (size, weight = 400, family = sans) => { ctx.font = weight + " " + (size * 25.4 / 72) + "px " + family; };
-  const text = (s, x, y, o = {}) => {
-    font(o.size || 10, o.weight || 400, o.family);
-    ctx.fillStyle = o.color || INK;
+  const M = 18, W = PAGE.w - 2 * M, BOTTOM = PAGE.h - 16;
+  const mm = (pt) => pt * s * 25.4 / 72;                       // a type size in points, as millimetres
+  // Type is set at its printed size in CSS pixels (96 to the inch) and placed in millimetres, so the system font
+  // picks the design it uses at that size on screen: text for the body, display for the title. Set at a few
+  // "pixels" (millimetres), it would pick its loosely spaced caption design.
+  const CSS = 96 / 25.4;
+  const font = (size, weight = 400, family = sans) => { ctx.font = weight + " " + (mm(size) * CSS) + "px " + family; };
+  const measure = (str) => ctx.measureText(str).width / CSS;
+  const put = (str, x, y) => { ctx.save(); ctx.scale(1 / CSS, 1 / CSS); ctx.fillText(str, x * CSS, y * CSS); ctx.restore(); };
+  // x is measured from the start edge (the right one in right-to-left languages); a box of width w is mirrored whole
+  const bx = (x, w = 0) => (rtl ? PAGE.w - x - w : x);
+  const text = (str, x, y, o = {}) => {
+    font(o.size || 12, o.weight || 400, o.family);
+    ctx.fillStyle = o.color || C.ink;
     ctx.direction = o.ltr ? "ltr" : rtl ? "rtl" : "ltr";
-    ctx.textAlign = o.end ? (rtl ? "left" : "right") : (rtl ? "right" : "left");
-    ctx.fillText(s, o.end ? (rtl ? x : PAGE.w - x) : X(x), y);
+    ctx.textAlign = o.center ? "center" : o.end ? (rtl ? "left" : "right") : (rtl ? "right" : "left");
+    put(str, o.center ? x : bx(x), y);
   };
   // Words to lines that fit, or characters where a language writes no spaces
-  const wrap = (s, maxW, size, weight = 400) => {
+  const wrap = (str, maxW, size, weight = 400) => {
     font(size, weight);
-    const cjk = /^(ja|zh)/.test(LANG);
-    const tokens = cjk ? [...s] : s.split(/(\s+)/);
+    const tokens = cjk ? [...str] : str.split(/(\s+)/);
     const lines = [];
     let line = "";
     for (const tok of tokens) {
       const next = line + tok;
-      if (line && ctx.measureText(next.trim()).width > maxW) { lines.push(line.trim()); line = tok.trimStart(); }
+      if (line && measure(next.trim()) > maxW) { lines.push(line.trim()); line = tok.trimStart(); }
       else line = next;
     }
     if (line.trim()) lines.push(line.trim());
     return lines;
   };
-  const para = (s, x, y, maxW, o = {}) => {
-    const size = o.size || 10, lh = o.lh || size * 0.53;
-    const at = o.bold ? s.indexOf(o.bold) : -1;
-    if (at >= 0 && !rtl && !/^(ja|zh)/.test(LANG)) return boldPara(s, at, at + o.bold.length, x, y, maxW, size, lh, o.color || INK);
-    const lines = wrap(s, maxW, size, o.weight);
+  const lead = (size) => mm(size) * 1.42;
+  // A paragraph; one part of it may be bold (the household's names, the link to choose)
+  const para = (str, x, y, maxW, o = {}) => {
+    const size = o.size || 12, lh = lead(size);
+    const at = o.bold ? str.indexOf(o.bold) : -1;
+    if (at >= 0 && !rtl && !cjk) return boldPara(str, at, at + o.bold.length, x, y, maxW, size, lh, o.color || C.ink, o.boldColor || C.ink);
+    const lines = wrap(str, maxW, size, o.weight);
     lines.forEach((l, i) => text(l, x, y + i * lh, o));
-    return y + lines.length * lh;
+    return y + (lines.length - 1) * lh;
   };
-  // A paragraph with one part in bold (the household's names, the link to choose): word by word
-  const boldPara = (s, from, to, x, y, maxW, size, lh, color) => {
+  const boldPara = (str, from, to, x, y, maxW, size, lh, color, boldColor) => {
     const words = [];
     let i = 0;
-    for (const tok of s.split(/(\s+)/)) {
+    for (const tok of str.split(/(\s+)/)) {
       // A word that is partly bold (the names, then a full stop) is split where the bold ends
       for (const [a, b] of [[i, Math.min(i + tok.length, Math.max(from, i))], [Math.max(from, i), Math.min(to, i + tok.length)], [Math.max(to, i), i + tok.length]]) {
-        if (b > a) words.push({ s: s.slice(a, b), w: a >= from && b <= to ? 700 : 400 });
+        if (b > a) words.push({ s: str.slice(a, b), b: a >= from && b <= to });
       }
       i += tok.length;
     }
-    const width = (wd) => { font(size, wd.w); return ctx.measureText(wd.s).width; };
+    const width = (wd) => { font(size, wd.b ? 650 : 400); return measure(wd.s); };
     const lines = [[]];
     let lw = 0;
     for (const wd of words) {
@@ -116,106 +131,124 @@ async function drawKit(ctx, key, address) {
       if (space && !lines[lines.length - 1].length) continue;
       lines[lines.length - 1].push(wd); lw += ww;
     }
-    ctx.fillStyle = color; ctx.direction = "ltr"; ctx.textAlign = "left";
-    lines.forEach((l, n) => { let cx = x; l.forEach((wd) => { font(size, wd.w); ctx.fillText(wd.s, cx, y + n * lh); cx += ctx.measureText(wd.s).width; }); });
-    return y + lines.length * lh;
+    ctx.direction = "ltr"; ctx.textAlign = "left";
+    lines.forEach((l, n) => { let cx = x; l.forEach((wd) => { font(size, wd.b ? 650 : 400); ctx.fillStyle = wd.b ? boldColor : color; put(wd.s, cx, y + n * lh); cx += measure(wd.s); }); });
+    return y + (lines.length - 1) * lh;
   };
-  const eyebrow = (s, x, y) => text(s.toLocaleUpperCase(LANG), x, y, { size: 7.5, weight: 650, color: INK3 });
+  // A section's name, small and grey, inset like the app's group labels
+  const label = (str, y) => text(str, M + 4, y, { size: 10.5, weight: 600, color: C.ink3 });
+  const fill = (color, x, y, w, h, r) => { ctx.fillStyle = color; roundRect(ctx, bx(x, w), y, w, h, r); ctx.fill(); };
 
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, PAGE.w, PAGE.h);
-  // Large, calm type that fills the page: it is read on paper, in a drawer, years from now
-  const label = (s, y) => { ctx.letterSpacing = "0.3px"; text(s.toLocaleUpperCase(LANG), M, y, { size: 14.2, weight: 600, color: INK3 }); ctx.letterSpacing = "0px"; };
 
-  // Header: the mark in grey, the name, and the day it was made
-  const logo = await loadImage("/icons/icon-192.png");
-  if (logo) {
-    ctx.save(); roundRect(ctx, X(M, 11), 14.5, 11, 11, 2.6); ctx.clip();
-    ctx.filter = "grayscale(1)";
-    ctx.drawImage(logo, X(M, 11), 14.5, 11, 11); ctx.restore();
-    ctx.filter = "none";
-  }
-  text("Wally", M + 14, 22.4, { size: 17, weight: 700 });
+  // Header: the wallet in color, the name, and the day it was made
+  let y = 16;
+  if (logo) ctx.drawImage(logo, bx(M, 9), y, 9, 9);
+  text("Wally", M + 11.5, y + 6.4, { size: 14, weight: 650 });
   const made = new Intl.DateTimeFormat(LANG, { day: "numeric", month: "long", year: "numeric" }).format(new Date());
-  text(t("Made {date}", { date: made }), M, 22.4, { size: 15, color: INK3, end: true });
+  text(t("Made {date}", { date: made }), M + W, y + 6.4, { size: 10.5, color: C.ink3, end: true });
 
-  // The title once, and whose household it opens
-  ctx.letterSpacing = "-0.24px";
-  text(t("Emergency Kit"), M, 48.1, { size: 34, weight: 700 });
-  ctx.letterSpacing = "0px";
+  // The title, and whose household it opens
+  y += 9 + 8 + mm(30) * 0.8;
+  text(t("Emergency Kit"), M, y, { size: 30, weight: 700 });
   const names = (state.people || []).map((p) => p.name).filter(Boolean);
   const listed = names.length ? new Intl.ListFormat(LANG, { type: "conjunction" }).format(names) : "";
   const whose = names.length
     ? t("For the household of {names}. Keep it with your passport: it opens Wally if the password is forgotten.", { names: listed })
     : t("Keep it with your passport: it opens Wally if the password is forgotten.");
-  let y = para(whose, M, 62.4, W, { size: 17, lh: 8.7, color: INK2, bold: listed });
+  y = para(whose, M, y + 6 + mm(13) * 1.1, W - 10, { size: 13, color: C.ink2, bold: listed });
 
-  // The recovery key, with its QR code, in a black outline
-  y = Math.max(y + 10, 89.5);
+  // The recovery key and its QR code, on the accent's tint
+  y += 13 + extra;
   label(t("Recovery key"), y);
-  const boxH = 52.4, boxY = y + 5.2;
-  ctx.strokeStyle = INK; ctx.lineWidth = 0.75; roundRect(ctx, M, boxY, W, boxH, 5); ctx.stroke();
-  const groups = key.split("-"), qrSize = 39, qrX = rtl ? M + 7.7 : M + W - 7.7 - qrSize, qrY = boxY + (boxH - qrSize) / 2;
-  const keyX = rtl ? M + qrSize + 15.4 : M + 7.7;
+  const pad = 8, qrSize = 36 * Math.min(1.1, s), groups = key.split("-");
+  // The key as large as it goes, keeping a clear gap before the code
+  const ROWS = rowsOf(groups.length);
+  let keySize = 18;
+  font(keySize, 600, MONO);
+  const widest = Math.max(...ROWS.map(([a, b]) => measure(groups.slice(a, b).join("  "))));
+  keySize *= Math.min(1, (W - qrSize - 5 - pad - 10) / widest);
+  const keyLh = mm(keySize) * 1.75;
+  const boxY = y + 3.2, boxH = Math.max(qrSize + 2 * 5, 3 * keyLh + 2 * pad);
+  fill(C.tint, M, boxY, W, boxH, 4.5);
   const rows = [];
-  font(17.5, 700, MONO);
-  ctx.fillStyle = INK; ctx.direction = "ltr"; ctx.textAlign = "left";
+  // Physical positions: the code sits at the end of the card, the key at its start
+  const qrX = rtl ? M + 5 : M + W - 5 - qrSize, qrY = boxY + (boxH - qrSize) / 2;
+  const keyX = rtl ? M + 5 + qrSize + pad : M + pad;
+  font(keySize, 600, MONO);
+  ctx.fillStyle = C.ink; ctx.direction = "ltr"; ctx.textAlign = "left";
+  const firstLine = boxY + (boxH - 3 * keyLh) / 2 + keyLh * 0.68;
   ROWS.forEach(([a, b], i) => {
     const line = groups.slice(a, b).join("  ");
-    const by = boxY + 16.7 + i * 11.25;
-    ctx.fillText(line, keyX, by);
-    rows.push({ text: groups.slice(a, b).join("-"), shown: line, x: keyX, y: by, w: ctx.measureText(line).width, size: 17.5 });
+    const by = firstLine + i * keyLh;
+    put(line, keyX, by);
+    rows.push({ text: groups.slice(a, b).join("-"), shown: line, x: keyX, y: by, w: measure(line), size: keySize * s });
   });
   const q = await qrModules(key);
   if (q) {
-    ctx.strokeStyle = INK; ctx.lineWidth = 0.75; ctx.strokeRect(qrX, qrY, qrSize, qrSize);
-    const n = q.getModuleCount(), pad = 2.4, cell = (qrSize - 2 * pad) / n;
-    ctx.fillStyle = INK;
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) ctx.fillRect(qrX + pad + c * cell, qrY + pad + r * cell, cell + 0.02, cell + 0.02);
+    ctx.fillStyle = "#fff"; roundRect(ctx, qrX, qrY, qrSize, qrSize, 2.6); ctx.fill();
+    const n = q.getModuleCount(), qp = 2.6, cell = (qrSize - 2 * qp) / n;
+    ctx.fillStyle = C.ink;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) ctx.fillRect(qrX + qp + c * cell, qrY + qp + r * cell, cell + 0.02, cell + 0.02);
   }
+  y = boxY + boxH;
 
-  // Lines to read or write on: the value on the line, or a grey hint where it goes
-  const line = (name, value, hint, at) => {
-    label(name, at);
-    if (value) {
-      text(value, M, at + 12.5, { size: 17, weight: 500, ltr: true });
-      text(hint, M, at + 12.5, { size: 14.2, color: "#999999", end: true });
-    } else text(hint, M, at + 13, { size: 14.2, color: "#999999" });
-    ctx.strokeStyle = RULE; ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(M, at + 17.9); ctx.lineTo(PAGE.w - M, at + 17.9); ctx.stroke();
-  };
-  y = boxY + boxH + 12;
-  // The address only when it works from another device: made on the server itself, it would print localhost
-  line(t("Wally address"), address || "", address ? t("or write it here") : t("Write it here"), y);
-  y += 29.9;
-  line(t("Household password"), "", t("Write it here by hand, if you like"), y);
+  // The address and the password: two rows, as in Settings, with room to write on
+  y += 11 + extra;
+  const fields = [
+    // The address only when it works from another device: made on the server itself, it would print localhost
+    { k: t("Wally address"), v: address || "", hint: address ? "" : t("Write it here") },
+    { k: t("Household password"), v: "", hint: t("Write it here by hand, if you like") },
+  ];
+  const rowH = 16 * Math.max(s, 0.9), fy = y;
+  fill(C.group, M, fy, W, rowH * fields.length, 4.5);
+  fields.forEach((f, i) => {
+    const mid = fy + i * rowH + rowH / 2 + mm(12.5) * 0.34;
+    text(f.k, M + 6, mid, { size: 12.5, weight: 500 });
+    if (f.v) text(f.v, M + W - 6, mid, { size: 12.5, color: C.ink2, end: true, ltr: true });
+    else text(f.hint, M + W - 6, mid, { size: 11, color: C.hint, end: true });
+    if (i) { ctx.fillStyle = C.sep; ctx.fillRect(bx(M + 6, W - 6), fy + i * rowH - 0.12, W - 6, 0.24); }
+  });
+  y = fy + rowH * fields.length;
 
-  // How to use it
-  y += 29.8;
+  // How to use it: numbered steps, each number in an accent circle
+  y += 13 + extra;
   label(t("If you forget the password"), y);
   const steps = [
     t("On the sign-in page, choose Forgot password?"),
     t("Type this key, or scan the code and paste it."),
     t("Choose a new household password."),
   ];
-  let sy = y + 12.4;
-  // "Forgot password?" in bold, as it reads on the sign-in page
   const link = t("Forgot password?");
+  // The circles line up with the section's name above them, as the steps aren't in a card
+  const r0 = 3.3, cx0 = M + 4 + r0, tx = cx0 + r0 + 4;
+  y += 4;
   steps.forEach((st, i) => {
-    // The number ends where a list's marker would, a space before the step
-    font(17); ctx.fillStyle = "#222222"; ctx.direction = rtl ? "rtl" : "ltr"; ctx.textAlign = rtl ? "left" : "right";
-    ctx.fillText((i + 1) + ".", X(M + 7.4), sy);
-    sy = para(st, M + 9, sy, W - 9, { size: 17, lh: 8.7, color: "#222222", bold: i === 0 ? link : "" });
+    const base = y + 3 + mm(13) * 0.75;
+    const cy = base - mm(13) * 0.36;
+    ctx.fillStyle = C.accent; ctx.beginPath(); ctx.arc(bx(cx0), cy, r0, 0, Math.PI * 2); ctx.fill();
+    font(10.5, 700); ctx.fillStyle = "#fff"; ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    put(String(i + 1), bx(cx0), cy + 0.15);
+    ctx.textBaseline = "alphabetic";
+    y = para(st, tx, base, W - (tx - M), { size: 13, color: C.ink, bold: i === 0 ? link : "", boldColor: C.accentInk }) + mm(13) * 0.45;
   });
 
-  // Keep it safe: at the foot of the page, under a thin rule
+  // Keep it safe: a calm warning at the foot of the page
   const safe = t("Anyone with this key can open your Wally, even with two-step sign-in on. Making a new kit in Settings › Sign-in & Privacy stops this one working.");
-  const safeLines = wrap(safe, W, 14.9);
-  const top = Math.max(sy + 8, 281 - (safeLines.length - 1) * 7.6);
-  ctx.strokeStyle = LINE; ctx.lineWidth = 0.35;
-  ctx.beginPath(); ctx.moveTo(M, top - 7.5); ctx.lineTo(PAGE.w - M, top - 7.5); ctx.stroke();
-  safeLines.forEach((l, i) => text(l, M, top + i * 7.6, { size: 14.9, color: INK2 }));
-  return rows;
+  const wp = 6, icon = 5.2, wtx = M + wp + icon + 4;
+  const safeLines = wrap(safe, W - (wtx - M) - wp, 11);
+  const wlh = lead(11), wh = 2 * wp + (safeLines.length - 1) * wlh + mm(11) * 0.9;
+  const top = Math.max(y + 12 + extra, BOTTOM - wh);
+  fill(C.warnBg, M, top, W, wh, 4.5);
+  // A rounded warning triangle, with its mark
+  const ix = bx(M + wp, icon), iy = top + wp + 0.1;
+  ctx.fillStyle = C.warn; ctx.strokeStyle = C.warn; ctx.lineWidth = 0.9; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(ix + icon / 2, iy); ctx.lineTo(ix + icon, iy + icon * 0.88); ctx.lineTo(ix, iy + icon * 0.88); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.warnBg; ctx.fillRect(ix + icon / 2 - 0.3, iy + icon * 0.3, 0.6, icon * 0.3);
+  ctx.beginPath(); ctx.arc(ix + icon / 2, iy + icon * 0.72, 0.35, 0, Math.PI * 2); ctx.fill();
+  safeLines.forEach((l, i) => text(l, wtx, top + wp + mm(11) * 0.78 + i * wlh, { size: 11, color: C.ink2 }));
+  return { rows, fits: top + wh <= BOTTOM + 0.01, slack: BOTTOM - wh - (y + 12 + extra) };
 }
 
 /* ---------- the PDF around it ---------- */
@@ -275,7 +308,17 @@ export async function kitPdf(key, address) {
   canvas.height = Math.round(PAGE.h * PX);
   const ctx = canvas.getContext("2d");
   ctx.scale(PX, PX);
-  const rows = await drawKit(ctx, key, address === undefined ? reachable() : address);
+  const logo = await loadImage("/icons/wally.svg");
+  // Smaller type, a step at a time, until the longest language fits the page
+  const addr = address === undefined ? reachable() : address;
+  let drawn, scale;
+  for (scale of [1.2, 1.15, 1.1, 1.05, 1, 0.95, 0.9, 0.85, 0.8, 0.75]) {
+    drawn = await drawKit(ctx, key, addr, scale, logo);
+    if (drawn.fits) break;
+  }
+  // Room to spare is shared between the four gaps, up to a point; the rest stays under the warning
+  if (drawn.slack > 1) drawn = await drawKit(ctx, key, addr, scale, logo, Math.min(drawn.slack / 4, 9));
+  const rows = drawn.rows;
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.93));
   const jpeg = new Uint8Array(await blob.arrayBuffer());
   return buildPdf(jpeg, canvas.width, canvas.height, rows);

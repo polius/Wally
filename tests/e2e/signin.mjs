@@ -49,22 +49,26 @@ function totp(secret, step = 0) {
   const h = createHmac("sha1", base32(secret)).update(buf).digest(), o = h[h.length - 1] & 15;
   return String(((h.readUInt32BE(o) & 0x7fffffff) % 1e6)).padStart(6, "0");
 }
-/* Emergency Kit keys, as Wally makes them: 31 random bytes and a check byte, in Crockford base32 */
+/* Emergency Kit keys, as Wally makes them: 29 random bytes and a check byte, in Crockford base32 (48 characters).
+   A body of 31 bytes makes the 52-character key of kits from before 2.0 shipped, which still work. */
 const ABC = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const SIZES = { 48: 29, 52: 31 };
 function keyFrom(body) {
+  const chars = body.length === 31 ? 52 : 48;
   const raw = Buffer.concat([body, createHash("sha256").update(body).digest().subarray(0, 1)]);
-  const bits = [...raw].map((b) => b.toString(2).padStart(8, "0")).join("").padEnd(260, "0");
+  const bits = [...raw].map((b) => b.toString(2).padStart(8, "0")).join("").padEnd(chars * 5, "0");
   let out = "";
-  for (let i = 0; i < 52; i++) out += ABC[parseInt(bits.slice(i * 5, i * 5 + 5), 2)];
+  for (let i = 0; i < chars; i++) out += ABC[parseInt(bits.slice(i * 5, i * 5 + 5), 2)];
   return out.match(/.{4}/g).join("-");
 }
 function checks(key) {
-  const s = key.replace(/-/g, "");
+  const s = key.replace(/-/g, ""), n = SIZES[s.length];
+  if (!n) return false;
   const bits = [...s].map((c) => ABC.indexOf(c).toString(2).padStart(5, "0")).join("");
-  const raw = Buffer.from(Array.from({ length: 32 }, (_, i) => parseInt(bits.slice(i * 8, i * 8 + 8), 2)));
-  return !bits.slice(256).includes("1") && raw[31] === createHash("sha256").update(raw.subarray(0, 31)).digest()[0];
+  const raw = Buffer.from(Array.from({ length: n + 1 }, (_, i) => parseInt(bits.slice(i * 8, i * 8 + 8), 2)));
+  return !bits.slice((n + 1) * 8).includes("1") && raw[n] === createHash("sha256").update(raw.subarray(0, n)).digest()[0];
 }
-const otherKey = () => keyFrom(randomBytes(31));
+const otherKey = () => keyFrom(randomBytes(29));
 /* The key with one character changed, so that its check byte no longer matches */
 function typo(key) {
   for (let i = 0; i < key.length; i++) {
@@ -146,7 +150,7 @@ try {
     const body = await r.json();
     kit = body.kit;
     ok(r.ok && body.signin === true, "API: sign-in turned on, with the household password");
-    ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(kit || "") && checks(kit), "API: and the household's Emergency Kit, made by the server (" + kit + ")");
+    ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(kit || "") && checks(kit), "API: and the household's Emergency Kit, made by the server, in 12 groups (" + kit + ")");
     const st = await (await fetch(demo.base + "/api/auth/status")).json();
     ok(st.signin && st.two_step === false && !("require_two_step" in st) && !("needs_two_step" in st) && !("household_password" in st) && !("must_change_password" in st), "API: status says two_step, and nothing per person");
     ok(!st.signed_in && typeof st.kit === "string" && !isNaN(Date.parse(st.kit)), "API: status says when the kit was made, even signed out (" + st.kit + ")");

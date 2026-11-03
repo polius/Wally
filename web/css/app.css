@@ -196,3 +196,9 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:120ms!important;animation-iteration-count:1!important;transition-duration:120ms!important}
 }
+/* ‹ ›: on wider screens they keep one place at the end of the header, before the person menu, so they don't
+   move as the month's name changes */
+@media (min-width:768px){
+  .w-head .w-steps{gap:6px;margin-inline:auto 0}
+  .w-head .w-steps ~ .w-hact{margin-inline-start:12px}
+}

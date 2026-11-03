@@ -19,7 +19,7 @@ from sqlmodel import Session, select, func
 from .. import database
 from ..database import get_session
 from ..models.app import AppConfig
-from ..models.categories import Category, CategoryColor
+from ..models.categories import Category, CategoryColor, CategoryIcon
 from ..models.money import ImportRule
 from ..models.people import Person
 from ..models.recurring_transactions import RecurringTransaction
@@ -249,8 +249,12 @@ def export_items(db: Session) -> list[dict]:
             "anchor_day": r.anchor_day, "missed": r.missed or None, "created_date": _fmt(r.created_date),
         })
     colors = {c.name: c.color for c in db.exec(select(CategoryColor)).all()}
+    icons = {c.name: c.icon for c in db.exec(select(CategoryIcon)).all()}
     for c in db.exec(select(Category)).all():
-        out.append({"k": "cat", "name": c.name, "color": colors.get(c.name)})
+        item = {"k": "cat", "name": c.name, "color": colors.get(c.name)}
+        if icons.get(c.name):
+            item["icon"] = icons[c.name]
+        out.append(item)
     for g in db.exec(select(Tag)).all():
         out.append({"k": "tag", "name": g.name})
     for i in db.exec(select(ImportRule)).all():
@@ -334,6 +338,8 @@ def import_item(nx: Session, item: dict):
             row = Category(name=item["name"])
             if item.get("color") is not None:
                 nx.add(CategoryColor(name=item["name"], color=int(item["color"])))
+            if item.get("icon"):
+                nx.add(CategoryIcon(name=item["name"], icon=str(item["icon"])))
         elif kind == "tag":
             row = Tag(name=item["name"])
         elif kind == "irule":

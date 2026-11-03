@@ -45,6 +45,9 @@ const sealed = () => !!(state.status && state.status.vault && state.status.vault
 const keyName = (k) => k.name || t("Unnamed key");
 const can = (k) => (k.scope === "read" ? t("Read only") : t("Read and write"));
 const keyPic = (big) => '<span class="w-sico' + (big ? " w-sico48" : "") + '">' + icon("key") + "</span>";
+/* A sheet's header, as in Sign-in & Privacy: the picture, a 20px title, one sentence */
+const sheetTop = (ico, title, text) => '<span class="w-secico">' + icon(ico) + '</span><b class="w-shtitle w-sht20">' + title + '</b><p class="w-mw360">' + text + "</p>";
+const scopeNote = (scope) => (scope === "read" ? t("It can read what’s in Wally, but not change anything.") : t("It can read what’s in Wally and change it, like adding transactions."));
 
 function render() {
   if (!box) return;
@@ -101,23 +104,29 @@ async function onClick(ev) {
 
 /* A sheet: what it's for and what it can do. Encrypted, it also needs the password: the browser makes
    the key and locks the household key under it. */
+const MAX_KEYS = 5;   // each person's, as the server allows
 function create() {
   let scope = "write";
+  const full = (keys || []).filter((k) => String(k.person_id) === String(state.me)).length >= MAX_KEYS;
   openDialog({
     kind: "sheet",
     title: t("New Key"),
+    top: sheetTop("key", t("API key"), t("A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.")),
     body: '<div class="w-gl"><label class="w-gr"><input id="key-name" placeholder="' + esc(t("What is this key for?")) + '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off" autofocus></label>' +
       '<div class="w-gr"><span class="k">' + t("Can") + "</span>" + uiSeg("key-scope", [["write", t("Read and write")], ["read", t("Read only")]], scope, t("What the key can do"), "sm") + "</div></div>" +
+      '<p class="w-glf" id="key-scopef">' + scopeNote(scope) + "</p>" +
+      (full ? '<p class="w-glf w-keyfull">' + t("You have {n} keys, the most each person can have. Delete one first.", { n: num(MAX_KEYS) }) + "</p>" : "") +
       (sealed() ? '<div class="w-gl"><label class="w-gr"><input type="password" id="key-pw" placeholder="' + esc(t("Household password")) + '" aria-label="' + esc(t("Household password")) + '" autocomplete="current-password"></label></div>' +
         '<p class="w-glf">' + t("Wally is encrypted. While a call made with this key runs, the server opens the data it needs, then forgets it.") + "</p>" : ""),
     ok: t("Create"),
     onOpen: (root) => {
-      gate(root, (r) => !!val(r, "key-name") && (!sealed() || !!(r.querySelector("#key-pw") || {}).value));
+      gate(root, (r) => !full && !!val(r, "key-name") && (!sealed() || !!(r.querySelector("#key-pw") || {}).value));
       root.addEventListener("click", (ev) => {
         const s2 = ev.target.closest("#key-scope [data-v]");
         if (!s2) return;
         scope = s2.dataset.v;
         root.querySelectorAll("#key-scope [data-v]").forEach((x) => x.setAttribute("aria-pressed", String(x === s2)));
+        root.querySelector("#key-scopef").textContent = scopeNote(scope);
       });
     },
     onOk: async (root) => {
@@ -138,11 +147,13 @@ function create() {
 
 async function showKey(k, name) {
   await load();
+  const half = Math.ceil(k.key.length / 2);
   openDialog({
     kind: "sheet",
-    title: t("“{name}” Key", { name: esc(name || k.name || "") }),
-    top: '<span class="w-big-ico">' + icon("key") + '</span><p class="w-mw340">' + t("It’s shown only this once. Put it where the tool that uses it can read it.") + "</p>",
-    body: '<div class="w-keybox2"><code id="key-raw">' + esc(k.key.slice(0, Math.ceil(k.key.length / 2))) + "<wbr>" + esc(k.key.slice(Math.ceil(k.key.length / 2))) + "</code></div>" + '<div class="w-gl"><button type="button" class="w-gr acc" data-copy>' + t("Copy key") + "</button></div>",
+    title: "",
+    top: sheetTop("key", t("“{name}” Key", { name: esc(name || k.name || "") }), t("It’s shown only this once. Put it where the tool that uses it can read it.")),
+    body: '<div class="w-seckey w-keybox2"><code id="key-raw" translate="no">' + esc(k.key.slice(0, half)) + "<wbr>" + esc(k.key.slice(half)) + "</code></div>" +
+      '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy key") + "</button></div>",
     ok: t("Done"),
     noCancel: true,
     onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied"))),
@@ -156,7 +167,8 @@ function remove(id) {
     kind: "alert",
     top: keyPic(true),
     title: t("Delete “{name}”?", { name: esc(keyName(k)) }),
-    body: "<p>" + t("Anything using this key stops working. This can’t be undone.") + "</p>",
+    body: "<p>" + (parseUtc(k.last_used) ? t("It was last used {when}. Anything using it stops working, and this can’t be undone.", { when: ago(parseUtc(k.last_used)) })
+      : t("It has never been used. This can’t be undone.")) + "</p>",
     ok: phone() ? t("Delete Key") : t("Delete"),
     danger: true,
     onOk: async () => {
@@ -168,7 +180,7 @@ function remove(id) {
   });
 }
 
-/* The steps to add from a phone's lock screen, as numbered rows, and the request to copy */
+/* The steps to add from a phone's lock screen, numbered as in Two-step sign-in; the request sits under the step that uses it */
 function steps(kind) {
   const ios = kind === "ios";
   const req = request(ios ? [t("Amount"), t("Name")] : ["{amount}", "{name}"]);
@@ -179,12 +191,13 @@ function steps(kind) {
     : [t("Create a key, and copy it."), t("In HTTP Shortcuts, create a regular shortcut with two variables, amount and name, that ask every time."),
       t("Paste the request below, and replace “your key” with your key."),
       t("Add the shortcut to the home screen, or to quick settings.")];
+  const reqBox = '<pre class="w-code" id="sc-req">' + esc(req) + "</pre>" +
+    '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy the request") + "</button></div>";
   openDialog({
     kind: "sheet",
     title: ios ? t("iPhone Shortcut") : t("Android Shortcut"),
-    body: '<div class="w-gl w-steps3">' + list.map((s2, i) => '<div class="w-gr"><span class="w-stepn">' + num(i + 1) + '</span><span class="k">' + s2 + "</span></div>").join("") + "</div>" +
-      '<div class="w-glh">' + t("The request") + '</div><pre class="w-code" id="sc-req">' + esc(req) + "</pre>" +
-      '<div class="w-gl"><button type="button" class="w-gr acc" data-copy>' + t("Copy the request") + "</button></div>",
+    body: '<p class="w-shlead">' + (ios ? t("Asks for amount and name, then sends it to Wally.") : t("A home or lock screen shortcut, with the free app.")) + "</p>" +
+      list.map((s2, i) => '<div class="w-shstep w-shstep2"><span class="w-shstepn" aria-hidden="true">' + num(i + 1) + "</span><b>" + s2 + "</b></div>" + (i === 2 ? reqBox : "")).join(""),
     ok: t("Done"),
     noCancel: true,
     onOpen: (root) => { root.classList.add("w-sh520", "w-shfull"); root.querySelector("[data-copy]").addEventListener("click", () => copyText(req, t("Request copied"))); },

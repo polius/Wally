@@ -5,7 +5,7 @@ from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
-from ..models.categories import Category, CategoryColor, CategoryCreate, CategoryPublic, CategoryUpdate, COLORS, GREY
+from ..models.categories import Category, CategoryColor, CategoryIcon, CategoryCreate, CategoryPublic, CategoryUpdate, COLORS, GREY
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.money import ImportRule
@@ -53,6 +53,29 @@ def set_color(db: Session, name: str, color: int):
         row = CategoryColor(name=name, color=color)
     db.add(row)
 
+def set_icon(db: Session, name: str, icon: str):
+    row = db.get(CategoryIcon, name)
+    if not icon:
+        if row:
+            db.delete(row)
+        return
+    if row:
+        row.icon = icon
+    else:
+        row = CategoryIcon(name=name, icon=icon)
+    db.add(row)
+
+def public(db: Session, name: str) -> CategoryPublic:
+    color, icon = db.get(CategoryColor, name), db.get(CategoryIcon, name)
+    return CategoryPublic(name=name, color=color.color if color else None, icon=icon.icon if icon else None)
+
+@router.get("/categories/icons")
+def category_icons(
+    db: Annotated[Session, Depends(get_session)]
+):
+    """{name: icon} for the categories whose icon someone picked."""
+    return {c.name: c.icon for c in db.exec(select(CategoryIcon)).all()}
+
 @router.get("/categories/colors")
 def category_colors(
     db: Annotated[Session, Depends(get_session)]
@@ -78,11 +101,12 @@ def create_category(
     db.add(new_category)
     if category.color is not None:
         set_color(db, category.name, category.color)
+    if category.icon:
+        set_icon(db, category.name, category.icon)
     try:
         db.commit()
         db.refresh(new_category)
-        row = db.get(CategoryColor, new_category.name)
-        return CategoryPublic(name=new_category.name, color=row.color if row else None)
+        return public(db, new_category.name)
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="This category already exists.")
@@ -119,7 +143,7 @@ def update_category(
         # Import rules follow the category
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=new_category_name))
 
-    # The color moves with the name, then takes the new value
+    # The color and icon move with the name, then take the new values
     if new_category_name != category_name:
         if db.get(Category, new_category_name):
             raise HTTPException(status_code=400, detail="A category with this name already exists.")
@@ -129,16 +153,23 @@ def update_category(
             db.delete(old_color)
             db.flush()
             db.add(CategoryColor(name=new_category_name, color=color))
+        old_icon = db.get(CategoryIcon, category_name)
+        if old_icon:
+            icon = old_icon.icon
+            db.delete(old_icon)
+            db.flush()
+            db.add(CategoryIcon(name=new_category_name, icon=icon))
         category.name = new_category_name
     if category_update.color is not None:
         set_color(db, new_category_name, category_update.color)
+    if category_update.icon is not None:
+        set_icon(db, new_category_name, category_update.icon)
 
     try:
         db.add(category)
         db.commit()
         db.refresh(category)
-        row = db.get(CategoryColor, category.name)
-        return CategoryPublic(name=category.name, color=row.color if row else None)
+        return public(db, category.name)
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="A category with this name already exists.")
@@ -176,9 +207,9 @@ def delete_category(
         db.exec(update(RecurringTransaction).where(RecurringTransaction.category == category_name).values(category=move_to))
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=move_to))
 
-    color = db.get(CategoryColor, category_name)
-    if color:
-        db.delete(color)
+    for kept in (db.get(CategoryColor, category_name), db.get(CategoryIcon, category_name)):
+        if kept:
+            db.delete(kept)
     db.delete(category)
     db.commit()
     return {"ok": True}

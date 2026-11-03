@@ -209,7 +209,7 @@ try {
   await alex1.waitForFunction(() => document.querySelector("#dlg .w-shtitle") && document.querySelector("#dlg .w-shtitle").textContent.includes("Emergency Kit"), null, { timeout: 60000 });
   await shot(alex1, "kit-dialog");
   const alexKey = (await alex1.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
-  ok(/^([0-9A-Z]{4}-){12}[0-9A-Z]{4}$/.test(alexKey), "the Emergency Kit shows a 52-character recovery key");
+  ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(alexKey), "the Emergency Kit shows a 48-character recovery key, in 12 groups");
   ok(await alex1.locator("#dlg [data-dlg-ok]").isDisabled(), "Done waits until the kit is saved");
   await alex1.keyboard.press("Escape");
   ok(await alex1.locator("#dlg .w-kitkey").count() === 1, "Escape doesn't close the kit");
@@ -367,7 +367,9 @@ try {
   await alex1.waitForFunction(() => /Ana · Last seen/.test(document.getElementById("set-pane").innerText), null, { timeout: 10000 }).catch(() => {});
   ok(/Ana · Last seen/.test(await alex1.locator("#set-pane").innerText()), "Signed-in browsers shows Ana’s browsers too");
   await alex1.click('[data-act="others"]');
-  await alex1.waitForTimeout(500);
+  await alex1.waitForSelector("#dlg .w-alert");
+  await alex1.click("#dlg [data-dlg-ok]");
+  await alex1.waitForFunction(() => document.getElementById("dlg").hidden, null, { timeout: 10000 });
   await alex2.evaluate(() => window.dispatchEvent(new Event("focus")));
   ok(await atPassword(alex2, "Alex", 15000) || await gateShown(alex2, "Who is signing in", 2000), "signed out elsewhere: the phone is back at sign-in");
   ok(!(await hasKeys(alex2)), "and its key and copy are gone");

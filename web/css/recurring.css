@@ -226,3 +226,5 @@
 @media (max-width:767px){#main[data-page="recurring"] .w-pswitch-b > svg.i{display:inline-block;width:16px;height:16px}}
 /* Summary's phone header pulls its person button next to the title (beside ‹ ›); Recurring has none, so it stays at the end */
 @media (max-width:767px){.rec-head .w-hact{margin-inline-start:auto}}
+/* Delete a rule (desktop): a long answer wraps inside its button instead of running past it */
+@media (min-width:768px){.w-alert.rec-del3 .w-alg > .w-dlgok{height:auto;min-height:34px;padding:7px 14px;white-space:normal;line-height:1.25;text-wrap:balance}}
