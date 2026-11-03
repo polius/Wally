@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete, func
 
 from ..database import get_session, STATE
-from ..models.people import Person, PersonCreate, PersonUpdate, PersonPublic, SessionToken, person_public
+from ..models.people import Person, PersonCreate, PersonUpdate, PersonPublic, SessionToken, person_public, next_color
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.api_keys import ApiKeys
@@ -46,7 +46,7 @@ def create_person(
         raise HTTPException(status_code=400, detail="Someone with this name is already here.")
     position = (db.exec(select(func.max(Person.position))).first() or 0) + 1
     # They sign in with the household password, like everyone else
-    person = Person(name=name, position=position)
+    person = Person(name=name, position=position, color=next_color(db.exec(select(Person.color)).all()))
     db.add(person)
     db.commit()
     db.refresh(person)
@@ -82,6 +82,8 @@ def update_person(
         person.name = name
     if body.position is not None:
         person.position = body.position
+    if body.color is not None:
+        person.color = body.color
     db.add(person)
     db.commit()
     db.refresh(person)

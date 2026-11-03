@@ -3,7 +3,7 @@
    "who is using this browser".
    app.js decides which one comes first (nextGate) and calls mountGate; done() reloads Wally. */
 import * as core from "../core.js";
-import { t, tn, esc, state, GET, POST, PUT, av, pname, person, icon, loadLanguage, LANGUAGES, LANG } from "../core.js";
+import { t, tn, esc, state, GET, POST, PUT, av, pname, person, icon, loadLanguage, LANGUAGES, LANG, PCOLORS } from "../core.js";
 import { trapFocus } from "../ui.js";
 
 let root = null;      // #gate
@@ -340,7 +340,7 @@ function progress() {
 
 /* The people rows, shared by first run and the upgrade */
 function initialOf(name) { const c = [...String(name || "").trim()][0]; return c ? c.toLocaleUpperCase(LANG) : ""; }
-function faceOf(name, i) { const c = initialOf(name); return '<span class="w-av p' + (i % 6) + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
+function faceOf(name, i) { const c = initialOf(name); return '<span class="w-av c' + PCOLORS[i % 8] + (c ? "" : " none") + '" data-av="' + i + '" aria-hidden="true">' + (c ? esc(c) : icon("user")) + "</span>"; }
 function peopleRows(names, created) {
   // One group of rows, as in Contacts: a face that fills in as the name is typed, the name, then You or a red minus
   if (created.length) {

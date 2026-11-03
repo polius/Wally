@@ -515,6 +515,21 @@ def test_remove_person_moves_their_part(couple):
     assert t[own["id"]]["person_id"] == ana
     assert t[shared["id"]]["paid_by"] == ana and sum(t[shared["id"]]["shares"].values()) == 3000
 
+def test_person_keeps_their_color(couple):
+    client, alex, ana = couple
+    people = {p["id"]: p for p in client.get("/people").json()}
+    # New people take the colors avatars always had, in turn: blue, then orange
+    assert people[alex]["color"] == 6 and people[ana]["color"] == 2
+    assert client.put(f"/people/{ana}", json={"color": 8}).json()["color"] == 8
+    assert client.put(f"/people/{ana}", json={"color": 9}).status_code == 422
+    # Reordering or removing someone no longer changes anyone else's color
+    carol = client.post("/people", json={"name": "Carol"}).json()
+    assert carol["color"] == 2  # orange is free again once Ana took pink
+    client.put("/people/order", json=[carol["id"], ana, alex])
+    client.request("DELETE", f"/people/{alex}", json={})
+    after = {p["id"]: p["color"] for p in client.get("/people").json()}
+    assert after == {ana: 8, carol["id"]: 2}
+
 def test_tag_into_person(couple):
     client, alex, ana = couple
     expense(client, tags=["ana", "weekly"])

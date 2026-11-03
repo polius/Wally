@@ -147,6 +147,18 @@ def _add_columns():
     with engine.begin() as conn:
         _add_column(conn, "apikeys", "scope", "scope VARCHAR NOT NULL DEFAULT 'write'")
         _add_column(conn, "apikeys", "wrap", "wrap VARCHAR")
+        _add_column(conn, "person", "color", "color INTEGER")
+        _keep_avatar_colors(conn)
+
+def _keep_avatar_colors(conn):
+    """Avatars used to take their color from their place in the list; keep each person's for good."""
+    from .models.people import COLORS
+    if "person" not in inspect(conn).get_table_names():
+        return
+    rows = conn.exec_driver_sql("SELECT id, color FROM person ORDER BY position, id").fetchall()
+    for i, (pid, color) in enumerate(rows):
+        if color is None:
+            conn.exec_driver_sql("UPDATE person SET color = ? WHERE id = ?", (COLORS[i % 6], pid))
 
 def _version() -> str:
     try:

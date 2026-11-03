@@ -45,7 +45,7 @@ def generate_demo():
     start = min(today.replace(day=1) - relativedelta(months=21), date(today.year - 1, 1, 1))
 
     with Session(database.engine) as db:
-        alex, ana = Person(name="Alex", position=0), Person(name="Ana", position=1)
+        alex, ana = Person(name="Alex", position=0, color=6), Person(name="Ana", position=1, color=2)
         db.add_all([alex, ana])
         db.add(AppConfig(key="ONBOARDED", value="1"))
         db.commit()

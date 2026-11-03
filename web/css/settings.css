@@ -126,6 +126,9 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
 .w-swatches{display:grid;grid-template-columns:repeat(5,44px);gap:16px;justify-content:center;padding:18px 10px;background:var(--w-panel2);border-radius:var(--r-card)}
 .w-swatches button{width:44px;height:44px;border-radius:50%;display:block}
 .w-swatches button[aria-checked="true"]{box-shadow:0 0 0 3px var(--w-raised),0 0 0 5px var(--w-ink)}
+/* A person's colors: four to a row, each the avatar itself */
+.w-swatches.w-avsw{grid-template-columns:repeat(4,44px);gap:18px}
+.w-swatches.w-avsw button.w-av{width:44px;height:44px;font-size:var(--fs-body);font-weight:600}
 .w-pane > *{min-width:0}
 
 /* ---------- rows ---------- */

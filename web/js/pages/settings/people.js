@@ -1,6 +1,6 @@
 /* Settings › People: who is in the household. Each person opens their own page (name, switch, remove);
    Edit reorders. Turning a tag into a person lives on the tag's page. */
-import { t, tn, esc, state, av, num, icon, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym } from "../../core.js";
+import { t, tn, esc, state, av, num, icon, GET, POST, PUT, DEL, reloadLedger, reloadRules, couple, person, monthYear, ym, pcolor, initial } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { gl, gr, addRow, hero, fieldRow, gate, phone, val, paint } from "./common.js";
@@ -62,7 +62,8 @@ function renderPerson() {
   const line = !state.tx.length ? t("No transactions yet") : couple()
     ? tn(own[k] || 0, "{n} own transaction, plus {shared} shared", "{n} own transactions, plus {shared} shared", { shared: num(shared) })
     : tn(own[k] || 0, "{n} transaction", "{n} transactions");
-  const first = [gr({ k: t("Name"), v: esc(p.name), chev: true, act: "rename", attrs: ' data-id="' + k + '" data-k="rename"' })];
+  const first = [gr({ k: t("Name"), v: esc(p.name), chev: true, act: "rename", attrs: ' data-id="' + k + '" data-k="rename"' }),
+    gr({ k: t("Color"), v: '<span role="img" aria-label="' + esc(COLOR_NAMES()[pcolor(k) - 1]) + '">' + av(k) + "</span>", chev: true, act: "color", attrs: ' data-id="' + k + '" data-k="color"' })];
   if (!me && !signin) first.push(gr({ k: t("Switch to {name}", { name: esc(p.name) }), cls: "acc", act: "switch", attrs: ' data-id="' + k + '" data-k="switch"' }));
   if (me && signin) first.push(gr({ k: t("Sign out"), cls: "acc", tag: "button", attrs: ' data-signout data-k="signout"' }));
   setAction("");
@@ -137,6 +138,7 @@ async function onClick(ev) {
   switch (b.dataset.act) {
     case "add": return addPerson();
     case "rename": return renamePerson(id);
+    case "color": return pickColor(id);
     case "switch": return switchTo(id);
     case "remove": return removePerson(id);
   }
@@ -145,6 +147,38 @@ async function onClick(ev) {
 function switchTo(id) {
   try { localStorage.setItem("wally.person", String(id)); } catch (e) { /* fine */ }
   location.href = "/";
+}
+
+/* Eight colors, by the same numbers as categories; each swatch is the avatar as it will look */
+const COLOR_NAMES = () => [t("Red"), t("Orange"), t("Yellow"), t("Green"), t("Cyan"), t("Blue"), t("Violet"), t("Pink")];
+function pickColor(id) {
+  const p = person(id);
+  if (!p) return;
+  const now = pcolor(id), face = esc(initial(p.name));
+  let pick = now;
+  openDialog({
+    kind: "sheet",
+    title: t("Color for {name}", { name: esc(p.name) }),
+    body: '<div class="w-swatches w-avsw" role="radiogroup" aria-label="' + esc(t("Color")) + '">' + COLOR_NAMES().map((label, i) =>
+      '<button type="button" class="w-av c' + (i + 1) + '" role="radio" data-c="' + (i + 1) + '" aria-checked="' + (now === i + 1) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + face + "</button>").join("") + "</div>",
+    ok: t("Done"),
+    onOpen(root) {
+      root.classList.add("w-sh400");
+      (root.querySelector('[aria-checked="true"]') || root.querySelector("[data-c]")).focus();
+      root.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-c]");
+        if (!b) return;
+        pick = +b.dataset.c;
+        root.querySelectorAll("[data-c]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+      });
+    },
+    onOk: async () => {
+      if (pick === now) return;
+      await PUT("/people/" + id, { color: pick });
+      await reloadPeople();
+      refresh({ people: true });
+    },
+  });
 }
 
 async function reloadPeople() {
