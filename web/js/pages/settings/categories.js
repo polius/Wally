@@ -1,6 +1,6 @@
-/* Settings › Categories: a list that opens each category's page (name, icon, color, its transactions,
-   merge, delete). Edit puts a delete button on each row. Deleting asks where its transactions go. */
-import { t, tn, esc, state, f0, PUT, POST, DEL, GET, rerank, cat, cc, tile, isIncomeCat, catIcon, iconsFor, iconHref, CAT_ICONS, CAT_LUCIDE, OWN_DRAWN, num, monthsIn, START, TODAY, icon, reloadCategories } from "../../core.js";
+/* Settings › Categories: a list, biggest spender first (the order that gives each its color), that opens
+   each category's page (name, icon, its transactions, merge, delete). Edit puts a delete button on each row. Deleting asks where its transactions go. */
+import { t, tn, esc, state, f0, PUT, POST, DEL, GET, paintColors, catRank, cat, cc, tile, isIncomeCat, catIcon, iconsFor, iconHref, CAT_ICONS, CAT_LUCIDE, OWN_DRAWN, num, monthsIn, START, TODAY, icon, reloadCategories } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { gl, gr, addRow, hero, check, minus, fieldRow, nameGate, sameName, phone, val, paint } from "./common.js";
@@ -28,7 +28,6 @@ function stats() {
   for (const tx of state.tx) { const s2 = out[tx.c] || (out[tx.c] = { n: 0, v: 0 }); s2.n++; s2.v += tx.a; }
   return out;
 }
-const COLOR_NAMES = () => [t("Red"), t("Orange"), t("Yellow"), t("Green"), t("Cyan"), t("Blue"), t("Violet"), t("Pink"), t("Grey")];
 function line(k, st, months) {
   return st.n ? tn(st.n, "{n} transaction · about {avg} a month", "{n} transactions · about {avg} a month", { avg: '<span class="amt">' + f0(st.v / months) + "</span>" }) : t("No transactions yet");
 }
@@ -39,7 +38,8 @@ function render() {
   if (!box) return;
   if (sub) return renderCategory();
   const s2 = stats(), m = months();
-  const ranked = rerank(START, TODAY, "all").filter((k) => !isIncomeCat(k));
+  paintColors();
+  const ranked = catRank();
   const income = state.categories.filter((c) => isIncomeCat(c));
   const row = (k) => {
     const name = esc(k);
@@ -52,15 +52,14 @@ function render() {
   paint(box, gl(rows, t("Expenses")) + (income.length ? gl(income.map(row), t("Income")) : ""));
 }
 
-/* A category's own page: name, icon, color, its transactions, merging and deleting */
+/* A category's own page: name, icon, its transactions, merging and deleting */
 function renderCategory() {
   const k = sub;
   if (!state.categories.includes(k)) { openPane("categories"); return; }
   const st = stats()[k] || { n: 0, v: 0 };
-  const income = isIncomeCat(k), name = esc(k), c = cat(k).c;
+  const income = isIncomeCat(k), name = esc(k);
   const first = [gr({ k: t("Name"), v: name, chev: true, act: "rename", attrs: ' data-k="rename"' }),
     gr({ k: t("Icon"), v: icon(cat(k).i), chev: true, act: "icon", attrs: ' data-k="icon"' })];
-  if (!income) first.push(gr({ k: t("Color"), v: '<span class="w-dot" style="background:' + cc(k) + '" role="img" aria-label="' + esc(COLOR_NAMES()[(c >= 1 && c <= 9 ? c : 9) - 1]) + '"></span>', chev: true, act: "color", attrs: ' data-k="color"' }));
   const same = state.categories.filter((x) => x !== k && isIncomeCat(x) === income);
   const second = [gr({ tag: "a", href: "/transactions?mode=all&cat=" + encodeURIComponent(k), k: t("See its transactions"), chev: true, attrs: ' data-k="see"' })];
   if (same.length) second.push(gr({ k: t("Merge into another…"), chev: true, act: "merge", attrs: ' data-k="merge"' }));
@@ -76,39 +75,8 @@ async function onClick(ev) {
   if (b.dataset.act === "add") return addCategory();
   if (b.dataset.act === "rename") return rename(name);
   if (b.dataset.act === "delete") return remove(name);
-  if (b.dataset.act === "color") return pickColor(name);
   if (b.dataset.act === "icon") return pickIcon(name);
   if (b.dataset.act === "merge") return merge(name);
-}
-
-/* Nine colors to choose from; Done keeps the one picked */
-function pickColor(name) {
-  const now = cat(name).c;
-  let pick = now;
-  openDialog({
-    kind: "sheet",
-    title: t("Color for {name}", { name: esc(name) }),
-    body: '<div class="w-swatches" role="radiogroup" aria-label="' + esc(t("Color")) + '">' + COLOR_NAMES().map((label, i) =>
-      '<button type="button" role="radio" data-c="' + (i + 1) + '" aria-checked="' + (now === i + 1) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '" style="background:var(--c' + (i + 1) + ')"></button>').join("") + "</div>",
-    ok: t("Done"),
-    onOpen(root) {
-      root.classList.add("w-sh400");
-      const on = root.querySelector('[aria-checked="true"]') || root.querySelector("[data-c]");
-      on.focus();
-      root.addEventListener("click", (ev) => {
-        const b = ev.target.closest("[data-c]");
-        if (!b) return;
-        pick = +b.dataset.c;
-        root.querySelectorAll("[data-c]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
-      });
-    },
-    onOk: async () => {
-      if (pick === now) return;
-      await PUT("/categories/" + encodeURIComponent(name), { color: pick });
-      await reloadCategories();
-      refresh({ categories: true });
-    },
-  });
 }
 
 /* A category's icon: the pick, big, in its color; a search; Wally's own icons; then all of Lucide's.

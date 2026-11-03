@@ -4,7 +4,7 @@
     2. Build    wally.next.db, next to wally.db, which is not touched
     3. Check    the browser reads everything back and compares; SQLite checks the file
     4. Switch   wally.db becomes wally.prev.db, wally.next.db becomes wally.db (renames are atomic)
-    5. Clean up turning on: the old file and plain backups go; turning off: the old file is kept as a backup
+    5. Clean up turning on: the old file, plain backups and the 1.x upgrade report go; turning off: the old file is kept as a backup
 
 conversion.json, next to the database, says which step it is at. If Wally stops half-way, it
 reads it on start: before the switch, the new file is thrown away and nothing changed; during
@@ -171,12 +171,28 @@ def _build_next(direction: str):
             names = ", ".join(f'"{c}"' for c in cols)
             conn.execute(f'INSERT INTO main."{table}" ({names}) SELECT {names} FROM old."{table}"')
         conn.execute("DELETE FROM main.appconfig WHERE key IN ('VAULT_ID', 'VAULT_SEQ', 'VAULT_FLOOR', 'ENCRYPTION_OFF')")
+        if direction == "on":
+            _report_without_details(conn)
         if direction == "off":
             conn.execute("UPDATE main.apikeys SET wrap = NULL")
         conn.execute("COMMIT")
         conn.execute("DETACH DATABASE old")
     finally:
         conn.close()
+
+def _report_without_details(conn: sqlite3.Connection):
+    """Settings stay in the clear, and the 1.x upgrade report among them names transactions and
+    amounts: keep only its counts, for the welcome to 2.0."""
+    from ..upgrade import without_details
+    row = conn.execute("SELECT value FROM main.appconfig WHERE key = 'UPGRADE_REPORT'").fetchone()
+    if not row:
+        return
+    try:
+        report = without_details(json.loads(row[0]))
+    except (ValueError, KeyError, TypeError):
+        conn.execute("DELETE FROM main.appconfig WHERE key = 'UPGRADE_REPORT'")
+        return
+    conn.execute("UPDATE main.appconfig SET value = ? WHERE key = 'UPGRADE_REPORT'", (json.dumps(report, ensure_ascii=False),))
 
 def next_session() -> Session:
     return Session(next_engine())
@@ -248,10 +264,13 @@ def _do_switch():
 def _cleanup(direction: str):
     prev = prev_path()
     if direction == "on":
-        # The old file holds everything in the clear, and so do backups made before
+        # The old file holds everything in the clear, and so do backups made before and the 1.x
+        # upgrade report (names and amounts)
         _remove(prev)
         from .backups import plain_backups
         for path in plain_backups():
+            path.unlink(missing_ok=True)
+        for path in database.DATA_DIR.glob("upgrade-report-*"):
             path.unlink(missing_ok=True)
     elif prev.exists():
         from .backups import _stamp

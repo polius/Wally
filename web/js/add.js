@@ -12,7 +12,7 @@
 import {
   $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName,
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
-  rerank, LANG,
+  LANG,
 } from "./core.js";
 import { toast, openDialog, trapFocus, hideTip, dialogOpen } from "./ui.js";
 import { refresh } from "./shell.js";
@@ -732,10 +732,6 @@ function pickCat(i) {
 }
 
 /* ---------- open and close ---------- */
-function ensureColors() {
-  // Categories take their color from their rank; if no page has ranked them yet, rank this month
-  if (!state.categories.some((c) => cat(c).c !== 9)) { const [y, m] = ym(TODAY); rerank(ds(y, m, 1), TODAY, "all"); }
-}
 function fillTx(tx) {
   const group = tx.gr ? state.tx.filter((x) => x.gr === tx.gr).sort((a, b) => (a.ca < b.ca ? -1 : a.ca > b.ca ? 1 : 0)) : [];
   reset(tx.type);
@@ -816,7 +812,6 @@ export function openAdd(o) {
   opener = document.activeElement;
   hideTip();
   cache = { payees: C.payeeIndex(), cats: C.catUsage(), tags: C.allTags(), incomeW: C.incomeWeights() };
-  ensureColors();
   fill(o);
   build();
   wrap.hidden = false;

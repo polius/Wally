@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Um filho, um colega de casa, qualquer pessoa que partilhe despesas. Inicia sessão com a palavra-passe da casa.",
  "A code from an authenticator app, the same on everyone’s phone.": "Um código de uma app de autenticação, igual no telemóvel de todos.",
  "A currency that isn’t listed": "Uma moeda que não está na lista",
- "A file left from turning encryption on.": "Um ficheiro que ficou da ativação da encriptação.",
  "A home or lock screen shortcut, with the free app.": "Um atalho no ecrã principal ou de bloqueio, com a app gratuita.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Uma chave permite que um script, uma folha de cálculo ou um atalho do telemóvel adicione e leia transações. Só é mostrada uma vez, quando é criada.",
  "A no-spend day.": "Um dia sem gastos.",
@@ -98,8 +97,6 @@
  "Amount of part {n}": "Valor da parte {n}",
  "Amounts": "Valores",
  "Amounts are shown in {name} now": "Os valores são agora mostrados em {name}",
- "Amounts hidden": "Valores ocultos",
- "Amounts shown": "Valores visíveis",
  "Amounts will look like {amount}.": "Os valores vão aparecer assim: {amount}.",
  "And {n} more": {
   "many": "E mais {n}",
@@ -141,7 +138,6 @@
  "Bills": "Contas",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "As contas e os salários são adicionados quando vencem, e o Wally repara quando um preço sobe.",
  "Blue": "Azul",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Desfoca todos os valores, para partilhares o ecrã. {key} ativa ou desativa.",
  "Both new passwords match": "As duas palavras-passe novas coincidem",
  "Both passwords match": "As duas palavras-passe coincidem",
  "Bring your data": "Traz os teus dados",
@@ -169,7 +165,6 @@
  "Change who": "Alterar quem",
  "Change {name}?": "Alterar {name}?",
  "Chart": "Gráfico",
- "Check again": "Verificar de novo",
  "Checking…": "A verificar…",
  "Choose a date.": "Escolhe uma data.",
  "Choose a file": "Escolher um ficheiro",
@@ -423,9 +418,7 @@
  "Give each part an amount, or leave just one empty.": "Dá um valor a cada parte, ou deixa só uma vazia.",
  "Go to": "Ir para",
  "Green": "Verde",
- "Grey": "Cinzento",
  "Half each: {list}": "Metade cada: {list}",
- "Hide amounts": "Ocultar valores",
  "Hide password": "Ocultar palavra-passe",
  "History": "Histórico",
  "History of {name}: {n} charges, the last {amount} on {date}": "Histórico de {name}: {n} cobranças, a última de {amount} a {date}",
@@ -523,7 +516,6 @@
  },
  "Kept": "Poupado",
  "Kept each month": "Poupado cada mês",
- "Kept here": "Guardados aqui",
  "Kept {amount}": "Poupado {amount}",
  "Kept {amount} · {pct}": "Poupado {amount} · {pct}",
  "Key copied": "Chave copiada",
@@ -670,7 +662,6 @@
  "Nothing changes for {name}": "Nada muda para {name}",
  "Nothing found": "Nada encontrado",
  "Nothing here yet": "Ainda não há nada aqui",
- "Nothing in the clear": "Nada sem encriptação",
  "Nothing in the next 30 days": "Nada nos próximos 30 dias",
  "Nothing in this period": "Nada neste período",
  "Nothing in this range yet": "Ainda nada neste período",
@@ -728,7 +719,6 @@
  "Open Wally": "Abrir o Wally",
  "Open Wally over HTTPS": "Abre a Wally em HTTPS",
  "Open in Summary": "Abrir no Resumo",
- "Opened only in memory, while Wally is open.": "Abertos só na memória, enquanto o Wally está aberto.",
  "Opening {n} of {total}…": "A abrir {n} de {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Opcional sem encriptação. Com um kit, “Esqueceste-te da palavra-passe?” na página de início de sessão pede a chave de recuperação e depois uma nova palavra-passe, sem ter de pedir a quem gere o servidor.",
  "Orange": "Laranja",
@@ -894,7 +884,6 @@
  "Show": "Mostrar",
  "Show Code": "Mostrar código",
  "Show all": "Mostrar tudo",
- "Show amounts": "Mostrar valores",
  "Show every day, not only {day}": "Mostrar todos os dias, não só {day}",
  "Show in List": "Mostrar na lista",
  "Show less": "Ver menos",
@@ -937,7 +926,6 @@
   "other": "O mesmo acontece a {n} regras recorrentes.",
   "many": "O mesmo acontece a {n} regras recorrentes."
  },
- "Some data is still in the clear": "Alguns dados continuam sem encriptação",
  "Someone": "Alguém",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Alguém sem a chave alterou-os. O Wally deixa-os de fora e mantém todo o resto.",
  "Something went wrong.": "Algo correu mal.",
@@ -1151,7 +1139,6 @@
  "What is this key for?": "Para que é esta chave?",
  "What it already added stays. Nothing is added after this day.": "O que já adicionou fica. Nada é adicionado depois deste dia.",
  "What the key can do": "O que a chave pode fazer",
- "What the server can see": "O que o servidor consegue ver",
  "What to do with {name}": "O que fazer com {name}",
  "What was it for?": "Para que foi?",
  "What {column} holds": "O que contém {column}",
@@ -1398,11 +1385,6 @@
   "one": "{n} já adicionada",
   "other": "{n} já adicionadas"
  },
- "{n} backup from before.": {
-  "one": "{n} cópia de segurança anterior.",
-  "many": "{n} cópias de segurança anteriores.",
-  "other": "{n} cópias de segurança anteriores."
- },
  "{n} bill": {
   "one": "{n} conta",
   "other": "{n} contas",
@@ -1417,16 +1399,6 @@
   "many": "{n} dias",
   "one": "{n} dia",
   "other": "{n} dias"
- },
- "{n} encrypted record": {
-  "one": "{n} registo encriptado",
-  "other": "{n} registos encriptados",
-  "many": "{n} registos encriptados"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} registo encriptado. O servidor não consegue abrir nenhum.",
-  "many": "{n} registos encriptados. O servidor não consegue abrir nenhum.",
-  "other": "{n} registos encriptados. O servidor não consegue abrir nenhum."
  },
  "{n} imported before": {
   "many": "{n} já importadas",
@@ -1484,11 +1456,6 @@
   "many": "{n} linhas não têm categoria. Atribui-lhes:",
   "one": "{n} linha não tem categoria. Atribui-lhe:",
   "other": "{n} linhas não têm categoria. Atribui-lhes:"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} linha na base de dados do Wally.",
-  "many": "{n} linhas na base de dados do Wally.",
-  "other": "{n} linhas na base de dados do Wally."
  },
  "{n} selected": {
   "many": "{n} selecionadas",

@@ -319,19 +319,11 @@ try {
     await page.locator('[role=group]:has(.w-cmdg:text-is("Recurring")) .w-cmdi').first().click();
     await page.waitForFunction(() => location.pathname === "/recurring" && location.search.includes("id="));
     ok(true, "cmd: a rule opens in Recurring (" + rules[0].name + ")");
-    // Show only one person, hide amounts
+    // Show only one person
     await page.keyboard.press("Control+k");
     await page.keyboard.type("only ana");
     await page.keyboard.press("Enter");
     ok(await page.evaluate(() => localStorage.getItem("wally.scope")) === "2", "cmd: Show only Ana");
-    await page.keyboard.press("Control+k");
-    await page.keyboard.type("hide am");
-    await page.keyboard.press("Enter");
-    ok(await page.evaluate(() => document.documentElement.classList.contains("w-hide")), "cmd: Hide amounts");
-    await page.keyboard.press("Control+k");
-    await page.keyboard.type("show am");
-    await page.keyboard.press("Enter");
-    ok(!(await page.evaluate(() => document.documentElement.classList.contains("w-hide"))), "cmd: Show amounts");
     await page.keyboard.press("Control+k");
     await page.keyboard.type("everyone");
     await page.keyboard.press("Enter");

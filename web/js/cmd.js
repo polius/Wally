@@ -1,7 +1,7 @@
 /* The command bar (2.1), ⌘K or Ctrl+K anywhere: search, jump to any page, settings pane, rule or
    category, find a transaction by name, or add one by typing it: "12 coffee ana". */
 import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, LANG } from "./core.js";
-import { navigate, setScope, setHide, railed, setRail } from "./shell.js";
+import { navigate, setScope, railed, setRail } from "./shell.js";
 import { trapFocus, hideTip } from "./ui.js";
 import { shortDesc } from "./sched.js";
 
@@ -67,7 +67,6 @@ function build(q) {
     show.push([t("Show"), t("Everyone"), null, () => setScope("all"), av("all", "sm")]);
     state.people.forEach((p) => show.push([t("Show"), t("Only {name}", { name: p.name }), null, () => setScope(String(p.id)), av(String(p.id), "sm")]));
   }
-  show.push([t("Show"), state.hide ? t("Show amounts") : t("Hide amounts"), "eye", () => setHide(!state.hide)]);
   if (matchMedia("(min-width:1024px)").matches) show.push([t("Show"), railed() ? t("Expand sidebar") : t("Collapse sidebar"), "sidebar", () => setRail(!railed())]);
   const panes = PANES.map(([k, ic, label]) => [t("Settings"), label(), ic, go("/settings/" + k), null, t("Settings") + " " + label()]);
   const list = words.length ? fixed.concat(panes, show) : fixed;

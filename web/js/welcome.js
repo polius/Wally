@@ -2,7 +2,7 @@
    The person who upgrades sees it full screen before "Who uses Wally?" (pages/signin.js); everyone
    else sees it over the app the first time they open 2.0 (app.js). It says what's new and that
    the data came across, checked one by one by api/upgrade.py. The full report
-   stays in the data folder (upgrade-report-<date>.txt). */
+   stays in the data folder (upgrade-report-<date>.txt) until encryption is turned on. */
 import { t, tn, icon, POST } from "./core.js";
 import { trapFocus } from "./ui.js";
 

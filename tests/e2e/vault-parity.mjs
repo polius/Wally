@@ -55,8 +55,6 @@ try {
     await c("PUT", "/signin", { enabled: true, password: "house-pass-1" }, { "x-wally-person": "1" });
   }
   await p("POST", "/login", { person_id: 1, password: "house-pass-1" });
-  // Colors are given the first time anyone asks; the browser asks when it opens, so ask here too
-  await p("GET", "/categories/colors");
   // The encrypted one: Alex turns encryption on in a browser, which then answers everything
   const ctx = await browser.newContext({ serviceWorkers: "block" });
   const page = await ctx.newPage();
@@ -89,8 +87,8 @@ try {
 
   const get = (side, path) => (side === "P" ? p("GET", path) : local("GET", path));
   async function state(side) {
-    const [led, rules, cats, colors, icons, tags, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/colors", "/categories/icons", "/tags", "/rules"].map((x) => get(side, x)));
-    return { led: led.data, rules: rules.data, cats: cats.data, colors: colors.data, icons: icons.data, tags: tags.data, irules: irules.data };
+    const [led, rules, cats, icons, tags, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/icons", "/tags", "/rules"].map((x) => get(side, x)));
+    return { led: led.data, rules: rules.data, cats: cats.data, icons: icons.data, tags: tags.data, irules: irules.data };
   }
   /* New transactions and rules since the last step get labels from what they are, the same on both sides */
   function labelNew(side, st, op) {
@@ -117,9 +115,8 @@ try {
     rows.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const rules = st.rules.map((r) => ({ ...r, id: name(side, r.id), amount: Math.round(Number(r.amount) * 100), created_date: undefined })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const irules = st.irules.map((r) => ({ match: r.match, category: r.category, person_id: r.person_id, set_person: r.set_person, uses: r.uses, learned: r.learned, position: r.position }));
-    const colors = Object.fromEntries(Object.entries(st.colors).sort());
     const icons = Object.fromEntries(Object.entries(st.icons).sort());
-    return JSON.stringify({ rows, rules, cats: st.cats, colors, icons, tags: st.tags, irules });
+    return JSON.stringify({ rows, rules, cats: st.cats, icons, tags: st.tags, irules });
   }
   const sortKeys = (v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : Array.isArray(v) ? v.map(sortKeys) : v);
   function normBody(side, body) {
@@ -216,7 +213,6 @@ try {
   await both("", "DELETE", (s) => "/recurring/" + real(s, "r2:r0"), { applyTo: "all" });
 
   console.log("Categories and tags");
-  await both("", "GET", "/categories/colors");
   await both("", "POST", "/categories", { name: "Kids", color: 3 });
   await both("", "POST", "/categories", { name: "Kids" });
   await both("", "PUT", "/categories/Kids", { color: 5 });
@@ -231,7 +227,6 @@ try {
   await both("", "DELETE", "/categories/Eating%20out", undefined, { anyMessage: false });
   await both("", "DELETE", "/categories/Eating%20out?move_to=Groceries");
   await both("", "DELETE", "/categories/Kids");
-  await both("", "GET", "/categories/colors");
   await both("", "POST", "/tags", { name: "holiday" });
   await both("", "POST", "/tags", { name: "holiday" });
   await both("", "PUT", "/tags/weekly", { name: "#week" });

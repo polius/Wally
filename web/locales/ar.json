@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "طفل، أو شريك سكن، أو أي شخص يتقاسم التكاليف. يسجّل الدخول بكلمة مرور الأسرة.",
  "A code from an authenticator app, the same on everyone’s phone.": "رمز من تطبيق مصادقة، هو نفسه على هاتف كل شخص.",
  "A currency that isn’t listed": "عملة غير موجودة في القائمة",
- "A file left from turning encryption on.": "ملف متبقٍّ من تشغيل التشفير.",
  "A home or lock screen shortcut, with the free app.": "اختصار على الشاشة الرئيسية أو شاشة القفل، بالتطبيق المجاني.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "يتيح المفتاح لبرنامج نصي أو جدول بيانات أو اختصار على الهاتف إضافة المعاملات وقراءتها. يُعرض مرة واحدة فقط، عند إنشائه.",
  "A no-spend day.": "يوم بلا إنفاق.",
@@ -104,8 +103,6 @@
  "Amount of part {n}": "مبلغ الجزء {n}",
  "Amounts": "المبالغ",
  "Amounts are shown in {name} now": "تُعرض المبالغ الآن بـ{name}",
- "Amounts hidden": "المبالغ مخفية",
- "Amounts shown": "المبالغ ظاهرة",
  "Amounts will look like {amount}.": "ستظهر المبالغ هكذا: {amount}.",
  "And {n} more": {
   "few": "و{n} أخرى",
@@ -150,7 +147,6 @@
  "Bills": "الفواتير",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "تُضاف الفواتير والرواتب في مواعيد استحقاقها، ويلاحظ Wally عندما يرتفع سعر.",
  "Blue": "أزرق",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "يموّه كل الأرقام، لمشاركة شاشتك. {key} للتبديل.",
  "Both new passwords match": "كلمتا المرور الجديدتان متطابقتان",
  "Both passwords match": "كلمتا المرور متطابقتان",
  "Bring your data": "أحضر بياناتك",
@@ -178,7 +174,6 @@
  "Change who": "تغيير الشخص",
  "Change {name}?": "تغيير {name}؟",
  "Chart": "الرسم البياني",
- "Check again": "تحقّق مجددًا",
  "Checking…": "جارٍ التحقق…",
  "Choose a date.": "اختر تاريخًا.",
  "Choose a file": "اختر ملفًا",
@@ -474,9 +469,7 @@
  "Give each part an amount, or leave just one empty.": "حدد مبلغًا لكل جزء، أو اترك جزءًا واحدًا فقط فارغًا.",
  "Go to": "انتقال إلى",
  "Green": "أخضر",
- "Grey": "رمادي",
  "Half each: {list}": "النصف لكل واحد: {list}",
- "Hide amounts": "إخفاء المبالغ",
  "Hide password": "إخفاء كلمة المرور",
  "History": "السجل",
  "History of {name}: {n} charges, the last {amount} on {date}": "سجل {name}: {n} دفعات، آخرها {amount} في {date}",
@@ -601,7 +594,6 @@
  },
  "Kept": "تم ادخاره",
  "Kept each month": "المدخر كل شهر",
- "Kept here": "المحفوظ هنا",
  "Kept {amount}": "تم ادخار {amount}",
  "Kept {amount} · {pct}": "تم ادخار {amount} · {pct}",
  "Key copied": "تم نسخ المفتاح",
@@ -754,7 +746,6 @@
  "Nothing changes for {name}": "لا شيء يتغير لـ {name}",
  "Nothing found": "لم يُعثر على شيء",
  "Nothing here yet": "لا شيء هنا بعد",
- "Nothing in the clear": "لا شيء غير مشفّر",
  "Nothing in the next 30 days": "لا شيء خلال الثلاثين يومًا القادمة",
  "Nothing in this period": "لا شيء في هذه الفترة",
  "Nothing in this range yet": "لا شيء في هذه الفترة بعد",
@@ -815,7 +806,6 @@
  "Open Wally": "فتح Wally",
  "Open Wally over HTTPS": "افتح Wally عبر HTTPS",
  "Open in Summary": "فتح في الملخص",
- "Opened only in memory, while Wally is open.": "تُفتح في الذاكرة فقط، ما دام Wally مفتوحًا.",
  "Opening {n} of {total}…": "جارٍ فتح {n} من {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "اختيارية بدون تشفير. مع حقيبة، يطلب «نسيت كلمة المرور؟» في صفحة تسجيل الدخول مفتاح الاسترداد ثم كلمة مرور جديدة، دون الرجوع إلى من يدير الخادم.",
  "Orange": "برتقالي",
@@ -996,7 +986,6 @@
  "Show": "عرض",
  "Show Code": "عرض الرمز",
  "Show all": "عرض الكل",
- "Show amounts": "إظهار المبالغ",
  "Show every day, not only {day}": "عرض كل الأيام، وليس {day} فقط",
  "Show in List": "عرض في القائمة",
  "Show less": "عرض أقل",
@@ -1051,7 +1040,6 @@
   "many": "وكذلك {n} قاعدة متكررة.",
   "other": "وكذلك {n} قاعدة متكررة."
  },
- "Some data is still in the clear": "لا تزال بعض البيانات غير مشفّرة",
  "Someone": "شخص ما",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "غيّرها شخص لا يملك المفتاح. يتجاهلها Wally ويحتفظ بكل ما عداها.",
  "Something went wrong.": "حدث خطأ ما.",
@@ -1283,7 +1271,6 @@
  "What is this key for?": "ما الغرض من هذا المفتاح؟",
  "What it already added stays. Nothing is added after this day.": "يبقى ما أُضيف حتى الآن. ولن يُضاف شيء بعد هذا اليوم.",
  "What the key can do": "ما يمكن للمفتاح فعله",
- "What the server can see": "ما يستطيع الخادم رؤيته",
  "What to do with {name}": "ماذا تفعل بـ {name}",
  "What was it for?": "على ماذا؟",
  "What {column} holds": "محتوى {column}",
@@ -1572,14 +1559,6 @@
   "two": "اثنتان مضافتان بالفعل",
   "zero": "{n} مضافة بالفعل"
  },
- "{n} backup from before.": {
-  "zero": "{n} نسخة احتياطية سابقة.",
-  "one": "نسخة احتياطية واحدة سابقة.",
-  "two": "نسختان احتياطيتان سابقتان.",
-  "few": "{n} نسخ احتياطية سابقة.",
-  "many": "{n} نسخة احتياطية سابقة.",
-  "other": "{n} نسخة احتياطية سابقة."
- },
  "{n} bill": {
   "zero": "لا فواتير",
   "one": "فاتورة واحدة",
@@ -1603,22 +1582,6 @@
   "other": "{n} يوم",
   "two": "يومان",
   "zero": "{n} يوم"
- },
- "{n} encrypted record": {
-  "zero": "لا سجلات مشفّرة",
-  "one": "سجل مشفّر واحد",
-  "two": "سجلان مشفّران",
-  "few": "{n} سجلات مشفّرة",
-  "many": "{n} سجلًا مشفّرًا",
-  "other": "{n} سجل مشفّر"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "zero": "{n} سجل مشفّر. لا يستطيع الخادم فتح أيٍّ منها.",
-  "one": "سجل مشفّر واحد. لا يستطيع الخادم فتحه.",
-  "two": "سجلان مشفّران. لا يستطيع الخادم فتح أيٍّ منهما.",
-  "few": "{n} سجلات مشفّرة. لا يستطيع الخادم فتح أيٍّ منها.",
-  "many": "{n} سجلًا مشفّرًا. لا يستطيع الخادم فتح أيٍّ منها.",
-  "other": "{n} سجل مشفّر. لا يستطيع الخادم فتح أيٍّ منها."
  },
  "{n} imported before": {
   "few": "{n} مستوردة سابقًا",
@@ -1709,14 +1672,6 @@
   "other": "{n} صف بلا فئة. امنحها:",
   "two": "صفان بلا فئة. امنحهما:",
   "zero": "لا توجد صفوف بلا فئة."
- },
- "{n} row in Wally’s database.": {
-  "zero": "{n} صف في قاعدة بيانات Wally.",
-  "one": "صف واحد في قاعدة بيانات Wally.",
-  "two": "صفان في قاعدة بيانات Wally.",
-  "few": "{n} صفوف في قاعدة بيانات Wally.",
-  "many": "{n} صفًا في قاعدة بيانات Wally.",
-  "other": "{n} صف في قاعدة بيانات Wally."
  },
  "{n} selected": {
   "few": "تم تحديد {n}",

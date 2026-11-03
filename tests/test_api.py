@@ -495,26 +495,13 @@ def test_delete_category_moves_transactions(couple):
     assert client.delete("/categories/Snacks", params={"move_to": "Food"}).status_code == 200
     assert {t["category"] for t in client.get("/transactions").json()} == {"Food"}
 
-def test_category_colors_are_assigned_once_and_kept(couple):
+def test_category_colors_are_not_stored(couple):
+    """The app colors categories by spending; the server keeps no color and ignores one sent."""
     client, *_ = couple
-    expense(client, category="Rent", amount="900.00")
     expense(client, category="Food", amount="40.00")
-    client.post("/transactions", json={"name": "Salary", "category": "Income", "amount": "2000.00", "type": "income", "date": TODAY, "tags": []})
-    colors = client.get("/categories/colors").json()
-    # The biggest spender takes the first color, income has none
-    assert colors["Rent"] == 1 and colors["Food"] == 2 and colors["Income"] is None
-    # More spending later doesn't move a color
-    expense(client, category="Food", amount="5000.00")
-    assert client.get("/categories/colors").json()["Food"] == 2
-    # Settings can change it, and a rename keeps it
-    assert client.put("/categories/Food", json={"color": 6}).json()["color"] == 6
-    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "color": 6, "icon": None}
-    assert client.get("/categories/colors").json()["Eating out"] == 6
-    assert client.put("/categories/Rent", json={"color": 12}).status_code == 422
-    # Past eight colors, the rest are grey
-    for i in range(9):
-        expense(client, category=f"Extra {i}", amount="1.00")
-    assert sorted(client.get("/categories/colors").json().values(), key=lambda v: v or 0).count(9) >= 1
+    assert client.get("/categories/colors").status_code != 200
+    assert client.put("/categories/Food", json={"color": 6}).json() == {"name": "Food", "icon": None}
+    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "icon": None}
     assert "Food" not in client.get("/categories").json()
 
 def test_category_icon_is_picked_kept_and_given_back(couple):
@@ -528,14 +515,14 @@ def test_category_icon_is_picked_kept_and_given_back(couple):
     assert client.put("/categories/Snacks", json={"icon": "<svg>"}).status_code == 422
     assert client.put("/categories/Snacks", json={"icon": "l-square-arrow-out-up-right"}).status_code == 200
     assert client.put("/categories/Snacks", json={"icon": "cake"}).status_code == 200
-    # A rename keeps it, a color change leaves it alone
-    assert client.put("/categories/Snacks", json={"name": "Treats", "color": 4}).json() == {"name": "Treats", "color": 4, "icon": "cake"}
+    # A rename keeps it
+    assert client.put("/categories/Snacks", json={"name": "Treats"}).json() == {"name": "Treats", "icon": "cake"}
     assert client.get("/categories/icons").json() == {"Treats": "cake"}
     # "" goes back to the name's icon
     assert client.put("/categories/Treats", json={"icon": ""}).json()["icon"] is None
     assert client.get("/categories/icons").json() == {}
     # A new category can come with one, and deleting it takes the icon too
-    assert client.post("/categories", json={"name": "Vet", "icon": "dog"}).json() == {"name": "Vet", "color": None, "icon": "dog"}
+    assert client.post("/categories", json={"name": "Vet", "icon": "dog"}).json() == {"name": "Vet", "icon": "dog"}
     assert client.delete("/categories/Vet").status_code == 200
     assert client.get("/categories/icons").json() == {}
 

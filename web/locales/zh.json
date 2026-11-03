@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "孩子、室友，任何分摊开销的人。他们用家庭密码登录。",
  "A code from an authenticator app, the same on everyone’s phone.": "身份验证器应用中的验证码，每个人手机上的都一样。",
  "A currency that isn’t listed": "未列出的货币",
- "A file left from turning encryption on.": "开启加密时留下的文件。",
  "A home or lock screen shortcut, with the free app.": "借助免费应用，在主屏幕或锁屏上添加快捷方式。",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "有了密钥，脚本、电子表格或手机快捷方式就能添加和读取交易。密钥只在创建时显示一次。",
  "A no-spend day.": "零支出日。",
@@ -94,8 +93,6 @@
  "Amount of part {n}": "第{n}项金额",
  "Amounts": "金额",
  "Amounts are shown in {name} now": "金额现以{name}显示",
- "Amounts hidden": "已隐藏金额",
- "Amounts shown": "已显示金额",
  "Amounts will look like {amount}.": "金额将显示为{amount}。",
  "And {n} more": {
   "other": "还有{n}项"
@@ -135,7 +132,6 @@
  "Bills": "账单",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "账单和工资会在到期时添加，价格上涨时 Wally 也会注意到。",
  "Blue": "蓝色",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "模糊所有数字，方便共享屏幕。按 {key} 切换。",
  "Both new passwords match": "两次输入的新密码一致",
  "Both passwords match": "两次输入的密码一致",
  "Bring your data": "导入你的数据",
@@ -163,7 +159,6 @@
  "Change who": "更改成员",
  "Change {name}?": "更改{name}？",
  "Chart": "图表",
- "Check again": "再次检查",
  "Checking…": "正在检查…",
  "Choose a date.": "请选择日期。",
  "Choose a file": "选择文件",
@@ -389,9 +384,7 @@
  "Give each part an amount, or leave just one empty.": "为每一项填写金额，或只留一项为空。",
  "Go to": "前往",
  "Green": "绿色",
- "Grey": "灰色",
  "Half each: {list}": "各付一半：{list}",
- "Hide amounts": "隐藏金额",
  "Hide password": "隐藏密码",
  "History": "历史",
  "History of {name}: {n} charges, the last {amount} on {date}": "{name}的历史：{n}次扣款，最近一次为{date} {amount}",
@@ -471,7 +464,6 @@
  },
  "Kept": "结余",
  "Kept each month": "每月结余",
- "Kept here": "保存在此",
  "Kept {amount}": "结余 {amount}",
  "Kept {amount} · {pct}": "结余 {amount} · {pct}",
  "Key copied": "密钥已复制",
@@ -614,7 +606,6 @@
  "Nothing changes for {name}": "{name}没有变化",
  "Nothing found": "未找到任何内容",
  "Nothing here yet": "这里还什么都没有",
- "Nothing in the clear": "没有未加密的数据",
  "Nothing in the next 30 days": "未来 30 天没有",
  "Nothing in this period": "此期间没有内容",
  "Nothing in this range yet": "此范围内还没有内容",
@@ -670,7 +661,6 @@
  "Open Wally": "打开 Wally",
  "Open Wally over HTTPS": "通过 HTTPS 打开 Wally",
  "Open in Summary": "在摘要中打开",
- "Opened only in memory, while Wally is open.": "仅在 Wally 打开期间于内存中打开。",
  "Opening {n} of {total}…": "正在打开第 {n} 项，共 {total} 项…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "不加密时可选。有了它，登录页面上的“忘记密码？”会先要求输入恢复密钥，再设置新密码，无需找服务器管理员。",
  "Orange": "橙色",
@@ -826,7 +816,6 @@
  "Show": "显示",
  "Show Code": "显示二维码",
  "Show all": "显示全部",
- "Show amounts": "显示金额",
  "Show every day, not only {day}": "显示每一天，而不仅是{day}",
  "Show in List": "在列表中显示",
  "Show less": "收起",
@@ -861,7 +850,6 @@
  "So does {n} recurring rule.": {
   "other": "{n}条定期规则也是如此。"
  },
- "Some data is still in the clear": "仍有部分数据未加密",
  "Someone": "某人",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "有人在没有密钥的情况下更改了它们。Wally 会略过它们，保留其余所有内容。",
  "Something went wrong.": "出错了。",
@@ -1063,7 +1051,6 @@
  "What is this key for?": "此密钥的用途是什么？",
  "What it already added stays. Nothing is added after this day.": "已添加的会保留。此日之后不再添加。",
  "What the key can do": "密钥可执行的操作",
- "What the server can see": "服务器能看到什么",
  "What to do with {name}": "如何处理{name}",
  "What was it for?": "用途是什么？",
  "What {column} holds": "{column}包含的内容",
@@ -1282,9 +1269,6 @@
  "{n} already added": {
   "other": "{n}笔已添加"
  },
- "{n} backup from before.": {
-  "other": "之前的 {n} 个备份。"
- },
  "{n} bill": {
   "other": "{n}笔账单"
  },
@@ -1293,12 +1277,6 @@
  },
  "{n} day": {
   "other": "{n}天"
- },
- "{n} encrypted record": {
-  "other": "{n} 条加密记录"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "other": "{n} 条加密记录。服务器无法打开其中任何一条。"
  },
  "{n} imported before": {
   "other": "{n}笔之前已导入"
@@ -1334,9 +1312,6 @@
  },
  "{n} row has no category. Give it:": {
   "other": "{n}行没有分类。设为："
- },
- "{n} row in Wally’s database.": {
-  "other": "Wally 数据库中的 {n} 行。"
  },
  "{n} selected": {
   "other": "已选择{n}项"

@@ -5,7 +5,7 @@ from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session
-from ..models.categories import Category, CategoryColor, CategoryIcon, CategoryCreate, CategoryPublic, CategoryUpdate, COLORS, GREY
+from ..models.categories import Category, CategoryIcon, CategoryCreate, CategoryPublic, CategoryUpdate
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.money import ImportRule
@@ -21,38 +21,6 @@ def read_categories(
     categories = db.exec(statement).all()
     return sorted([c.name for c in categories], key=str.lower)
 
-def assign_colors(db: Session) -> dict[str, int | None]:
-    """Every category's color. One without a color takes the first one nobody has, biggest spender
-    first, or grey once all eight are taken, and keeps it from then on. Income categories (income
-    and no spending) have none."""
-    names = [c.name for c in db.exec(select(Category)).all()]
-    colors = {c.name: c.color for c in db.exec(select(CategoryColor)).all()}
-    spent = dict(db.exec(select(Transaction.category, func.sum(Transaction.amount)).where(Transaction.type == "expense").group_by(Transaction.category)).all())
-    earned = set(db.exec(select(Transaction.category).where(Transaction.type == "income").distinct()).all())
-    income = {n for n in names if n in earned and n not in spent}
-    used = {k: 0 for k in COLORS}
-    for n in names:
-        if colors.get(n) in used:
-            used[colors[n]] += 1
-    missing = sorted((n for n in names if n not in colors and n not in income), key=lambda n: (-float(spent.get(n) or 0), n.lower()))
-    for n in missing:
-        free = [k for k in COLORS if not used[k]]
-        colors[n] = free[0] if free else GREY
-        if colors[n] in used:
-            used[colors[n]] += 1
-        db.add(CategoryColor(name=n, color=colors[n]))
-    if missing:
-        db.commit()
-    return {n: (None if n in income else colors.get(n)) for n in names}
-
-def set_color(db: Session, name: str, color: int):
-    row = db.get(CategoryColor, name)
-    if row:
-        row.color = color
-    else:
-        row = CategoryColor(name=name, color=color)
-    db.add(row)
-
 def set_icon(db: Session, name: str, icon: str):
     row = db.get(CategoryIcon, name)
     if not icon:
@@ -66,8 +34,8 @@ def set_icon(db: Session, name: str, icon: str):
     db.add(row)
 
 def public(db: Session, name: str) -> CategoryPublic:
-    color, icon = db.get(CategoryColor, name), db.get(CategoryIcon, name)
-    return CategoryPublic(name=name, color=color.color if color else None, icon=icon.icon if icon else None)
+    icon = db.get(CategoryIcon, name)
+    return CategoryPublic(name=name, icon=icon.icon if icon else None)
 
 @router.get("/categories/icons")
 def category_icons(
@@ -75,13 +43,6 @@ def category_icons(
 ):
     """{name: icon} for the categories whose icon someone picked."""
     return {c.name: c.icon for c in db.exec(select(CategoryIcon)).all()}
-
-@router.get("/categories/colors")
-def category_colors(
-    db: Annotated[Session, Depends(get_session)]
-):
-    """{name: color}: 1 to 8, or null for an income category."""
-    return assign_colors(db)
 
 @router.get("/categories/stats")
 def category_stats(
@@ -99,8 +60,6 @@ def create_category(
 ):
     new_category = Category(name=category.name)
     db.add(new_category)
-    if category.color is not None:
-        set_color(db, category.name, category.color)
     if category.icon:
         set_icon(db, category.name, category.icon)
     try:
@@ -143,16 +102,10 @@ def update_category(
         # Import rules follow the category
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=new_category_name))
 
-    # The color and icon move with the name, then take the new values
+    # The icon moves with the name, then takes the new value
     if new_category_name != category_name:
         if db.get(Category, new_category_name):
             raise HTTPException(status_code=400, detail="A category with this name already exists.")
-        old_color = db.get(CategoryColor, category_name)
-        if old_color:
-            color = old_color.color
-            db.delete(old_color)
-            db.flush()
-            db.add(CategoryColor(name=new_category_name, color=color))
         old_icon = db.get(CategoryIcon, category_name)
         if old_icon:
             icon = old_icon.icon
@@ -160,8 +113,6 @@ def update_category(
             db.flush()
             db.add(CategoryIcon(name=new_category_name, icon=icon))
         category.name = new_category_name
-    if category_update.color is not None:
-        set_color(db, new_category_name, category_update.color)
     if category_update.icon is not None:
         set_icon(db, new_category_name, category_update.icon)
 
@@ -207,9 +158,9 @@ def delete_category(
         db.exec(update(RecurringTransaction).where(RecurringTransaction.category == category_name).values(category=move_to))
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=move_to))
 
-    for kept in (db.get(CategoryColor, category_name), db.get(CategoryIcon, category_name)):
-        if kept:
-            db.delete(kept)
+    kept = db.get(CategoryIcon, category_name)
+    if kept:
+        db.delete(kept)
     db.delete(category)
     db.commit()
     return {"ok": True}

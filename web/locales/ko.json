@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "자녀, 룸메이트 등 비용을 함께 나누는 사람이면 누구나요. 가구 공용 비밀번호로 로그인해요.",
  "A code from an authenticator app, the same on everyone’s phone.": "인증 앱의 코드로, 모두의 휴대폰에 같은 코드가 표시돼요.",
  "A currency that isn’t listed": "목록에 없는 통화",
- "A file left from turning encryption on.": "암호화를 켤 때 남은 파일이에요.",
  "A home or lock screen shortcut, with the free app.": "무료 앱으로 홈 화면이나 잠금 화면에 바로가기를 만들어요.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "키가 있으면 스크립트, 스프레드시트, 휴대폰 바로가기에서 거래를 추가하고 읽을 수 있어요. 키는 만들 때 한 번만 표시돼요.",
  "A no-spend day.": "무지출일이에요.",
@@ -94,8 +93,6 @@
  "Amount of part {n}": "항목 {n} 금액",
  "Amounts": "금액",
  "Amounts are shown in {name} now": "이제 금액을 {name} 단위로 표시해요",
- "Amounts hidden": "금액 숨김",
- "Amounts shown": "금액 표시",
  "Amounts will look like {amount}.": "금액이 {amount}처럼 표시돼요.",
  "And {n} more": {
   "other": "외 {n}건"
@@ -135,7 +132,6 @@
  "Bills": "고정 지출",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "고정 지출과 급여는 기한이 되면 추가되고, 가격이 오르면 Wally가 알아차려요.",
  "Blue": "파랑",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "화면을 공유할 때 모든 숫자를 흐리게 가려요. {key}로 켜고 끌 수 있어요.",
  "Both new passwords match": "새 비밀번호 두 개가 일치해요",
  "Both passwords match": "두 비밀번호 일치",
  "Bring your data": "데이터 가져오기",
@@ -163,7 +159,6 @@
  "Change who": "구성원 변경",
  "Change {name}?": "{name} 변경할까요?",
  "Chart": "차트",
- "Check again": "다시 확인",
  "Checking…": "확인 중…",
  "Choose a date.": "날짜를 선택하세요.",
  "Choose a file": "파일 선택",
@@ -389,9 +384,7 @@
  "Give each part an amount, or leave just one empty.": "각 항목에 금액을 입력하거나, 하나만 비워 두세요.",
  "Go to": "이동",
  "Green": "초록",
- "Grey": "회색",
  "Half each: {list}": "반씩: {list}",
- "Hide amounts": "금액 숨기기",
  "Hide password": "비밀번호 숨기기",
  "History": "기록",
  "History of {name}: {n} charges, the last {amount} on {date}": "{name} 기록: {n}회 결제, 최근 {date} {amount}",
@@ -471,7 +464,6 @@
  },
  "Kept": "남긴 돈",
  "Kept each month": "매달 남긴 돈",
- "Kept here": "이 브라우저에 보관",
  "Kept {amount}": "{amount} 남김",
  "Kept {amount} · {pct}": "{amount} 남김 · {pct}",
  "Key copied": "키를 복사했어요",
@@ -614,7 +606,6 @@
  "Nothing changes for {name}": "{name} 님은 변경 없음",
  "Nothing found": "검색 결과 없음",
  "Nothing here yet": "아직 아무것도 없어요",
- "Nothing in the clear": "암호화되지 않은 데이터 없음",
  "Nothing in the next 30 days": "앞으로 30일 동안 없음",
  "Nothing in this period": "이 기간에는 아무것도 없어요",
  "Nothing in this range yet": "이 기간에는 아직 아무것도 없어요",
@@ -670,7 +661,6 @@
  "Open Wally": "Wally 열기",
  "Open Wally over HTTPS": "HTTPS로 Wally를 여세요",
  "Open in Summary": "요약에서 열기",
- "Opened only in memory, while Wally is open.": "Wally가 열려 있는 동안 메모리에서만 열려요.",
  "Opening {n} of {total}…": "{total}개 중 {n}개 여는 중…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "암호화하지 않으면 선택 사항이에요. 키트가 있으면 로그인 페이지의 “비밀번호를 잊으셨나요?”에서 복구 키를 입력하고, 서버 관리자에게 부탁하지 않고 새 비밀번호를 정할 수 있어요.",
  "Orange": "주황",
@@ -826,7 +816,6 @@
  "Show": "표시",
  "Show Code": "코드 보기",
  "Show all": "모두 보기",
- "Show amounts": "금액 보기",
  "Show every day, not only {day}": "{day}만이 아니라 모든 날 보기",
  "Show in List": "목록에서 보기",
  "Show less": "접기",
@@ -861,7 +850,6 @@
  "So does {n} recurring rule.": {
   "other": "반복 규칙 {n}개도 마찬가지예요."
  },
- "Some data is still in the clear": "일부 데이터가 아직 암호화되지 않았어요",
  "Someone": "누군가",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "키가 없는 누군가가 변경했어요. Wally는 이 항목을 제외하고 나머지는 모두 유지해요.",
  "Something went wrong.": "문제가 생겼어요.",
@@ -1063,7 +1051,6 @@
  "What is this key for?": "이 키는 어디에 쓰나요?",
  "What it already added stays. Nothing is added after this day.": "이미 추가된 거래는 남아요. 이날 이후로는 추가되지 않아요.",
  "What the key can do": "키로 할 수 있는 일",
- "What the server can see": "서버가 볼 수 있는 것",
  "What to do with {name}": "{name} 처리 방법",
  "What was it for?": "어디에 썼나요?",
  "What {column} holds": "{column} 열의 내용",
@@ -1282,9 +1269,6 @@
  "{n} already added": {
   "other": "{n}건 이미 추가됨"
  },
- "{n} backup from before.": {
-  "other": "이전 백업 {n}개."
- },
  "{n} bill": {
   "other": "고정 지출 {n}건"
  },
@@ -1293,12 +1277,6 @@
  },
  "{n} day": {
   "other": "{n}일"
- },
- "{n} encrypted record": {
-  "other": "암호화된 레코드 {n}개"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "other": "암호화된 레코드 {n}개. 서버는 어느 것도 열 수 없어요."
  },
  "{n} imported before": {
   "other": "{n}건 이미 가져옴"
@@ -1334,9 +1312,6 @@
  },
  "{n} row has no category. Give it:": {
   "other": "{n}행에 카테고리가 없어요. 지정할 카테고리:"
- },
- "{n} row in Wally’s database.": {
-  "other": "Wally 데이터베이스의 행 {n}개."
  },
  "{n} selected": {
   "other": "{n}개 선택됨"

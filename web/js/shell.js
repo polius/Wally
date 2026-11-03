@@ -218,12 +218,6 @@ function menuKeys(ev) {
   return false;
 }
 
-/* ---------- hide amounts, for sharing a screen ---------- */
-export function setHide(on) {
-  state.hide = on;
-  document.documentElement.classList.toggle("w-hide", on);
-  try { localStorage.setItem("wally.hide", on ? "1" : ""); } catch (e) { /* fine */ }
-}
 export function setTheme(mode) {
   if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
   else document.documentElement.removeAttribute("data-theme");
@@ -276,7 +270,6 @@ export function initShell() {
     if (overlay || typing(ev) || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     const k = ev.key;
     if (k === "n" || k === "N") { ev.preventDefault(); handlers.openAdd && handlers.openAdd(); }
-    else if (k === "h" || k === "H") { setHide(!state.hide); }
     else if (k === "/") { ev.preventDefault(); if (pageName !== "transactions") navigate("/transactions?focus=search"); else emit("focus-search"); }
     else if (page && page.key) page.key(ev);
   });

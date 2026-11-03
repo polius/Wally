@@ -224,8 +224,6 @@ button.s-title:hover{background:var(--w-fill)}
 /* …but the big number still lines up under its label, on the right */
 [dir=rtl] #main[data-page=dashboard] .s-big{text-align:right}
 
-/* Hide amounts (H) also blurs this page's own figures */
-.w-hide #main[data-page=dashboard] :is(.s-big,.s-am,.s-proj b,.s-ch b,.s-keptn b,.s-yearsub b,.s-notice small,.s-person small,.s-recap small,.chart .lb,.chart .lb2,.chart .lbs){filter:blur(6px)}
 /* On phones a long title (a month of another year) is set smaller, as in Transactions, and never pushes the page wider */
 @media (max-width:767px){
   .s-head:not(.tx-head) .s-title{max-width:100%}

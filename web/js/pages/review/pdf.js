@@ -10,8 +10,8 @@ import { highlights, dayRows, billRows, sharedText, splitParts } from "../review
 
 /* Paper is white whatever the app's theme, and it prints in black and grey: green and red only for
    money, category colours only on the small dots that name them */
-const C = ["#14804A", "#FA5252", "#FD7E14", "#FAB005", "#40C057", "#15AABF", "#228BE6", "#7950F2", "#E64980", "#ADB5BD"];
-const col = (k) => C[cat(k).c] || C[9];
+const C = ["#14804A", "#EB3745", "#FA872A", "#F0C800", "#8DB600", "#009238", "#00B09F", "#1CBDEB", "#0074C2", "#3443D6", "#9058E7", "#D957C4", "#FF85A8", "#ADB5BD"];
+const col = (k) => C[cat(k).c] || C[C.length - 1];
 const catName = (k) => esc(cat(k).n);
 const mon = (q) => F.months[q[1] - 1];
 /* A share of spending: under 1% says so rather than 0% */

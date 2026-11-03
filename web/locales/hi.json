@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "बच्चा, फ़्लैटमेट, कोई भी जो खर्च बाँटता है। वे घर के पासवर्ड से साइन इन करते हैं।",
  "A code from an authenticator app, the same on everyone’s phone.": "ऑथेंटिकेटर ऐप का कोड, जो सबके फ़ोन पर एक ही होता है।",
  "A currency that isn’t listed": "ऐसी मुद्रा जो सूची में नहीं है",
- "A file left from turning encryption on.": "एन्क्रिप्शन चालू करते समय बची एक फ़ाइल।",
  "A home or lock screen shortcut, with the free app.": "मुफ़्त ऐप से होम या लॉक स्क्रीन पर एक शॉर्टकट।",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "कुंजी से कोई स्क्रिप्ट, स्प्रेडशीट या फ़ोन शॉर्टकट लेन-देन जोड़ और पढ़ सकता है। यह बनते समय सिर्फ़ एक बार दिखती है।",
  "A no-spend day.": "बिना खर्च का दिन।",
@@ -96,8 +95,6 @@
  "Amount of part {n}": "हिस्सा {n} की राशि",
  "Amounts": "रकम",
  "Amounts are shown in {name} now": "राशियाँ अब {name} में दिखाई जा रही हैं",
- "Amounts hidden": "राशियाँ छिपाई गईं",
- "Amounts shown": "राशियाँ दिखाई गईं",
  "Amounts will look like {amount}.": "राशियाँ {amount} जैसी दिखेंगी।",
  "And {n} more": {
   "one": "और {n}",
@@ -138,7 +135,6 @@
  "Bills": "बिल",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "बिल और वेतन अपनी तय तारीख पर जुड़ते हैं, और कीमत बढ़ने पर Wally ध्यान देता है।",
  "Blue": "नीला",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "स्क्रीन शेयर करते समय हर आँकड़ा धुंधला कर देता है। {key} से चालू/बंद करें।",
  "Both new passwords match": "दोनों नए पासवर्ड मेल खाते हैं",
  "Both passwords match": "दोनों पासवर्ड मेल खाते हैं",
  "Bring your data": "अपना डेटा लाएँ",
@@ -166,7 +162,6 @@
  "Change who": "व्यक्ति बदलें",
  "Change {name}?": "{name} बदलें?",
  "Chart": "चार्ट",
- "Check again": "फिर से जाँचें",
  "Checking…": "जाँच हो रही है…",
  "Choose a date.": "तारीख चुनें।",
  "Choose a file": "फ़ाइल चुनें",
@@ -406,9 +401,7 @@
  "Give each part an amount, or leave just one empty.": "हर हिस्से को राशि दें, या सिर्फ़ एक खाली छोड़ें।",
  "Go to": "जाएँ",
  "Green": "हरा",
- "Grey": "स्लेटी",
  "Half each: {list}": "आधा-आधा: {list}",
- "Hide amounts": "राशियाँ छिपाएँ",
  "Hide password": "पासवर्ड छिपाएँ",
  "History": "इतिहास",
  "History of {name}: {n} charges, the last {amount} on {date}": "{name} का इतिहास: {n} चार्ज, आखिरी {date} को {amount}",
@@ -497,7 +490,6 @@
  },
  "Kept": "बचाया",
  "Kept each month": "हर महीने की बचत",
- "Kept here": "यहाँ रखा गया",
  "Kept {amount}": "{amount} बचाया",
  "Kept {amount} · {pct}": "{amount} बचाया · {pct}",
  "Key copied": "कुंजी कॉपी हो गई",
@@ -642,7 +634,6 @@
  "Nothing changes for {name}": "{name} के लिए कुछ नहीं बदलता",
  "Nothing found": "कुछ नहीं मिला",
  "Nothing here yet": "यहाँ अभी कुछ नहीं",
- "Nothing in the clear": "बिना एन्क्रिप्शन के कुछ भी नहीं",
  "Nothing in the next 30 days": "अगले 30 दिनों में कुछ नहीं",
  "Nothing in this period": "इस अवधि में कुछ नहीं",
  "Nothing in this range yet": "इस अवधि में अभी कुछ नहीं",
@@ -699,7 +690,6 @@
  "Open Wally": "Wally खोलें",
  "Open Wally over HTTPS": "Wally को HTTPS पर खोलें",
  "Open in Summary": "सारांश में खोलें",
- "Opened only in memory, while Wally is open.": "सिर्फ़ मेमोरी में खुलता है, जब तक Wally खुला है।",
  "Opening {n} of {total}…": "{total} में से {n} खुल रहे हैं…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "एन्क्रिप्शन के बिना वैकल्पिक। किट होने पर साइन इन पेज पर “पासवर्ड भूल गए?” रिकवरी कुंजी और फिर नया पासवर्ड माँगता है, सर्वर चलाने वाले से पूछे बिना।",
  "Orange": "नारंगी",
@@ -860,7 +850,6 @@
  "Show": "दिखाएँ",
  "Show Code": "कोड दिखाएँ",
  "Show all": "सभी दिखाएँ",
- "Show amounts": "राशि दिखाएँ",
  "Show every day, not only {day}": "हर दिन दिखाएँ, सिर्फ़ {day} नहीं",
  "Show in List": "सूची में दिखाएँ",
  "Show less": "कम दिखाएँ",
@@ -899,7 +888,6 @@
   "one": "{n} आवर्ती नियम भी।",
   "other": "{n} आवर्ती नियम भी।"
  },
- "Some data is still in the clear": "कुछ डेटा अब भी बिना एन्क्रिप्शन के है",
  "Someone": "कोई",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "इन्हें किसी ने बिना कुंजी के बदला है। Wally इन्हें छोड़ देता है और बाकी सब रखता है।",
  "Something went wrong.": "कुछ गड़बड़ हो गई।",
@@ -1107,7 +1095,6 @@
  "What is this key for?": "यह कुंजी किसलिए है?",
  "What it already added stays. Nothing is added after this day.": "जो पहले से जुड़ चुका है, वह बना रहेगा। इस दिन के बाद कुछ नहीं जुड़ेगा।",
  "What the key can do": "यह कुंजी क्या कर सकती है",
- "What the server can see": "सर्वर क्या देख सकता है",
  "What to do with {name}": "{name} का क्या करें",
  "What was it for?": "यह किसलिए था?",
  "What {column} holds": "{column} में क्या है",
@@ -1340,10 +1327,6 @@
   "one": "{n} पहले से जुड़ा",
   "other": "{n} पहले से जुड़े"
  },
- "{n} backup from before.": {
-  "one": "पहले का {n} बैकअप।",
-  "other": "पहले के {n} बैकअप।"
- },
  "{n} bill": {
   "one": "{n} बिल",
   "other": "{n} बिल"
@@ -1355,14 +1338,6 @@
  "{n} day": {
   "one": "{n} दिन",
   "other": "{n} दिन"
- },
- "{n} encrypted record": {
-  "one": "{n} एन्क्रिप्टेड रिकॉर्ड",
-  "other": "{n} एन्क्रिप्टेड रिकॉर्ड"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} एन्क्रिप्टेड रिकॉर्ड। सर्वर इनमें से किसी को नहीं खोल सकता।",
-  "other": "{n} एन्क्रिप्टेड रिकॉर्ड। सर्वर इनमें से किसी को नहीं खोल सकता।"
  },
  "{n} imported before": {
   "one": "{n} पहले इंपोर्ट हुआ",
@@ -1409,10 +1384,6 @@
  "{n} row has no category. Give it:": {
   "one": "{n} पंक्ति की कोई श्रेणी नहीं है। इसे दें:",
   "other": "{n} पंक्तियों की कोई श्रेणी नहीं है। इन्हें दें:"
- },
- "{n} row in Wally’s database.": {
-  "one": "Wally के डेटाबेस में {n} पंक्ति।",
-  "other": "Wally के डेटाबेस में {n} पंक्तियाँ।"
  },
  "{n} selected": {
   "one": "{n} चुना गया",

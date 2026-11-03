@@ -10,12 +10,11 @@ import { openPane } from "../settings.js";
 import { parseUtc, ago, deviceLabel, isPhoneUA, copyText, download, loadScript, paint, size } from "./common.js";
 
 const MIN = 8;
-const SUBS = ["two-step", "kit", "browsers", "server"];
+const SUBS = ["two-step", "kit", "browsers"];
 let box = null;
 let sub = null;            // the sub-page on screen, or null for the page itself
 let sessions = null;       // null until loaded, or when sign-in is off
 let codesLeft = null;
-let check = null;          // /vault/check, with encryption on
 let backups = null;        // /backups, before turning encryption on
 let vmod = null;
 
@@ -33,7 +32,7 @@ export function show(s) { sub = SUBS.includes(s) ? s : null; render(); }
 /* Settings draws the head: "‹ Sign-in & Privacy" on a sub-page, then its title */
 export function meta(s) {
   const phone = matchMedia("(max-width:767px)").matches;
-  return { "two-step": { title: phone ? t("Two-step") : t("Two-step sign-in") }, kit: { title: "" }, browsers: { title: t("Signed-in browsers") }, server: { title: t("What the server can see") } }[s] || {};
+  return { "two-step": { title: phone ? t("Two-step") : t("Two-step sign-in") }, kit: { title: "" }, browsers: { title: t("Signed-in browsers") } }[s] || {};
 }
 
 const S = () => state.status || {};
@@ -50,7 +49,7 @@ async function load() {
   try {
     if (S().signin) sessions = await GET("/sessions"); else sessions = null;
     codesLeft = S().two_step ? (await GET("/two-step/recovery-codes")).left : null;
-    if (encrypted()) { await vs(); check = await GET("/vault/check"); }
+    if (encrypted()) await vs();
     else if (S().signin) backups = await GET("/backups");
   } catch (e) { /* the rows say what they know */ }
   if (box) render();
@@ -88,7 +87,7 @@ function kitDate() { let d = null; try { d = S().kit ? parseUtc(S().kit) : null;
 function render() {
   if (!box) return;
   const html = sub === "two-step" && S().two_step ? twoStepPage() : sub === "kit" && S().signin ? kitPage()
-    : sub === "browsers" && S().signin ? browsersPage() : sub === "server" && encrypted() ? serverPage() : null;
+    : sub === "browsers" && S().signin ? browsersPage() : null;
   if (html === null && sub) { sub = null; setTimeout(() => openPane("security"), 0); }
   paint(box, '<div class="w-sec">' + (html === null ? mainPage() : html) + "</div>");
 }
@@ -115,8 +114,7 @@ function mainPage() {
     ];
     if (bad) rows.push(row('<span class="w-bad">' + tn(bad, "{n} record would not open", "{n} records would not open") + "</span>",
       { sub: t("Someone without the key changed them. Wally leaves them out and keeps everything else.") }));
-    rows.push(row(t("What the server can see"), { go: "server" }));
-    h += gl(rows);
+    h += gl(rows) + glf(t("The server sees people’s names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category."));
     if (/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone) h += glf(t("Add Wally to your Home Screen: Safari clears what a website keeps after seven days without a visit."));
   } else {
     const why = !secure ? t("Browsers only encrypt on secure pages: open Wally at its https:// address.")
@@ -174,24 +172,6 @@ function browsersPage() {
   return h;
 }
 
-function serverPage() {
-  const c = check, records = vmod ? vmod.records() : null;
-  const clean = c && !c.plain_rows && !c.plain_backups.length && !c.leftover_files.length;
-  let h = "";
-  h += gl([
-    row(c === null ? t("Checking…") : clean ? t("Nothing in the clear") : '<span class="w-bad">' + t("Some data is still in the clear") + "</span>", {
-      lead: '<span class="w-secdev' + (c && !clean ? " bad" : "") + '">' + icon(c && !clean ? "alert" : "shield") + "</span>",
-      sub: c === null ? "" : clean ? tn(c.records, "{n} encrypted record. The server can’t open any of them.", "{n} encrypted records. The server can’t open any of them.")
-        : [c.plain_rows ? tn(c.plain_rows, "{n} row in Wally’s database.", "{n} rows in Wally’s database.") : "", c.plain_backups.length ? tn(c.plain_backups.length, "{n} backup from before.", "{n} backups from before.") : "", c.leftover_files.length ? t("A file left from turning encryption on.") : ""].filter(Boolean).join(" "),
-    }),
-    row(t("Check again"), { act: "check", cls: "acc" }),
-  ]);
-  h += glf(t("The server sees people’s names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category."));
-  if (records !== null) h += glh(t("This browser")) + gl([row(t("Kept here"), { value: esc(tn(records, "{n} encrypted record", "{n} encrypted records")) })]) +
-    glf(t("Opened only in memory, while Wally is open."));
-  return h;
-}
-
 /* ---------- moving between the page and its sub-pages: links with data-pane, which Settings follows ---------- */
 function go(s) { openPane("security" + (s ? "/" + s : "")); }
 
@@ -218,7 +198,6 @@ async function onClick(ev) {
     case "codes": return newCodes();
     case "others": return signOutOthers();
     case "signout": return signOut();
-    case "check": check = null; render(); return load();
   }
 }
 

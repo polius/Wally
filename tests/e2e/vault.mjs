@@ -197,7 +197,7 @@ try {
 
   await alex1.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
   await shot(alex1, "privacy-off");
-  // Taken now: opening the app gave the new categories their colors
+  // What the plain database holds just before encryption
   const plainBefore = check("plain", DB).items;
   await alex1.click("#pv-toggle");
   const onText = await alex1.locator("#dlg").innerText();
@@ -505,11 +505,9 @@ try {
   ok(now.items.length === fromApp, "the server has exactly the records the app has (" + fromApp + ")");
   const hits2 = Object.entries(check("grep", DB, ...WORDS, "Psychologist", "Gym", "market")).filter(([, v]) => v).map(([k]) => k);
   ok(hits2.length === 0, "still nothing readable in wally.db" + (hits2.length ? " — found " + hits2.join(", ") : ""));
-  await alex3.goto(base + "/settings/security/server", { waitUntil: "networkidle" });
-  await alex3.waitForFunction(() => document.getElementById("set-pane").innerText.includes("Nothing in the clear"), null, { timeout: 10000 }).catch(() => {});
-  ok((await alex3.locator("#set-pane").innerText()).includes("Nothing in the clear"), "What the server can see confirms nothing is in the clear");
+  await alex3.goto(base + "/settings/security", { waitUntil: "networkidle" });
   const priv = await alex3.locator("#set-pane").innerText();
-  ok(!priv.includes("Recently") && !priv.includes("helped") && await alex3.locator('#set-pane [data-act="kit"]').count() === 0, "What the server can see: no “Recently” group, and the kit has its own page");
+  ok(priv.includes("Not one amount, name or category") && !priv.includes("What the server can see"), "Privacy says what the server sees, without a page of its own");
   await shot(alex3, "privacy-on");
 
   /* ================= stopping half-way ================= */

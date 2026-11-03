@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Un fill, un company de pis, qualsevol que comparteixi despeses. Entra amb la contrasenya de la llar.",
  "A code from an authenticator app, the same on everyone’s phone.": "Un codi d’una app d’autenticació, el mateix al mòbil de tothom.",
  "A currency that isn’t listed": "Una moneda que no és a la llista",
- "A file left from turning encryption on.": "Un fitxer que va quedar en activar el xifratge.",
  "A home or lock screen shortcut, with the free app.": "Una drecera a la pantalla d’inici o de bloqueig, amb l’app gratuïta.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Una clau permet que un script, un full de càlcul o una drecera del mòbil afegeixin i llegeixin transaccions. Es mostra un sol cop, quan es crea.",
  "A no-spend day.": "Un dia sense despeses.",
@@ -98,8 +97,6 @@
  "Amount of part {n}": "Import de la part {n}",
  "Amounts": "Imports",
  "Amounts are shown in {name} now": "Ara els imports es mostren en {name}",
- "Amounts hidden": "Imports amagats",
- "Amounts shown": "Imports visibles",
  "Amounts will look like {amount}.": "Els imports es veuran així: {amount}.",
  "And {n} more": {
   "many": "I {n} més",
@@ -141,7 +138,6 @@
  "Bills": "Rebuts",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "Els rebuts i les nòmines s’afegeixen quan vencen, i Wally s’adona quan puja un preu.",
  "Blue": "Blau",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Difumina totes les xifres, per compartir la pantalla. {key} ho activa o desactiva.",
  "Both new passwords match": "Les dues contrasenyes noves coincideixen",
  "Both passwords match": "Les dues contrasenyes coincideixen",
  "Bring your data": "Porta les teves dades",
@@ -169,7 +165,6 @@
  "Change who": "Canvia qui",
  "Change {name}?": "Vols canviar {name}?",
  "Chart": "Gràfic",
- "Check again": "Torna-ho a comprovar",
  "Checking…": "S’està comprovant…",
  "Choose a date.": "Tria una data.",
  "Choose a file": "Tria un fitxer",
@@ -423,9 +418,7 @@
  "Give each part an amount, or leave just one empty.": "Posa un import a cada part, o deixa’n només una buida.",
  "Go to": "Ves a",
  "Green": "Verd",
- "Grey": "Gris",
  "Half each: {list}": "Meitat cadascú: {list}",
- "Hide amounts": "Amaga els imports",
  "Hide password": "Amaga la contrasenya",
  "History": "Historial",
  "History of {name}: {n} charges, the last {amount} on {date}": "Historial de {name}: {n} càrrecs, l’últim de {amount} el {date}",
@@ -523,7 +516,6 @@
  },
  "Kept": "Estalviat",
  "Kept each month": "Estalviat cada mes",
- "Kept here": "Desat aquí",
  "Kept {amount}": "Estalviat: {amount}",
  "Kept {amount} · {pct}": "Estalviat: {amount} · {pct}",
  "Key copied": "Clau copiada",
@@ -670,7 +662,6 @@
  "Nothing changes for {name}": "Res no canvia per a {name}",
  "Nothing found": "No s’ha trobat res",
  "Nothing here yet": "Encara no hi ha res",
- "Nothing in the clear": "Res sense xifrar",
  "Nothing in the next 30 days": "Res als propers 30 dies",
  "Nothing in this period": "Res en aquest període",
  "Nothing in this range yet": "Encara no hi ha res en aquest període",
@@ -728,7 +719,6 @@
  "Open Wally": "Obre Wally",
  "Open Wally over HTTPS": "Obre Wally amb HTTPS",
  "Open in Summary": "Obre a Resum",
- "Opened only in memory, while Wally is open.": "S’obren només a la memòria, mentre Wally és obert.",
  "Opening {n} of {total}…": "Obrint {n} de {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Opcional sense xifratge. Amb un kit, “Has oblidat la contrasenya?” a la pàgina d’inici de sessió demana la clau de recuperació i després una contrasenya nova, sense haver de demanar-ho a qui gestiona el servidor.",
  "Orange": "Taronja",
@@ -894,7 +884,6 @@
  "Show": "Mostra",
  "Show Code": "Mostra el codi",
  "Show all": "Mostra-ho tot",
- "Show amounts": "Mostra els imports",
  "Show every day, not only {day}": "Mostra tots els dies, no només {day}",
  "Show in List": "Mostra a la llista",
  "Show less": "Mostra'n menys",
@@ -937,7 +926,6 @@
   "many": "I també {n} regles recurrents.",
   "other": "I també {n} regles recurrents."
  },
- "Some data is still in the clear": "Algunes dades encara estan sense xifrar",
  "Someone": "Algú",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Algú sense la clau els va modificar. Wally els deixa fora i conserva tota la resta.",
  "Something went wrong.": "Alguna cosa ha anat malament.",
@@ -1151,7 +1139,6 @@
  "What is this key for?": "Per a què és aquesta clau?",
  "What it already added stays. Nothing is added after this day.": "El que ja ha afegit es queda. No s’afegeix res després d’aquest dia.",
  "What the key can do": "Què pot fer la clau",
- "What the server can see": "Què pot veure el servidor",
  "What to do with {name}": "Què fem amb {name}",
  "What was it for?": "Per a què era?",
  "What {column} holds": "Què conté {column}",
@@ -1398,11 +1385,6 @@
   "one": "{n} ja afegida",
   "other": "{n} ja afegides"
  },
- "{n} backup from before.": {
-  "one": "{n} còpia d’abans.",
-  "many": "{n} còpies d’abans.",
-  "other": "{n} còpies d’abans."
- },
  "{n} bill": {
   "one": "{n} rebut",
   "many": "{n} rebuts",
@@ -1417,16 +1399,6 @@
   "many": "{n} dies",
   "one": "{n} dia",
   "other": "{n} dies"
- },
- "{n} encrypted record": {
-  "one": "{n} registre xifrat",
-  "many": "{n} registres xifrats",
-  "other": "{n} registres xifrats"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} registre xifrat. El servidor no en pot obrir cap.",
-  "many": "{n} registres xifrats. El servidor no en pot obrir cap.",
-  "other": "{n} registres xifrats. El servidor no en pot obrir cap."
  },
  "{n} imported before": {
   "many": "{n} ja importades",
@@ -1484,11 +1456,6 @@
   "many": "{n} files no tenen categoria. Assigna’ls:",
   "one": "{n} fila no té categoria. Assigna-li:",
   "other": "{n} files no tenen categoria. Assigna’ls:"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} fila a la base de dades de Wally.",
-  "many": "{n} files a la base de dades de Wally.",
-  "other": "{n} files a la base de dades de Wally."
  },
  "{n} selected": {
   "many": "{n} seleccionades",

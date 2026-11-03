@@ -15,10 +15,8 @@ DEFAULT_CATEGORIES = [
     {"name": "Utilities"},
 ]
 
-# A category keeps one of eight colors for good (1 red, 2 orange, 3 yellow, 4 green, 5 cyan,
-# 6 blue, 7 violet, 8 pink), or grey (9) once all eight are taken. Income is always green and has none.
-COLORS = range(1, 9)
-GREY = 9
+# A category's color isn't stored: the app gives it from the category's place in all-time spending
+# (biggest red, then on through the rainbow). Income is always green.
 
 class CategoryBase(SQLModel):
     name: str = Field(primary_key=True)
@@ -27,7 +25,8 @@ class Category(CategoryBase, table=True):
     pass
 
 class CategoryColor(SQLModel, table=True):
-    """Kept apart from Category so the category table stays as Wally 1.x made it."""
+    """Colors picked before they followed spending. No longer read or written; the table stays so
+    backups and older households keep the same tables."""
     name: str = Field(primary_key=True)
     color: int
 
@@ -41,14 +40,11 @@ class CategoryIcon(SQLModel, table=True):
 IconId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{0,64}$")]
 
 class CategoryCreate(CategoryBase):
-    color: int | None = Field(default=None, ge=1, le=9)
     icon: IconId | None = None
 
 class CategoryUpdate(SQLModel):
     name: str | None = None
-    color: int | None = Field(default=None, ge=1, le=9)
     icon: IconId | None = None
 
 class CategoryPublic(CategoryBase):
-    color: int | None = None
     icon: str | None = None

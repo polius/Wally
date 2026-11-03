@@ -359,7 +359,6 @@ label.w-btn{cursor:pointer;position:relative}
 .w-sec .w-gr.w-gtext{color:var(--w-ink2);font-size:var(--fs-sub);line-height:1.45;padding-block:12px}
 .w-sec .w-gr .w-badge{margin-inline-start:4px;vertical-align:1px}
 .w-secdev{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2);flex:none}
-.w-secdev.bad{background:var(--w-bad-soft);color:var(--w-bad)}
 .w-secdev svg.i{width:16px;height:16px}
 .w-sechero{display:grid;justify-items:center;text-align:center;gap:6px;margin:0 0 16px}
 .w-sechero b{font-size:20px;font-weight:650;letter-spacing:-.02em}

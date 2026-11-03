@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Un hijo, un compañero de piso, cualquiera que comparta gastos. Entra con la contraseña del hogar.",
  "A code from an authenticator app, the same on everyone’s phone.": "Un código de una app de autenticación, el mismo en el móvil de todos.",
  "A currency that isn’t listed": "Una moneda que no está en la lista",
- "A file left from turning encryption on.": "Un archivo que quedó al activar el cifrado.",
  "A home or lock screen shortcut, with the free app.": "Un acceso directo en la pantalla de inicio o de bloqueo, con la app gratuita.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Una clave permite que un script, una hoja de cálculo o un atajo del móvil añadan y lean transacciones. Se muestra una sola vez, al crearla.",
  "A no-spend day.": "Un día sin gastos.",
@@ -98,8 +97,6 @@
  "Amount of part {n}": "Importe de la parte {n}",
  "Amounts": "Importes",
  "Amounts are shown in {name} now": "Ahora los importes se muestran en {name}",
- "Amounts hidden": "Importes ocultos",
- "Amounts shown": "Importes visibles",
  "Amounts will look like {amount}.": "Los importes se verán así: {amount}.",
  "And {n} more": {
   "many": "Y {n} más",
@@ -141,7 +138,6 @@
  "Bills": "Recibos",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "Los recibos y las nóminas se añaden cuando vencen, y Wally se da cuenta cuando sube un precio.",
  "Blue": "Azul",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Difumina todas las cifras, para compartir pantalla. {key} lo activa o desactiva.",
  "Both new passwords match": "Las dos contraseñas nuevas coinciden",
  "Both passwords match": "Las dos contraseñas coinciden",
  "Bring your data": "Trae tus datos",
@@ -169,7 +165,6 @@
  "Change who": "Cambiar quién",
  "Change {name}?": "¿Cambiar {name}?",
  "Chart": "Gráfico",
- "Check again": "Volver a comprobar",
  "Checking…": "Comprobando…",
  "Choose a date.": "Elige una fecha.",
  "Choose a file": "Elegir un archivo",
@@ -423,9 +418,7 @@
  "Give each part an amount, or leave just one empty.": "Pon un importe a cada parte, o deja solo una vacía.",
  "Go to": "Ir a",
  "Green": "Verde",
- "Grey": "Gris",
  "Half each: {list}": "Mitad cada uno: {list}",
- "Hide amounts": "Ocultar importes",
  "Hide password": "Ocultar contraseña",
  "History": "Historial",
  "History of {name}: {n} charges, the last {amount} on {date}": "Historial de {name}: {n} cargos, el último de {amount} el {date}",
@@ -523,7 +516,6 @@
  },
  "Kept": "Ahorrado",
  "Kept each month": "Ahorrado cada mes",
- "Kept here": "Guardado aquí",
  "Kept {amount}": "Ahorrado: {amount}",
  "Kept {amount} · {pct}": "Ahorrado: {amount} · {pct}",
  "Key copied": "Clave copiada",
@@ -670,7 +662,6 @@
  "Nothing changes for {name}": "Nada cambia para {name}",
  "Nothing found": "No se ha encontrado nada",
  "Nothing here yet": "Aún no hay nada",
- "Nothing in the clear": "Nada sin cifrar",
  "Nothing in the next 30 days": "Nada en los próximos 30 días",
  "Nothing in this period": "Nada en este periodo",
  "Nothing in this range yet": "Aún no hay nada en este periodo",
@@ -728,7 +719,6 @@
  "Open Wally": "Abrir Wally",
  "Open Wally over HTTPS": "Abre Wally con HTTPS",
  "Open in Summary": "Abrir en Resumen",
- "Opened only in memory, while Wally is open.": "Se abren solo en memoria, mientras Wally está abierto.",
  "Opening {n} of {total}…": "Abriendo {n} de {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Opcional sin cifrado. Con uno, “¿Has olvidado la contraseña?” en la página de inicio de sesión pide la clave de recuperación y luego una contraseña nueva, sin tener que pedírselo a quien gestiona el servidor.",
  "Orange": "Naranja",
@@ -894,7 +884,6 @@
  "Show": "Mostrar",
  "Show Code": "Mostrar código",
  "Show all": "Ver todo",
- "Show amounts": "Mostrar importes",
  "Show every day, not only {day}": "Mostrar todos los días, no solo {day}",
  "Show in List": "Ver en la lista",
  "Show less": "Ver menos",
@@ -937,7 +926,6 @@
   "many": "Y también {n} reglas recurrentes.",
   "other": "Y también {n} reglas recurrentes."
  },
- "Some data is still in the clear": "Algunos datos siguen sin cifrar",
  "Someone": "Alguien",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Alguien sin la clave los modificó. Wally los deja fuera y conserva todo lo demás.",
  "Something went wrong.": "Algo ha ido mal.",
@@ -1151,7 +1139,6 @@
  "What is this key for?": "¿Para qué es esta clave?",
  "What it already added stays. Nothing is added after this day.": "Lo que ya ha añadido se queda. No se añade nada después de este día.",
  "What the key can do": "Qué puede hacer la clave",
- "What the server can see": "Qué puede ver el servidor",
  "What to do with {name}": "Qué hacer con {name}",
  "What was it for?": "¿Para qué era?",
  "What {column} holds": "Qué contiene {column}",
@@ -1398,11 +1385,6 @@
   "one": "{n} ya añadida",
   "other": "{n} ya añadidas"
  },
- "{n} backup from before.": {
-  "one": "{n} copia de antes.",
-  "many": "{n} copias de antes.",
-  "other": "{n} copias de antes."
- },
  "{n} bill": {
   "one": "{n} recibo",
   "many": "{n} recibos",
@@ -1417,16 +1399,6 @@
   "many": "{n} días",
   "one": "{n} día",
   "other": "{n} días"
- },
- "{n} encrypted record": {
-  "one": "{n} registro cifrado",
-  "many": "{n} registros cifrados",
-  "other": "{n} registros cifrados"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} registro cifrado. El servidor no puede abrir ninguno.",
-  "many": "{n} registros cifrados. El servidor no puede abrir ninguno.",
-  "other": "{n} registros cifrados. El servidor no puede abrir ninguno."
  },
  "{n} imported before": {
   "many": "{n} ya importadas",
@@ -1484,11 +1456,6 @@
   "many": "{n} filas no tienen categoría. Asígnales:",
   "one": "{n} fila no tiene categoría. Asígnale:",
   "other": "{n} filas no tienen categoría. Asígnales:"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} fila en la base de datos de Wally.",
-  "many": "{n} filas en la base de datos de Wally.",
-  "other": "{n} filas en la base de datos de Wally."
  },
  "{n} selected": {
   "many": "{n} seleccionadas",

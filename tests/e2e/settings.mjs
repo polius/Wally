@@ -197,17 +197,14 @@ section("Categories");
 await pane("categories");
 ok((await page.locator("#set-pane .w-glh").allTextContents()).join() === "Expenses,Income", "Expenses, then Income");
 ok(await page.locator("#set-pane .w-swb, #set-pane .w-link").count() === 0, "no color dots, Rename links or bins on the rows");
+{
+  // Biggest spender first, colored through the rainbow in that order
+  const tiles = await page.$$eval("#set-pane .w-gl", (gs) => [...gs[0].querySelectorAll(".w-ico")].slice(0, 3).map((e) => e.getAttribute("style")));
+  ok(tiles.length === 3 && ["--k1", "--k2", "--k3"].every((k, i) => tiles[i].includes("var(" + k + ")")), "the first three rows are red, orange, yellow");
+}
 await openRow('#set-pane a[data-pane="categories/Rent"]');
 ok(/Rent/.test(await page.textContent("#set-pane .w-shero")) && /a month/.test(await page.textContent("#set-pane .w-shero")), "Rent's page: icon, name, how much a month");
-const rentColor = (await api("GET", "/categories/colors")).data.Rent;
-await page.click('#set-pane [data-act="color"]');
-ok(await page.locator("#dlg .w-swatches [role=radio]").count() === 9 && (await page.getAttribute('#dlg .w-swatches [data-c="' + rentColor + '"]', "aria-checked")) === "true", "nine colors to pick from, the one in use ringed");
-const otherColor = rentColor === 6 ? 5 : 6;
-await page.click('#dlg .w-swatches [data-c="' + otherColor + '"]');
-await dlgOk(); await dlgClosed();
-ok((await api("GET", "/categories/colors")).data.Rent === otherColor, "Done keeps the color picked");
-await page.click('#set-pane [data-act="color"]');
-await page.click('#dlg .w-swatches [data-c="' + rentColor + '"]'); await dlgOk(); await dlgClosed();
+ok(await page.locator('#set-pane [data-act="color"]').count() === 0, "no color to pick: it follows spending");
 await page.click('#set-pane [data-act="icon"]');
 ok(await page.locator("#ic-list > .w-icgrp").first().locator("[role=radio]").count() === 64 && (await page.getAttribute('#ic-list [data-i="rent"]', "aria-checked")) === "true", "64 suggested icons, the one in use ringed");
 await page.waitForFunction(() => document.querySelectorAll("#ic-list [data-i^='l-']").length > 1500, null, { timeout: 8000 });
@@ -511,7 +508,7 @@ ok((await api("GET", "/api-keys")).data.length === 0, "a key is deleted after co
 /* ======================================================================= */
 section("Appearance");
 await pane("appearance");
-ok(!/Week starts on|Time zone|About/.test(await paneText()), "only Theme and Hide amounts");
+ok(!/Week starts on|Time zone|About/.test(await paneText()), "only Theme");
 await page.click('#ap-theme [data-v="dark"]');
 ok(await page.getAttribute("html", "data-theme") === "dark", "Dark applies at once");
 await page.waitForFunction(() => /Dark/.test(document.querySelector('#set-nav a[data-pane="appearance"] .v').textContent));
@@ -521,10 +518,6 @@ await page.click('#ap-theme [data-v="light"]');
 ok(await page.getAttribute("html", "data-theme") === "light", "Light");
 await page.click('#ap-theme [data-v="auto"]');
 ok(await page.getAttribute("html", "data-theme") === null, "Auto follows the device");
-await page.click("#hide-toggle");
-ok(await page.evaluate(() => document.documentElement.classList.contains("w-hide")), "Hide amounts on");
-await page.click("#hide-toggle");
-ok(!(await page.evaluate(() => document.documentElement.classList.contains("w-hide"))), "and off");
 
 /* ======================================================================= */
 section("Language");

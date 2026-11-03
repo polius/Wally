@@ -2,7 +2,7 @@
 import * as core from "./core.js";
 import { $, t, state, GET, loadAll, loadLanguage, on, person, refreshToday, esc, TODAY, F, T } from "./core.js";
 import { initToast, initDialogs } from "./ui.js";
-import { initShell, show, setHandlers, setHide, signOut, refresh } from "./shell.js";
+import { initShell, show, setHandlers, signOut, refresh } from "./shell.js";
 
 let vaultMod = null;   // js/vault/session.js, loaded only for an encrypted household
 async function vaultSession() {
@@ -15,7 +15,6 @@ async function boot() {
   initToast();
   initDialogs();
   initShell();
-  try { setHide(localStorage.getItem("wally.hide") === "1"); } catch (e) { /* fine */ }
   await enter();
 }
 

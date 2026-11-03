@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Un enfant, un colocataire, toute personne qui partage les dépenses. Elle se connecte avec le mot de passe du foyer.",
  "A code from an authenticator app, the same on everyone’s phone.": "Un code d’une application d’authentification, le même sur le téléphone de chacun.",
  "A currency that isn’t listed": "Une devise absente de la liste",
- "A file left from turning encryption on.": "Un fichier laissé par l’activation du chiffrement.",
  "A home or lock screen shortcut, with the free app.": "Un raccourci sur l’écran d’accueil ou de verrouillage, avec l’application gratuite.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Une clé permet à un script, un tableur ou un raccourci de téléphone d’ajouter et de lire des transactions. Elle ne s’affiche qu’une fois, à sa création.",
  "A no-spend day.": "Un jour sans dépense.",
@@ -98,8 +97,6 @@
  "Amount of part {n}": "Montant de la part {n}",
  "Amounts": "Montants",
  "Amounts are shown in {name} now": "Les montants s'affichent désormais en {name}",
- "Amounts hidden": "Montants masqués",
- "Amounts shown": "Montants affichés",
  "Amounts will look like {amount}.": "Les montants s’afficheront ainsi : {amount}.",
  "And {n} more": {
   "one": "Et {n} de plus",
@@ -141,7 +138,6 @@
  "Bills": "Factures",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "Les factures et les salaires sont ajoutés à leur échéance, et Wally remarque quand un prix augmente.",
  "Blue": "Bleu",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Floute tous les chiffres, pour partager votre écran. {key} l'active ou le désactive.",
  "Both new passwords match": "Les deux nouveaux mots de passe sont identiques",
  "Both passwords match": "Les deux mots de passe correspondent",
  "Bring your data": "Importez vos données",
@@ -169,7 +165,6 @@
  "Change who": "Changer la personne",
  "Change {name}?": "Modifier {name} ?",
  "Chart": "Graphique",
- "Check again": "Vérifier à nouveau",
  "Checking…": "Vérification…",
  "Choose a date.": "Choisissez une date.",
  "Choose a file": "Choisir un fichier",
@@ -423,9 +418,7 @@
  "Give each part an amount, or leave just one empty.": "Donnez un montant à chaque part, ou laissez-en une seule vide.",
  "Go to": "Aller à",
  "Green": "Vert",
- "Grey": "Gris",
  "Half each: {list}": "Moitié chacun : {list}",
- "Hide amounts": "Masquer les montants",
  "Hide password": "Masquer le mot de passe",
  "History": "Historique",
  "History of {name}: {n} charges, the last {amount} on {date}": "Historique de {name} : {n} prélèvements, le dernier de {amount} le {date}",
@@ -523,7 +516,6 @@
  },
  "Kept": "Épargné",
  "Kept each month": "Épargné chaque mois",
- "Kept here": "Stocké ici",
  "Kept {amount}": "{amount} épargnés",
  "Kept {amount} · {pct}": "{amount} épargnés · {pct}",
  "Key copied": "Clé copiée",
@@ -670,7 +662,6 @@
  "Nothing changes for {name}": "Rien ne change pour {name}",
  "Nothing found": "Aucun résultat",
  "Nothing here yet": "Rien ici pour l'instant",
- "Nothing in the clear": "Rien en clair",
  "Nothing in the next 30 days": "Rien dans les 30 prochains jours",
  "Nothing in this period": "Rien sur cette période",
  "Nothing in this range yet": "Rien sur cette période",
@@ -728,7 +719,6 @@
  "Open Wally": "Ouvrir Wally",
  "Open Wally over HTTPS": "Ouvrez Wally en HTTPS",
  "Open in Summary": "Ouvrir dans Résumé",
- "Opened only in memory, while Wally is open.": "Ouverts uniquement en mémoire, pendant que Wally est ouvert.",
  "Opening {n} of {total}…": "Ouverture de {n} sur {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Facultatif sans chiffrement. Avec un kit, « Mot de passe oublié ? » sur la page de connexion demande sa clé de récupération, puis un nouveau mot de passe, sans passer par la personne qui gère le serveur.",
  "Orange": "Orange",
@@ -894,7 +884,6 @@
  "Show": "Afficher",
  "Show Code": "Afficher le code",
  "Show all": "Voir tout",
- "Show amounts": "Afficher les montants",
  "Show every day, not only {day}": "Afficher tous les jours, pas seulement le {day}",
  "Show in List": "Voir dans la liste",
  "Show less": "Voir moins",
@@ -937,7 +926,6 @@
   "many": "De même que {n} règles récurrentes.",
   "other": "De même que {n} règles récurrentes."
  },
- "Some data is still in the clear": "Certaines données sont encore en clair",
  "Someone": "Quelqu'un",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Quelqu’un sans la clé les a modifiés. Wally les écarte et conserve tout le reste.",
  "Something went wrong.": "Une erreur s'est produite.",
@@ -1151,7 +1139,6 @@
  "What is this key for?": "À quoi sert cette clé ?",
  "What it already added stays. Nothing is added after this day.": "Ce qu'elle a déjà ajouté reste. Rien n'est ajouté après ce jour.",
  "What the key can do": "Ce que la clé peut faire",
- "What the server can see": "Ce que le serveur peut voir",
  "What to do with {name}": "Que faire de {name}",
  "What was it for?": "C'était pour quoi ?",
  "What {column} holds": "Contenu de {column}",
@@ -1398,11 +1385,6 @@
   "many": "{n} déjà ajoutées",
   "other": "{n} déjà ajoutées"
  },
- "{n} backup from before.": {
-  "one": "{n} sauvegarde d’avant.",
-  "many": "{n} sauvegardes d’avant.",
-  "other": "{n} sauvegardes d’avant."
- },
  "{n} bill": {
   "one": "{n} facture",
   "many": "{n} factures",
@@ -1417,16 +1399,6 @@
   "one": "{n} jour",
   "many": "{n} jours",
   "other": "{n} jours"
- },
- "{n} encrypted record": {
-  "one": "{n} enregistrement chiffré",
-  "many": "{n} enregistrements chiffrés",
-  "other": "{n} enregistrements chiffrés"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} enregistrement chiffré. Le serveur ne peut en ouvrir aucun.",
-  "many": "{n} enregistrements chiffrés. Le serveur ne peut en ouvrir aucun.",
-  "other": "{n} enregistrements chiffrés. Le serveur ne peut en ouvrir aucun."
  },
  "{n} imported before": {
   "one": "{n} déjà importée",
@@ -1484,11 +1456,6 @@
   "one": "{n} ligne n'a pas de catégorie. Attribuez-lui :",
   "many": "{n} lignes n'ont pas de catégorie. Attribuez-leur :",
   "other": "{n} lignes n'ont pas de catégorie. Attribuez-leur :"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} ligne dans la base de données de Wally.",
-  "many": "{n} lignes dans la base de données de Wally.",
-  "other": "{n} lignes dans la base de données de Wally."
  },
  "{n} selected": {
   "one": "{n} sélectionnée",

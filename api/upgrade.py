@@ -114,6 +114,12 @@ def report(before: dict, today: date, version: str, backup: str | None) -> dict:
         "checked": ["transactions", "rules", "categories", "tags", "currencies", "settings", "integrity"],
     }
 
+def without_details(r: dict) -> dict:
+    """The report once encryption is on. The database keeps it in the clear, so it keeps only counts
+    and dates: no names, no amounts, no totals."""
+    return {**r, "kept": {**r["kept"], "expense": None, "income": None}, "removed": [], "notes": [],
+            "removed_count": len(r.get("removed") or []), "private": True}
+
 def _n(count: int, one: str, many: str) -> str:
     return f"{count} {one if count == 1 else many}"
 
@@ -126,7 +132,7 @@ def text(r: dict) -> str:
         "",
         "Kept, and checked one by one against the old database:",
         "  " + _n(k["transactions"], "transaction", "transactions") + (f", from {k['first']} to {k['last']}" if k["first"] else ""),
-        f"  spent {k['expense']}, earned {k['income']}",
+        *([f"  spent {k['expense']}, earned {k['income']}"] if k.get("expense") is not None else []),
         "  " + ", ".join([_n(k["rules"], "recurring rule", "recurring rules"), _n(k["categories"], "category", "categories"), _n(k["tags"], "tag", "tags")]),
     ]
     if kept_settings:
@@ -135,6 +141,11 @@ def text(r: dict) -> str:
         lines += ["", f"Taken out: {len(r['removed'])} charges that 1.x added in advance, dated after {r['today']}.",
                   "Wally 2.0 adds each recurring charge on its day, so they come back then:"]
         lines += [f"  {x['date']}  {x['name']}  {x['amount']}" for x in r["removed"]]
+    if r.get("private"):
+        if r.get("removed_count"):
+            lines += ["", f"Taken out: {_n(r['removed_count'], 'charge', 'charges')} that 1.x added in advance, dated after {r['today']}.",
+                      "Wally 2.0 adds each recurring charge on its day, so they come back then."]
+        lines += ["", "Names, amounts and totals were taken out of this report when encryption was turned on."]
     for n in r["notes"]:
         if n["kind"] == "decimals":
             lines += ["", (f"1 amount has more than two decimals, as typed in 1.x. It is kept as it is and shown to the cent:" if n["count"] == 1

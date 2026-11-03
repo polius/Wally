@@ -242,13 +242,11 @@ export const state = {
   config: {},
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
-  colors: {},            // {category: 1 to 8, or null for income}: each category keeps its color
   icons: {},             // {category: icon id} for the categories whose icon someone picked
   tags: [],
   irules: [],
   prefs: {},
   scope: "all",          // "all" or a person key
-  hide: false,           // Hide amounts
 };
 export function personKey(id) { return id === null || id === undefined ? null : String(id); }
 export function person(key) { return state.people.find((p) => String(p.id) === String(key)) || null; }
@@ -304,8 +302,9 @@ export function upsertTx(list) {
   });
   sortTx();
   setStart();
+  paintColors();
 }
-export function removeTx(ids) { const set = new Set(ids); state.tx = state.tx.filter((t) => !set.has(t.id)); setStart(); }
+export function removeTx(ids) { const set = new Set(ids); state.tx = state.tx.filter((t) => !set.has(t.id)); setStart(); paintColors(); }
 function setStart() {
   const last = state.tx.length ? state.tx[state.tx.length - 1].d : TODAY;
   START = last.slice(0, 8) + "01";
@@ -322,8 +321,8 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags, colors, icons] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/colors"), GET("/categories/icons"),
+  const [status, people, ledger, rules, config, currency, categories, tags, icons] = await Promise.all([
+    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"),
   ]);
   state.status = status;
   state.people = people;
@@ -334,7 +333,6 @@ export async function loadAll() {
   const sel = currency.currencies.find((c) => c.name === currency.selected);
   state.currency = { symbol: sel ? sel.symbol : currency.selected, position: currency.position, selected: currency.selected, currencies: currency.currencies };
   state.categories = categories;
-  state.colors = colors || {};
   state.icons = icons || {};
   paintColors();
   state.tags = tags;
@@ -351,23 +349,21 @@ export async function loadExtras() {
     emit("change", { extras: true });
   } catch (e) { /* shown when opened */ }
 }
-/* Categories and their colors, after a change in Settings or an import */
+/* Categories and their icons, after a change in Settings or an import */
 export async function reloadCategories() {
-  const [categories, colors, icons] = await Promise.all([GET("/categories"), GET("/categories/colors"), GET("/categories/icons")]);
+  const [categories, icons] = await Promise.all([GET("/categories"), GET("/categories/icons")]);
   state.categories = categories;
-  state.colors = colors || {};
   state.icons = icons || {};
   paintColors();
 }
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
 /* Another device saved something: read it all again from this device's copy */
 export async function reloadAll() {
-  const [ledger, rules, categories, colors, icons, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/colors"), GET("/categories/icons"), GET("/tags"), GET("/rules")]);
+  const [ledger, rules, categories, icons, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/icons"), GET("/tags"), GET("/rules")]);
   state.tx = ledger.rows.map(fromRow);
   setStart();
   state.rules = rules.map(fromRule);
   state.categories = categories;
-  state.colors = colors || {};
   state.icons = icons || {};
   paintColors();
   state.tags = tags;
@@ -480,13 +476,32 @@ export const CAT_ICONS = [
   "income", "wallet", "savings", "card", "banknote", "tax", "briefcase", "receipt",
   "education", "handheart", "flower", "leaf", "umbrella", "sparkles", "star", "misc",
 ];
-function colorOf(name) {
-  const c = state.colors[name];
-  if (c >= 1 && c <= 9) return c;
-  return isIncomeCat(name) ? 0 : 9;
+/* A category's color is its place among the household's expense categories by everything spent up to
+   today: the biggest red, then on through the rainbow (CAT_HUES colors), grey after that. Ties and
+   categories with nothing spent go by name. Income categories are green. */
+export const CAT_HUES = 12, GREY = CAT_HUES + 1;
+let ranked = [];
+export function catRank() { return ranked; }
+function rankAll() {
+  const spent = {}, paid = new Set(), earned = new Set();
+  for (const x of state.tx) {
+    if (x.type === "income") earned.add(x.c);
+    if (x.type !== "expense") continue;
+    paid.add(x.c);
+    if (x.d <= TODAY) spent[x.c] = (spent[x.c] || 0) + x.a;
+  }
+  // The same test as isIncomeCat, for every category at once
+  const income = (n) => !paid.has(n) && (earned.has(n) || catIcon(n) === "income");
+  const names = new Set((state.categories || []).concat(Object.keys(spent)));
+  ranked = [...names].filter((n) => !income(n)).sort((x, y) => (spent[y] || 0) - (spent[x] || 0) || x.localeCompare(y));
 }
-export function paintColors() { Object.keys(CAT).forEach((k) => { CAT[k].c = colorOf(k); CAT[k].i = iconOf(k); }); }
-/* Expense categories, biggest spender in the range first (colors don't follow the rank) */
+function colorOf(name) {
+  const i = ranked.indexOf(name);
+  if (i < 0) return isIncomeCat(name) ? 0 : GREY;
+  return i < CAT_HUES ? i + 1 : GREY;
+}
+export function paintColors() { rankAll(); Object.keys(CAT).forEach((k) => { CAT[k].c = colorOf(k); CAT[k].i = iconOf(k); }); }
+/* Expense categories, biggest spender in the range first. Colors follow the all-time rank, not this one. */
 export function rerank(a, b, sc) {
   const totalsBy = byCat(a, b, sc);
   const names = new Set(state.categories.concat(Object.keys(totalsBy)));
@@ -499,7 +514,7 @@ export function isIncomeCat(name) {
   return inc && !exp || (!inc && !exp && catIcon(name) === "income");
 }
 export function expCats() { return state.categories.filter((c) => !isIncomeCat(c)); }
-export function cc(c) { return "var(--c" + cat(c).c + ")"; }
+export function cc(c) { const n = cat(c).c; return n === 0 ? "var(--c0)" : n === GREY ? "var(--c9)" : "var(--k" + n + ")"; }
 export function icon(id, cls) { return '<svg class="i ' + (cls || "") + '" aria-hidden="true"><use href="' + iconHref(id) + '"/></svg>'; }
 /* Wally's own icons are in the page; "l-" + a name is one of Lucide's, from a file read the first time one is shown */
 export const LIB = "/icons/lucide.svg";

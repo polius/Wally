@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "子ども、ルームメイトなど、費用を分け合う人です。世帯のパスワードでログインします。",
  "A code from an authenticator app, the same on everyone’s phone.": "認証アプリのコードです。全員のスマホに同じコードが表示されます。",
  "A currency that isn’t listed": "リストにない通貨",
- "A file left from turning encryption on.": "暗号化をオンにしたときに残ったファイルです。",
  "A home or lock screen shortcut, with the free app.": "無料アプリで、ホーム画面やロック画面にショートカットを置きます。",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "キーを使うと、スクリプトやスプレッドシート、スマホのショートカットから取引を追加・読み取りできます。キーは作成時に一度だけ表示されます。",
  "A no-spend day.": "ノー支出デーです。",
@@ -94,8 +93,6 @@
  "Amount of part {n}": "内訳{n}の金額",
  "Amounts": "金額",
  "Amounts are shown in {name} now": "金額を{name}で表示します",
- "Amounts hidden": "金額を非表示にしました",
- "Amounts shown": "金額を表示しました",
  "Amounts will look like {amount}.": "金額は{amount}のように表示されます。",
  "And {n} more": {
   "other": "ほか{n}件"
@@ -135,7 +132,6 @@
  "Bills": "固定費",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "固定費や給料は期日に追加され、値上がりするとWallyが気づきます。",
  "Blue": "青",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "画面共有のときに金額をすべてぼかします。{key}で切り替えます。",
  "Both new passwords match": "2つの新しいパスワードが一致しています",
  "Both passwords match": "2つのパスワードが一致",
  "Bring your data": "データの取り込み",
@@ -163,7 +159,6 @@
  "Change who": "メンバーを変更",
  "Change {name}?": "{name}を変更しますか？",
  "Chart": "グラフ",
- "Check again": "もう一度確認",
  "Checking…": "確認中…",
  "Choose a date.": "日付を選んでください。",
  "Choose a file": "ファイルを選択",
@@ -389,9 +384,7 @@
  "Give each part an amount, or leave just one empty.": "各内訳に金額を入れるか、1つだけ空欄にしてください。",
  "Go to": "移動",
  "Green": "緑",
- "Grey": "グレー",
  "Half each: {list}": "半分ずつ：{list}",
- "Hide amounts": "金額を隠す",
  "Hide password": "パスワードを隠す",
  "History": "履歴",
  "History of {name}: {n} charges, the last {amount} on {date}": "{name}の履歴：{n}回、最後は{date}の{amount}",
@@ -471,7 +464,6 @@
  },
  "Kept": "黒字",
  "Kept each month": "毎月の貯蓄額",
- "Kept here": "このブラウザに保存",
  "Kept {amount}": "{amount}の黒字",
  "Kept {amount} · {pct}": "{amount}の黒字 · {pct}",
  "Key copied": "キーをコピーしました",
@@ -614,7 +606,6 @@
  "Nothing changes for {name}": "{name}は変更なし",
  "Nothing found": "見つかりません",
  "Nothing here yet": "まだ何もありません",
- "Nothing in the clear": "暗号化されていないデータはありません",
  "Nothing in the next 30 days": "今後 30 日間はなし",
  "Nothing in this period": "この期間は何もありません",
  "Nothing in this range yet": "この期間はまだ何もありません",
@@ -670,7 +661,6 @@
  "Open Wally": "Wallyを開く",
  "Open Wally over HTTPS": "HTTPS で Wally を開いてください",
  "Open in Summary": "概要で開く",
- "Opened only in memory, while Wally is open.": "Wallyを開いている間だけ、メモリ上で開かれます。",
  "Opening {n} of {total}…": "{total}件中{n}件を開いています…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "暗号化しない場合は任意です。キットがあれば、ログインページの「パスワードをお忘れですか？」でリカバリーキーを入力し、サーバーの管理者に頼まずに新しいパスワードを設定できます。",
  "Orange": "オレンジ",
@@ -826,7 +816,6 @@
  "Show": "表示",
  "Show Code": "コードを表示",
  "Show all": "すべて表示",
- "Show amounts": "金額を表示",
  "Show every day, not only {day}": "{day}だけでなく全日を表示",
  "Show in List": "リストで表示",
  "Show less": "表示を減らす",
@@ -861,7 +850,6 @@
  "So does {n} recurring rule.": {
   "other": "{n}件の定期ルールも同様です。"
  },
- "Some data is still in the clear": "一部のデータがまだ暗号化されていません",
  "Someone": "誰か",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "キーを持たない誰かが変更しました。Wallyはそれらを除外し、ほかはすべて残します。",
  "Something went wrong.": "問題が発生しました。",
@@ -1063,7 +1051,6 @@
  "What is this key for?": "このキーの用途は？",
  "What it already added stays. Nothing is added after this day.": "すでに追加された分は残ります。この日以降は追加されません。",
  "What the key can do": "キーでできること",
- "What the server can see": "サーバーから見えるもの",
  "What to do with {name}": "{name}の扱い",
  "What was it for?": "何に使いましたか？",
  "What {column} holds": "{column}の内容",
@@ -1282,9 +1269,6 @@
  "{n} already added": {
   "other": "{n}件追加済み"
  },
- "{n} backup from before.": {
-  "other": "以前のバックアップ{n}件。"
- },
  "{n} bill": {
   "other": "固定費{n}件"
  },
@@ -1293,12 +1277,6 @@
  },
  "{n} day": {
   "other": "{n}日"
- },
- "{n} encrypted record": {
-  "other": "暗号化されたレコード{n}件"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "other": "暗号化されたレコード{n}件。サーバーはどれも開けません。"
  },
  "{n} imported before": {
   "other": "{n}件取り込み済み"
@@ -1334,9 +1312,6 @@
  },
  "{n} row has no category. Give it:": {
   "other": "{n}行にカテゴリがありません。設定するカテゴリ："
- },
- "{n} row in Wally’s database.": {
-  "other": "Wallyのデータベースの{n}行。"
  },
  "{n} selected": {
   "other": "{n}件選択中"

@@ -186,7 +186,7 @@ export function cleanTags(tags) {
   }
   return out;
 }
-function ensureCategory(d, name) { if (name && !d.get("cat", name)) d.put("cat", { name, color: null }); }
+function ensureCategory(d, name) { if (name && !d.get("cat", name)) d.put("cat", { name }); }
 function ensureTags(d, tags) { for (const g of tags) if (!d.get("tag", g)) d.put("tag", { name: g }); }
 export function evenShares(total, people, payer) {
   if (!people.length) return {};
@@ -620,30 +620,10 @@ const recurring = {
 };
 
 /* ---------- categories (routers/categories.py) ---------- */
-const COLORS = [1, 2, 3, 4, 5, 6, 7, 8], GREY = 9;
 const byLower = (a, b) => { const x = a.toLowerCase(), y = b.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0; };
 function catNames(d) { return d.all("cat").map((c) => c.name); }
-function assignColors(d) {
-  const cats = d.all("cat"), names = cats.map((c) => c.name);
-  const colors = {};
-  cats.forEach((c) => { if (c.color !== null && c.color !== undefined) colors[c.name] = c.color; });
-  const spent = {}, earned = new Set();
-  for (const t of d.all("tx")) { if (t.type === "expense") spent[t.category] = (spent[t.category] || 0) + t.cents; else earned.add(t.category); }
-  const income = new Set(names.filter((n) => earned.has(n) && !(n in spent)));
-  const used = Object.fromEntries(COLORS.map((k) => [k, 0]));
-  names.forEach((n) => { if (colors[n] in used) used[colors[n]]++; });
-  const missing = names.filter((n) => !(n in colors) && !income.has(n)).sort((a, b) => ((spent[b] || 0) - (spent[a] || 0)) || byLower(a, b));
-  for (const n of missing) {
-    const free = COLORS.filter((k) => !used[k]);
-    colors[n] = free.length ? free[0] : GREY;
-    if (colors[n] in used) used[colors[n]]++;
-    d.put("cat", Object.assign(clone(d.get("cat", n)), { color: colors[n] }));
-  }
-  return Object.fromEntries(names.map((n) => [n, income.has(n) ? null : (n in colors ? colors[n] : null)]));
-}
 function iconArg(v) { if (v === undefined || v === null) return ""; const s = String(v); if (!/^[a-z0-9-]{0,64}$/.test(s)) throw fail(422, "icon is an icon's id."); return s; }
-function pub(name) { const c = read("cat", name) || {}; return { name, color: c.color || null, icon: c.icon || null }; }
-function colorArg(v) { if (v === undefined || v === null) return null; const n = Number(v); if (!Number.isInteger(n) || n < 1 || n > 9) throw fail(422, "color is 1 to 9."); return n; }
+function pub(name) { const c = read("cat", name) || {}; return { name, icon: c.icon || null }; }
 function catUsage(d, name) {
   return { transactions: d.all("tx").filter((t) => t.category === name).length, recurring: d.all("rule").filter((r) => r.category === name).length };
 }
@@ -654,7 +634,6 @@ function moveCategory(d, from, to) {
 }
 const categories = {
   list: () => serial(() => catNames(new Draft()).sort(byLower)),
-  colors: () => run((d) => assignColors(d)),
   icons: () => serial(() => Object.fromEntries(new Draft().all("cat").filter((c) => c.icon).map((c) => [c.name, c.icon]))),
   stats: () => serial(() => { const d = new Draft(), counts = {}; d.all("tx").forEach((t) => { counts[t.category] = (counts[t.category] || 0) + 1; }); return catNames(d).sort(byLower).map((n) => ({ name: n, count: counts[n] || 0 })); }),
   create: (body) => run((d) => {
@@ -662,7 +641,7 @@ const categories = {
     if (!name) throw fail(422, "A category needs a name.");
     if (d.get("cat", name)) throw fail(400, "This category already exists.");
     const icon = iconArg(body.icon);
-    d.put("cat", icon ? { name, color: colorArg(body.color), icon } : { name, color: colorArg(body.color) });
+    d.put("cat", icon ? { name, icon } : { name });
     return () => pub(name);
   }),
   update: (name, body) => run((d) => {
@@ -670,17 +649,15 @@ const categories = {
     if (!cat) throw fail(404, "This category does not exist.");
     const to = body && body.name !== undefined && body.name !== null ? String(body.name) : name;
     if (!to.trim()) throw fail(400, "A category needs a name.");
-    let color = cat.color;
     if (to !== name) {
       if (d.get("cat", to)) throw fail(400, "A category with this name already exists.");
       moveCategory(d, name, to);
       d.del("cat", name);
     }
-    if (body && body.color !== undefined && body.color !== null) color = colorArg(body.color);
     // The icon moves with the name; "" goes back to the one picked from the name
     let icon = cat.icon || "";
     if (body && body.icon !== undefined && body.icon !== null) icon = iconArg(body.icon);
-    const row = { name: to, color: color === undefined ? null : color };
+    const row = { name: to };
     if (icon) row.icon = icon;
     d.put("cat", row);
     return () => pub(to);
@@ -1019,7 +996,6 @@ const ROUTES = [
   ["POST", /^\/recurring\/([^/]+)\/missed$/, (m, b) => recurring.missed(idArg(m[1]), b)],
   ["DELETE", /^\/recurring\/([^/]+)$/, (m, b) => recurring.remove(idArg(m[1]), b)],
   ["GET", /^\/categories$/, () => categories.list()],
-  ["GET", /^\/categories\/colors$/, () => categories.colors()],
   ["GET", /^\/categories\/icons$/, () => categories.icons()],
   ["GET", /^\/categories\/stats$/, () => categories.stats()],
   ["POST", /^\/categories$/, (m, b) => categories.create(b || {})],

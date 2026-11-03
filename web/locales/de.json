@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Ein Kind, jemand aus der WG, alle, die Kosten teilen. Sie melden sich mit dem Haushaltspasswort an.",
  "A code from an authenticator app, the same on everyone’s phone.": "Ein Code aus einer Authenticator-App, auf jedem Handy derselbe.",
  "A currency that isn’t listed": "Eine nicht aufgeführte Währung",
- "A file left from turning encryption on.": "Eine Datei, die vom Einschalten der Verschlüsselung übrig ist.",
  "A home or lock screen shortcut, with the free app.": "Eine Verknüpfung auf dem Home- oder Sperrbildschirm, mit der kostenlosen App.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Mit einem Schlüssel kann ein Skript, eine Tabelle oder ein Kurzbefehl auf dem Handy Transaktionen hinzufügen und lesen. Er wird nur einmal angezeigt, beim Erstellen.",
  "A no-spend day.": "Ein Tag ohne Ausgaben.",
@@ -96,8 +95,6 @@
  "Amount of part {n}": "Betrag von Teil {n}",
  "Amounts": "Beträge",
  "Amounts are shown in {name} now": "Beträge werden jetzt in {name} angezeigt",
- "Amounts hidden": "Beträge ausgeblendet",
- "Amounts shown": "Beträge eingeblendet",
  "Amounts will look like {amount}.": "Beträge sehen dann so aus: {amount}.",
  "And {n} more": {
   "one": "Und {n} weitere",
@@ -138,7 +135,6 @@
  "Bills": "Rechnungen",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "Rechnungen und Gehälter werden am Fälligkeitstag hinzugefügt, und Wally merkt, wenn ein Preis steigt.",
  "Blue": "Blau",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Verwischt alle Zahlen, wenn du deinen Bildschirm teilst. {key} schaltet um.",
  "Both new passwords match": "Beide neuen Passwörter stimmen überein",
  "Both passwords match": "Beide Passwörter stimmen überein",
  "Bring your data": "Bring deine Daten mit",
@@ -166,7 +162,6 @@
  "Change who": "Person ändern",
  "Change {name}?": "{name} ändern?",
  "Chart": "Diagramm",
- "Check again": "Erneut prüfen",
  "Checking…": "Wird geprüft…",
  "Choose a date.": "Wähle ein Datum.",
  "Choose a file": "Datei wählen",
@@ -406,9 +401,7 @@
  "Give each part an amount, or leave just one empty.": "Gib jedem Teil einen Betrag, oder lass genau einen leer.",
  "Go to": "Gehe zu",
  "Green": "Grün",
- "Grey": "Grau",
  "Half each: {list}": "Je zur Hälfte: {list}",
- "Hide amounts": "Beträge ausblenden",
  "Hide password": "Passwort verbergen",
  "History": "Verlauf",
  "History of {name}: {n} charges, the last {amount} on {date}": "Verlauf von {name}: {n} Buchungen, zuletzt {amount} am {date}",
@@ -497,7 +490,6 @@
  },
  "Kept": "Gespart",
  "Kept each month": "Gespart pro Monat",
- "Kept here": "Hier gespeichert",
  "Kept {amount}": "{amount} gespart",
  "Kept {amount} · {pct}": "{amount} gespart · {pct}",
  "Key copied": "Schlüssel kopiert",
@@ -642,7 +634,6 @@
  "Nothing changes for {name}": "Für {name} ändert sich nichts",
  "Nothing found": "Nichts gefunden",
  "Nothing here yet": "Hier ist noch nichts",
- "Nothing in the clear": "Nichts unverschlüsselt",
  "Nothing in the next 30 days": "Nichts in den nächsten 30 Tagen",
  "Nothing in this period": "Nichts in diesem Zeitraum",
  "Nothing in this range yet": "Noch nichts in diesem Zeitraum",
@@ -699,7 +690,6 @@
  "Open Wally": "Wally öffnen",
  "Open Wally over HTTPS": "Öffne Wally über HTTPS",
  "Open in Summary": "In der Zusammenfassung öffnen",
- "Opened only in memory, while Wally is open.": "Nur im Arbeitsspeicher geöffnet, solange Wally offen ist.",
  "Opening {n} of {total}…": "{n} von {total} wird geöffnet…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Ohne Verschlüsselung optional. Mit einem Kit fragt „Passwort vergessen?“ auf der Anmeldeseite nach dem Wiederherstellungsschlüssel und dann nach einem neuen Passwort, ohne dass jemand den Server-Betreiber fragen muss.",
  "Orange": "Orange",
@@ -860,7 +850,6 @@
  "Show": "Anzeigen",
  "Show Code": "Code anzeigen",
  "Show all": "Alle zeigen",
- "Show amounts": "Beträge einblenden",
  "Show every day, not only {day}": "Jeden Tag zeigen, nicht nur {day}",
  "Show in List": "In der Liste zeigen",
  "Show less": "Weniger zeigen",
@@ -899,7 +888,6 @@
   "one": "Ebenso {n} wiederkehrende Regel.",
   "other": "Ebenso {n} wiederkehrende Regeln."
  },
- "Some data is still in the clear": "Einige Daten sind noch unverschlüsselt",
  "Someone": "Jemand",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Jemand ohne den Schlüssel hat sie geändert. Wally lässt sie weg und behält alles andere.",
  "Something went wrong.": "Etwas ist schiefgelaufen.",
@@ -1107,7 +1095,6 @@
  "What is this key for?": "Wofür ist dieser Schlüssel?",
  "What it already added stays. Nothing is added after this day.": "Bereits Hinzugefügtes bleibt. Nach diesem Tag kommt nichts mehr dazu.",
  "What the key can do": "Was der Schlüssel darf",
- "What the server can see": "Was der Server sehen kann",
  "What to do with {name}": "Was mit {name} passieren soll",
  "What was it for?": "Wofür war es?",
  "What {column} holds": "Was {column} enthält",
@@ -1340,10 +1327,6 @@
   "one": "{n} schon erfasst",
   "other": "{n} schon erfasst"
  },
- "{n} backup from before.": {
-  "one": "{n} Backup von vorher.",
-  "other": "{n} Backups von vorher."
- },
  "{n} bill": {
   "one": "{n} Rechnung",
   "other": "{n} Rechnungen"
@@ -1355,14 +1338,6 @@
  "{n} day": {
   "one": "{n} Tag",
   "other": "{n} Tage"
- },
- "{n} encrypted record": {
-  "one": "{n} verschlüsselter Eintrag",
-  "other": "{n} verschlüsselte Einträge"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} verschlüsselter Datensatz. Der Server kann keinen davon öffnen.",
-  "other": "{n} verschlüsselte Datensätze. Der Server kann keinen davon öffnen."
  },
  "{n} imported before": {
   "one": "{n} schon importiert",
@@ -1409,10 +1384,6 @@
  "{n} row has no category. Give it:": {
   "one": "{n} Zeile hat keine Kategorie. Zuweisen:",
   "other": "{n} Zeilen haben keine Kategorie. Zuweisen:"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} Zeile in der Datenbank von Wally.",
-  "other": "{n} Zeilen in der Datenbank von Wally."
  },
  "{n} selected": {
   "one": "{n} ausgewählt",

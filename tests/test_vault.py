@@ -146,6 +146,38 @@ def test_turning_on_leaves_nothing_in_the_clear(encrypted):
     for word in ("Mercadona", "Farmacia", "Therapy", "Café", "AMAZON", "Netflix", "holiday", "weekly", "Kids", "Groceries", "13.99", "23.45"):
         assert word.encode() not in raw, word
 
+def test_turning_on_keeps_only_counts_of_the_upgrade_report(make_client):
+    """A household upgraded from 1.x: its report names transactions and amounts. The files go, and the
+    copy in the settings (which stay in the clear) keeps only counts, for the welcome to 2.0."""
+    from api import upgrade
+    client = make_client()
+    alex, ana = plain_household(client)
+    report = {
+        "from": "1.x", "to": "2.0.0", "at": "2026-11-03T10:00:00+00:00", "today": "2026-11-03", "backup": None,
+        "kept": {"transactions": 5, "first": "2026-10-01", "last": "2026-10-20", "expense": "139.74", "income": "0.00",
+                 "rules": 1, "categories": 4, "tags": 2, "password": True, "settings": ["currency"]},
+        "removed": [{"date": "2026-12-01", "name": "Lloguer Pis Manresa", "amount": "469"}],
+        "notes": [{"kind": "decimals", "count": 1, "examples": [{"date": "2026-10-02", "name": "Forn de pa", "amount": "1.005"}]}],
+        "checked": ["transactions"],
+    }
+    upgrade.save(report, database.DATA_DIR)
+    conn = sqlite3.connect(database.DB_PATH)
+    conn.execute("INSERT OR REPLACE INTO appconfig (key, value) VALUES ('UPGRADE_REPORT', ?)", (json.dumps(report),))
+    conn.commit()
+    conn.close()
+    assert list(database.DATA_DIR.glob("upgrade-report-*"))
+    assert client.post("/login", json={"person_id": alex, "password": PASS}).status_code == 200
+    turn_on(client, alex, PASS)
+    assert not list(database.DATA_DIR.glob("upgrade-report-*"))
+    raw = database.DB_PATH.read_bytes()
+    for word in ("Lloguer", "Forn de pa", "469", "139.74"):
+        assert word.encode() not in raw, word
+    # The welcome still says how many came across, and the download says what was taken out
+    assert client.get("/auth/status").json()["upgrade"]["kept"]["transactions"] == 5
+    text = client.get("/upgrade/report").text
+    assert "5 transactions" in text and "1 charge that 1.x added" in text and "taken out of this report when encryption was turned on" in text
+    assert "spent" not in text
+
 def test_the_browsers_records_open_with_the_password_from_outside(encrypted):
     client, alex, ana, result, before = encrypted
     house, items = vc.open_database(database.DB_PATH, PASS)

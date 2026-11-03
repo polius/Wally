@@ -103,7 +103,6 @@ export async function forget() { flag(false); await store.wipe(); }
 export const isLocal = local.isLocal;
 export const lockOnClose = store.lockOnClose;
 export const setLockOnClose = store.setLockOnClose;
-export function records() { let n = 0; for (const r of vault.recs.values()) if (r.obj) n++; return n; }
 /* Records that would not open: changed by someone without the key. Never silently dropped. */
 export function broken() { return vault.broken.size; }
 export function handle(method, path, body, send) {

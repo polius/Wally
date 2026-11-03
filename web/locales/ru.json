@@ -10,7 +10,6 @@
  "A child, a flatmate, anyone who shares costs. They sign in with the household password.": "Ребёнок, сосед по квартире — любой, с кем вы делите расходы. Этот человек входит с паролем семьи.",
  "A code from an authenticator app, the same on everyone’s phone.": "Код из приложения-аутентификатора, одинаковый на телефонах у всех.",
  "A currency that isn’t listed": "Валюта, которой нет в списке",
- "A file left from turning encryption on.": "Файл, оставшийся после включения шифрования.",
  "A home or lock screen shortcut, with the free app.": "Ярлык на главном экране или экране блокировки, через бесплатное приложение.",
  "A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.": "Ключ позволяет скрипту, таблице или ярлыку на телефоне добавлять и читать транзакции. Он показывается один раз, при создании.",
  "A no-spend day.": "День без трат.",
@@ -100,8 +99,6 @@
  "Amount of part {n}": "Сумма части {n}",
  "Amounts": "Суммы",
  "Amounts are shown in {name} now": "Теперь суммы показаны в {name}",
- "Amounts hidden": "Суммы скрыты",
- "Amounts shown": "Суммы показаны",
  "Amounts will look like {amount}.": "Суммы будут выглядеть так: {amount}.",
  "And {n} more": {
   "few": "И ещё {n}",
@@ -144,7 +141,6 @@
  "Bills": "Счета",
  "Bills and salaries are added when they’re due, and Wally notices when a price goes up.": "Счета и зарплаты добавляются в срок, а Wally замечает, когда растёт цена.",
  "Blue": "Синий",
- "Blurs every figure, for sharing your screen. {key} toggles it.": "Размывает все цифры, когда вы показываете экран. {key} включает и выключает.",
  "Both new passwords match": "Оба новых пароля совпадают",
  "Both passwords match": "Пароли совпадают",
  "Bring your data": "Перенесите свои данные",
@@ -172,7 +168,6 @@
  "Change who": "Сменить человека",
  "Change {name}?": "Изменить «{name}»?",
  "Chart": "График",
- "Check again": "Проверить снова",
  "Checking…": "Проверка…",
  "Choose a date.": "Выберите дату.",
  "Choose a file": "Выберите файл",
@@ -440,9 +435,7 @@
  "Give each part an amount, or leave just one empty.": "Укажите сумму каждой части или оставьте пустой только одну.",
  "Go to": "Перейти",
  "Green": "Зелёный",
- "Grey": "Серый",
  "Half each: {list}": "Пополам: {list}",
- "Hide amounts": "Скрыть суммы",
  "Hide password": "Скрыть пароль",
  "History": "История",
  "History of {name}: {n} charges, the last {amount} on {date}": "История «{name}»: списаний — {n}, последнее {amount}, {date}",
@@ -549,7 +542,6 @@
  },
  "Kept": "Отложено",
  "Kept each month": "Отложено за месяц",
- "Kept here": "Хранится здесь",
  "Kept {amount}": "Отложено {amount}",
  "Kept {amount} · {pct}": "Отложено {amount} · {pct}",
  "Key copied": "Ключ скопирован",
@@ -698,7 +690,6 @@
  "Nothing changes for {name}": "Для участника {name} ничего не меняется",
  "Nothing found": "Ничего не найдено",
  "Nothing here yet": "Здесь пока пусто",
- "Nothing in the clear": "Ничего в открытом виде",
  "Nothing in the next 30 days": "Ничего в ближайшие 30 дней",
  "Nothing in this period": "За этот период ничего нет",
  "Nothing in this range yet": "За этот период пока ничего нет",
@@ -757,7 +748,6 @@
  "Open Wally": "Открыть Wally",
  "Open Wally over HTTPS": "Откройте Wally по HTTPS",
  "Open in Summary": "Открыть в сводке",
- "Opened only in memory, while Wally is open.": "Расшифровываются только в памяти, пока Wally открыт.",
  "Opening {n} of {total}…": "Открытие: {n} из {total}…",
  "Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.": "Без шифрования необязателен. С ним «Забыли пароль?» на странице входа запросит ключ восстановления, а затем новый пароль — без обращения к тому, кто управляет сервером.",
  "Orange": "Оранжевый",
@@ -928,7 +918,6 @@
  "Show": "Показать",
  "Show Code": "Показать код",
  "Show all": "Показать все",
- "Show amounts": "Показать суммы",
  "Show every day, not only {day}": "Показать все дни, а не только {day}",
  "Show in List": "Показать в списке",
  "Show less": "Свернуть",
@@ -975,7 +964,6 @@
   "many": "Как и {n} регулярных правил.",
   "other": "Как и {n} регулярного правила."
  },
- "Some data is still in the clear": "Часть данных всё ещё в открытом виде",
  "Someone": "Кто-то",
  "Someone without the key changed them. Wally leaves them out and keeps everything else.": "Их изменил кто-то без ключа. Wally пропускает их и сохраняет всё остальное.",
  "Something went wrong.": "Что-то пошло не так.",
@@ -1195,7 +1183,6 @@
  "What is this key for?": "Для чего этот ключ?",
  "What it already added stays. Nothing is added after this day.": "Уже добавленное останется. После этого дня ничего не добавляется.",
  "What the key can do": "Что может ключ",
- "What the server can see": "Что видит сервер",
  "What to do with {name}": "Что сделать с «{name}»",
  "What was it for?": "На что?",
  "What {column} holds": "Что в столбце {column}",
@@ -1456,12 +1443,6 @@
   "one": "{n} уже есть",
   "other": "{n} уже есть"
  },
- "{n} backup from before.": {
-  "one": "{n} прежняя резервная копия.",
-  "few": "{n} прежние резервные копии.",
-  "many": "{n} прежних резервных копий.",
-  "other": "{n} прежней резервной копии."
- },
  "{n} bill": {
   "one": "{n} счёт",
   "few": "{n} счёта",
@@ -1479,18 +1460,6 @@
   "many": "{n} дней",
   "one": "{n} день",
   "other": "{n} дня"
- },
- "{n} encrypted record": {
-  "one": "{n} зашифрованная запись",
-  "few": "{n} зашифрованные записи",
-  "many": "{n} зашифрованных записей",
-  "other": "{n} зашифрованной записи"
- },
- "{n} encrypted record. The server can’t open any of them.": {
-  "one": "{n} зашифрованная запись. Сервер не может открыть ни одну из них.",
-  "few": "{n} зашифрованные записи. Сервер не может открыть ни одну из них.",
-  "many": "{n} зашифрованных записей. Сервер не может открыть ни одну из них.",
-  "other": "{n} зашифрованной записи. Сервер не может открыть ни одну из них."
  },
  "{n} imported before": {
   "few": "Ранее импортировано: {n}",
@@ -1559,12 +1528,6 @@
   "many": "У {n} строк нет категории. Назначить:",
   "one": "У {n} строки нет категории. Назначить:",
   "other": "У {n} строки нет категории. Назначить:"
- },
- "{n} row in Wally’s database.": {
-  "one": "{n} строка в базе данных Wally.",
-  "few": "{n} строки в базе данных Wally.",
-  "many": "{n} строк в базе данных Wally.",
-  "other": "{n} строки в базе данных Wally."
  },
  "{n} selected": {
   "few": "Выбрано: {n}",
