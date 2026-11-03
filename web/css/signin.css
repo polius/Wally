@@ -516,3 +516,12 @@
 .w-gate .w-onbfields .w-gr{padding-block:6px}
 @media (min-width:768px){.w-onbback{font-size:var(--fs-body)}}
 @media (max-width:767px){.w-gate .w-onbgl .w-seg button{min-height:0;padding:5px 12px;font-size:14px;line-height:20px}}
+/* Spacing pass: Add someone is a row like the others (its separator, the people rows' height); a
+   two-line choice gets the same 12 px above and below as a list row; the What's New pill keeps its
+   text off the rounded ends when it wraps; on a phone its list fills the screen with the button at
+   the bottom, and the last line clears the fade above the button. */
+.w-gate .w-onbpl > .w-onbadd{border-top:1px solid var(--w-line2);min-height:54px}
+.w-onbpick .w-gr{padding-block:12px}
+.w-welok{padding:7px 14px;border-radius:16px;text-wrap:balance}
+.w-welbody{flex:1 1 auto;padding-bottom:28px}
+@media (max-width:560px){.w-welbody{padding-bottom:24px}}

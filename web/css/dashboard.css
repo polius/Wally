@@ -55,10 +55,12 @@ button.s-title:hover{background:var(--w-fill)}
 .s-nm small{font-size:var(--fs-foot);color:var(--w-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s-am{font-size:var(--fs-sub);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:end}
 .s-am.pos{color:var(--w-good)}
+/* Cards: the last row's own padding plus the card's would leave more room under it than above the title */
+@media (min-width:768px){.s-body > :is(.s-row,.s-notice,.s-person):last-child{padding-bottom:2px}}
 .s-more{display:block;width:100%;text-align:center;padding:10px 0 2px;font-size:var(--fs-sub);border-top:1px solid var(--w-line2)}
 
 /* ---------- Worth noticing ---------- */
-.s-notice{align-items:flex-start;gap:12px;padding:10px 0}
+.s-notice{align-items:center;gap:12px;padding:10px 0}
 .s-sh + .s-body > .s-notice:first-child{padding-top:2px}
 .s-notice .w-ico{width:32px;height:32px;border-radius:8px;flex:none}
 .s-notice .w-ico svg.i{width:16px;height:16px}
@@ -69,12 +71,14 @@ button.s-title:hover{background:var(--w-fill)}
 .s-notice .s-nm small{white-space:normal}
 
 /* ---------- The household ---------- */
-.s-person{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;padding:10px 0}
+.s-person{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;align-items:center}
 .s-sh + .s-body > .s-person:first-child{padding-top:4px}
 .s-person .w-av.lg{width:36px;height:36px;font-size:15px}
 .s-person .s-nm{display:contents}
 .s-person .s-nm > span{grid-column:2;grid-row:1;align-self:center}
-.s-person .s-nm small{grid-column:1 / -1;grid-row:2}
+.s-person .s-nm small{grid-column:2 / -1;grid-row:2}
+.s-person .w-av.lg{grid-row:1 / span 2;align-self:center}
+/* The amount sits on the name's line, so a long detail line ("5,470 € own · 8,033 € share…") runs under it, never into it */
 .s-person .s-am{grid-column:3;grid-row:1;align-self:center}
 .s-foot{font-size:var(--fs-foot);color:var(--w-ink2);margin-top:6px}
 
@@ -101,8 +105,11 @@ button.s-title:hover{background:var(--w-fill)}
 .s-chev{color:var(--w-ink3);width:14px!important;height:14px!important}
 
 /* ---------- empty Summary ---------- */
-.d-emptyb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.d-emptyb{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:6px}
 .d-emptyb .w-btn{margin:0;text-decoration:none}
+/* One button size in an empty state: the same pills as the Everyday spending card's */
+.d-welcome .d-emptyb{margin-top:12px}
+.d-welcome .d-emptyb .w-btn{height:40px;border-radius:999px;padding:0 16px;font-size:var(--fs-sub);font-weight:600}
 .d-welcome{padding:40px 20px}
 #s-heroempty .w-empty{padding:22px 0 8px}
 #s-heroempty .w-empty b{font-size:16px}
@@ -178,30 +185,44 @@ button.s-title:hover{background:var(--w-fill)}
   .s-pmenu{min-width:250px;top:calc(100% - 3px)}
   .s-title{min-height:49px}
   .s-steps{margin-inline-end:0;margin-inline-start:auto}
+  .s-head .w-hact{margin-inline-start:4px}
   .s-grid{--s-card:var(--w-canvas);gap:0}
   .s-sec{background:none;padding:0;box-shadow:none;border-radius:0}
   .s-sh{margin:26px 4px 8px}
   .s-sh h4{font-size:var(--fs-title);font-weight:650}
   .s-body{background:var(--w-panel);border-radius:var(--r-card);padding:4px 14px}
   .s-hero .s-body{background:none;padding:0}
+  /* Year and longer: the chart switch is too wide to sit beside the number, so it leads, full width */
+  .s-heroh{flex-direction:column-reverse;align-items:stretch;gap:14px}
+  .s-view{display:flex;margin-top:4px}
+  .s-view[hidden]{display:none}
+  .s-view button{flex:1 1 auto;padding:6px 8px;font-size:var(--fs-foot)}
   .s-big{font-size:56px;margin:2px 0 4px}
   .s-dk{display:none}
   .s-ph{display:inline}
   .s-sec[data-w="kept"] .s-body,.s-sec[data-w="year"] .s-body{padding:12px 14px}
   .s-row{padding:11px 0}
-  .s-notice,.s-person{padding:10px 0}
+  .s-more{padding:12px 0 8px}
+  .s-notice,.s-person{padding:12px 0}
+  .s-body > .s-foot{margin:2px 0 0;padding:10px 0 12px;border-top:1px solid var(--w-line2)}
   .s-sh + .s-body > .s-row:first-child{padding-top:11px}
-  .s-sh + .s-body > :is(.s-notice,.s-person):first-child{padding-top:0}
+  .s-sh + .s-body > :is(.s-notice,.s-person):first-child{padding-top:12px}
   .s-nm > span{font-weight:500}
   .s-none{padding:14px 0}
   .s-recapw:not(:empty){margin-top:26px}
   .s-recap{padding:14px}
   .d-welcome{padding:24px 12px}
+  /* Three pills do not fit on one line: the main action leads, full width, the other two share the line under it */
+  .d-welcome .d-emptyb{width:100%;max-width:300px;justify-self:center}
+  .d-welcome .d-emptyb .w-btn{flex:1 1 0}
+  .d-welcome .d-emptyb .w-btn.primary{order:-1;flex-basis:100%}
   .d-calg button{width:40px;height:40px;font-size:17px}
 }
 
 /* Right to left: amounts stay left to right ("2,831.28 €", never "€ 2,831.28") */
 [dir=rtl] #main[data-page=dashboard] :is(.s-big,.s-am,.s-keptn b,.s-ch b,.s-proj b,.s-yearsub b){direction:ltr;unicode-bidi:isolate}
+/* …but the big number still lines up under its label, on the right */
+[dir=rtl] #main[data-page=dashboard] .s-big{text-align:right}
 
 /* Hide amounts (H) also blurs this page's own figures */
 .w-hide #main[data-page=dashboard] :is(.s-big,.s-am,.s-proj b,.s-ch b,.s-keptn b,.s-yearsub b,.s-notice small,.s-person small,.s-recap small,.chart .lb,.chart .lb2,.chart .lbs){filter:blur(6px)}

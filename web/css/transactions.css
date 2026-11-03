@@ -93,6 +93,9 @@
 .tx-page .w-row .amt{font-weight:400}
 .tx-page .w-dayh{font-size:14px;color:var(--w-ink2);padding:14px 0 8px;margin-top:0}
 .tx-page .w-dayh span{color:var(--w-ink2)}
+/* The day's rule sits a little above its edge, so a selected or hovered row under it doesn't touch it */
+.tx-page .w-dayh{border-bottom:0;padding-bottom:10px}
+.tx-page .w-dayh::after{content:"";position:absolute;inset-inline:0;bottom:2px;height:1px;background:var(--w-line2)}
 .tx-page .w-txlist > .w-dayh:first-child,.tx-page .w-monh + .w-dayh{padding-top:4px}
 .tx-page .w-monh{font-size:16px;font-weight:700;padding:18px 0 2px}
 /* Across months (a search), the day headers sit close under their month */
@@ -114,7 +117,7 @@
 .tx-win .tx-vwin{position:absolute;inset-inline:0;top:0;will-change:transform}
 .tx-win .w-row{height:67px;box-sizing:border-box;padding-block:0;overflow:hidden}
 .tx-win .w-row p{flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
-.tx-win .w-dayh{position:static;height:44px;box-sizing:border-box;padding-block:14px 8px;align-items:center}
+.tx-win .w-dayh{position:relative;height:44px;box-sizing:border-box;padding-block:13px 9px;align-items:center}
 .tx-win .w-monh,.tx-win .w-monh:first-child{height:44px;box-sizing:border-box;padding-block:18px 4px}
 .tx-pin{position:sticky;top:0;height:0;z-index:3}
 .tx-pin > .w-dayh{position:absolute;inset-inline:0;top:0}
@@ -134,7 +137,7 @@
 .tx-close{display:none;width:30px;height:30px;border-radius:50%;place-items:center;color:var(--w-ink2);background:var(--w-fill)}
 .tx-close svg.i{width:15px;height:15px}
 .tx-close:hover{background:var(--w-fill2)}
-.tx-iamt{display:grid;gap:0}
+.tx-iamt{display:grid;gap:2px}
 .tx-idate{font-size:var(--fs-foot);color:var(--w-ink2);font-weight:400}
 .tx-insp .w-big{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;line-height:1.1}
 .tx-insp .w-big .c{font-size:22px;letter-spacing:-.02em;color:inherit}
@@ -256,6 +259,8 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-page.qblank .tx-main{display:none}
   .tx-qrec{display:grid;padding-top:2px}
   .tx-qrec .w-gr{font-size:var(--fs-body);min-height:46px}
+  .tx-qrec > .w-glh{padding-bottom:8px}
+  .tx-qrec > .w-gl + .w-glh{margin-top:26px}
   .tx-qrec .w-gr .v{color:var(--w-ink2)}
   .tx-qrec .tok{font-size:var(--fs-sub)}
   .tx-listp:not([hidden]){height:auto;min-height:0;display:block}

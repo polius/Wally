@@ -6,7 +6,7 @@
    bills, worth knowing. On a phone, the same in pages. */
 .w-mrpage{display:grid;justify-items:center}
 .w-mrpage .w-mrev{width:100%;max-width:1040px;border:0;border-radius:20px}
-.w-mrh{flex-wrap:wrap;padding:16px 22px;gap:10px}
+.w-mrh{flex-wrap:wrap;padding:16px 26px;gap:10px}
 .w-mrh .t{min-width:0;flex:1}
 .w-mrh .t h1{font-size:var(--fs-body);font-weight:600;letter-spacing:-.02em;line-height:1.3}
 .w-mrh .t p{font-size:var(--fs-foot);color:var(--w-ink2)}
@@ -49,6 +49,7 @@
 .w-mrtile .w-mrd{font-size:var(--fs-foot)}
 .w-mrtile.k > b{font-size:var(--fs-sub);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .w-mrtile.k .s{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-mrtop > .w-mrhero + .w-mrtiles{margin-top:6px}
 /* Where it went: one row per category, who spent it inside the bar */
 .w-mrkey{display:inline-flex;gap:14px;font-size:var(--fs-foot);color:var(--w-ink2);align-items:center;flex-wrap:wrap}
 .w-mrkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
@@ -79,9 +80,9 @@
 .w-mrchg p{font-size:var(--fs-foot);color:var(--w-ink2)}
 /* Each of you */
 .w-mrpcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.w-mrpc{background:var(--w-panel2);border-radius:12px;padding:14px 16px;display:grid;gap:8px;align-content:start;transition:opacity .2s}
+.w-mrpc{background:var(--w-panel2);border-radius:12px;padding:14px 16px 7px;display:grid;gap:0;align-content:start;transition:opacity .2s}
 .w-mrpc.dim{opacity:.45}
-.w-mrpc .h{display:flex;align-items:center;gap:10px}
+.w-mrpc .h{display:flex;align-items:center;gap:10px;padding-bottom:10px}
 .w-mrpc .h b{flex:1;font-weight:600}
 .w-mrpc .h > span{font-weight:600;font-variant-numeric:tabular-nums}
 .w-mrpc .h > span.good{color:var(--w-good)}.w-mrpc .h > span.bad{color:var(--w-bad)}
@@ -95,7 +96,7 @@
 .w-mr2 > .w-mrcol + .w-mrcol{border:0}
 .w-mrcol .w-mrkv:first-of-type{border-top-color:var(--w-line2)}
 /* The foot */
-.w-mrf{justify-content:flex-end;gap:10px;background:none;padding:14px 22px}
+.w-mrf{justify-content:flex-end;gap:10px;background:none;padding:16px 26px}
 .w-mrf .w-btn{text-decoration:none;height:40px;border-radius:999px;padding:0 18px;font-size:var(--fs-sub);font-weight:600}
 
 @media (max-width:1180px){
@@ -113,7 +114,8 @@
   .w-mrpage .w-mrev{display:none}
   body:has(#main[data-page="review"]) .w-tabbar{display:none}
   .w-app > .w-main[data-page="review"]{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-  .w-mrpage{display:block}
+  /* justify-items now centres block children too: the story must fill the width on every page, not shrink to its content */
+  .w-mrpage{display:block;justify-items:stretch}
   .w-mrstory{display:grid;gap:12px;min-height:calc(100dvh - 90px);grid-template-rows:auto auto auto 1fr auto;align-content:start}
   .w-story{margin:2px 0 0}
   .w-mrstop{display:flex;align-items:center;gap:8px}
@@ -149,7 +151,7 @@
   .w-mrsp .w-mrpc{background:var(--w-panel)}
   .w-mrsp .w-mrtile.k{background:var(--w-panel)}
   .w-mrsfoot{display:grid;gap:8px;margin-top:14px}
-  .w-mrsfoot .w-btn{height:44px;text-decoration:none;justify-content:center;border-radius:999px}
+  .w-mrsfoot .w-btn{height:44px;text-decoration:none;justify-content:center;border-radius:999px;font-size:var(--fs-body);font-weight:600}
   .w-mrsctl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 calc(6px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;background:var(--w-canvas);margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px))}
   .w-mrsn{font-size:var(--fs-sub);color:var(--w-ink2);margin-inline-end:auto}
   .w-mrsctl .w-btn{min-height:44px;padding:0 18px;justify-content:center;border-radius:999px;font-size:var(--fs-body)}
@@ -158,7 +160,7 @@
   .w-mrsback{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .w-mrsback:focus-visible{position:static;width:auto;height:44px;clip:auto;padding:0 12px;color:var(--w-accent-ink)}
   .w-mrsback[hidden]{display:none}
-  .w-mrempty{display:block!important}
+  .w-mrempty{display:block!important;margin-top:12px}
 }
 
 /* ---------- Command bar ---------- */

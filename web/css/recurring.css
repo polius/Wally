@@ -28,6 +28,9 @@
 
 /* The list */
 .rec-list{padding:6px 18px 12px}
+/* Section heads line up with the rows' icons, with room above each new section */
+.rec-list .w-dayh{padding-inline:0}
+.rec-list .w-dayh:not(:first-child){padding-top:20px}
 .rec-list .w-rrow,.rec-day .w-rrow{grid-template-columns:40px minmax(0,1fr) auto;gap:14px;min-height:58px;padding:9px 10px;margin-inline:-10px;width:calc(100% + 20px);border-radius:10px}
 [data-page="recurring"] .w-rrow .w-ico{border-radius:10px}
 [data-page="recurring"] .w-rrow .w-ico svg.i{width:18px;height:18px}
@@ -88,6 +91,8 @@
 
 /* The panel: Edit at the top right, the facts as rows, the actions as rows */
 .rec-insp{outline:0;padding:20px;gap:0}
+/* Rows keep their height when the panel is shorter than its content (it scrolls instead) */
+.rec-insp{grid-auto-rows:max-content}
 .w .rec-insp:focus-visible{outline:0}
 .rec-back{display:inline-flex;align-items:center;gap:2px;margin:-4px 0 10px -4px;font-size:var(--fs-foot)}
 .rec-back svg.i{width:16px;height:16px}
@@ -104,7 +109,7 @@
 .rec-kvs{display:grid}
 .rec-kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--w-line2);font-size:16px;min-height:50px}
 .rec-kv > span{color:var(--w-ink2);flex:none}
-.rec-kv > b{font-weight:500;text-align:end;min-width:0}
+.rec-kv > b{font-weight:500;text-align:end;min-width:0;text-wrap:balance}
 .rec-kv > b.ic{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
 .rec-kv > b.dim{color:var(--w-ink2);font-weight:400}
 .rec-kv > b.rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
@@ -219,3 +224,5 @@
 }
 /* Recurring has no ‹ › next to its title, so the phone person button keeps its chevron */
 @media (max-width:767px){#main[data-page="recurring"] .w-pswitch-b > svg.i{display:inline-block;width:16px;height:16px}}
+/* Summary's phone header pulls its person button next to the title (beside ‹ ›); Recurring has none, so it stays at the end */
+@media (max-width:767px){.rec-head .w-hact{margin-inline-start:auto}}

@@ -42,7 +42,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 /* The foot of the sidebar: Settings, and who is signed in */
 .w-sidefoot{margin-top:auto;display:grid;gap:6px}
 .w-me{position:relative;border-top:1px solid var(--w-line);padding-top:10px}
-.w-meb{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;border-radius:var(--r-ctl);font-weight:500;color:var(--w-ink);text-decoration:none;text-align:start}
+.w-meb{display:flex;align-items:center;gap:6px;width:100%;padding-block:7px;padding-inline:6px 10px;border-radius:var(--r-ctl);font-weight:500;color:var(--w-ink);text-decoration:none;text-align:start}
 .w-meb:hover{background:var(--w-fill)}
 .w-meb .w-av{width:24px;height:24px}
 .w-menu.w-memenu{bottom:calc(100% + 4px);top:auto;inset-inline:0;min-width:0}
@@ -60,6 +60,9 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 .w-menu > [aria-checked="true"] span:nth-child(3){display:none}
 .w-menu > button .w-av{width:24px;height:24px}
 .w-menusep{height:1px;background:var(--w-line2);margin:5px 8px}
+/* With two faces for Everyone, each name starts where Everyone does, and an icon sits centred over a face */
+.w-menu:has(.w-avpair) > :is(button,a) > .w-av:first-child{margin-inline-end:18px}
+.w-menu:has(.w-avpair) > :is(button,a) > svg.i:first-child{margin-inline:4px 22px}
 
 /* A page's own actions, top right: the person menu, then Add */
 .w-hact{margin-inline-start:auto;display:flex;align-items:center;gap:8px;flex:none}

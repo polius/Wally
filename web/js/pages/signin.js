@@ -115,7 +115,7 @@ function renderSignin() {
   }
   const msg = si.wait ? waitText() : si.err;
   // Said where the password is typed, so everyone knows who can read their data
-  const sealed = !code && status.vault && status.vault.on ? '<p class="w-sienc">' + icon("lock") + t("End-to-end encrypted: whoever runs this server can’t read your data.") + "</p>" : "";
+  const sealed = !code && status.vault && status.vault.on ? '<p class="w-sienc w-lnote">' + icon("lock") + "<span>" + t("End-to-end encrypted: whoever runs this server can’t read your data.") + "</span></p>" : "";
   const shake = si.shake;
   si.shake = false;
   paint('<main class="w-lock" aria-labelledby="gate-h">' +

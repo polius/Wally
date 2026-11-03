@@ -4,6 +4,9 @@
 
 /* Under confirmation dialogs (65) and toasts (70), over the page and its tooltips */
 .w-addwrap{z-index:58}
+/* On wide screens the sheet hangs from near the top, like a macOS sheet: rows that appear later
+   (Split and Paid by, a receipt's lines) grow it downward instead of moving it */
+@media (min-width:768px){.w-addwrap{place-items:start center;padding-top:max(20px,8vh)}}
 html.w-addopen{overflow:hidden}
 .w-add{--w-sep:rgba(20,22,27,.07);--w-grp:var(--w-panel2);--w-key:var(--w-panel);--w-keyop:var(--w-fill2);animation:w-addin 260ms var(--ease)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-add{--w-sep:rgba(255,255,255,.08);--w-grp:#26282F;--w-key:#2C2E36;--w-keyop:#3A3D47}}
@@ -13,8 +16,10 @@ html.w-addopen{overflow:hidden}
 .w-add .w-contents{display:contents}
 .w-add:not(.w-addp) .w-grab{display:none}
 .w-add.w-sheet{display:block;max-width:460px;padding:16px 18px 18px;border-radius:20px;max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain}
+/* Hanging from near the top, it still ends 20px above the window's bottom */
+@media (min-width:768px){.w-add.w-sheet{max-height:calc(100vh - max(20px,8vh) - 20px)}}
 .w-add:focus{outline:0}
-.w-apage{display:grid;gap:10px;align-content:start}
+.w-apage{display:grid;gap:14px;align-content:start}
 .w-apage[hidden]{display:none}
 
 /* The top: the type and Close; Cancel and the type; or Cancel · title · Save */
@@ -41,8 +46,8 @@ html.w-addopen{overflow:hidden}
 .w-add .w-amount .w-calc{position:absolute;inset-inline-end:0;bottom:14px;font-size:var(--fs-foot);color:var(--w-accent-ink);font-weight:600}
 .w-add .w-amount:focus-within input{caret-color:var(--w-accent)}
 .w-add .w-amount.err input{color:var(--w-bad)}
-.w-acap{text-align:center;font-size:var(--fs-foot);color:var(--w-ink3);margin-top:-8px}
-.w-acenter{text-align:center;margin:-6px 0 0}
+.w-acap{text-align:center;font-size:var(--fs-foot);color:var(--w-ink3);margin-top:-12px}
+.w-acenter{text-align:center;margin:-10px 0 0}
 
 /* Grouped rows, in the sheet's grey */
 .w-add .w-gl{background:var(--w-grp);overflow:visible}
@@ -52,10 +57,12 @@ html.w-addopen{overflow:hidden}
 .w-add .w-gr:first-child{border-start-start-radius:var(--r-card);border-start-end-radius:var(--r-card)}
 .w-add .w-gr:last-child{border-end-start-radius:var(--r-card);border-end-end-radius:var(--r-card)}
 .w-add .w-gl > [hidden]{display:none}
+/* Split, Paid by and each person's part are wrapped rows: the first one keeps its separator */
+.w-add :is(.w-asplit,.w-acust) > .w-gr:first-child{border-top:1px solid var(--w-sep);border-radius:0}
 /* Rows hidden at the top of a group leave the next one's border out */
 .w-add .w-gl > [hidden]:first-child + .w-gr,.w-add .w-gl > [hidden] + [hidden] + .w-gr:not(:first-child){border-top:0}
 .w-add .w-gr > .v{color:var(--w-ink2)}
-.w-add .w-glf{padding:0 16px;margin-top:-4px}
+.w-add .w-glf{padding:0 16px;margin-top:-6px}
 .w-add .w-glf[hidden]{display:none}
 .w-add .w-aname input,.w-add .w-acatrow .w-catbox input,.w-apop select,.w-anum,.w-adate,.w-add #add-tag,.w-add #add-note{font-size:16px!important}
 .w-add .w-aname{position:relative}
@@ -120,11 +127,13 @@ html.w-addopen{overflow:hidden}
 .w-aleft.bad,.w-aleft.bad .v{color:var(--w-bad)}
 .w-add .w-gr.add svg.i{width:16px;height:16px}
 /* Tags and a note */
+/* The label takes its own width, so several tags line up in one row before they wrap */
+.w-add #add-tagrow > .k{flex:none}
 .w-atags{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;flex:1;min-width:0}
 .w-atags .w-chip{height:26px;font-size:var(--fs-sub);font-weight:500;padding:0 7px;border:0;border-radius:6px;background:var(--w-accent-soft);color:var(--w-accent-ink)}
 .w-atags .w-chip svg.x{width:11px;height:11px}
 .w-atags .w-chip .x{margin-inline-start:2px;opacity:.7}
-.w-add #add-tag{border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--w-ink);text-align:end;width:10.5em;min-width:0;padding:0}
+.w-add #add-tag{border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--w-ink);text-align:end;width:10.5em;min-width:0;padding:0;flex:0 1 auto}
 .w-add #add-tags:not(:empty) + #add-tag:not(:focus){width:4em}
 .w-add #add-tag::-webkit-calendar-picker-indicator{display:none!important}
 .w-add #add-note{font-size:15px}
@@ -137,12 +146,14 @@ html.w-addopen{overflow:hidden}
 .w-aplus{width:18px;height:18px;color:var(--w-accent-ink);flex:none}
 .w-anext{color:var(--w-ink2)}
 /* Notes under the groups */
-.w-add .w-dup{margin:0;padding:0 16px;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-add .w-dup{margin:0;padding:10px 14px;border-radius:10px;font-size:var(--fs-foot);line-height:1.4;color:var(--w-ink2)}
 .w-add .w-dup b{color:var(--w-ink)}
 .w-add .w-err{font-size:var(--fs-foot);color:var(--w-bad)}
 .w-add #add-rep-l .w-link{margin-inline-start:4px;font-size:var(--fs-foot)}
 /* The main button names what is missing; it stays clickable to take you there */
 .w-afoot{margin-top:4px}
+/* Delete stands apart from what it deletes */
+.w-add #add-delgrp{margin-top:6px}
 .w-add .w-submit{width:100%;height:44px;border-radius:999px;font-size:var(--fs-sub);font-weight:600}
 .w-add .w-btn.primary[aria-disabled="true"]{background:var(--w-fill);color:var(--w-ink3);box-shadow:none;filter:none;cursor:pointer}
 
@@ -177,10 +188,10 @@ html.w-addopen{overflow:hidden}
   .w-addwrap{place-items:end stretch;padding:0}
   .w-add.w-addp{max-width:none;width:100%;height:calc(100dvh - max(48px, env(safe-area-inset-top,0px) + 40px));max-height:none;border-radius:14px 14px 0 0;
     padding:8px 16px 0;display:block;overflow-y:auto;overscroll-behavior:contain;background:var(--w-raised);animation:w-up 260ms var(--ease)}
-  .w-addp .w-apage{display:flex;flex-direction:column;gap:10px;min-height:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .w-addp .w-apage{display:flex;flex-direction:column;gap:14px;min-height:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
   .w-addp .w-apage[hidden]{display:none}
   .w-add.w-addp:focus{outline:0}
-  .w-addp .w-grab{flex:none;width:36px;height:5px;border-radius:3px;background:var(--w-fill2);margin:0 auto 2px}
+  .w-addp .w-grab{flex:none;width:36px;height:5px;border-radius:3px;background:var(--w-fill2);margin:0 auto -2px}
   .w-addp .w-ah{min-height:44px}
   .w-addp .w-alink,.w-addp .w-ah .w-atitle{font-size:var(--fs-body)}
   .w-addp .w-ah .w-atitle{font-weight:600}
@@ -197,7 +208,7 @@ html.w-addopen{overflow:hidden}
   /* Keys always add at the end, so the caret shows only once there is an end */
   .w-addp .w-pamt input:placeholder-shown{caret-color:transparent}
   .w-addp .w-pamt.err input{color:var(--w-bad)}
-  .w-addp .w-pcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:var(--fs-sub);min-height:0;margin-top:-8px;font-variant-numeric:tabular-nums}
+  .w-addp .w-pcalc{text-align:center;color:var(--w-accent-ink);font-weight:600;font-size:var(--fs-sub);min-height:0;margin-top:-12px;font-variant-numeric:tabular-nums}
   .w-addp .w-pcalc:empty{display:none}
   .w-addp .w-sugg button{min-height:52px}
   .w-addp .w-sugg .w-kbd{display:none}

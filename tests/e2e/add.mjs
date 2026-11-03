@@ -780,6 +780,18 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await p.tap("#add-amt");
   check(await visible(p, "#add-keypad") && await text(p, "#add-knext") === "Done", "editing the amount: the keypad, with Done");
   await p.click('#add-form section:not([hidden]) [data-close]');
+  if (await visible(p, "#dlg .w-dialog")) await p.click("#dlg [data-dlg-ok]");
+  // Split across categories, from the phone's Category page
+  await p.waitForTimeout(400);
+  await open(p, {});
+  await p.tap('[data-k="9"]');
+  await p.tap("#add-knext");
+  await p.evaluate(() => document.activeElement.blur());
+  await p.click("#add-catrow");
+  await p.click("[data-psplit]");
+  check(await visible(p, "#add-parts") && !(await visible(p, "#add-catrow")), "phone: Split across categories shows the parts");
+  await p.click('#add-form section:not([hidden]) [data-close]');
+  if (await visible(p, "#dlg .w-dialog")) await p.click("#dlg [data-dlg-ok]");
   await p.context().close();
 }
 

@@ -561,6 +561,9 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-cmdi small{color:var(--w-ink3);font-size:var(--fs-foot)}
 .w-cmdi kbd{margin-left:auto}
 .w-cmdi.hl{background:var(--w-accent-soft)}
+/* The bar is the field, as in Spotlight: no second ring inside it; plain icons take a tile's width, so every name starts in one column */
+.w .w-cmdin input:focus-visible{outline:none}
+.w-cmdi > svg.i:first-child{margin-inline:3px}
 .w-explain{display:grid;gap:10px;padding:14px 16px;border-radius:var(--r-card);background:var(--w-panel);border:1px solid var(--w-line)}
 .w-explain p{font-size:var(--fs-foot);color:var(--w-ink2);max-width:70ch}
 .w-ramp{display:flex;gap:3px}
@@ -625,6 +628,7 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-shtop{display:grid;justify-items:center;gap:6px;text-align:center;margin:-4px 0 16px}
 .w-shb{display:grid;gap:8px}
 .w-shb > p{padding:0 4px}
+.w-shb > p.w-glf{padding:0 16px}
 .w-dialog .w-gl{background:var(--w-panel2)}
 .w-dialog .w-gr{min-height:46px}
 /* In dark mode, rows inside a sheet sit lighter than the sheet, as on iOS */

@@ -13,7 +13,7 @@
 .w-setnav a span{margin-inline-start:auto;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:400}
 .w-setnav button span{margin-left:0;margin-inline-start:auto}
 .w-setver{font-size:var(--fs-cap);color:var(--w-ink3);padding:4px 12px 0}
-.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:30px}
+.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:56px}
 /* Rows of settings read best at a measured width: the whole page sits centred instead of stretching */
 @media (min-width:1024px){.w-app > #main[data-page="settings"]{max-width:1232px}}
 .w-pane{outline:0;min-width:0}
@@ -30,9 +30,6 @@
 /* Rows inside panes */
 .w-pane{display:grid;align-content:start;gap:0}
 .w-pane > .w-glh{padding-top:0}
-.w-pane > :is(.w-gl,.w-glf) + .w-glh{margin-top:20px}
-.w-pane > .w-gl + .w-gl{margin-top:18px}
-.w-pane > .w-glf + .w-gl{margin-top:18px}
 a.w-gr{text-decoration:none;color:var(--w-ink)}
 .w-pane .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
 .w-pane .w-gr{font-size:16px;min-height:48px;padding-block:11px}
@@ -70,7 +67,6 @@ span.w-gck{display:inline-block}
 .w-sico.w-sico48 svg.i{width:22px;height:22px}
 code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0;color:inherit}
 .w-glf.w-glf2{padding-top:8px}
-.w-pane > .w-glf + .w-glf{margin-top:0}
 .w-pane > .w-glh + .w-code{margin-top:0}
 .w-gl .w-gr input:focus-visible{outline:none}
 .w-gminus{width:22px;height:22px;border-radius:50%;background:var(--w-bad);display:grid;place-items:center;flex:none}
@@ -119,8 +115,8 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
   .w-hsheet .w-pop2 span{color:var(--w-ink)}
   .w-hsheet .w-pop2 select{max-width:65%;color:var(--w-ink2);padding-inline-end:22px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m9.5 6 6 6-6 6'/%3E%3C/svg%3E")}
   [dir="rtl"] .w-hsheet .w-pop2 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m14.5 6-6 6 6 6'/%3E%3C/svg%3E");background-position:left center}
-  .w-hsheet .w-alg > .w-dlgok,.w-hsheet .w-alg > .w-dlgok.danger{margin:14px 0 0;height:46px;border:0;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:400;padding:0 16px}
-  .w-alert.w-hsheet > .w-dlgx{margin:8px 0 0;height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:600}
+  .w-hsheet .w-alg > .w-dlgok,.w-hsheet .w-alg > .w-dlgok.danger{margin:10px 0 0;height:46px;border:0;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:400;padding:0 16px}
+  .w-alert.w-hsheet > .w-dlgx{margin:10px 0 0;height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:600}
 }
 .w-pop2{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px 0 10px;margin-top:8px;border-radius:8px;background:var(--w-fill);font-size:14px;text-align:start}
 .w-pop2 span{color:var(--w-ink2)}
@@ -218,7 +214,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-imp-h{display:block;font-weight:600;color:var(--w-ink);margin-bottom:5px;white-space:nowrap}
 .w-imp-map select{width:100%;color:var(--w-ink)}
 .w-imp-prev td{vertical-align:middle}
-.w-imp-prev td:first-child{min-width:150px}
+.w-imp-prev td:first-child{min-width:110px}
 .w-imp-sel{max-width:180px;color:var(--w-ink);background:var(--w-panel);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:3px 6px;font-size:var(--fs-foot)}
 .w-imp-prev td:first-child .w-imp-sel{display:block;margin-top:5px}
 .w-imp-m{display:block;font-size:var(--fs-cap);color:var(--w-ink3);margin-top:3px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -227,9 +223,14 @@ label.w-btn{cursor:pointer;position:relative}
 .w-imp-open{background:color-mix(in srgb,var(--c3) 9%,transparent)}
 .w-pill.warn{background:color-mix(in srgb,var(--c3) 22%,transparent);color:color-mix(in srgb,var(--c3) 45%,var(--w-ink))}
 .w-imp-counts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
-.w-imp-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.w-imp-foot{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px}
 .w-imp-foot .w-btn.primary{min-width:180px}
-.w-imp-bad{margin-top:10px;font-size:var(--fs-foot);color:var(--w-ink2)}
+/* Import: the table's text lines up with the options above it, the buttons are one height and stand clear of the card */
+.w-imp-foot .w-btn{height:36px;font-size:var(--fs-sub)}
+@media (min-width:1024px){.w-pane .w-table :is(th,td):first-child{padding-inline-start:16px}}
+.w-pane .w-imp-map :is(th,td):first-child{padding-inline-start:16px}
+.w-imp-prev td:nth-child(2){white-space:nowrap}
+.w-imp-bad{margin-top:10px;padding-inline:16px;font-size:var(--fs-foot);color:var(--w-ink2)}
 .w-imp-bad summary{cursor:pointer;color:var(--w-bad)}
 .w-imp-bad ul{margin:6px 0 0;padding-inline-start:20px;display:grid;gap:2px}
 .w-imp-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
@@ -263,7 +264,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-shead h3#set-title{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.035em;line-height:1.1;margin-top:2px}
 
 @media (max-width:1023px){
-  .w-set{grid-template-columns:200px minmax(0,1fr);gap:20px}
+  .w-set{grid-template-columns:200px minmax(0,1fr);gap:36px}
   /* A narrow list of panes, as on iPad: names only */
   .w-setnav a span{display:none}
 }
@@ -304,16 +305,22 @@ label.w-btn{cursor:pointer;position:relative}
   .w-glabel{flex-direction:column;gap:2px}
   .w-glabel > span:last-child:not(:first-child){text-align:start}
   .w-imp-counts{justify-content:flex-start}
+  /* A row whose button sits under its text: the icon stays with the title */
+  .w-pane .w-gi > .w-ico{align-self:start}
   .w-imp-foot .w-btn{flex:1 1 auto;min-height:44px}
   .w-sfields2{grid-template-columns:1fr}
   .w-svctl{justify-content:flex-start}
   .w-drop{padding:20px 14px}
   .w-imp-opts .w-seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
   .w-imp-opts > label.w-inline{flex-wrap:wrap}
-  /* The preview becomes one card per row: name and amount, date, what happens, then category and person */
+}
+
+/* Phones and tablets: the import preview is too wide for a table, so each row becomes a card */
+@media (max-width:1023px){
+  /* One card per row: name and amount, date, what happens, then category and person */
   .w-imp-prev thead{display:none}
   .w-imp-prev,.w-imp-prev tbody{display:block}
-  .w-imp-prev tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:11px 14px;border-bottom:1px solid var(--w-line2)}
+  .w-imp-prev tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:12px 16px;border-bottom:1px solid var(--w-line2)}
   .w-imp-prev td{padding:0;border:0;min-width:0}
   .w-imp-prev td:nth-child(3){order:0;font-weight:500;overflow-wrap:anywhere}
   .w-imp-prev td:nth-child(4){order:1}
@@ -340,9 +347,6 @@ label.w-btn{cursor:pointer;position:relative}
 /* Sign-in & Privacy (security.js): one page in short groups, its sub-pages, and its alerts and sheets */
 .w-sec{display:grid;align-content:start;max-width:640px}
 .w-sec > .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
-.w-sec > .w-glh{margin-top:18px}
-.w-sec > .w-glh:first-child{margin-top:0}
-.w-sec > .w-gl + .w-gl{margin-top:14px}
 .w-sec a.w-gr{text-decoration:none;color:inherit}
 .w-sec .w-gr[disabled]{opacity:.45;cursor:default}
 .w-sec .w-gr .k small{line-height:1.35}
@@ -424,4 +428,37 @@ label.w-btn{cursor:pointer;position:relative}
   .w-dialog.w-shfull{max-width:none;min-height:calc(100dvh - 48px)}
   .w-secsecret{flex-wrap:nowrap;justify-content:space-between;align-items:flex-start}
   .w-secsecret code{flex:1}
+}
+
+/* One vertical rhythm for every pane, whatever its blocks are (groups, drop zones, code, sections):
+   room between blocks, more above a section label, a label close to its group, a footnote close to
+   the group it explains, and room again after it. */
+.w-pane{gap:0}
+:is(.w-pane,.w-sec) > * + *{margin-top:20px}
+:is(.w-pane,.w-sec) > * + :is(.w-glh,.w-sec){margin-top:30px}
+:is(.w-pane,.w-sec) > .w-glh + *{margin-top:0}
+:is(.w-pane,.w-sec) > * + .w-glf{margin-top:0}
+:is(.w-pane,.w-sec) > .w-glf + .w-glf{margin-top:2px}
+:is(.w-pane,.w-sec) > .w-glh{padding:0 16px 8px}
+:is(.w-pane,.w-sec) > .w-glf{padding:8px 16px 0}
+/* wally.css spaces two groups 14px apart (.w-gl + .w-gl): in a pane they keep the pane's rhythm */
+:is(.w-pane,.w-sec) > .w-gl + .w-gl{margin-top:20px}
+/* A labelled group (Export) is a section too, its label inset like every other group label */
+:is(.w-pane,.w-sec) > * + .w-sgroup{margin-top:30px}
+.w-pane > .w-sgroup > .w-glabel{padding:0 16px 8px}
+/* An item's picture and name, then its rows: the same room as above a section */
+.w-pane > .w-shero{margin-bottom:0}
+.w-pane > .w-shero + *{margin-top:30px}
+.w-shead{margin-bottom:20px}
+/* Sheets: a key, a code block or a card of codes never touches the button row under it */
+.w-shb > :is(.w-keybox2,.w-code,.w-seckey) + .w-gl{margin-top:6px}
+@media (max-width:767px){
+  :is(.w-pane,.w-sec) > * + *{margin-top:18px}
+  :is(.w-pane,.w-sec) > * + :is(.w-glh,.w-sec,.w-sgroup){margin-top:26px}
+  :is(.w-pane,.w-sec) > .w-glh + *,:is(.w-pane,.w-sec) > * + .w-glf{margin-top:0}
+  :is(.w-pane,.w-sec) > .w-glf + .w-glf{margin-top:2px}
+  :is(.w-pane,.w-sec) > .w-gl + .w-gl{margin-top:18px}
+  .w-pane > .w-shero + *{margin-top:26px}
+  /* The large title sits close over the pane (its list adds 16px): 12px to the first group or label */
+  .w-shead{margin-bottom:-4px}
 }

@@ -294,8 +294,8 @@ function render() {
   }
   setHtml("add-taglist", cache.tags.filter((g) => !ad.tags.includes(g)).slice(0, 200).map((g) => '<option value="' + esc(g) + '">').join(""));
   setVal("add-note", ad.note);
-  // Tags and a note join the second group once there is an amount (or when editing, or already filled)
-  const extra = edit || a > 0 || ad.more || ad.tags.length > 0 || !!ad.note || !!ad.tagDraft;
+  // Tags and a note are always there, so nothing moves when the amount is typed
+  const extra = true;
   show("add-tagrow", extra);
   show("add-noterow", extra);
 
@@ -557,7 +557,7 @@ function renderPages() {
   if (ad.step === "cat") {
     const opts = cache.cats.slice();
     const rows = opts.map((c) => '<button type="button" class="w-gr" data-pcat="' + esc(c) + '" aria-pressed="' + (ad.cat === c) + '">' + tile(c) + '<span class="k">' + esc(c) + "</span>" + (ad.cat === c ? icon("check", "w-ack") : "") + "</button>");
-    if (opts.length && !ad.rule) rows.push('<button type="button" class="w-gr" data-pcat="' + SPLIT + '"><span class="w-ico w-conew">' + icon("split") + '</span><span class="k">' + t("Split across categories") + "</span></button>");
+    if (opts.length && !ad.rule) rows.push('<button type="button" class="w-gr" data-psplit><span class="w-ico w-conew">' + icon("split") + '</span><span class="k">' + t("Split across categories") + "</span></button>");
     setHtml("add-pcats", rows.join(""));
   }
 }
@@ -1178,8 +1178,9 @@ function onClick(ev) {
     ad.who = x.dataset.aw; ad.touched.who = 1; render(); refocus("add-who", "data-aw", ad.who); return;
   }
   if ((x = at("[data-sm]"))) { setSm(x.dataset.sm); refocus("add-smlist", "data-sm", ad.sm); return; }
+  // Its own attribute: a NUL in markup (SPLIT) reads back as U+FFFD, so it never matched
+  if (at("[data-psplit]")) { goStep("main"); toggleSplit(); return; }
   if ((x = at("[data-pcat]"))) {
-    if (x.dataset.pcat === SPLIT) { goStep("main"); toggleSplit(); return; }
     ad.cat = x.dataset.pcat; ad.touched.cat = 1; goStep("main"); return;
   }
   if ((x = at("[data-ad]"))) { ad.date = x.dataset.ad; ad.cal = null; render(); refocus("add-date", "data-ad", ad.date); return; }
