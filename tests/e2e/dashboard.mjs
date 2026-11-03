@@ -70,8 +70,8 @@ try {
   const [py, pm] = ymAdd(CY, CM, -1);
   ok((await text(page, "#s-title")).startsWith(MONTH(CM)), "opens on the current month, the period is the title");
   ok(await page.locator(".s-steps [data-step]").count() === 2 && await page.locator('.s-steps [data-step="1"]').isDisabled(), "‹ › beside the title; › waits at this month");
-  ok(await page.locator("#c-hero svg path").count() >= 2, "Everyday spending chart drawn");
-  ok((await text(page, "#s-eye")) === "Everyday spending", "the headline is everyday spending");
+  ok(await page.locator("#c-hero svg path").count() >= 2, "Spending chart drawn");
+  ok((await text(page, "#s-eye")) === "Spending", "the headline is all spending, bills included");
   const left = await page.locator(".s-left > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   const right = await page.locator(".s-right > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   ok(left === "hero,cats,recent,upcoming", "the month on the left: " + left);
@@ -85,7 +85,7 @@ try {
   ok(!lines.includes("Bills"), "no Bills line in the headline card");
   ok((await text(page, "#c-hero")).includes(MONTH(pm)), "the dashed line names last month and its total");
   ok(await page.locator("#s-recapw a.s-recap").count() === 0 && (await text(page, "#s-recapw")) === "", "no recap card while the month runs");
-  ok((await text(page, "#s-catsnote")).startsWith("without bills"), "Categories leave bills out: " + await text(page, "#s-catsnote"));
+  ok((await text(page, "#s-catsnote")).startsWith("vs "), "Categories say what they're against: " + await text(page, "#s-catsnote"));
   ok((await text(page, '[data-w="people"]')).includes("share of shared costs"), "The household: own and shared, per person");
   ok((await text(page, '[data-w="year"] h4')) === "This year" && (await text(page, "#s-year")).includes("kept since January"), "This year: kept since January");
   ok(await page.locator('[data-w="notice"]').isHidden() || await page.locator("#s-notice .s-notice").count() <= 3, "Worth noticing: hidden or at most three lines");
@@ -151,7 +151,7 @@ try {
   ok(await page.locator("#c-kept [data-go-month]").count() > 12, "All time: Kept each month shows every month (" + await page.locator("#c-kept [data-go-month]").count() + ")");
 
   console.log("Chart views");
-  ok((await page.locator("#s-view button").allInnerTexts()).join("|") === "Everyday|Income vs spending|By category", "three chart views");
+  ok((await page.locator("#s-view button").allInnerTexts()).join("|") === "Spending|Income vs spending|By category", "three chart views");
   await page.click('[data-hv="ivs"]');
   ok(await page.locator("#c-hero svg path").count() > 4, "Income vs spending bars");
   await page.click('[data-hv="cats"]');
@@ -186,6 +186,7 @@ try {
   const rows = await page.locator("#s-cats .s-row").count();
   ok(rows > 0 && rows <= 6, "the biggest six: " + rows);
   ok((await text(page, "#s-cats .s-row small")).startsWith(MONTH(ymAdd(CY, CM, -2)[1]) + ":"), "each against the month before: " + await text(page, "#s-cats .s-row small"));
+  ok((await text(page, "#s-cats .s-row .s-nm > span")) === "Rent", "bills count: Rent, the biggest, leads the list");
   if (await page.locator('[data-act="cats-all"]').isVisible()) {
     await page.click('[data-act="cats-all"]');
     ok(await page.locator("#s-cats .s-row").count() > rows && (await text(page, '[data-act="cats-all"]')) === "Show less", "Show all lists every category");

@@ -113,7 +113,7 @@ docker run --rm -v /path/to/your/data:/wally/data poliuscorp/wally python3 -m ap
 What changes on purpose:
 
 - The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person from the tag's page in **Settings › Tags**.
-- If you had a password, it stays the household's password: everyone picks their name and signs in with it. 1.x had no Emergency Kit, so whoever signs in first is asked to save one.
+- If you had a password, it stays the household's password: everyone picks their name and signs in with it. Choosing to encrypt during the upgrade also gives the household an Emergency Kit; without encryption it's optional (see [Forgot your password](#forgot-your-password)).
 - Recurring transactions are no longer created in advance: each one is added on its day. Those 1.x had already added for dates after today are taken out, listed in the report, and come back on their day.
 
 ## Environment variables
@@ -131,9 +131,9 @@ Wally supports the following environment variables:
 
 Everyone uses the same password, so first ask someone else in the household.
 
-Otherwise, use the **Emergency Kit**. Wally gives the household one when sign-in is turned on: a recovery key to print, download or keep in a password manager. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Make a new kit in **Settings › Sign-in & Privacy › Emergency Kit**; the old one stops working.
+Otherwise, use the **Emergency Kit**, if the household has one: a recovery key to print, download or keep in a password manager. Encrypting always makes one. Without encryption it's optional: make one in **Settings › Sign-in & Privacy › Emergency Kit**. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Making a new kit there replaces the old one, which stops working.
 
-Lost the kit too? Whoever runs the server can turn sign-in off, then you turn it on again with a new password:
+No kit, or lost it too? Whoever runs the server can turn sign-in off, then you turn it on again with a new password:
 
 ```bash
 docker exec wally python3 -m api.signin_off
@@ -147,7 +147,7 @@ When you set Wally up with a password, it is encrypted right then, before anythi
 
 - **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
 - **The password**: the household password is the key. Your browser turns it into keys (Argon2id) and never sends it, and each browser asks for it once. Everyone keeps using the same password; nobody needs a code to join.
-- **The Emergency Kit**: turning encryption on gives the household a new one; its recovery key also opens the household key, in your browser. **Forgot password** works as above, and it's the only way back in: whoever runs the server can't turn sign-in off. Turning encryption off gives you a new kit again.
+- **The Emergency Kit**: turning encryption on gives the household a new one; its recovery key also opens the household key, in your browser. **Forgot password** works as above, and it's the only way back in: whoever runs the server can't turn sign-in off. Turning encryption off removes the kit: without encryption it's optional again.
 - **If nobody can get in** (the password forgotten and the kit lost), the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
 - **Off while encrypted**: turning sign-in off. API keys and phone shortcuts keep working: see below. Keys made before turning encryption on stop working; make new ones.
 - **Turning it on or off** builds a new database file next to the old one, checks it, and only then switches. Wally is read-only for about a minute. If Wally or the browser stops half-way, the old file is used, untouched. Turning it on deletes backups made before, which are in the clear; download them first if you want them.

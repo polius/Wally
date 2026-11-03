@@ -22,7 +22,7 @@ export function mountGate(el, kind, s, done) {
   state.people = s.people || [];
   root.classList.add("w-gate");
   root.addEventListener("keydown", (ev) => { const card = root.firstElementChild; if (card) trapFocus(card, ev); });
-  ({ signin: startSignin, welcome: startWelcome, people: startPeople, kit: startKit, who: renderWho,
+  ({ signin: startSignin, welcome: startWelcome, people: startPeople, who: renderWho,
      unlock: () => startVault("unlock", s.me && String(s.me.id)) }[kind] || startSignin)();
 }
 
@@ -85,9 +85,9 @@ function renderSignin() {
     return;
   }
   if (s === "nokit") {
-    // Upgraded from 1.x and nobody has signed in since: there is no Emergency Kit yet. The server command is in the README.
-    paint('<main class="w-lock wide" aria-labelledby="gate-h"><div class="w-lockhero"><span class="w-mark w-lockmark" aria-hidden="true"></span><h1 id="gate-h">' + t("There is no Emergency Kit yet") + "</h1><p>" +
-      t("Wally 1 didn’t make one. Whoever runs the server can turn sign-in off by running this on it:") + "</p></div>" + serverFix() +
+    // Not encrypted and no Emergency Kit (optional without encryption): the server command, as in the README
+    paint('<main class="w-lock wide" aria-labelledby="gate-h"><div class="w-lockhero"><span class="w-mark w-lockmark" aria-hidden="true"></span><h1 id="gate-h">' + t("There’s no Emergency Kit") + "</h1><p>" +
+      t("Whoever runs the server can turn sign-in off by running this on it:") + "</p></div>" + serverFix() +
       '<div class="w-locklinks"><button type="button" class="w-link w-silink acc" id="si-back" data-autofocus>' + t("Back to sign in") + "</button></div></main>");
     wireServerFix();
     root.querySelector("#si-back").addEventListener("click", () => go(si.p ? "pw" : "household"));
@@ -270,33 +270,7 @@ function wirePicker(onPick) {
   });
 }
 
-/* ======================= saving the household's Emergency Kit ======================= */
-/* After the upgrade from 1.x, or turning encryption off: the household has no kit yet. Whoever
-   signs in next makes one and saves it. */
-const kg = { key: "", qr: "", saved: false, err: "" };
-async function startKit() {
-  paint(onbFrame({ key: "kit-wait", ico: "file", title: t("Save the household’s Emergency Kit"), sub: t("Getting it ready…") }));
-  try {
-    kg.key = (await POST("/kit", {}, { quiet401: true })).key;
-    kg.qr = await (await import("../vault/kit.js")).qrSvg(kg.key);
-  } catch (e) {
-    // Someone else in the household saved it a moment ago: nothing to do here
-    if (e.status === 409) return finish();
-    paint(onbFrame({ key: "kit-err", ico: "file", title: t("Save the household’s Emergency Kit"), sub: apiMessage(e), next: t("Try again"), body: '<div class="w-locklinks">' + signOutLink() + "</div>" }));
-    root.querySelector("#onb-next").addEventListener("click", startKit);
-    wireSignOut();
-    return;
-  }
-  renderKit();
-}
-/* The same step as in setup: the key beside its QR code, a switch, then Wally */
-function renderKit() {
-  paint(onbFrame({ key: "kit", ico: "file", title: t("Save the household’s Emergency Kit"), next: t("Open Wally"), nextOff: !kg.saved,
-    sub: t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again."),
-    body: kitBody(kg.key, kg.qr, kg.saved, "") }), "#onb-dl");
-  wireKit(kg.key, (on) => { kg.saved = on; });
-  root.querySelector("#onb-next").addEventListener("click", () => { if (kg.saved) finish(); });
-}
+/* ======================= the household's Emergency Kit ======================= */
 /* The kit as a designed PDF, made in this browser: the key never leaves it */
 async function downloadKit(key) { (await import("../vault/kit.js")).downloadKitPdf(key); }
 
@@ -410,12 +384,11 @@ function whatItMeans(others) {
     (others ? item("users", t("Everyone uses the same password."), t("Each person types it once on their own phone or computer.")) : "") + "</ul>";
 }
 /* The household's Emergency Kit: the recovery key, its QR code, and a tick before going on */
-function kitBody(key, qr, saved, note) {
+function kitBody(key, qr, saved) {
   return '<div class="w-kitbox"><span class="w-kitqr">' + qr + '</span><div class="w-kitside">' + keyGroups(key) +
     '<div class="w-kitbtns"><button type="button" class="w-btn ghost" id="onb-dl">' + icon("download") + t("Download PDF") + '</button><button type="button" class="w-btn ghost" id="onb-copy">' + icon("copy") + t("Copy") + "</button></div></div></div>" +
     '<div class="w-gl w-onbgl"><label class="w-gr" for="onb-saved"><span class="k">' + t("I saved the Emergency Kit somewhere safe") + "</span>" +
-    '<button type="button" class="w-switch" role="switch" id="onb-saved" aria-checked="' + !!saved + '"></button></label></div>' +
-    (note ? '<p class="w-glf">' + note + "</p>" : "");
+    '<button type="button" class="w-switch" role="switch" id="onb-saved" aria-checked="' + !!saved + '"></button></label></div>';
 }
 function wireKit(key, onTick) {
   root.querySelector("#onb-dl").addEventListener("click", () => downloadKit(key));
@@ -448,16 +421,18 @@ function currencyLabel(x) {
 
 /* ---------- first run: Welcome, People, Password, Encrypt, Emergency Kit, Your data ---------- */
 /* One question a step. The password is kept in memory until the Encrypt step, where it is saved
-   and, unless that waits, becomes the key to the household's data. Over plain HTTP browsers can't
-   encrypt: that step is left out and the kit is made with the password. With
-   WALLY_ENCRYPTION=required, neither the password nor encrypting can wait. */
+   and, unless that waits, becomes the key to the household's data. The Emergency Kit comes only with
+   encrypting: without it the kit is optional (Settings), as whoever runs the server can turn sign-in
+   off. Over plain HTTP browsers can't encrypt: that step is left out. With WALLY_ENCRYPTION=required,
+   neither the password nor encrypting can wait. */
 // pw: a password, unless "Not now" says otherwise, so the dots count its steps from the start
-const onb = { step: 0, names: [""], ids: [null], people: [], pw: true, secret: "", pwSaved: false, data: "add", currency: null, plainKit: "", kit: "", qr: "", saved: false, sealed: false };
+const onb = { step: 0, names: [""], ids: [null], people: [], pw: true, secret: "", pwSaved: false, later: false, data: "add", currency: null, kit: "", qr: "", saved: false, sealed: false };
 const mustEncrypt = () => !!(status.vault && status.vault.required);
 const canEncrypt = () => !!(window.crypto && crypto.subtle && window.isSecureContext !== false);
 function onbSteps() {
   const pw = onb.pw || mustEncrypt();
-  return ["basics", "people", "password", ...(pw && (canEncrypt() || mustEncrypt()) ? ["encrypt"] : []), ...(pw ? ["kit"] : []), "data"];
+  const enc = pw && (canEncrypt() || mustEncrypt());
+  return ["basics", "people", "password", ...(enc ? ["encrypt"] : []), ...(enc && !onb.later ? ["kit"] : []), "data"];
 }
 
 async function startWelcome() {
@@ -506,17 +481,19 @@ function renderWelcome() {
       '<p class="w-hint w-onbprog" id="onb-prog" aria-live="polite" hidden></p>';
   } else if (k === "kit") {
     Object.assign(o, { ico: "file", back: false, title: t("Save the household’s Emergency Kit"), next: t("Continue"), nextOff: !onb.saved,
-      sub: onb.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
-        : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
-    o.body = kitBody(onb.kit, onb.qr, onb.saved, onb.sealed || canEncrypt() ? "" : t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Sign-in & Privacy."));
+      sub: t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
+    o.body = kitBody(onb.kit, onb.qr, onb.saved);
     focus = "#onb-dl";
   } else {
-    // No going back into the kit: it was shown once, and ticked
-    Object.assign(o, { ico: "download", back: o.back && !onb.kit, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
+    // No going back once the password is saved: into the kit (shown once, and ticked), or into Encrypt
+    // after "Not now" (the password is no longer in memory; Settings turns encryption on later)
+    Object.assign(o, { ico: "download", back: o.back && !onb.pwSaved, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
     o.body = '<div class="w-gl w-onbgl w-onbpick" role="radiogroup" aria-labelledby="gate-h">' +
       [["import", "upload", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
        ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([key, ic, b, sm]) =>
         '<button type="button" class="w-gr" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '"><span class="w-onbsico">' + icon(ic) + '</span><span class="k">' + b + "<small>" + sm + '</small></span><span class="w-onbradio">' + icon("check") + "</span></button>").join("") + "</div>";
+    // Over plain HTTP there was no Encrypt step: say why, and how to turn it on later
+    if ((onb.pw || mustEncrypt()) && !canEncrypt() && !mustEncrypt()) o.body += '<p class="w-glf">' + t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Sign-in & Privacy.") + "</p>";
   }
   paint(onbFrame(o), focus);
   wireEyes();
@@ -531,8 +508,8 @@ function wireWelcome(k) {
     busy(skip, true);
     try {
       if (k === "password") { onb.pw = false; onb.secret = ""; return go(1); }
-      // Encrypting can wait: the password is saved, and the kit made with it is the household's
-      if (k === "encrypt") { await savePassword(); await plainKitNow(); return go(1); }
+      // Encrypting can wait: the password is saved, and no kit is needed without it
+      if (k === "encrypt") { await savePassword(); onb.secret = ""; onb.later = true; return go(1); }
     } catch (e) { onbError(apiMessage(e)); busy(skip, false); }
   });
   if (next) next.addEventListener("click", async () => {
@@ -595,23 +572,14 @@ async function choosePassword() {
   if (a.value !== b.value) { onbError(t("The passwords don’t match.")); b.focus(); return false; }
   onb.pw = true;
   onb.secret = a.value;
-  if (!onbSteps().includes("encrypt")) { await savePassword(); await plainKitNow(); }
+  if (!onbSteps().includes("encrypt")) { await savePassword(); onb.secret = ""; }
   return true;
 }
 async function savePassword() {
   if (onb.pwSaved) return;
-  const r = await PUT("/signin", { enabled: true, password: onb.secret });
+  await PUT("/signin", { enabled: true, password: onb.secret });
   state.status.signin = true;
   onb.pwSaved = true;
-  // The kit made with the password: the household's, unless encrypting makes a new one
-  onb.plainKit = r.kit || "";
-}
-/* Not encrypted: the kit made with the password */
-async function plainKitNow() {
-  onb.secret = "";
-  onb.kit = onb.plainKit;
-  onb.plainKit = "";
-  onb.qr = await (await import("../vault/kit.js")).qrSvg(onb.kit);
 }
 /* Encrypt the new household now: there is almost nothing yet, so it takes a moment */
 async function encryptNow() {
@@ -620,8 +588,6 @@ async function encryptNow() {
   state.me = String(onb.people[0].id);
   const r = await session.turnOn(onb.secret, progress());
   onb.secret = "";
-  // Encrypting replaced the kit made with the password
-  onb.plainKit = "";
   onb.kit = r.recoveryKey;
   onb.sealed = true;
   onb.qr = await (await import("../vault/kit.js")).qrSvg(r.recoveryKey);
@@ -632,10 +598,10 @@ async function openWally(choice) {
 }
 
 /* ---------- after the upgrade from 1.x: there is data, but no people yet ---------- */
-/* People, then tags if there are any, then encrypting where sign-in is on and browsers can,
-   then the household's Emergency Kit. The 1.x password is asked again to encrypt: signing in
-   reloaded Wally, and nothing keeps it. */
-const up = { step: 0, names: [""], ids: [null], people: [], tags: null, picks: {}, rest: "", solo: false, preview: null, remove: true, kit: "", qr: "", saved: false, sealed: false };
+/* People, then tags if there are any, then encrypting where sign-in is on and browsers can, and
+   with it the household's Emergency Kit ("Not now" ends the upgrade: no kit is needed without
+   encryption). The 1.x password is asked again to encrypt: signing in reloaded Wally, and nothing keeps it. */
+const up = { step: 0, names: [""], ids: [null], people: [], tags: null, picks: {}, rest: "", solo: false, preview: null, remove: true, later: false, kit: "", qr: "", saved: false, sealed: false };
 /* On their own, everything from 1.x becomes theirs, with nothing to ask: decided by the names typed, until people exist */
 const upSolo = () => up.names.filter((n) => n.trim()).length <= 1;
 const upNote = () => upSolo() ? t("Everything already in Wally becomes yours.") : t("Everything already in Wally starts out shared by the household.");
@@ -665,7 +631,7 @@ function upgradeSteps() {
   const steps = ["people"];
   if (up.tags.length && !upSolo()) steps.push("tags");
   if (status.signin && canEncrypt() && (!sealed() || up.sealed)) steps.push("encrypt");
-  if (status.signin && (!status.kit || up.kit)) steps.push("kit");
+  if (steps.includes("encrypt") && !up.later) steps.push("kit");
   return steps;
 }
 function renderUpgrade() {
@@ -707,7 +673,7 @@ function renderUpgrade() {
     Object.assign(o, { ico: "file", back: false, title: t("Save the household’s Emergency Kit"), next: t("Open Wally"), nextOff: !up.saved,
       sub: up.sealed ? t("Wally is encrypted. If you forget your password, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.")
         : t("If you forget the password or can’t get a two-step code, this recovery key gets you back in. Wally keeps no copy it can read, so it can’t show it again.") });
-    o.body = kitBody(up.kit, up.qr, up.saved, "");
+    o.body = kitBody(up.kit, up.qr, up.saved);
     focus = "#onb-dl";
   }
   paint(onbFrame(o), focus);
@@ -758,9 +724,8 @@ function wireUpgrade(kind) {
     busy(skip, true);
     try {
       if (kind === "tags") { up.picks = {}; up.rest = ""; up.preview = null; return await upgradeNext(); }
-      // Not encrypted: the household still needs its kit, made now
-      await soloOwns();
-      await makePlainKit();
+      // Not encrypting: no kit is needed, so the upgrade ends here
+      up.later = true;
       await upgradeNext();
     } catch (e) { onbError(apiMessage(e)); busy(skip, false); }
   });
@@ -818,18 +783,6 @@ async function encryptUpgrade(password) {
   const r = await session.turnOn(password, progress());
   up.sealed = true;
   up.kit = r.recoveryKey;
-  up.qr = await (await import("../vault/kit.js")).qrSvg(up.kit);
-}
-/* Not encrypting: the kit, as whoever signs in first after the upgrade would make it */
-async function makePlainKit() {
-  if (status.kit) return;
-  try {
-    up.kit = (await POST("/kit", {}, { quiet401: true })).key;
-  } catch (e) {
-    // Someone else in the household saved it a moment ago
-    if (e.status === 409) { status.kit = true; return; }
-    throw e;
-  }
   up.qr = await (await import("../vault/kit.js")).qrSvg(up.kit);
 }
 async function upgradeNext() {

@@ -1,6 +1,8 @@
-"""The household's Emergency Kit: the one way back in when the password is forgotten, with or
-without encryption. It also stands in for two-step sign-in, so a forgotten password and a lost
-phone together never lock the household out; two-step stays on for everyone else's phones."""
+"""The household's Emergency Kit: the way back in when the password is forgotten. With encryption
+it's required (encrypting makes one), as nothing else can open the data. Without it the kit is
+optional, made in Settings: whoever runs the server can always turn sign-in off instead
+(`python -m api.signin_off`). It also stands in for two-step sign-in, so a forgotten password and
+a lost phone together never lock the household out; two-step stays on for everyone else's phones."""
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -66,14 +68,13 @@ def new_kit(
     db: Annotated[Session, Depends(get_session)],
     actor: Actor = Depends(signed_in),
 ):
-    """A new Emergency Kit. Replacing one asks for the password; the old one stops working.
-    Without encryption the answer holds the key, once: Wally keeps only a hash of it."""
+    """A new Emergency Kit, with the password: a kit is a way in, so a signed-in browser alone can't
+    make one. The old one stops working. Without encryption the answer holds the key, once: Wally
+    keeps only a hash of it."""
     _need_signin(db)
-    if kit_made(db):
-        if not body.current:
-            # Another browser saved one first, as when two open Wally right after the upgrade
-            raise HTTPException(status_code=409, detail="This household already has an Emergency Kit.")
-        prove_password(db, body.current)
+    if not body.current:
+        raise HTTPException(status_code=400, detail="Enter the password first.")
+    prove_password(db, body.current)
     if records.vault_id(db):
         key = db.get(HouseholdKey, 1)
         if not key:

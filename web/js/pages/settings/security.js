@@ -127,7 +127,7 @@ function mainPage() {
   }
   if (on) {
     const made = kitDate();
-    h += glh(t("If you forget the password")) + gl([row(t("Emergency Kit"), { go: "kit", value: made ? esc(t("Made {date}", { date: longDay(made) })) : "" })]);
+    h += glh(t("If you forget the password")) + gl([row(t("Emergency Kit"), { go: "kit", value: made ? esc(t("Made {date}", { date: longDay(made) })) : esc(t("None")) })]);
     h += glh(t("Browsers")) + gl([row(t("Signed-in browsers"), { go: "browsers", value: sessions === null ? "" : num(sessions.length) }),
       row(t("Sign out of this browser"), { act: "signout", cls: "red" })]);
   }
@@ -147,10 +147,12 @@ function twoStepPage() {
 function kitPage() {
   const made = kitDate();
   let h = "";
-  h += '<div class="w-sechero"><span class="w-secico">' + icon("file") + "</span><b>" + esc(t("Emergency Kit")) + "</b><p>" +
-    (made ? esc(t("Made {date}.", { date: longDay(made) })) + " " : "") + esc(t("On the sign-in page, “Forgot password?” takes its recovery key, then a new password.")) + "</p></div>";
-  h += gl([row(t("Make a new kit"), { act: "kit", cls: "acc" })]);
-  h += glh(t("Lost the kit too?")) + gl(['<div class="w-gr w-gtext">' + (encrypted()
+  // Without encryption the kit is optional: whoever runs the server can turn sign-in off instead
+  const why = made ? t("Made {date}.", { date: longDay(made) }) + " " + t("On the sign-in page, “Forgot password?” takes its recovery key, then a new password.")
+    : t("Optional without encryption. With one, “Forgot password?” on the sign-in page takes its recovery key, then a new password, without asking whoever runs the server.");
+  h += '<div class="w-sechero"><span class="w-secico">' + icon("file") + "</span><b>" + esc(t("Emergency Kit")) + "</b><p>" + esc(why) + "</p></div>";
+  h += gl([row(made ? t("Make a new kit") : t("Make a kit"), { act: "kit", cls: "acc" })]);
+  h += glh(made ? t("Lost the kit too?") : t("Without a kit")) + gl(['<div class="w-gr w-gtext">' + (encrypted()
     ? esc(t("Then nobody can open the data, not even whoever runs the server. Keep the kit somewhere safe."))
     : esc(t("Whoever runs the server can turn sign-in off, then you turn it on again with a new password. The README explains how."))) + "</div>"]);
   return h;
@@ -281,7 +283,7 @@ function signinOn() {
     top: '<span class="w-secico">' + icon("lock") + '</span><b class="w-shtitle w-sht20">' + t("Household password") + "</b><p>" + t("Everyone in the household uses the same password.") + "</p>",
     body: '<div class="w-gl">' + pwRow("so-pw", t("Household password"), "new-password", true) + pwRow("so-rep", t("The same again"), "new-password") + "</div>" +
       '<ul class="w-pwrules" aria-live="polite">' + rule("len", t("At least {n} characters", { n: MIN })) + rule("same", t("Both passwords match")) + "</ul>" +
-      '<p class="w-glf">' + t("This browser stays signed in; every other one asks for the password. Next, you save an Emergency Kit.") + "</p>",
+      '<p class="w-glf">' + t("This browser stays signed in; every other one asks for the password.") + "</p>",
     ok: t("Turn On"),
     onOpen: (root) => {
       pwRules(root, "#so-pw", "#so-rep");
@@ -291,10 +293,9 @@ function signinOn() {
       const pw = root.querySelector("#so-pw").value;
       checkNew(pw);
       if (pw !== root.querySelector("#so-rep").value) throw new Error(t("The two passwords are different."));
-      const r = await PUT("/signin", { enabled: true, password: pw });
+      await PUT("/signin", { enabled: true, password: pw });
       await reloadStatus();
-      // The way back in if the password is forgotten, once
-      setTimeout(() => showKit(r.kit, () => toast(t("Sign-in is on"))), 0);
+      toast(t("Sign-in is on"));
     },
   });
 }
@@ -305,8 +306,10 @@ function signinOff() {
     id: "sf-pw",
     icon: "lock", danger: true,
     title: t("Turn off sign-in?"),
-    text: S().two_step ? t("Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.")
-      : t("Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed."),
+    text: S().kit ? (S().two_step ? t("Anyone who can open this address will see and change your finances. The password, two-step sign-in and the Emergency Kit are removed.")
+      : t("Anyone who can open this address will see and change your finances. The password and the Emergency Kit are removed."))
+      : S().two_step ? t("Anyone who can open this address will see and change your finances. The password and two-step sign-in are removed.")
+      : t("Anyone who can open this address will see and change your finances. The password is removed."),
     ok: t("Turn Off"),
     onOk: async (pw) => {
       await checked("PUT", "/signin", { enabled: false, current: await proofOf(pw) });
@@ -352,17 +355,18 @@ function changePassword() {
   });
 }
 
-/* A new Emergency Kit: the old one stops working */
+/* An Emergency Kit, or a new one: the old one stops working */
 function newKit() {
+  const had = !!S().kit;
   passwordAlert({
     id: "kit-pw",
     icon: "file",
-    title: t("Make a new Emergency Kit?"),
-    text: t("The old recovery key stops working. You see the new one once."),
-    ok: t("Make New Kit"),
+    title: had ? t("Make a new Emergency Kit?") : t("Make an Emergency Kit?"),
+    text: had ? t("The old recovery key stops working. You see the new one once.") : t("You see its recovery key once."),
+    ok: had ? t("Make New Kit") : t("Make Kit"),
     onOk: async (pw) => {
       const key = encrypted() ? await (await vs()).newRecoveryKey(pw) : (await checked("POST", "/kit", { current: await proofOf(pw) })).key;
-      setTimeout(() => showKit(key, async () => { toast(t("New Emergency Kit saved")); await reloadStatus(); }), 0);
+      setTimeout(() => showKit(key, async () => { toast(had ? t("New Emergency Kit saved") : t("Emergency Kit saved")); await reloadStatus(); }), 0);
     },
   });
 }
@@ -594,7 +598,7 @@ function encryptOff() {
     id: "pv-pw",
     icon: "shield", danger: true, progress: true,
     title: t("Turn off encryption?"),
-    text: t("Your data is stored on the server in the clear again. The Emergency Kit stops working; you get a new one."),
+    text: t("Your data is stored on the server in the clear again, and the Emergency Kit stops working. Without encryption you don’t need one: whoever runs the server can turn sign-in off if the password is forgotten."),
     ok: t("Turn Off"),
     onOk: async (pw, root) => {
       if (!pw) throw new Error(t("Enter your password first."));

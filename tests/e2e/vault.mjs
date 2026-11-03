@@ -174,8 +174,10 @@ try {
   await setup("POST", "/import/commit", { rows: [{ date: daysAgo(4), name: "AMAZON MKTPLACE 99", amount: "-15.20", import_ref: "ref-1", action: "add", category: "Shopping" }] }, as);
   await setup("POST", "/categories", { name: "Kids", color: 3 }, as);
   await setup("POST", "/tags", { name: "holiday" }, as);
-  const plainKit = (await setup("PUT", "/signin", { enabled: true, password: HP1 }, as)).kit;
-  ok(await plainRecover(ANA, plainKit) === 200, "sign-in on: the household has a kit, checked by the server");
+  ok(!("kit" in (await setup("PUT", "/signin", { enabled: true, password: HP1 }, as))), "sign-in on: no kit comes with it, optional without encryption");
+  // Made in Settings, with the password: so encrypting has one to replace
+  const plainKit = (await setup("POST", "/kit", { current: HP1 })).key;
+  ok(await plainRecover(ANA, plainKit) === 200, "a kit made on its own is checked by the server");
   ok(check("plain", DB).items.length >= 15, "the household has some of everything, in the clear");
 
   /* ================= Alex turns encryption on, in the browser ================= */
@@ -567,16 +569,10 @@ try {
   ok(await alex3.locator("#dlg #pv-pw").count() === 1, "with the field empty it asks for the password, and stays open");
   await alex3.fill("#pv-pw", HP2);
   await alex3.click("[data-dlg-ok]");
-  // The encrypted kit went with the encryption: on reload Wally makes a plain one and asks to save it
-  ok(await gateShown(alex3, "Save the household’s Emergency Kit", 60000), "turned off: Wally makes a new kit for the household");
-  await alex3.waitForSelector("#onb-saved");
-  const plainKit2 = (await alex3.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-  ok(await alex3.isDisabled("#onb-next"), "Open Wally waits until it is saved");
-  await shot(alex3, "kit-after-off");
-  await alex3.click("#onb-saved");
-  await alex3.click("#onb-next");
-  ok(await appShown(alex3, 30000) && await until(alex3, async ({ core }) => core.state.status && core.state.status.vault && !core.state.status.vault.on, null, 30000), "Wally opens again, in the clear");
-  ok(newKey !== plainKit2 && await plainRecover(ALEX, plainKit2) === 200 && await plainRecover(ALEX, newKey) === 401, "the new kit works, and the encrypted one doesn’t");
+  // The encrypted kit went with the encryption, and without it none is needed: Wally just opens again
+  ok(await appShown(alex3, 60000) && await until(alex3, async ({ core }) => core.state.status && core.state.status.vault && !core.state.status.vault.on, null, 30000), "Wally opens again, in the clear");
+  ok(await alex3.locator("#onb-saved").count() === 0, "turned off: no kit to save, optional without encryption");
+  ok((await alex3.evaluate(() => fetch("/api/auth/status").then((r) => r.json()))).kit === null && await plainRecover(ALEX, newKey) === 401, "no kit left, and the encrypted one doesn’t work");
   const plainAfter = check("plain", DB).items;
   ok(JSON.stringify(plainAfter) === JSON.stringify(beforeOff), "every item in the clear is exactly what was encrypted (" + plainAfter.length + ")");
   ok(JSON.stringify(await ledger(alex3)) === JSON.stringify(encLedger), "the app shows the same ledger, now from the server");

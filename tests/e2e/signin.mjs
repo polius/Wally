@@ -143,14 +143,19 @@ try {
     await page.context().close();
   }
 
-  // Turn sign-in on through the API: one household password for everyone, and its Emergency Kit
+  // Turn sign-in on through the API: one household password for everyone. No Emergency Kit comes with
+  // it (optional without encryption): one is made next, with the password, as Settings would
   let kit;
   {
     const r = await fetch(demo.base + "/api/signin", { method: "PUT", headers: { "Content-Type": "application/json", "X-Wally-Person": "1" }, body: JSON.stringify({ enabled: true, password: "household1" }) });
     const body = await r.json();
-    kit = body.kit;
-    ok(r.ok && body.signin === true, "API: sign-in turned on, with the household password");
-    ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(kit || "") && checks(kit), "API: and the household's Emergency Kit, made by the server, in 12 groups (" + kit + ")");
+    ok(r.ok && body.signin === true && !("kit" in body), "API: sign-in turned on, with the household password, and no kit");
+    ok((await (await fetch(demo.base + "/api/auth/status")).json()).kit === null, "API: no Emergency Kit yet");
+    const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
+    const post = (b) => fetch(demo.base + "/api/kit", { method: "POST", headers: { "Content-Type": "application/json", Cookie: cookie }, body: JSON.stringify(b) });
+    ok((await post({})).status === 400, "API: a kit asks for the password");
+    kit = (await (await post({ current: "household1" })).json()).key;
+    ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(kit || "") && checks(kit), "API: the household's Emergency Kit, made by the server, in 12 groups (" + kit + ")");
     const st = await (await fetch(demo.base + "/api/auth/status")).json();
     ok(st.signin && st.two_step === false && !("require_two_step" in st) && !("needs_two_step" in st) && !("household_password" in st) && !("must_change_password" in st), "API: status says two_step, and nothing per person");
     ok(!st.signed_in && typeof st.kit === "string" && !isNaN(Date.parse(st.kit)), "API: status says when the kit was made, even signed out (" + st.kit + ")");
@@ -543,20 +548,10 @@ try {
     await page.click("#onb-next");
     await page.waitForSelector("#onb-skip");
     await page.click("#onb-skip");
-    // Not encrypted: the Emergency Kit made with the password
-    await page.waitForSelector(".w-kitkey");
-    ok((await gateText(page)).includes("Save the household’s Emergency Kit") && !(await gateText(page)).includes("Wally is encrypted"), "welcome: not now: the household's Emergency Kit, not encrypted");
-    const onbKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-    ok(checks(onbKit), "welcome: a real recovery key (" + onbKit + ")");
-    ok(await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1 && (await page.locator("#onb-dl").innerText()).includes("Download PDF"), "welcome: Download PDF and Copy");
-    ok(await page.locator("#onb-back").count() === 0, "welcome: no Back from the kit");
-    await shot(page, "welcome-kit");
-    ok(await page.isDisabled("#onb-next"), "welcome: Continue waits for the tick");
-    await page.click("#onb-saved");
-    await page.click("#onb-next");
+    // Not encrypted: no Emergency Kit (optional without encryption), straight to the data
     await page.waitForSelector("[data-onb-data]");
-    ok((await gateText(page)).includes("Bring your data"), "welcome: step 6, your data");
-    ok(await page.locator("#onb-back").count() === 0, "welcome: no Back into the kit");
+    ok((await gateText(page)).includes("Bring your data") && await page.locator(".w-kitkey").count() === 0, "welcome: not now: no kit, straight to your data");
+    ok(await page.locator(".w-onbdots li").count() === 5, "welcome: five dots now, the kit step gone with encrypting");
     await shot(page, "welcome-3");
     await page.click('[data-onb-data="import"]');
     ok((await page.textContent("#onb-next")).includes("Choose a file"), "welcome: Import a CSV says Choose a file");
@@ -564,12 +559,7 @@ try {
     await page.waitForURL("**/settings/import");
     ok(await appShown(page), "welcome: Import opens the app at Settings › Import");
     const st = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
-    ok(st.onboarded && st.people.length === 2 && st.signin && st.me && st.me.name === "Sam" && !!st.kit, "welcome: onboarded, two people, sign-in on with a kit, signed in as Sam");
-    // The kit from the welcome screen is the household's: it gets Kim in, below, if needed
-    const probe = await browser.newContext();
-    const rec = await probe.request.post(empty.base + "/api/kit/recover", { data: { person_id: st.people[1].id, key: onbKit }, failOnStatusCode: false });
-    ok(rec.status() === 200, "welcome: the kit shown at setup is the one the server checks");
-    await probe.close();
+    ok(st.onboarded && st.people.length === 2 && st.signin && st.me && st.me.name === "Sam" && st.kit === null, "welcome: onboarded, two people, sign-in on with no kit, signed in as Sam");
     const cur = await page.evaluate(() => fetch("/api/currency").then((r) => r.json()));
     ok(cur.selected === "USD" && cur.position === "left", "welcome: currency and symbol position saved");
     noErrors(page, "welcome");
@@ -603,8 +593,8 @@ try {
     ok((await (await fetch(v1.base + "/api/auth/status")).json()).kit === null, "upgrade: no kit yet");
     await page.click("#si-forgot");
     await page.waitForSelector("#si-back");
-    ok((await gateText(page)).includes("There is no Emergency Kit yet") && (await page.textContent(".w-cmd code")) === "docker exec wally python3 -m api.signin_off" && await page.locator("#cmd-copy").count() === 1,
-      "upgrade: forgot says there is no kit yet, with the command that turns sign-in off, to copy");
+    ok((await gateText(page)).includes("There’s no Emergency Kit") && !(await gateText(page)).includes("Wally 1") && (await page.textContent(".w-cmd code")) === "docker exec wally python3 -m api.signin_off" && await page.locator("#cmd-copy").count() === 1,
+      "upgrade: forgot says there's no kit, with the command that turns sign-in off, to copy");
     await shot(page, "upgrade-forgot");
     await page.click("#si-back");
     await page.waitForSelector("#si-forgot");
@@ -680,24 +670,11 @@ try {
       "upgrade: then encrypting, with the household password, and Not now");
     await shot(page, "upgrade-encrypt");
     await page.click("#onb-skip");
-    // Signed in as a person, with no kit yet: Wally makes one and asks to save it, as the last step
-    await page.waitForSelector("#onb-saved", { timeout: 10000 });
-    ok((await gateText(page)).includes("Save the household’s Emergency Kit"), "upgrade: signed in as yourself, Wally makes the household's Emergency Kit");
-    const upKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-    ok(checks(upKit) && await page.locator("#gate svg").count() >= 1, "upgrade: a recovery key, with its QR code");
-    ok(await page.locator("#onb-dl").count() === 1 && await page.locator("#onb-copy").count() === 1 && !(await page.locator("#onb-back").count()), "upgrade: Download PDF and Copy, and no Back");
-    ok(await page.isDisabled("#onb-next") && (await page.locator("#onb-next").innerText()) === "Open Wally", "upgrade: Open Wally waits for the tick");
-    await shot(page, "upgrade-kit");
-    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#onb-dl")]);
-    const upPdf = readFileSync(await dl.path(), "latin1");
-    ok(dl.suggestedFilename() === "wally-emergency-kit.pdf" && upPdf.startsWith("%PDF-") && upKit.split("-").every((g) => upPdf.includes(g)), "upgrade: the kit downloads as a PDF, with its key");
-    await page.click("#onb-saved");
-    await page.click("#onb-next");
-    ok(await appShown(page), "upgrade: then the app, with no second sign-in and no password of their own to choose");
-    const kst2 = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
-    ok(!!kst2.kit, "upgrade: the household has its kit now");
+    // Not encrypting: no kit is needed, so the upgrade ends here and Wally opens
+    ok(await appShown(page), "upgrade: not now: then the app, with no kit to save and no second sign-in");
+    ok((await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()))).kit === null, "upgrade: no Emergency Kit, optional without encryption");
     await page.reload({ waitUntil: "networkidle" });
-    ok(await appShown(page) && !(await page.locator("#kg-saved, #onb-saved").count()), "upgrade: and isn't asked again");
+    ok(await appShown(page) && !(await page.locator("#onb-saved").count()), "upgrade: and nothing asks for one after a reload");
     const ust = await page.evaluate(() => fetch("/api/auth/status").then((r) => r.json()));
     ok(ust.me && ust.me.name === "Alex", "upgrade: signed in as Alex");
     const usage = await page.evaluate((ids) => Promise.all(ids.map((id) => fetch("/api/people/" + id + "/usage").then((r) => r.json()))), ids);

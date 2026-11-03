@@ -242,8 +242,8 @@ def update_signin(
     db: Annotated[Session, Depends(get_session)],
     actor: Actor = Depends(check_login),
 ):
-    """Turn sign-in on, with the household password everyone will use and its Emergency Kit, or off."""
-    from .kit import make_plain_kit
+    """Turn sign-in on, with the household password everyone will use, or off. No Emergency Kit comes
+    with it: without encryption it's optional, made in Settings."""
     if body.enabled:
         if flag(db, "LOGIN_PAGE"):
             return {"signin": True}
@@ -254,13 +254,11 @@ def update_signin(
         set_config(db, "LOGIN_PASSWORD", hash_password(body.password))
         set_config(db, "LOGIN_SALT", "")
         set_config(db, "LOGIN_PAGE", True)
-        # The way back in if the password is forgotten: shown once, now
-        kit = make_plain_kit(db)
         db.commit()
         # Keep the person who turned it on signed in on this browser
         start_session(db, request, response, me.id)
         db.commit()
-        return {"signin": True, "kit": kit}
+        return {"signin": True}
     from ..services.vault import required
     if required():
         raise HTTPException(status_code=400, detail="This server keeps every household encrypted, so sign-in stays on.")

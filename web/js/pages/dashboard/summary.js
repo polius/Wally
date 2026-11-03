@@ -1,8 +1,8 @@
 /* Summary: how this month is going, where it's heading, then the details.
-   Two columns on wide screens that fill independently: the month on the left (Everyday spending,
+   Two columns on wide screens that fill independently: the month on the left (Spending,
    Categories, Recent, Coming up), the context on the right (the recap when one is ready, Worth noticing,
    The household, Kept each month, This year). On a phone the same cards stack in reading order (see
-   dashboard.css). "Everyday" is everything except bills: transactions a recurring rule made.
+   dashboard.css). Spending is every expense, bills (what a recurring rule made) included.
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
@@ -87,11 +87,11 @@ export function renderSummary(r) {
 }
 const show = (id, on) => { const n = document.querySelector('.s-sec[data-w="' + id + '"]'); if (n) n.hidden = !on; };
 
-/* ---------- Everyday spending: the number, where it usually ends up, against last month ---------- */
+/* ---------- Spending: the number, where it usually ends up, against last month ---------- */
 function renderHero(r) {
   const tt = totals(r.start, r.end), p = prevOf(r), d = paceData(r), ci = d.cur.length - 1;
   if (d.proj && d.proj.length < 2) d.proj = null;
-  $("s-eye").textContent = t("Everyday spending");
+  $("s-eye").textContent = t("Spending");
   countTo($("s-big"), d.cur[ci] || 0);
   const none = !tt.n;
   $("s-heroempty").hidden = !none;
@@ -100,7 +100,7 @@ function renderHero(r) {
   viewSeg.hidden = r.daily || none;
   if (!r.daily) {
     const pill = (v, l) => '<button type="button" data-hv="' + v + '" aria-pressed="' + (view.hv === v) + '">' + l + "</button>";
-    viewSeg.innerHTML = pill("pace", t("Everyday")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category"));
+    viewSeg.innerHTML = pill("pace", t("Spending")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category"));
   }
   if (none) {
     $("s-lines").innerHTML = "";
@@ -129,7 +129,7 @@ function renderHero(r) {
     return;
   }
   const xlab = paceLabel(r, d.len);
-  const label = () => t("Everyday spending: {amount} by {date}", { amount: f(d.cur[ci]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[d.cmp.length - 1]) }) : "") +
+  const label = () => t("Spending: {amount} by {date}", { amount: f(d.cur[ci]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[d.cmp.length - 1]) }) : "") +
     (d.proj ? ". " + t("Usually: {amount}", { amount: f(d.proj[d.proj.length - 1]) }) : "");
   chart("c-hero", (w) => (w < 480 ? 120 : Math.min(200, Math.round((w * 150) / 560))), (svg, w, h) => pace(svg, w, h, { r, d, xlab }), label);
 }
@@ -197,7 +197,7 @@ function pace(svg, w, h, o) {
   hit.addEventListener("pointerleave", (ev) => { clearTimeout(later); if (ev.pointerType === "mouse") clear(); else later = setTimeout(clear, 3000); });
 }
 
-/* ---------- Categories: everyday spending only, each against the period before by the same date ---------- */
+/* ---------- Categories: all spending, bills included, each against the period before by the same date ---------- */
 let catsOpen = false;
 export function toggleCats() { catsOpen = !catsOpen; }
 function renderCats(r) {
@@ -213,8 +213,7 @@ function renderCats(r) {
   const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f0(prev[k] || 0) })
     : pm ? t("{period}: {amount}", { period: pm, amount: f0(prev[k] || 0) }) : t("Before: {amount}", { amount: f0(prev[k] || 0) });
   const against = !p.ok ? "" : r.month && r.current ? dlab(p.end) : pm || p.label;
-  $("s-catsnote").innerHTML = '<span class="s-dk">' + esc(against ? t("without bills · against {when}", { when: against }) : t("without bills")) + "</span>" +
-    (against ? '<span class="s-ph">' + esc(t("vs {when}", { when: against })) + "</span>" : "");
+  $("s-catsnote").textContent = against ? t("vs {when}", { when: against }) : "";
   $("s-cats").innerHTML = shown.map((k) => rowHtml('data-go-cat="' + esc(k) + '"', tile(k), k, note(k), f0(cur[k] || 0))).join("") +
     (keys.length > top ? '<button type="button" class="s-more w-link" data-act="cats-all" aria-expanded="' + catsOpen + '">' + (catsOpen ? t("Show less") : t("Show all")) + "</button>" : "");
 }
@@ -294,8 +293,8 @@ function notices(r) {
   }
   // A category well above usual: after the first week, against the last three months by the same day
   if (r.month && r.current && +TODAY.slice(8) >= 8) {
-    const [y, m] = ym(r.start), day = +TODAY.slice(8), cur = eByCat(r.start, r.end), usual = {};
-    [1, 2, 3].forEach((k) => { const q = ymAdd(y, m, -k), a = ds(q[0], q[1], 1); if (a < START) return; const b = ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))), o = eByCat(a, b); Object.keys(o).forEach((c) => { usual[c] = (usual[c] || 0) + o[c] / 3; }); });
+    const [y, m] = ym(r.start), day = +TODAY.slice(8), cur = eByCat(r.start, r.end, undefined, false), usual = {};
+    [1, 2, 3].forEach((k) => { const q = ymAdd(y, m, -k), a = ds(q[0], q[1], 1); if (a < START) return; const b = ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))), o = eByCat(a, b, undefined, false); Object.keys(o).forEach((c) => { usual[c] = (usual[c] || 0) + o[c] / 3; }); });
     Object.keys(cur).forEach((c) => {
       const u = usual[c] || 0;
       if (u > 0 && cur[c] >= u * 1.5 && cur[c] - u >= 40) out.push({ cat: c, w: 2, title: t("{category} is well above usual", { category: c }), sub: t("{amount} so far; usually about {usual} by now.", { amount: f0(cur[c]), usual: f0(u) }) });

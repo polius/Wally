@@ -212,23 +212,16 @@ try {
   await page.waitForFunction(() => document.getElementById("gate").innerText.includes("Encrypt your data"));
   ok(true, "Back to the password and on again: encrypting is still the next step");
   await page.click("#onb-skip");
-  // Not encrypted: the kit made with the password
-  await page.waitForSelector(".w-kitkey", { timeout: 15000 });
-  const meText = await gate(page);
-  ok(meText.includes("Save the household’s Emergency Kit") && !meText.includes("Wally is encrypted."), "Me: the household's Emergency Kit, made with the password");
-  const meKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-  await shot(page, "setup-kit-me");
-  ok(await page.isDisabled("#onb-next"), "Continue waits for the tick");
-  await page.click("#onb-saved");
-  await page.click("#onb-next");
-  await page.waitForSelector("[data-onb-data]");
-  ok(await page.locator("#onb-back").count() === 0, "no Back into the kit");
+  // Not encrypted: no kit (optional without encryption), straight to the data
+  await page.waitForSelector("[data-onb-data]", { timeout: 15000 });
+  ok(await page.locator(".w-kitkey").count() === 0 && await page.locator(".w-onbdots li").count() === 5, "not now: no Emergency Kit step, five dots");
+  await shot(page, "setup-nokit-me");
+  ok(await page.locator("#onb-back").count() === 0, "no Back into Encrypt: the password is saved, and Settings turns encryption on later");
   await page.click('[data-onb-data="add"]');
   await page.click("#onb-next");
   ok(await appShown(page), "Wally opens");
   const bst = await status(b.base);
-  ok(!bst.vault.on && !!bst.kit, "not encrypted, with a kit");
-  ok(await recover(b, 2, meKit) === 200, "the kit shown at setup is the household's");
+  ok(!bst.vault.on && bst.signin && bst.kit === null, "not encrypted, sign-in on, and no kit");
   noErrors(page, "setup, not encrypted");
   await page.context().close();
 
@@ -323,18 +316,15 @@ try {
     page = await ctx.newPage();
     await page.goto("http://" + ip.address + ":" + h.port + "/", { waitUntil: "networkidle" });
     await basicsAndPeople(page);
-    // Browsers don't encrypt here: straight to the kit made with the password, saying why
+    // Browsers don't encrypt here: no Encrypt step and no kit (optional without encryption), saying why
     const http = "http://" + ip.address + ":" + h.port;
-    await page.waitForSelector(".w-kitkey", { timeout: 15000 });
-    ok((await gate(page)).includes("Your data isn’t encrypted: browsers only encrypt on secure pages.") && !(await page.locator("#onb-skip").count()), "plain http: no encrypting step; the kit says why it isn't encrypted");
-    const httpKit = (await page.locator(".w-kitkey").innerText()).replace(/\s+/g, "-");
-    ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(httpKit), "plain http: the kit is made at setup");
-    await page.click("#onb-saved");
-    await page.click("#onb-next");
-    await page.waitForSelector("[data-onb-data]");
+    await page.waitForSelector("[data-onb-data]", { timeout: 15000 });
+    ok((await gate(page)).includes("Your data isn’t encrypted: browsers only encrypt on secure pages.") && !(await page.locator(".w-kitkey").count()) && !(await page.locator("#onb-skip").count()),
+      "plain http: no encrypting step and no kit; Your data says why it isn't encrypted");
     await page.click('[data-onb-data="add"]');
     await page.click("#onb-next");
     ok(await appShown(page), "plain http: Wally opens");
+    ok((await status(h.base)).kit === null, "plain http: no kit");
     const ctx2 = await browser.newContext({ serviceWorkers: "block" });
     const ana = await ctx2.newPage();
     ana.errors = [];
@@ -342,21 +332,8 @@ try {
     await ana.goto(http + "/", { waitUntil: "networkidle" });
     await ana.click('[data-prof="2"]');
     await ana.click("#si-forgot");
-    await ana.waitForSelector("textarea#vg-in");
-    ok((await gate(ana)).includes("Use your recovery key"), "plain http: Forgot password asks for the recovery key");
-    await ana.fill("#vg-in", httpKit);
-    await ana.click("#vg-go");
-    await ana.waitForSelector("#vg-in2");
-    await ana.fill("#vg-in", "ana-new-pass");
-    await ana.fill("#vg-in2", "ana-new-pass");
-    await ana.click("#vg-go");
-    ok(await appShown(ana), "plain http: the kit and a new password sign Ana in");
-    ok((await ana.evaluate(() => fetch("/api/auth/status").then((r) => r.json()))).me.name === "Ana", "as Ana");
-    await page.reload({ waitUntil: "networkidle" });
-    ok(await page.locator("#si-in").count() === 1, "plain http: Alex's browser is signed out");
-    await page.fill("#si-in", "ana-new-pass");
-    await page.click("#si-go");
-    ok(await appShown(page), "and signs in with the new password");
+    await ana.waitForSelector("#si-back");
+    ok((await gate(ana)).includes("There’s no Emergency Kit") && (await ana.textContent(".w-cmd code")) === "docker exec wally python3 -m api.signin_off", "plain http: Forgot password, with no kit, gives the server command");
     ok(ana.errors.length === 0, "plain http: no page errors" + (ana.errors.length ? " — " + ana.errors.join(" | ") : ""));
     await ctx2.close();
     await ctx.close();

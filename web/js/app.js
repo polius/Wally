@@ -76,8 +76,6 @@ function nextGate(s) {
   if (s.signin && !s.signed_in) return "signin";
   if (!s.people.length && !s.onboarded) return "welcome";
   if (!s.people.length) return "people";
-  // No Emergency Kit yet (upgraded from 1.x, or encryption just turned off): whoever is here saves one
-  if (s.signin && s.signed_in && s.me && !s.kit) return "kit";
   if (!s.signin) {
     // With sign-in off, Wally asks who you are once on each browser, and takes it on trust
     let who = null;

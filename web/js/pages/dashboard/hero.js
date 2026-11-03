@@ -10,20 +10,21 @@ import { prevOf } from "./range.js";
 const DASH = '<div class="r d-sum"><span>';
 
 /* ---------- small helpers ---------- */
-/* Everyday spending: every expense except bills, the ones a recurring rule made */
-export function everyday(x) { return x.type === "expense" && !x.rec; }
+/* Spending: every expense, bills included. The notices can leave bills out (bills=false), so a
+   yearly bill doesn't read as a category "well above usual". */
+const spent = (x, bills) => x.type === "expense" && (bills || !x.rec);
 export function eDaily(a, len, sc) {
   const arr = new Array(len).fill(0), t0 = T(a);
   for (const x of state.tx) {
-    if (!everyday(x)) continue;
+    if (!spent(x, true)) continue;
     const i = Math.round((T(x.d) - t0) / 86400000);
     if (i < 0 || i >= len) continue;
     arr[i] += amt(x, sc);
   }
   return arr;
 }
-export function eTotal(a, b, sc) { let v = 0; for (const x of state.tx) if (x.d >= a && x.d <= b && everyday(x)) v += amt(x, sc); return v; }
-export function eByCat(a, b, sc) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || !everyday(x)) continue; const v = amt(x, sc); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
+export function eTotal(a, b, sc) { let v = 0; for (const x of state.tx) if (x.d >= a && x.d <= b && spent(x, true)) v += amt(x, sc); return v; }
+export function eByCat(a, b, sc, bills = true) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || !spent(x, bills)) continue; const v = amt(x, sc); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
 function monthCum(y, m) { return cum(eDaily(ds(y, m, 1), dim(y, m))); }
 function haveMonth(y, m, back) { const q = ymAdd(y, m, -back); return ds(q[0], q[1], 1) >= START; }
 /* "Oct 26" on an axis: the year only on January and on the first label */

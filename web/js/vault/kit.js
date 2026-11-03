@@ -182,7 +182,7 @@ async function drawKit(ctx, key, address, s, logo, extra = 0) {
   ROWS.forEach(([a, b], i) => {
     const line = groups.slice(a, b).join("  ");
     const by = firstLine + i * keyLh;
-    put(line, keyX, by);
+    // Not drawn here: the PDF sets the key as real text, so any viewer can select and copy it
     rows.push({ text: groups.slice(a, b).join("-"), shown: line, x: keyX, y: by, w: measure(line), size: keySize * s });
   });
   const q = await qrModules(key);
@@ -253,17 +253,22 @@ async function drawKit(ctx, key, address, s, logo, extra = 0) {
 
 /* ---------- the PDF around it ---------- */
 const enc = new TextEncoder();
+// Courier's capitals are shorter than the app's monospace: a larger size gives them the same height
+const KEY_EM = 1.2;
 const ascii = (s) => s.replace(/[^\x20-\x7E]/g, "?");
 function pdfString(s) { return "(" + ascii(s).replace(/[\\()]/g, (c) => "\\" + c) + ")"; }
 
 function buildPdf(jpeg, wPx, hPx, rows) {
   const W = 595.28, H = 841.89, pt = W / PAGE.w;
-  // The key again as text: invisible (render mode 3), in Courier, stretched to sit where it's drawn
+  // The key as real text on top of the picture, in Courier Bold, stretched to the width the layout gave it.
+  // Text drawn into the picture with an invisible copy on top can't be selected in every viewer (Preview
+  // takes the drag for the image); text that's really there can.
   let layer = "";
+  const ink = C.ink.slice(1).match(/../g).map((h) => (parseInt(h, 16) / 255).toFixed(3)).join(" ");
   for (const r of rows) {
     const chars = r.shown.length, width = r.w * pt;
-    const size = r.size * 0.95, scale = (width / (chars * 0.6 * size)) * 100;
-    layer += "BT 3 Tr /F1 " + size.toFixed(2) + " Tf " + scale.toFixed(2) + " Tz " + (r.x * pt).toFixed(2) + " " + (H - r.y * pt).toFixed(2) + " Td " + pdfString(r.shown) + " Tj ET\n";
+    const size = r.size * KEY_EM, scale = (width / (chars * 0.6 * size)) * 100;
+    layer += "BT " + ink + " rg /F1 " + size.toFixed(2) + " Tf " + scale.toFixed(2) + " Tz " + (r.x * pt).toFixed(2) + " " + (H - r.y * pt).toFixed(2) + " Td " + pdfString(r.shown) + " Tj ET\n";
   }
   const content = "q " + W + " 0 0 " + H + " 0 0 cm /Im1 Do Q\n" + layer;
   const objs = [
@@ -272,7 +277,7 @@ function buildPdf(jpeg, wPx, hPx, rows) {
     "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] /Resources << /XObject << /Im1 4 0 R >> /Font << /F1 6 0 R >> >> /Contents 5 0 R >>",
     null, // the image, binary
     "<< /Length " + enc.encode(content).length + " >>\nstream\n" + content + "\nendstream",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>",
     "<< /Title " + pdfString("Wally Emergency Kit") + " /Creator (Wally) >>",
   ];
   const parts = [], offsets = [];

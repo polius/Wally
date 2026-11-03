@@ -290,8 +290,8 @@ def auth_status(
         "signed_in": actor is not None,
         "people": [person_public(p) for p in _people(db)],
         "me": person_public(me) if me else None,
-        # When the household's Emergency Kit was made. None: Forgot password can't help, and
-        # whoever signs in next is asked to save one.
+        # When the household's Emergency Kit was made. None: Forgot password can't help, and the
+        # sign-in page shows the server command instead (encrypting always makes one).
         "kit": _kit_made(db) if signin else None,
         "onboarded": flag(db, "ONBOARDED"),
         # The upgrade from 1.x: the welcome to 2.0, once for each person

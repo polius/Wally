@@ -178,13 +178,13 @@ def test_delete_rule_keeps_or_removes_past(client):
 # ---------- sign-in: one password, one two-step, for the household ----------
 PW = "household-pass-1"
 
-def turn_on_signin(client, alex, ana) -> str:
-    """Returns the household's Emergency Kit, made with the password"""
+def turn_on_signin(client, alex, ana):
+    """Sign-in on, with no Emergency Kit: without encryption it's optional"""
     r = client.put("/signin", json={"enabled": True, "password": PW})
     assert r.status_code == 200, r.text
+    assert r.json() == {"signin": True}
     client.headers.pop("x-wally-person", None)
     client.cookies.clear()
-    return r.json()["kit"]
 
 def login(client, person_id, password=PW):
     return client.post("/login", json={"person_id": person_id, "password": password})
@@ -212,7 +212,7 @@ def test_everyone_signs_in_with_the_household_password(couple):
     cookie = r.headers["set-cookie"]
     assert "HttpOnly" in cookie and "Max-Age=31536000" in cookie
     me = client.get("/auth/status").json()
-    assert me["me"]["name"] == "Ana" and me["kit"]
+    assert me["me"]["name"] == "Ana" and me["kit"] is None
 
     # Created by comes from sign-in, not from what the browser says
     t = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "5", "date": TODAY}, headers={"x-wally-person": str(alex)}).json()
@@ -293,10 +293,15 @@ def test_recovery_keys_of_both_sizes_are_read():
 
 def test_the_emergency_kit_gets_in_without_the_password_or_two_step(couple):
     client, alex, ana = couple
-    kit = turn_on_signin(client, alex, ana)
-    # Twelve groups of four: three even rows on the kit
-    assert len(kit) == 59 and kit.count("-") == 11
+    turn_on_signin(client, alex, ana)
     login(client, alex)
+    # Optional without encryption, made in Settings: with the password, as a kit is a way in
+    assert client.post("/kit/recover", json={"person_id": alex, "key": __import__("api.services.kit", fromlist=["new_key"]).new_key()}).status_code == 401
+    assert client.post("/kit", json={}).status_code == 400
+    assert client.post("/kit", json={"current": "wrong-pass"}).status_code == 401
+    kit = client.post("/kit", json={"current": PW}).json()["key"]
+    # Twelve groups of four: three even rows on the kit
+    assert len(kit) == 59 and kit.count("-") == 11 and client.get("/auth/status").json()["kit"]
     two_step(client)
     other = TestClient(client.app)
     login(other, ana)
@@ -676,11 +681,11 @@ def test_upgrade_from_v1(make_client, tmp_path):
     # Everyone signs in with the same household password, as before: nothing to choose
     other = TestClient(client.app)
     assert other.post("/login", json={"person_id": ana, "password": "household"}).json() == {"ok": True, "code_needed": False}
-    # 1.x had no Emergency Kit: whoever signs in first makes one, no password asked as none is replaced
+    # 1.x had no Emergency Kit, and without encryption none is needed: one can be made, with the password
     assert client.get("/auth/status").json()["kit"] is None
-    kit = client.post("/kit", json={}).json()["key"]
+    assert client.post("/kit", json={}).status_code == 400
+    kit = client.post("/kit", json={"current": "household"}).json()["key"]
     assert client.get("/auth/status").json()["kit"]
-    assert client.post("/kit", json={}).status_code == 409
     client.cookies.clear()
     assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 200
     assert client.post("/kit/password", json={"new": "new-household-pass"}).status_code == 200
