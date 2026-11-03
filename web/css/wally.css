@@ -215,8 +215,9 @@ h1,h2,h3,h4,h5,h6,p{margin:0}
 .w svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .w-desk{position:relative;display:grid;grid-template-columns:212px minmax(0,1fr);min-width:1120px;background:var(--w-canvas)}
 .w-side{display:flex;flex-direction:column;gap:22px;padding:20px 14px;border-right:1px solid var(--w-line);background:var(--w-side)}
-.w-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:var(--fs-body);letter-spacing:-.02em;padding:2px 8px}
-.w-brand .w-mark{width:30px;height:30px}
+.w-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:var(--fs-body);letter-spacing:-.02em;padding:2px 6px}
+/* The wallet is drawn edge to edge, so 24px reads like the old padded 30px mark, centred over the nav icons */
+.w-brand .w-mark{width:24px;height:24px}
 .w-mark{width:26px;height:26px;background:url(/icons/wally.svg) center/contain no-repeat;flex:none;display:inline-block}
 .w-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:var(--r-ctl);font-weight:600;font-size:var(--fs-sub)}
 a.w-btn{text-decoration:none}
