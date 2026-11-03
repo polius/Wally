@@ -39,13 +39,15 @@ function render() {
   if (sub) return renderTag();
   const s2 = stats();
   const names = Object.keys(s2).sort((a, b) => s2[b].n - s2[a].n || a.localeCompare(b));
+  // The last one deleted: nothing left to edit
+  if (!names.length) editing = false;
   const rows = names.map((g) => {
     const e = esc(g);
     if (editing) return gr({ lead: minus(t("Delete #{name}", { name: g }), ' data-act="delete" data-name="' + e + '" data-k="del:' + e + '"') + tagIco(), k: "#" + e, sub: line(s2[g]) });
     return gr({ tag: "a", href: "/settings/tags/" + encodeURIComponent(g), attrs: ' data-pane="tags/' + encodeURIComponent(g) + '" data-k="tag:' + e + '"', lead: tagIco(), k: "#" + e, sub: line(s2[g]), chev: true });
   });
   if (!names.length) rows.push('<div class="w-gr w-gempty">' + empty("tag", t("No tags yet"), t("Add #tags to transactions to follow things that cut across categories, like a holiday.")) + "</div>");
-  if (!editing) rows.push(addRow(t("Add a tag"), "add", ' data-k="add"'));
+  rows.push(addRow(t("Add a tag"), "add", ' data-k="add"'));
   setAction(names.length ? '<button type="button" data-act="' + (editing ? "done" : "edit") + '"' + (editing ? ' class="on"' : "") + ">" + (editing ? t("Done") : t("Edit")) + "</button>" : "");
   paint(box, gl(rows));
 }

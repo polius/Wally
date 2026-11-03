@@ -260,6 +260,7 @@ ok(new RegExp(stats.Travel + " transactions").test(await dialog().textContent())
 await page.selectOption("#cd-to", "Shopping");
 await dlgOk(); await dlgClosed();
 await toastText(/Deleted Travel/);
+ok(await page.locator('#set-pane [data-k="add"]').count() === 1 && await page.locator("#set-pane .w-gminus").count() >= 8, "still in Edit after a delete, with Add a category at the foot");
 const stats2 = Object.fromEntries((await api("GET", "/categories/stats")).data.map((c) => [c.name, c.count]));
 ok(!("Travel" in stats2) && stats2.Shopping === stats.Shopping + stats.Travel, "they moved to Shopping");
 await editMode(false);
@@ -295,6 +296,17 @@ await page.click('#set-pane [data-act="delete"]');
 await dlgOk(); await dlgClosed();
 await page.waitForFunction(() => location.pathname === "/settings/tags");
 ok(!(await api("GET", "/tags")).data.includes("job"), "a tag is deleted after confirming");
+// Deleting in Edit keeps Edit, and Add a tag stays at the foot
+await page.click('#set-pane [data-act="add"]');
+await page.fill("#tag-new", "#temp");
+await dlgOk(); await dlgClosed();
+await toastText(/Added #temp/);
+await editMode(true);
+await page.click('#set-pane .w-gminus[data-name="temp"]');
+await dlgOk(); await dlgClosed();
+await toastText(/Deleted #temp/);
+ok(await page.locator('#set-pane [data-k="add"]').count() === 1 && await page.locator("#set-pane .w-gminus").count() > 0, "a tag deleted in Edit: still in Edit, with Add a tag at the foot");
+await editMode(false);
 const tstats = Object.fromEntries((await api("GET", "/tags/stats")).data.map((c) => [c.name, c.count]));
 await openRow('#set-pane a[data-pane="tags/holiday"]');
 await page.click('#set-pane [data-act="merge"]');
@@ -557,17 +569,16 @@ ok(/Off\. Anyone who can reach this address/.test(await paneText()) && !/Change 
 ok(/End-to-end encryption/.test(await paneText()) && await page.isDisabled("#pv-toggle"), "Privacy is on the same page; encryption waits for sign-in");
 await page.click("#si-toggle");
 await page.waitForSelector("#so-pw");
-ok(/Everyone in the household uses the same password/.test(await dialog().textContent()), "turning on asks for one password, for everyone");
+ok(/Everyone in the household uses this password/.test(await dialog().textContent()), "turning on asks for one password, for everyone");
 await page.fill("#so-pw", "short");
 await page.fill("#so-rep", "short");
-ok(await page.isDisabled("#dlg [data-dlg-ok]") && /At least 8 characters/.test(await dialog().textContent()) &&
-  !(await page.locator('#dlg [data-rule="len"]').evaluate((e) => e.classList.contains("ok"))), "Turn On waits for at least 8 characters");
+ok(await page.isDisabled("#dlg [data-dlg-ok]") && (await page.textContent("#pw-hint")) === "At least 8 characters", "Turn On waits for at least 8 characters");
 await page.fill("#so-pw", "alexpassword");
 await page.fill("#so-rep", "alexpassw0rd");
-ok(await page.isDisabled("#dlg [data-dlg-ok]") && await page.locator('#dlg [data-rule="len"].ok').count() === 1 && await page.locator('#dlg [data-rule="same"].ok').count() === 0,
-  "the two passwords must match: the length rule ticks, Turn On waits for the match");
+ok(await page.isDisabled("#dlg [data-dlg-ok]") && (await page.textContent("#pw-hint")) === "The two passwords are different.",
+  "the two passwords must match: once the second is typed out, the line under them says they differ");
 await page.fill("#so-rep", "alexpassword");
-ok(await page.locator('#dlg [data-rule="same"].ok').count() === 1 && !(await page.isDisabled("#dlg [data-dlg-ok]")), "once they match, Turn On lights up");
+ok((await page.textContent("#pw-hint")) === "At least 8 characters" && !(await page.isDisabled("#dlg [data-dlg-ok]")), "once they match, Turn On lights up");
 await dlgOk();
 // No Emergency Kit comes with it: optional without encryption
 ok(await page.locator("#kit-saved").count() === 0, "turning on shows no kit: optional without encryption");
@@ -593,7 +604,7 @@ await page.waitForSelector('a[data-pane="security/kit"]');
 await page.click('a[data-pane="security/kit"]');
 await page.waitForSelector('[data-act="kit"]');
 txt = await paneText();
-ok(/Optional without encryption/.test(txt) && /Make a kit/.test(txt) && /Without a kit/.test(txt) && /README/.test(txt) && !/password\.txt/.test(txt), "Emergency Kit page: optional, Make a kit, and what to do without one, pointing at the README");
+ok(/Optional without encryption/.test(txt) && /Make a kit/.test(txt) && /whoever runs the server can turn sign-in off/.test(txt) && !/password\.txt/.test(txt), "Emergency Kit page: optional, Make a kit, and what happens without one");
 // Made here, with the password: the household's Emergency Kit, once
 await page.click('[data-act="kit"]');
 await page.waitForSelector("#kit-pw");
@@ -601,11 +612,11 @@ ok(/Make an Emergency Kit\?/.test(await dialog().textContent()), "Make a kit ask
 await page.fill("#kit-pw", "alexpassword");
 await dlgOk();
 await page.waitForSelector("#kit-saved", { timeout: 10000 });
-ok(/Save the household’s Emergency Kit/.test(await dialog().textContent()), "then shows the household's Emergency Kit");
+ok(/this recovery key gets you back in/.test(await dialog().textContent()) && await page.locator("#dlg svg.w-qr").count() === 0, "then shows the household's Emergency Kit: the key alone");
 const kit1 = (await page.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
 ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(kit1), "a 48-character recovery key, in 12 groups");
 ok(await page.isDisabled("#dlg [data-dlg-ok]"), "Done waits until it is saved");
-const [kitDl] = await Promise.all([page.waitForEvent("download"), page.click("#dlg [data-save]")]);
+const [kitDl] = await Promise.all([page.waitForEvent("download"), page.click('#dlg [data-act="kit-pdf"]')]);
 const kitPdf = readFileSync(await kitDl.path(), "latin1");
 ok(kitDl.suggestedFilename() === "wally-emergency-kit.pdf" && kitPdf.startsWith("%PDF-") && kit1.split("-").every((g) => kitPdf.includes(g)), "the kit downloads as a PDF, with the key in it as text");
 ok(!/\b3 Tr\b/.test(kitPdf) && kitPdf.includes("/Courier-Bold"), "the key is real, visible text, so any viewer can select it");
@@ -615,7 +626,7 @@ await toastText(/^Emergency Kit saved/);
 status = (await api("GET", "/auth/status")).data;
 ok(typeof status.kit === "string", "status says when the kit was made");
 await page.waitForFunction(() => /Made /.test(document.getElementById("set-pane").textContent) && /Make a new kit/.test(document.getElementById("set-pane").textContent));
-ok(/Lost the kit too\?/.test(await paneText()), "with a kit: Make a new kit, and Lost the kit too?");
+ok(/Without the kit, whoever runs the server/.test(await paneText()), "with a kit: when it was made, Make a new kit, and what happens without it");
 const anon = await fetch(BASE + "/api/ledger");
 ok(anon.status === 401, "without the cookie, the API now asks to sign in");
 ok((await fetch(BASE + "/api/ledger", { headers: { "X-API-Key": rawKey } })).status === 401, "the deleted API key no longer works");
@@ -651,10 +662,11 @@ await page.click('[data-act="password"]');
 await page.fill("#pw-cur", "wrongwrong"); await page.fill("#pw-new", "alexpassword2"); await page.fill("#pw-rep", "alexpassword2");
 await expectHttpError(async () => { await dlgOk(); ok(/not right/.test(await dlgError()), "a wrong current password is refused"); });
 await page.fill("#pw-cur", "alexpassword"); await page.fill("#pw-rep", "different1");
-ok(await page.locator("#dlg [data-dlg-ok]").isDisabled() && !(await page.locator('#dlg [data-rule="same"]').evaluate((n) => n.classList.contains("ok"))) && await page.locator('#dlg [data-rule="len"]').evaluate((n) => n.classList.contains("ok")),
-  "the two new passwords must match: Change waits, and only the length rule is ticked");
+ok(await page.locator("#dlg [data-dlg-ok]").isDisabled() && (await page.textContent("#pw-hint")) === "At least 8 characters", "Change waits, and says nothing while the second is still being typed");
+await page.fill("#pw-rep", "alexpassword3");
+ok((await page.textContent("#pw-hint")) === "The two new passwords are not the same.", "typed out and different: it says so");
 await page.fill("#pw-rep", "alexpassword2");
-ok(await page.locator('#dlg [data-rule="same"]').evaluate((n) => n.classList.contains("ok")), "both rules ticked once they match");
+ok(!(await page.locator("#dlg [data-dlg-ok]").isDisabled()), "Change lights up once they match");
 await dlgOk(); await dlgClosed();
 await toastText(/Password changed/);
 ok((await anaCtx.request.get(BASE + "/api/ledger", { failOnStatusCode: false })).status() === 401, "changing the password signs Ana's browser out");
@@ -693,12 +705,14 @@ await secOpen();
 
 // Two-step: set up with a real QR and secret, confirmed with a code worked out here and the password
 await page.click(twoStepRow);
-await page.waitForSelector("#ts-secret");
+await page.waitForSelector("#ts-secret", { state: "attached" });
 const qrPath = await page.getAttribute("#dlg svg.w-qr path", "d");
 ok(qrPath && qrPath.length > 500, "a real QR code is drawn");
 const secret = (await page.textContent("#ts-secret")).replace(/\s/g, "");
-ok(/^[A-Z2-7]{32}$/.test(secret), "the secret is shown to type in");
-ok(/One code for the household/.test(await dialog().textContent()) && await page.locator("#dlg #ts-pw").count() === 1, "one code for the household, and it asks for the password");
+ok(/^[A-Z2-7]{32}$/.test(secret) && !(await page.isVisible("#ts-secret")), "the key to type in waits behind Can’t scan?");
+await page.click("#dlg [data-show]");
+ok(await page.isVisible("#ts-secret") && !(await page.isVisible("#dlg [data-show]")), "and shows when asked for");
+ok(/on each person’s phone/.test(await dialog().textContent()) && await page.locator("#dlg #ts-pw").count() === 1, "one code for the household, and it asks for the password");
 await page.fill("#ts-code", totp(secret));
 await page.waitForTimeout(300);
 ok(!(await page.locator("#rc-codes").count()) && await dialog().isVisible(), "six digits alone don't send it");

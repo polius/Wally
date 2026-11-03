@@ -45,8 +45,6 @@ const sealed = () => !!(state.status && state.status.vault && state.status.vault
 const keyName = (k) => k.name || t("Unnamed key");
 const can = (k) => (k.scope === "read" ? t("Read only") : t("Read and write"));
 const keyPic = (big) => '<span class="w-sico' + (big ? " w-sico48" : "") + '">' + icon("key") + "</span>";
-/* A sheet's header, as in Sign-in & Privacy: the picture, a 20px title, one sentence */
-const sheetTop = (ico, title, text) => '<span class="w-secico">' + icon(ico) + '</span><b class="w-shtitle w-sht20">' + title + '</b><p class="w-mw360">' + text + "</p>";
 const scopeNote = (scope) => (scope === "read" ? t("It can read what’s in Wally, but not change anything.") : t("It can read what’s in Wally and change it, like adding transactions."));
 
 function render() {
@@ -111,7 +109,6 @@ function create() {
   openDialog({
     kind: "sheet",
     title: t("New Key"),
-    top: sheetTop("key", t("API key"), t("A key lets a script, a spreadsheet or a phone shortcut add and read transactions. It’s shown once, when it’s created.")),
     body: '<div class="w-gl"><label class="w-gr"><input id="key-name" placeholder="' + esc(t("What is this key for?")) + '" aria-label="' + esc(t("Key name")) + '" maxlength="60" autocomplete="off" autofocus></label>' +
       '<div class="w-gr"><span class="k">' + t("Can") + "</span>" + uiSeg("key-scope", [["write", t("Read and write")], ["read", t("Read only")]], scope, t("What the key can do"), "sm") + "</div></div>" +
       '<p class="w-glf" id="key-scopef">' + scopeNote(scope) + "</p>" +
@@ -120,6 +117,7 @@ function create() {
         '<p class="w-glf">' + t("Wally is encrypted. While a call made with this key runs, the server opens the data it needs, then forgets it.") + "</p>" : ""),
     ok: t("Create"),
     onOpen: (root) => {
+      root.classList.add("w-sh440");
       gate(root, (r) => !full && !!val(r, "key-name") && (!sealed() || !!(r.querySelector("#key-pw") || {}).value));
       root.addEventListener("click", (ev) => {
         const s2 = ev.target.closest("#key-scope [data-v]");
@@ -150,13 +148,16 @@ async function showKey(k, name) {
   const half = Math.ceil(k.key.length / 2);
   openDialog({
     kind: "sheet",
-    title: "",
-    top: sheetTop("key", t("“{name}” Key", { name: esc(name || k.name || "") }), t("It’s shown only this once. Put it where the tool that uses it can read it.")),
-    body: '<div class="w-seckey w-keybox2"><code id="key-raw" translate="no">' + esc(k.key.slice(0, half)) + "<wbr>" + esc(k.key.slice(half)) + "</code></div>" +
-      '<div class="w-secbtns"><button type="button" class="w-btn ghost" data-copy>' + icon("copy") + t("Copy key") + "</button></div>",
+    title: t("“{name}” Key", { name: esc(name || k.name || "") }),
+    body: '<p class="w-shlead">' + t("It’s shown only this once. Put it where the tool that uses it can read it.") + "</p>" +
+      '<div class="w-keyplain"><code id="key-raw" translate="no">' + esc(k.key.slice(0, half)) + "<wbr>" + esc(k.key.slice(half)) + "</code></div>" +
+      gl([gr({ k: t("Copy key"), cls: "acc", act: "copy", attrs: " data-copy" })]),
     ok: t("Done"),
     noCancel: true,
-    onOpen: (root) => root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied"))),
+    onOpen: (root) => {
+      root.classList.add("w-sh440");
+      root.querySelector("[data-copy]").addEventListener("click", () => copyText(k.key, t("Key copied")));
+    },
   });
 }
 

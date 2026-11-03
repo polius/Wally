@@ -329,7 +329,7 @@ try {
     ok(/not right/.test(await page.textContent("#dlg-err")), "Add a phone: a wrong password is refused");
     await page.fill("#ts-pw", "household1");
     await page.click("#dlg [data-dlg-ok]");
-    await page.waitForSelector("#ts-secret");
+    await page.waitForSelector("#ts-secret", { state: "attached" });
     ok((await page.textContent("#ts-secret")).replace(/\s/g, "") === secret, "Add a phone: shows the same secret as everyone's phone");
     ok(await page.locator("#dlg svg.w-qr").count() === 1, "Add a phone: with its QR code");
     await shot(page, "add-a-phone");
@@ -730,6 +730,19 @@ try {
     ok(n > 0 && await page.evaluate(async () => (await import("/js/core.js")).vaultOn()), "upgrade, encrypting: every transaction opens on this browser (" + n + ")");
     const mine = await page.evaluate(async () => { const c = await import("/js/core.js"); return c.state.tx.every((x) => x.p === c.state.me); });
     ok(mine, "upgrade, on their own: every transaction is Alex’s, settled before encrypting");
+    // And turned off again from Settings
+    await page.goto(v1e.base + "/settings/security", { waitUntil: "networkidle" });
+    await page.waitForSelector("#pv-toggle");
+    await page.click("#pv-toggle");
+    const opened = await page.waitForSelector("#pv-pw", { timeout: 5000 }).then(() => true, () => false);
+    ok(opened, "upgrade, encrypting: Settings opens Turn off encryption");
+    if (opened) {
+      await page.fill("#pv-pw", "household");
+      await page.click("[data-dlg-ok]");
+      const off = await page.waitForFunction(() => fetch("/api/auth/status").then((r) => r.json()).then((s) => !s.vault.on), null, { timeout: 60000, polling: 1000 }).then(() => true, () => false);
+      const err = await page.locator("#dlg-err").innerText().catch(() => "");
+      ok(off, "upgrade, encrypting: and turned off again" + (err ? " — " + err : ""));
+    }
     noErrors(page, "upgrade, encrypting");
     await page.context().close();
   }

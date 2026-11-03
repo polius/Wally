@@ -276,10 +276,12 @@ export async function turnOff(password, progress) {
   }
   await forget();
 }
-/* An item as both sides write it: an import rule gets a new number in the clear */
+/* An item as both sides write it: an import rule gets a new number in the clear, and a category
+   encrypted before colors followed spending still has the color the server no longer keeps */
 function comparable(o) {
   const c = JSON.parse(JSON.stringify(o));
   if (c.k === "irule") delete c.id;
+  if (c.k === "cat") delete c.color;
   return C.stable(c);
 }
 export { C as crypto };

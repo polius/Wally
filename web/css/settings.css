@@ -360,9 +360,6 @@ label.w-btn{cursor:pointer;position:relative}
 .w-sec .w-gr .w-badge{margin-inline-start:4px;vertical-align:1px}
 .w-secdev{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2);flex:none}
 .w-secdev svg.i{width:16px;height:16px}
-.w-sechero{display:grid;justify-items:center;text-align:center;gap:6px;margin:0 0 16px}
-.w-sechero b{font-size:20px;font-weight:650;letter-spacing:-.02em}
-.w-sechero p{font-size:var(--fs-foot);color:var(--w-ink2);max-width:380px}
 .w-secico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
 .w-secico svg.i{width:30px;height:30px}
 /* Alerts that ask for the password: a picture on top, then one field */
@@ -385,16 +382,18 @@ label.w-btn{cursor:pointer;position:relative}
 .w-seckey .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 10px;font:600 15px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;background:none;border:0;padding:0;color:var(--w-ink)}
 .w-seckey .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
 .w-seckey .w-codes{background:none;border:0;padding:0;width:100%;justify-items:center;font-size:var(--fs-sub)}
-.w-secscan{padding:14px}
-.w-secscan .w-qr{width:116px;height:116px}
-.w-secsecret{display:grid;justify-items:center;gap:6px;width:100%}
-.w-secsecret code{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 12px;font:600 13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);background:none;border:0;padding:0;letter-spacing:.04em;direction:ltr;unicode-bidi:isolate}
-.w-secsecret .w-link{font-size:14px;font-weight:500}
+/* Two-step: the QR code on its own, the key only when asked for */
+.w-tsqr{display:grid;justify-items:center;gap:10px;padding:6px 0 18px}
+.w-dialog .w-tsqr .w-qr{width:184px;height:184px;margin:0;border-radius:12px;box-shadow:0 0 0 1px var(--w-line)}
+.w-tsqr .w-link{font-size:var(--fs-sub);font-weight:500}
+.w-tskey{display:grid;justify-items:center;gap:4px}
+.w-tskey code{display:grid;grid-template-columns:repeat(4,auto);gap:0 14px;font:500 15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:var(--w-ink);background:none;padding:0;direction:ltr;user-select:all}
+.w-gr input.w-otp:not(:placeholder-shown){font-variant-numeric:tabular-nums;letter-spacing:.18em}
 .w-secbtns{display:flex;gap:10px;justify-content:center;margin:4px 0}
 .w-secbtns .w-btn{height:34px;border-radius:999px;font-size:14px;font-weight:600;padding:0 14px;gap:6px}
 .w-secbtns .w-btn svg.i{width:15px;height:15px}
 .w-kitsheet .w-shh{margin-bottom:6px}
-.w-dialog.w-kitsheet,.w-dialog.w-sh480{max-width:480px}
+.w-dialog.w-kitsheet{max-width:480px}
 .w-dialog.w-sh520{max-width:520px}
 @media (min-width:768px){.w-dialog.w-sh400{max-width:400px}.w-dialog.w-sh420{max-width:420px}.w-dialog.w-sh440{max-width:440px}}
 .w-shfull .w-shb > .w-gl + .w-gl{margin-top:6px}
@@ -480,14 +479,6 @@ label.w-btn{cursor:pointer;position:relative}
 :root[data-theme="dark"] .w-dialog .w-seckey{background:#292B33}
 @media (max-width:767px){.w-shstep b{font-size:var(--fs-body)}.w-shstepn{width:24px;height:24px;font-size:13px}}
 /* Change Password: the rules for the new one, ticked as they're met */
-.w-pwrules{list-style:none;margin:2px 0 0;padding:0 16px;display:grid;gap:6px}
-.w-pwrules li{display:flex;align-items:center;gap:8px;font-size:var(--fs-foot);color:var(--w-ink3);transition:color .15s}
-.w-pwmark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--w-ink3);display:grid;place-items:center;flex:none;transition:background-color .15s,border-color .15s}
-.w-pwmark svg.i{width:10px;height:10px;stroke-width:3;color:#fff;opacity:0}
-.w-pwrules li.ok{color:var(--w-ink2)}
-.w-pwrules li.ok .w-pwmark{background:var(--w-good,#2F9E44);border-color:transparent}
-.w-pwrules li.ok .w-pwmark svg.i{opacity:1}
-.w-pwrules + .w-glf{margin-top:6px}
 
 /* API keys: a Shortcut sheet's steps are sentences, so the number sits by the first line and the text is regular weight */
 .w-shstep.w-shstep2{align-items:flex-start}
@@ -530,3 +521,12 @@ label.w-btn{cursor:pointer;position:relative}
 .w-icons button:hover{background:var(--w-fill2)}
 .w-icons button[aria-checked="true"]{background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink));box-shadow:0 0 0 2px var(--w-raised),0 0 0 4px color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
 .w-icnone{padding:28px 12px;text-align:center;color:var(--w-ink3);font-size:var(--fs-sub)}
+#pw-hint.w-bad{color:var(--w-bad)}
+
+/* Emergency Kit: the key alone, in three lines */
+.w-kitplain{display:grid;justify-items:center;padding:6px 0 18px}
+.w-kitplain .w-kitkey{font:600 17px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;background:none;border:0;padding:0;color:var(--w-ink);user-select:all}
+.w-kitplain .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
+/* A new API key, shown once: the key alone */
+.w-keyplain{display:grid;justify-items:center;padding:6px 0 18px}
+.w-keyplain code{font:500 15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center;color:var(--w-ink);background:none;padding:0;direction:ltr;user-select:all}

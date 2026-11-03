@@ -208,7 +208,7 @@ try {
   ok((await alex1.locator("#dlg-err").innerText()).length > 0 && !check("grep", DB, "VAULT_ID").VAULT_ID, "a wrong password changes nothing");
   await alex1.fill("#pv-pw", HP1);
   await alex1.click("[data-dlg-ok]");
-  await alex1.waitForFunction(() => document.querySelector("#dlg .w-shtitle") && document.querySelector("#dlg .w-shtitle").textContent.includes("Emergency Kit"), null, { timeout: 60000 });
+  await alex1.waitForFunction(() => document.querySelector("#dlg #dlg-t") && document.querySelector("#dlg #dlg-t").textContent.includes("Emergency Kit"), null, { timeout: 60000 });
   await shot(alex1, "kit-dialog");
   const alexKey = (await alex1.locator("#dlg .w-kitkey").innerText()).replace(/\s+/g, "-");
   ok(/^([0-9A-Z]{4}-){11}[0-9A-Z]{4}$/.test(alexKey), "the Emergency Kit shows a 48-character recovery key, in 12 groups");
@@ -216,7 +216,7 @@ try {
   await alex1.keyboard.press("Escape");
   ok(await alex1.locator("#dlg .w-kitkey").count() === 1, "Escape doesn't close the kit");
   await alex1.click("#kit-saved");
-  ok((await alex1.locator("#dlg .w-shtitle").innerText()).includes("household’s Emergency Kit"), "one Emergency Kit, for the household");
+  ok((await alex1.locator("#dlg").innerText()).includes("this recovery key gets you back in"), "one Emergency Kit, for the household");
   await alex1.click("#dlg [data-dlg-ok]");
   await alex1.waitForLoadState("networkidle");
   ok(await appShown(alex1, 20000), "Wally opens again, encrypted");
@@ -402,7 +402,7 @@ try {
   // Two-step on, for the household, from Settings › Sign-in & Privacy
   await alex1.goto(base + "/settings/security", { waitUntil: "networkidle" });
   await alex1.click('a[data-pane="security/two-step"]');
-  await alex1.waitForSelector("#ts-secret");
+  await alex1.waitForSelector("#ts-secret", { state: "attached" });
   const secret = (await alex1.textContent("#ts-secret")).replace(/\s/g, "");
   await alex1.fill("#ts-code", totpAt(secret, Math.floor(Date.now() / 30000)));
   await alex1.fill("#ts-pw", HP1);
@@ -470,7 +470,7 @@ try {
   await alex3.click('a[data-pane="security/kit"]');
   await alex3.waitForSelector('[data-act="kit"]');
   const forgotText = await alex3.locator("#set-pane").innerText();
-  ok(!forgotText.includes("password.txt") && !forgotText.includes("signin_off") && forgotText.includes("Then nobody can open the data, not even whoever runs the server."), "Emergency Kit, encrypted: lost the kit too means nobody can open it; no password.txt, no command");
+  ok(!forgotText.includes("password.txt") && !forgotText.includes("signin_off") && forgotText.includes("Without the kit and the password, nobody can open the data, not even whoever runs the server."), "Emergency Kit, encrypted: lost the kit too means nobody can open it; no password.txt, no command");
   // A new kit, made in this browser: the old one stops working
   const proveIn = async (key) => { const d = await device(); await d.goto(base + "/", { waitUntil: "networkidle" });
     const r = await d.evaluate(async ([k, id]) => { const s = await import("/js/vault/session.js"); s.bind(await import("/js/core.js")); try { await s.prove(id, k); return 200; } catch (e) { return e.status; } }, [key, ALEX]);
@@ -558,6 +558,13 @@ try {
   await alex3.reload({ waitUntil: "networkidle" });
   await appShown(alex3);
   const encLedger = await ledger(alex3);
+  // A category encrypted before colors followed spending still has its color: turning off doesn't stop on it
+  const aged = await inPage(alex3, async ({ store }) => {
+    const [id, r] = [...store.vault.recs.entries()].find(([, x]) => x.obj && x.obj.k === "cat");
+    await store.commit(new Map([[id, { obj: Object.assign({}, r.obj, { color: 3 }) }]]));
+    return r.obj.name;
+  });
+  ok(!!aged, "a category encrypted with an old color: " + aged);
   await alex3.goto(base + "/settings/privacy", { waitUntil: "networkidle" });
   await alex3.click("#pv-toggle");
   await shot(alex3, "turn-off");

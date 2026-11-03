@@ -47,7 +47,7 @@ function render() {
     return gr({ tag: "a", href: href(k), attrs: ' data-pane="categories/' + encodeURIComponent(k) + '" data-k="cat:' + name + '"', lead: tile(k), k: name, sub: line(k, s2[k] || { n: 0 }, m), chev: true });
   };
   const rows = ranked.map(row);
-  if (!editing) rows.push(addRow(t("Add a category"), "add", ' data-k="add"'));
+  rows.push(addRow(t("Add a category"), "add", ' data-k="add"'));
   setAction('<button type="button" data-act="' + (editing ? "done" : "edit") + '"' + (editing ? ' class="on"' : "") + ">" + (editing ? t("Done") : t("Edit")) + "</button>");
   paint(box, gl(rows, t("Expenses")) + (income.length ? gl(income.map(row), t("Income")) : ""));
 }
