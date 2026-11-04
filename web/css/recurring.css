@@ -112,7 +112,6 @@
 .rec-kv > b{font-weight:500;text-align:end;min-width:0;text-wrap:balance}
 .rec-kv > b.ic{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
 .rec-kv > b.dim{color:var(--w-ink2);font-weight:400}
-.rec-kv > b.rec-note{font-weight:400;white-space:pre-wrap;word-break:break-word}
 .rec-kv .w-ico{width:24px!important;height:24px!important;border-radius:6px}
 .rec-kv .w-ico svg.i{width:13px;height:13px}
 .rec-sec{display:grid;gap:6px;margin-top:14px}
@@ -158,8 +157,6 @@
 .rec-mh .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px;font-size:var(--fs-body);font-weight:400}
 .rec-mh .w-plink svg.i{width:22px;height:22px;margin-inline-start:-6px}
 .rec-mhero{display:grid;justify-items:center;gap:2px;text-align:center;padding:2px 0 8px}
-.rec-mhero .w-ico{border-radius:18px;margin-bottom:8px}
-.rec-mhero .w-ico svg.i{width:32px;height:32px}
 .rec-mhero b{font-size:22px;font-weight:650;letter-spacing:-.02em}
 .rec-mamt{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.2}
 .rec-mamt.pos{color:var(--w-good)}
@@ -228,3 +225,18 @@
 @media (max-width:767px){.rec-head .w-hact{margin-inline-start:auto}}
 /* Delete a rule (desktop): a long answer wraps inside its button instead of running past it */
 @media (min-width:768px){.w-alert.rec-del3 .w-alg > .w-dlgok{height:auto;min-height:34px;padding:7px 14px;white-space:normal;line-height:1.25;text-wrap:balance}}
+
+/* ---------- the panel on wide screens: as the phone, price change, Next and Last charges ---------- */
+.rec-amt .c{font-size:.6em;letter-spacing:-.01em}
+.rec-mamt .c{font-size:.6em}
+.rec-pcard{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--w-line2)}
+.rec-pcard b{display:block;font-weight:600;font-size:15px}
+.rec-pcard small{display:block;font-size:13.5px;color:var(--w-ink2)}
+.rec-sec2{display:grid;margin-top:16px}
+.rec-sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:var(--fs-foot);font-weight:600;color:var(--w-ink2);padding-bottom:6px}
+.rec-cap{margin:0;padding-top:8px;border-top:1px solid var(--w-line2);font-size:var(--fs-foot);color:var(--w-ink2)}
+.rec-sec2 .rec-kv > span{color:var(--w-ink)}
+.rec-sec2 .rec-hist{margin:4px 0 8px}
+.rec-pnote{display:grid;gap:4px;padding:13px 0;border-top:1px solid var(--w-line2)}
+.rec-pnote > span{font-size:var(--fs-foot);color:var(--w-ink2)}
+.rec-pnote p{margin:0;font-size:16px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}

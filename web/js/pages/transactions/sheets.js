@@ -83,7 +83,7 @@ export function openRangeSheet(apply) {
 /* ---------- Filter ---------- */
 export function filterCount(P) {
   P = P || parseQ(S.q);
-  return S.cats.size + (S.type !== "all" ? 1 : 0) + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0);
+  return S.cats.size + (S.type !== "all" ? 1 : 0) + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0) + (S.sort !== "date" ? 1 : 0);
 }
 let fctx = null;
 function amounts() {
@@ -97,6 +97,7 @@ function filterBody(phone) {
     '<div class="tx-flabel">' + esc(t("Categories")) + '</div><div class="w-chips tx-fchips">' +
       cats.map((c) => { const on = S.cats.has(c), col = cc(c); return '<button type="button" class="w-chip' + (on ? " tx-con" : "") + '" data-fc="' + esc(c) + '" aria-pressed="' + on + '"' + (on ? ' style="--cc:' + col + '"' : "") + '><span class="w-cdot" style="background:' + col + '"></span>' + esc(c) + "</button>"; }).join("") + "</div>" +
     '<div class="tx-flabel">' + esc(t("Amount")) + "</div>" + seg("tx-famt", am.map(([k, l]) => [k, l]), (am.find((x) => x[2]) || ["custom"])[0], t("Amount"), "tx-fseg") +
+    '<div class="tx-flabel">' + esc(t("Sort by")) + "</div>" + seg("tx-fsort", [["date", t("Date")], ["amount", t("Amount")]], S.sort, t("Sort by"), "tx-fseg") +
     (couple() ? '<div class="tx-fshared"><span id="tx-fsl">' + esc(t("Shared only")) + "</span>" + sw("tx-fsw", S.shared, t("Shared only")) + "</div>" : "") +
     (phone ? '<p class="tx-fn">' + esc(tn(n, "{n} transaction", "{n} transactions")) + "</p>"
       : '<div class="tx-ffoot"><button type="button" class="w-link" data-f="reset">' + esc(t("Reset")) + '</button><span class="tx-fn">' + esc(tn(n, "{n} transaction", "{n} transactions")) + "</span></div>");
@@ -111,9 +112,10 @@ function change(b, host, phone) {
     if (b.dataset.v === "over") q = (q + " >50").trim();
     if (b.dataset.v === "under") q = (q + " <10").trim();
     fctx.setQ(q);
-  } else if (b.dataset.fc !== undefined) { const c = b.dataset.fc; if (S.cats.has(c)) S.cats.delete(c); else S.cats.add(c); }
+  } else if (b.closest("#tx-fsort")) S.sort = b.dataset.v;
+  else if (b.dataset.fc !== undefined) { const c = b.dataset.fc; if (S.cats.has(c)) S.cats.delete(c); else S.cats.add(c); }
   else if (b.id === "tx-fsw") S.shared = !S.shared;
-  else if (b.dataset.f === "reset") { S.type = "all"; S.cats = new Set(); S.shared = false; fctx.setQ(""); }
+  else if (b.dataset.f === "reset") { S.type = "all"; S.cats = new Set(); S.shared = false; S.sort = "date"; fctx.setQ(""); }
   else return;
   S.sel = null;
   const sel = b.id ? "#" + b.id : b.closest(".w-seg") ? "#" + b.closest(".w-seg").id + ' [data-v="' + b.dataset.v + '"]' : b.dataset.fc !== undefined ? '[data-fc="' + CSS.escape(b.dataset.fc) + '"]' : null;

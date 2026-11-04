@@ -7,7 +7,7 @@ import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon,
 import { hideTip, empty, trapFocus, stepLabels } from "../ui.js";
 import { headActions } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
-import { S, RANGES, parseQ, txRange, txFiltered, scopeLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering, recent, addRecent, clearRecent } from "./transactions/query.js";
+import { S, RANGES, parseQ, txRange, txFiltered, scopeLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering, recent, addRecent, clearRecent, bySize } from "./transactions/query.js";
 import { TxList, buildItems } from "./transactions/list.js";
 import { txPanel, dayPanel } from "./transactions/panel.js";
 import { deleteTx, bulkDelete, bulkCategory, bulkPerson, exportCsv } from "./transactions/actions.js";
@@ -140,12 +140,14 @@ function render() {
   const P = parseQ(S.q), R = txRange(P);
   const key = R.a + R.b + state.scope + state.tx.length + state.categories.length;
   if (key !== rankKey) { rerank(R.a, R.b); rankKey = key; }
-  const shown = txFiltered(R, P), noDay = S.day ? txFiltered(R, P, true) : shown;
+  const cal = S.view === "cal";
+  let shown = txFiltered(R, P);
+  const noDay = S.day ? txFiltered(R, P, true) : shown;
+  if (S.sort === "amount" && !cal) shown = bySize(shown);
   cur = { P, R, list: shown, listNoDay: noDay };
   if (S.sel && !shown.some((x) => x.id === S.sel)) { S.sel = null; S.open = false; }
   if (!S.sel && shown.length) S.sel = shown[0].id;
   if (S.picked.size) { const ids = new Set(shown.map((x) => x.id)); S.picked = new Set([...S.picked].filter((id) => ids.has(id))); }
-  const cal = S.view === "cal";
   if (cal) { S.selMode = false; S.picked.clear(); }
 
   renderHead(R, P);
@@ -253,17 +255,19 @@ function renderTools(R, P, shown) {
   for (const x of shown) { if (x.type === "income") inc += amt(x); else out += amt(x); }
   const n = shown.length;
   $("tx-count").innerHTML = '<span class="tx-n">' + esc(state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) })) + "</span>" +
-    (n ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f0(inc)) + '</b></span><span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f0(out)) + "</b></span>" : "");
+    (inc ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f0(inc)) + "</b></span>" : "") + (out ? '<span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f0(out)) + "</b></span>" : "");
 }
 
 /* On phones a row is only marked while its detail is open; elsewhere the selection always shows */
 /* Only the selected row is in the Tab order; ↑ ↓ move from there */
+/* Sorted by amount there are no day headers, so each row says its date */
 function rowOpts(x) {
-  const tab = x.id === S.sel;
-  return S.selMode ? { check: S.picked.has(x.id), tab } : { sel: tab && (S.open || layout() !== "phone"), tab };
+  const tab = x.id === S.sel, date = S.sort === "amount";
+  return S.selMode ? { check: S.picked.has(x.id), tab, date } : { sel: tab && (S.open || layout() !== "phone"), tab, date };
 }
 function renderList(R, P, shown) {
-  list.set(buildItems(shown, !R.month), rowOpts, emptyList(R, P));
+  $("tx-list").classList.toggle("tx-flat", S.sort === "amount");
+  list.set(buildItems(shown, !R.month, S.sort === "amount"), rowOpts, emptyList(R, P));
 }
 function emptyList(R, P) {
   const add = '<button type="button" class="w-btn primary" data-act="add">' + icon("plus") + esc(t("Add expense")) + "</button>";

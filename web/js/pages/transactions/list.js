@@ -1,10 +1,18 @@
 /* Transactions: the list. Rows grouped by day (and by month across several months).
    Up to 500 rows it is plain HTML with sticky day headers; past that only the rows on screen are
    drawn, so 20,000 rows scroll as smoothly as 20. */
-import { state, t, esc, f, amt, av, pname, tile, dlabL, monthYear, couple } from "../../core.js";
+import { state, t, esc, f, amt, av, pname, tile, dlab, dlabL, monthYear, couple, LANG, TODAY } from "../../core.js";
 
 /* Whose it is: with one person in the household, nothing is shared, so it is theirs */
 export function owner(x) { return x.p === null && !couple() && state.people[0] ? String(state.people[0].id) : x.p; }
+
+/* A row's own date, when no day header says it: "3 Nov", with the year when it isn't this one */
+let YEARF = null;
+function rowDate(d) {
+  if (d.slice(0, 4) === TODAY.slice(0, 4)) return dlab(d);
+  try { YEARF = YEARF || new Intl.DateTimeFormat(LANG, { day: "numeric", month: "short", year: "numeric" }); return YEARF.format(new Date(d + "T12:00:00")); }
+  catch (e) { return dlab(d) + " " + d.slice(0, 4); }
+}
 
 /* One transaction row. opts: {sel, check (true/false/null), date, tab: false leaves it out of the Tab order} */
 export function txRow(x, opts) {
@@ -12,26 +20,29 @@ export function txRow(x, opts) {
   const inc = x.type === "income", v = amt(x), part = x.p === null && state.scope !== "all" && Math.abs(v - x.a) > 0.004;
   const check = opts.check === true || opts.check === false;
   const name = x.n || x.c;
+  // One line on wide screens (name, date when sorted, who, category, tags as columns); two on phones
   return '<button type="button" class="w-row' + (opts.sel ? " sel" : "") + (check ? " chk" : "") + '" data-id="' + esc(x.id) + '"' +
     (check ? ' aria-pressed="' + opts.check + '"' : opts.sel ? ' aria-current="true"' : "") + (opts.tab === false ? ' tabindex="-1"' : "") + ">" +
     (check ? '<span class="w-cb' + (opts.check ? " on" : "") + '" aria-hidden="true"></span>' : "") + tile(x.c) +
-    '<div class="tx-rm"><h6>' + esc(name) + "</h6><p>" + (opts.date ? "<span>" + esc(dlabL(x.d)) + "</span>" : "") +
-      '<span class="tx-who">' + av(owner(x), "sm") + esc(pname(owner(x))) + "</span><span>· " + esc(x.c) + "</span>" +
+    '<div class="tx-rm"><h6><span class="tx-nm">' + esc(name) + "</span>" +
       (x.rec ? '<svg class="i tx-rec" role="img" aria-label="' + esc(t("Recurring")) + '"><use href="#i-repeat"/></svg>' : "") +
-      x.tags.map((g) => '<span class="w-ht">' + esc(g) + "</span>").join("") +
-      (x.pending ? '<span class="w-ht tx-wait">' + esc(t("Waiting to send")) + "</span>" : "") + "</p></div>" +
+      (x.pending ? '<span class="w-ht tx-wait">' + esc(t("Waiting to send")) + "</span>" : "") + "</h6><p>" +
+      (opts.date ? '<span class="tx-cd">' + esc(rowDate(x.d)) + "</span>" : "") +
+      '<span class="tx-who">' + av(owner(x), "sm") + "<span>" + esc(pname(owner(x))) + '</span></span><span class="tx-cat">' + esc(x.c) + "</span>" +
+      '<span class="tx-rtags">' + x.tags.map((g) => esc(g)).join(" ") + "</span></p></div>" +
     '<span class="amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + f(v) + (part ? '<small class="of">' + esc(t("of {amount}", { amount: f(x.a) })) + "</small>" : "") + "</span></button>";
 }
 
-/* The flat list of what is drawn: month headers (across months), day headers, rows */
-export function buildItems(list, byMonth) {
-  const items = [], spentDay = {}, spentMonth = {};
-  for (const x of list) {
+/* The flat list of what is drawn: month headers (across months), day headers, rows.
+   flat: only rows (sorted by amount, where days would break the order) */
+export function buildItems(list, byMonth, flat) {
+  if (flat) return list.map((x) => ({ k: "r", x }));
+  // Only months carry a total: the line under the title already has the range's, and Calendar each day's
+  const items = [], spentMonth = {};
+  if (byMonth) for (const x of list) {
     if (x.type !== "expense") continue;
-    const v = amt(x);
-    spentDay[x.d] = (spentDay[x.d] || 0) + v;
     const k = x.d.slice(0, 7);
-    spentMonth[k] = (spentMonth[k] || 0) + v;
+    spentMonth[k] = (spentMonth[k] || 0) + amt(x);
   }
   let curD = null, curM = null;
   for (const x of list) {
@@ -39,7 +50,7 @@ export function buildItems(list, byMonth) {
       const k = x.d.slice(0, 7);
       if (byMonth && k !== curM) { curM = k; items.push({ k: "m", key: k, spent: spentMonth[k] || 0 }); }
       curD = x.d;
-      items.push({ k: "d", d: x.d, spent: spentDay[x.d] || 0 });
+      items.push({ k: "d", d: x.d });
     }
     items.push({ k: "r", x });
   }
@@ -47,11 +58,12 @@ export function buildItems(list, byMonth) {
 }
 function headHtml(it) {
   if (it.k === "m") return '<div class="w-monh" role="heading" aria-level="3">' + esc(monthYear(+it.key.slice(0, 4), +it.key.slice(5, 7))) + "<span>" + (it.spent ? esc(t("{amount} spent", { amount: f(it.spent) })) : "") + "</span></div>";
-  return '<div class="w-dayh" role="heading" aria-level="4">' + esc(dlabL(it.d)) + "<span>" + (it.spent ? esc(t("{amount} spent", { amount: f(it.spent) })) : "") + "</span></div>";
+  return '<div class="w-dayh" role="heading" aria-level="4">' + esc(dlabL(it.d)) + "</div>";
 }
 
-/* Heights in the windowed list (fixed there by transactions.css) */
-const H = { m: 44, d: 44, r: 67 };
+/* Heights in the windowed list (fixed there by transactions.css): one-line rows on wide screens, two on phones */
+let H = { m: 44, d: 44, r: 67 };
+const PHONE = matchMedia("(max-width: 767px)");
 const WINDOW_OVER = 500;  // more rows than this: draw only what is on screen
 const OVERSCAN = 600;     // px drawn above and below the screen
 
@@ -82,6 +94,7 @@ export class TxList {
     this.index = new Map();
     items.forEach((it, i) => { if (it.k === "r") { this.index.set(it.x.id, i); this.rows.push(it.x); } });
     this.windowed = this.rows.length > WINDOW_OVER;
+    H = PHONE.matches ? { m: 44, d: 44, r: 67 } : { m: 44, d: 38, r: 48 };
     this.box.classList.toggle("tx-win", this.windowed);
     this.box.classList.toggle("tx-bym", items.length > 0 && items[0].k === "m");
     if (!items.length) { this.box.innerHTML = empty || ""; return; }

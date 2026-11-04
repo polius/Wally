@@ -156,10 +156,7 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
 .tx-daysub b.pos{font-weight:600}
 .tx-insp .w-field .val{overflow-wrap:anywhere}
 .tx-insp .w-field .val > span{min-width:0}
-.tx-tags{display:flex;flex-wrap:wrap;gap:4px}
-.tx-kvr .tx-tags .w-ht{font-size:13px;line-height:20px;padding:0 6px;border-radius:5px}
 .tx-mut{color:var(--w-ink3);font-weight:400}
-.tx-note{font-weight:400;white-space:pre-wrap}
 .tx-add{color:var(--w-ink3);font-weight:400;padding:2px 0;border-radius:var(--r-ctl);text-align:start}
 .tx-add:hover{color:var(--w-accent-ink)}
 .tx-src{font-weight:500}
@@ -278,9 +275,7 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-dnav{display:flex;justify-content:space-between;margin-bottom:-14px}
   .tx-dnav .w-plink{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px;font-size:var(--fs-body);font-weight:400;color:var(--w-accent-ink)}
   .tx-dnav .w-plink svg.i{width:22px;height:22px;margin-inline-start:-8px}
-  .tx-dhero{display:grid;justify-items:center;text-align:center;gap:4px;padding:0;margin-bottom:-2px}
-  .tx-dhero .w-ico{border-radius:13px;margin-bottom:6px}
-  .tx-dhero .w-ico svg.i{width:24px;height:24px}
+  .tx-dhero{display:grid;justify-items:center;text-align:center;gap:4px;padding:6px 0 0;margin-bottom:-2px}
   .tx-dhero > b{font-size:19px;font-weight:650}
   .tx-dhero .w-big{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
   .tx-dhero .w-big .c{font-size:22px}
@@ -400,3 +395,61 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-head .w-pswitch{margin-inline-start:6px}
 }
 
+
+/* ---------- rows: name, then "Alex · Food · #coffee" as plain text ---------- */
+.tx-page .w-row h6{display:flex;align-items:center;gap:6px;min-width:0}
+.tx-page .w-row h6 .tx-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-page .w-row h6 .tx-rec{flex:none}
+.tx-page .w-row p{flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
+.tx-page .w-row p > span{flex:none}
+.tx-page .w-row p > span + span::before{content:"·";margin-inline-end:4px;color:var(--w-ink3)}
+.tx-page .w-row p .tx-rtags:empty{display:none}
+.tx-page .w-row p .tx-rtags{color:var(--w-ink3);flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+/* Phones: no avatar */
+@media (max-width:767px){
+  .tx-page .w-row p .w-av{display:none}
+  .tx-page .w-row p .tx-who{display:inline}
+}
+/* The list on wide screens: one line, the details in columns (the day panel beside Calendar keeps two lines) */
+@media (min-width:768px){
+  .tx-listp .w-row{grid-template-columns:28px minmax(0,1fr) 116px;gap:12px;padding:0 10px;height:48px}
+  .tx-listp .w-row.chk{grid-template-columns:18px 28px minmax(0,1fr) 116px}
+  .tx-listp .w-row .w-ico{width:28px;height:28px;border-radius:8px}
+  .tx-listp .w-row .w-ico svg.i{width:15px;height:15px}
+  .tx-listp .w-row h6{font-size:15px;line-height:22px}
+  .tx-listp .tx-rm{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,.9fr);gap:16px;align-items:center}
+  .tx-listp .tx-flat .tx-rm{grid-template-columns:minmax(0,1.4fr) 104px minmax(0,.9fr) minmax(0,1fr) minmax(0,.8fr)}
+  .tx-listp .tx-rm p{display:contents}
+  .tx-listp .tx-rm p > span{font-size:14px;color:var(--w-ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .tx-listp .tx-rm p > span + span::before{content:none}
+  .tx-listp .tx-rm p .tx-rtags:empty{display:block}
+  .tx-listp .tx-rm p .tx-rtags{color:var(--w-ink3)}
+  .tx-listp .tx-rm .tx-who{display:flex;align-items:center;gap:6px}
+  .tx-listp .w-row .amt{font-size:15px}
+  .tx-listp .w-dayh{font-size:13px;padding:14px 0 6px}
+  .tx-listp .w-txlist > .w-dayh:first-child{padding-top:2px}
+  .tx-win .w-row{height:48px}
+  .tx-win .w-dayh{height:38px;padding-block:12px 6px}
+  /* The list fades out at the window's edge instead of cutting a row in half */
+  .tx-listp .w-txlist{padding-bottom:28px;-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
+}
+/* 1024–1180 px: the header fits; the person menu shows only the avatars, Add drops its N hint */
+@media (min-width:1024px) and (max-width:1180px){
+  .tx-head .w-pswitch-b{padding:0 6px 0 4px;gap:2px}
+  .tx-head .w-pswitch-b .w-pswho{display:none}
+  .tx-head .w-hadd kbd{display:none}
+}
+
+/* ---------- the panel: plain tags, the note as a paragraph, every part of a split ---------- */
+.tx-iadd{font-size:14px;color:var(--w-ink2)}
+.tx-ptags{color:var(--w-ink2);font-weight:400}
+.tx-pnote{display:grid;gap:4px;padding:13px 0;border-top:1px solid var(--w-line2)}
+.tx-pnote > span{font-size:var(--fs-foot);color:var(--w-ink2)}
+.tx-pnote p{margin:0;font-size:16px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.tx-sibh{display:flex;align-items:center;gap:6px}
+.tx-sibh > span{flex:1}
+.tx-sibh > b{font-weight:500;color:var(--w-ink2)}
+.tx-sib.on{background:var(--w-accent-soft)}
+@media (max-width:767px){
+  .tx-pnote{background:var(--w-panel);border:0;border-radius:var(--r-card);padding:12px 16px}
+}

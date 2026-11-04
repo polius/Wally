@@ -44,14 +44,6 @@ function audit(x) {
   if (x.rec) s = x.cb !== null ? t("Added by {name} on {date}, from the rule", { name: pname(x.cb), date: on }) : t("Added on {date}, from the rule", { date: on });
   return s;
 }
-/* Who added it and when, for the panel's last row: "Alex · Oct 30 · from the rule" */
-function added(x) {
-  const parts = [];
-  if (x.cb !== null && person(x.cb)) parts.push(pname(x.cb));
-  parts.push(dlab(x.ca ? x.ca.slice(0, 10) : x.d));
-  if (x.rec) parts.push(t("from the rule"));
-  return parts.join(" · ");
-}
 const muted = (s) => '<button type="button" class="tx-add" data-act="edit">' + esc(s) + "</button>";
 
 /* ---------- one transaction ----------
@@ -62,46 +54,50 @@ export function txPanel(x, phone) {
   if (!x) return '<div class="w-empty"><b>' + esc(t("Nothing selected")) + "</b>" + esc(t("Pick a transaction to see it here.")) + "</div>";
   const inc = x.type === "income", rule = ruleOf(x), pb = paidBy(x), sibs = siblings(x), h = history(x);
   const repText = x.rec ? (rule ? describe(rule) : t("Repeats")) : null;
-  const tags = x.tags.length ? '<span class="tx-tags">' + x.tags.map((g) => '<span class="w-ht">' + esc(g) + "</span>").join("") + "</span>" : muted(t("Add a tag"));
-  const note = x.note ? '<span class="tx-note">' + esc(x.note) + "</span>" : muted(t("Add a note"));
+  // Tags read as in the list: plain text. Empty tags and notes are a quiet way in to Edit on phones only.
+  const tags = x.tags.length ? '<span class="tx-ptags">' + x.tags.map((g) => esc(g)).join(" ") + "</span>" : phone ? muted(t("Add a tag")) : "";
   const fields = [
     [t("Category"), tile(x.c, 22) + "<span>" + esc(x.c) + "</span>"],
     [t("Who"), av(owner(x), "sm") + "<span>" + whoText(x) + "</span>"],
     pb && [t("Paid by"), av(pb, "sm") + "<span>" + esc(pname(pb)) + "</span>"],
-    [t("Date"), "<span>" + esc(dateText(x.d)) + "</span>"],
-    [t("Tags"), tags],
-    [t("Note"), note],
-    [t("Repeats"), repText ? "<span>" + esc(repText) + "</span>" : '<span class="tx-mut">' + esc(t("Never")) + "</span>", repText],
+    tags && [t("Tags"), tags],
+    repText && [t("Repeats"), "<span>" + esc(repText) + "</span>", true],
     x.src && [t("Imported from"), '<span class="tx-src">' + esc(x.src.name || "") + (x.src.date ? '<span class="tx-mut"> · ' + esc(dlab(x.src.date)) + "</span>" : "") + "</span>"],
   ].filter(Boolean);
-  const sibHtml = sibs.length
-    ? '<div class="tx-sibs"><span class="w-eyebrow">' + icon("receipt") + esc(t("Split receipt, {n} parts", { n: sibs.length + 1 })) + '</span><div class="w-list">' +
-      sibs.map((y) => '<button type="button" class="w-li tx-sib" data-sib="' + esc(y.id) + '">' + tile(y.c) + '<div><h6>' + esc(y.n || y.c) + "</h6><p>" + esc(y.c) + '</p></div><span class="w-amt">' + f(y.a) + "</span></button>").join("") +
+  // The note is free text: its own block, left-aligned, under the facts
+  const note = x.note ? '<div class="tx-pnote"><span>' + esc(t("Note")) + "</span><p>" + esc(x.note) + "</p></div>" : phone ? '<div class="w-gl"><div class="w-gr"><span class="k">' + esc(t("Note")) + '</span><span class="v tx-cv">' + muted(t("Add a note")) + "</span></div></div>" : "";
+  // A split receipt lists every part, this one marked, with the receipt's total
+  const parts = sibs.length ? [x].concat(sibs).sort((p, q) => q.a - p.a) : [];
+  const sibHtml = parts.length
+    ? '<div class="tx-sibs"><span class="w-eyebrow tx-sibh">' + icon("receipt") + "<span>" + esc(t("Split receipt, {n} parts", { n: parts.length })) + '</span><b class="amt">' + f(parts.reduce((s, y) => s + y.a, 0)) + '</b></span><div class="w-list">' +
+      parts.map((y) => y.id === x.id
+        ? '<div class="w-li tx-sib on" aria-current="true">' + tile(y.c) + "<div><h6>" + esc(y.c) + '</h6></div><span class="w-amt">' + f(y.a) + "</span></div>"
+        : '<button type="button" class="w-li tx-sib" data-sib="' + esc(y.id) + '">' + tile(y.c) + "<div><h6>" + esc(y.c) + '</h6></div><span class="w-amt">' + f(y.a) + "</span></button>").join("") +
       "</div></div>"
     : "";
   const name = x.n || x.c, ruleHref = x.rec ? "/recurring?id=" + encodeURIComponent(x.rid) : "";
+  const year = h.n > 1 ? [t("This year"), "<span>" + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span>"] : null;
 
   if (phone) {
     const row = ([k, v, link]) => link
       ? '<a class="w-gr" href="' + ruleHref + '" data-link><span class="k">' + esc(k) + '</span><span class="v tx-cv">' + v + "</span>" + icon("right", "chev") + "</a>"
       : '<div class="w-gr"><span class="k">' + esc(k) + '</span><span class="v tx-cv">' + v + "</span></div>";
     return '<div class="w-mh tx-dnav"><button type="button" class="w-plink" data-act="close">' + icon("left") + esc(t("Transactions")) + '</button><button type="button" class="w-plink" data-act="edit">' + esc(t("Edit")) + "</button></div>" +
-      '<div class="tx-dhero">' + tile(x.c, 52) + "<b>" + esc(name) + '</b><span class="w-big' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="w-hint">' + esc(dateText(x.d)) + " · " + esc(audit(x)) + "</span></div>" +
-      '<div class="w-gl">' + fields.map(row).join("") + "</div>" + sibHtml +
-      (h.n ? '<div class="w-gl"><div class="w-gr"><span class="k">' + esc(t("This payee in {year}", { year: h.y })) + '</span><span class="v">' + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span></div></div>" : "") +
+      '<div class="tx-dhero">' + "<b>" + esc(name) + '</b><span class="w-big' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="w-hint">' + esc(dateText(x.d)) + " · " + esc(audit(x)) + "</span></div>" +
+      '<div class="w-gl">' + fields.map(row).join("") + "</div>" + note + sibHtml +
+      (year ? '<div class="w-gl">' + row(year) + "</div>" : "") +
       '<div class="w-gl"><button type="button" class="w-gr acc" data-act="dup">' + esc(t("Duplicate")) + '</button><button type="button" class="w-gr red" data-act="del">' + esc(t("Delete transaction")) + "</button></div>";
   }
-  // Wide screens: nothing is lost; the year's history is one line and who added it is the last row
-  const rows = fields.filter(([k]) => k !== t("Date") && !((k === t("Tags") && !x.tags.length) || (k === t("Note") && !x.note)));
-  if (h.n > 1) rows.push([t("This year"), "<span>" + esc(tn(h.n, "{n} time", "{n} times")) + " · " + f(h.total) + "</span>"]);
-  rows.push([t("Added"), '<span class="tx-mut">' + esc(added(x)) + "</span>"]);
+  const rows = fields.slice();
+  if (year) rows.push(year);
   const kv = ([k, v, link]) => link
     ? '<a class="tx-kvr tx-kvl" href="' + ruleHref + '" data-link><span>' + esc(k) + '</span><span class="val">' + v + "</span></a>"
     : '<div class="tx-kvr"><span>' + esc(k) + '</span><span class="val">' + v + "</span></div>";
+  // The amount, the name, and who added it under them (the category has its own row)
   return '<div class="tx-ih"><span class="tx-idate">' + esc(cap(dateText(x.d))) + '</span><span class="tx-ihr"><button type="button" class="tx-edit" data-act="edit" title="' + esc(t("Edit")) + ' (E)">' + esc(t("Edit")) + "</button>" +
       '<button type="button" class="tx-close" data-act="close" aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></span></div>" +
-    '<div class="tx-iamt"><span class="w-big amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="tx-iname">' + esc(name) + "</span></div>" +
-    '<div class="tx-kv">' + rows.map(kv).join("") + "</div>" +
+    '<div class="tx-iamt"><span class="w-big amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + big(x.a) + '</span><span class="tx-iname">' + esc(name) + '</span><span class="tx-iadd">' + esc(audit(x)) + "</span></div>" +
+    '<div class="tx-kv">' + rows.map(kv).join("") + "</div>" + note +
     sibHtml +
     '<div class="w-pacts tx-pacts"><button type="button" data-act="dup" title="' + esc(t("Duplicate")) + ' (D)">' + esc(t("Duplicate")) + '</button><button type="button" class="red" data-act="del" title="' + esc(t("Delete")) + ' (⌫)">' + esc(t("Delete transaction")) + "</button></div>";
 }

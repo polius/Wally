@@ -23,6 +23,8 @@ let H = new Map();           // history per rule, worked out once per render
 /* Amounts stay left to right inside right-to-left text */
 const bdi = (html) => "<bdi>" + html + "</bdi>";
 const m = (n, sign) => bdi((sign || "") + esc(f(n)));
+/* The big amount: cents and currency small, as in Transactions */
+const bigM = (n, sign) => bdi((sign || "") + bigMoney(n).replace(/<\/span>([^<]*)$/, "$1</span>"));
 const norm = (s) => String(s || "").trim().toLowerCase();
 const wide = () => wideMQ.matches;
 const phone = () => phoneMQ.matches;
@@ -333,7 +335,7 @@ function inspector(r) {
     const gr = (k, v, cls) => '<div class="w-gr"><span class="k">' + k + '</span><span class="v' + (cls ? " " + cls : "") + '">' + v + "</span></div>";
     box.innerHTML =
       '<div class="w-mh rec-mh"><button type="button" class="w-plink" data-close>' + icon("left") + t("Recurring") + '</button><button type="button" class="w-plink" data-act="edit">' + t("Edit") + "</button></div>" +
-      '<div class="rec-mhero">' + tile(r.c, 72) + "<b>" + esc(r.n) + '</b><span class="rec-mamt amt' + (inc ? " pos" : "") + '">' + (r.varies ? "<small>" + t("about") + "</small> " : "") + m(ruleAmt(r)) + "</span>" +
+      '<div class="rec-mhero">' + "<b>" + esc(r.n) + '</b><span class="rec-mamt amt' + (inc ? " pos" : "") + '">' + (r.varies ? "<small>" + t("about") + "</small> " : "") + bigM(ruleAmt(r)) + "</span>" +
         '<span class="rec-msub">' + esc([describe(r), who, r.paused ? t("Paused") : isOver ? t("Ended") : ""].filter(Boolean).join(" · ")) + "</span></div>" +
       missed +
       (pc ? '<div class="w-gl rec-pcg"><div class="w-gr"><span class="rec-pci' + (pc.to > pc.from ? "" : " down") + '">' + icon("trend") + '</span><span class="k">' +
@@ -348,33 +350,36 @@ function inspector(r) {
     return;
   }
 
-  const ends = r.endDate ? (r.endDate < TODAY ? t("Ended on {date}", { date: dlabY(r.endDate) }) : t("On {date}", { date: dlabY(r.endDate) })) : t("Never");
+  const ends = r.endDate ? (r.endDate < TODAY ? t("Ended on {date}", { date: dlabY(r.endDate) }) : t("On {date}", { date: dlabY(r.endDate) })) : null;
   const howMany = tn(h.length, "{n} time", "{n} times");
   const story = h.length ? (inc ? t("{times}, {amount} received so far", { times: howMany, amount: m(paid) }) : t("{times}, {amount} paid so far", { times: howMany, amount: m(paid) }))
     : next.length ? t("Nothing added yet. The first one is on {date}.", { date: esc(dlab(next[0])) }) : t("Nothing added yet.");
-  // Dates within the coming year read without the year, as in Calendar
-  const yr = (d) => esc(dlab(d)) + (d > addD(TODAY, 330) ? " " + d.slice(0, 4) : "");
   const kv = (k, v, cls) => '<div class="rec-kv"><span>' + k + '</span><b class="' + (cls || "") + '">' + v + "</b></div>";
-
+  const yr = (d) => esc(dlabW(d)) + (d > addD(TODAY, 330) ? " " + d.slice(0, 4) : "");
+  // The bars only say something when the amount moves
+  const last12 = h.slice(-12), moves = last12.some((x) => Math.abs(amt(x) - amt(last12[0])) > 0.005);
+  const last = h.slice(-3).reverse();
   box.innerHTML =
     (ui.cal && ui.fromDay && ui.day ? '<button type="button" class="w-plink rec-back" data-to-day>' + icon("left") + esc(dlabL(ui.day)) + "</button>" : "") +
     '<div class="rec-ih"><span class="rec-eye2">' + (inc ? t("Recurring income") : t("Recurring bill")) + "</span>" + (r.paused ? '<span class="w-badge">' + t("Paused") + "</span>" : isOver ? '<span class="w-badge">' + t("Ended") + "</span>" : "") +
       '<button type="button" class="w-plink rec-edit" data-act="edit">' + t("Edit") + "</button>" +
       '<button type="button" class="w-x rec-close" data-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button></div>" +
-    '<div class="rec-iamt"><span class="rec-amt amt' + (inc ? " pos" : "") + '">' + (r.varies ? '<span class="rec-about">' + t("about") + " </span>" : "") + m(ruleAmt(r), inc ? "+" : "") + "</span>" +
+    '<div class="rec-iamt"><span class="rec-amt w-big amt' + (inc ? " pos" : "") + '">' + (r.varies ? '<span class="rec-about">' + t("about") + " </span>" : "") + bigM(ruleAmt(r), inc ? "+" : "") + "</span>" +
       '<span class="rec-iname">' + esc(r.n) + '</span><span class="rec-idesc">' + esc(describe(r)) + "</span></div>" +
     missed +
-    '<div class="rec-kvs">' + kv(t("Category"), tile(r.c, 24) + esc(r.c), "ic") + (who ? kv(t("Who"), esc(who)) : "") + kv(t("Started"), esc(dlabY(r.start))) + kv(t("Ends"), esc(ends)) +
-      (next.length ? kv(t("Next"), esc(dlabW(next[0])) + (next[0] > addD(TODAY, 330) ? " " + next[0].slice(0, 4) : "")) : kv(t("Next"), r.paused ? t("Paused") : t("No more charges"), "dim")) +
-      (next.length > 1 ? kv(t("Then"), next.slice(1).map(yr).join(", "), "dim") : "") +
-      (pc ? kv(pc.to > pc.from ? t("Price went up") : t("Price went down"), pcText, "dim") : "") +
-      (r.note ? kv(t("Note"), esc(r.note), "rec-note") : "") + "</div>" +
-    '<div class="rec-sec"><span class="rec-hl">' + (h.length ? t("History") + " · " : "") + story + "</span>" + (h.length ? histBars(r, h.slice(-12), inc) : "") + "</div>" +
+    (pc ? '<div class="rec-pcard"><span class="rec-pci' + (pc.to > pc.from ? "" : " down") + '">' + icon("trend") + "</span><span><b>" + (pc.to > pc.from ? t("Price went up") : t("Price went down")) + "</b><small>" + pcText + "</small></span></div>" : "") +
+    '<div class="rec-kvs">' + kv(t("Category"), tile(r.c, 24) + esc(r.c), "ic") + (who ? kv(t("Who"), esc(who)) : "") + kv(t("Started"), esc(dlabY(r.start))) + (ends ? kv(t("Ends"), esc(ends)) : "") + "</div>" +
+    (r.note ? '<div class="rec-pnote"><span>' + t("Note") + "</span><p>" + esc(r.note) + "</p></div>" : "") +
+    '<div class="rec-sec2"><div class="rec-sh">' + t("Next") + "</div>" + (next.length ? next.slice(0, 2).map((d) => kv(yr(d), esc(inDays(d)), "dim")).join("") : kv(r.paused ? t("Paused, nothing scheduled") : t("No more charges"), "", "dim")) + "</div>" +
+    '<div class="rec-sec2"><div class="rec-sh">' + (inc ? t("Last payments") : t("Last charges")) + "</div>" +
+      (moves ? histBars(r, last12, inc) : "") +
+      (last.length ? last.map((x) => kv(esc(dlabY(x.d)), '<span class="amt">' + m(amt(x)) + "</span>")).join("") : kv(t("Nothing added yet"), "", "dim")) +
+      (h.length ? '<p class="rec-cap">' + story + "</p>" : "") + "</div>" +
     '<div class="w-pacts rec-acts">' +
       (isOver ? "" : '<button type="button" data-act="pause">' + (r.paused ? t("Resume") : t("Pause")) + "</button>" +
         '<button type="button" data-act="end">' + t("End on a date…") + "</button>") +
       '<button type="button" class="red" data-act="del">' + del + "</button></div>";
-  box.querySelectorAll("[data-hb]").forEach((b) => { const x = h.slice(-12)[+b.dataset.hb]; hover(b, "<b>" + esc(dlabY(x.d)) + "</b>" + row(inc ? t("Received") : t("Paid"), m(amt(x)))); });
+  box.querySelectorAll("[data-hb]").forEach((b) => { const x = last12[+b.dataset.hb]; hover(b, "<b>" + esc(dlabY(x.d)) + "</b>" + row(inc ? t("Received") : t("Paid"), m(amt(x)))); });
 }
 
 /* The last charges as bars: grey, the latest in the accent; one label in two, the latest always */

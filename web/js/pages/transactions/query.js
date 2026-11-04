@@ -13,6 +13,7 @@ export const S = {
   type: "all",          // all | expense | income
   cats: new Set(),      // category names picked
   shared: false,        // Shared only
+  sort: "date",         // date (newest first, by day) | amount (largest first, one flat list)
   day: null,            // one day picked in the strip (list view)
   view: "list",         // list | cal
   calDay: null,         // the day picked in the calendar
@@ -23,7 +24,7 @@ export const S = {
 };
 export function resetView() {
   Object.assign(S, {
-    mode: "month", ym: ym(TODAY), y: +TODAY.slice(0, 4), custom: null, searchAll: true, q: "", type: "all", cats: new Set(), shared: false,
+    mode: "month", ym: ym(TODAY), y: +TODAY.slice(0, 4), custom: null, searchAll: true, q: "", type: "all", cats: new Set(), shared: false, sort: "date",
     day: null, view: "list", calDay: null, sel: null, open: false, selMode: false, picked: new Set(),
   });
 }
@@ -169,6 +170,9 @@ export function txFiltered(R, P, ignoreDay) {
   return out;
 }
 
+/* Largest first, for Sort by Amount. Equal amounts keep their order: newest first. */
+export function bySize(list) { return list.map((x, i) => [amt(x), i, x]).sort((p, q) => q[0] - p[0] || p[1] - q[1]).map((p) => p[2]); }
+
 /* Is anything narrowing the list besides the range? */
 export function filtering() { return !!(S.q.trim() || S.cats.size || S.shared || S.type !== "all" || S.day); }
 
@@ -190,6 +194,7 @@ export function fromQuery(q) {
   q.getAll("cat").forEach((c) => c && S.cats.add(c));
   if (q.get("type") === "expense" || q.get("type") === "income") S.type = q.get("type");
   if (q.get("shared") === "1") S.shared = true;
+  if (q.get("sort") === "amount") S.sort = "amount";
   if (q.has("q")) { S.q = q.get("q"); S.searchAll = !q.has("mode"); }
   if (q.get("view") === "cal") {
     S.view = "cal"; S.mode = "month";
@@ -228,6 +233,7 @@ export function toQuery() {
   S.cats.forEach((c) => q.append("cat", c));
   if (S.type !== "all") q.set("type", S.type);
   if (S.shared) q.set("shared", "1");
+  if (S.sort !== "date" && S.view !== "cal") q.set("sort", S.sort);
   const s = q.toString();
   return "/transactions" + (s ? "?" + s : "");
 }
