@@ -116,7 +116,7 @@ try {
   ok((await page.locator("#rec-insp .w-pacts button").allInnerTexts()).join("|") === "Pause|End on a date…|Delete bill", "actions as rows, Delete bill last");
   ok(await page.locator("#rec-insp .w-pacts button.red").innerText() === "Delete bill", "Delete in red");
   ok(await page.locator("#rec-insp .w-next span").count() === 0 && /Next\s*\n?\s*\w{3}, \w{3} \d+/.test(panel), "dates as text, not pills");
-  ok(await page.locator("#rec-insp .rec-hbars i").count() >= 6 && await page.locator("#rec-insp .rec-hbars i.on").count() === 1, "history bars, the latest one in the accent");
+  ok(/Last charges/.test(panel) && await page.locator("#rec-insp .rec-sec2 .rec-kv .amt").count() >= 1 && /\d+ times?, [\d,.]+ € paid so far/.test(panel), "Last charges: dates with amounts, the running total under them");
   await shot(page, "rec-1440");
 
   // The calendar replaces the list
@@ -153,8 +153,9 @@ try {
   await page.click('[data-rid="' + netflix.id + '"]');
   const insp = await text(page, "#rec-insp");
   ok(insp.includes("Every month on day 27"), "the panel describes the rule");
-  ok(insp.includes("Then"), "the next dates after the first, as text");
-  ok(/History · \d+ times, [\d,.]+ € paid so far/.test(insp) && /Price went up\s*From 11\.99 € to 13\.99 €/.test(insp), "history counts both Netflix versions, and the price change has its row");
+  ok(!insp.includes("Then") && (insp.match(/in \d+ days/g) || []).length === 2, "Next: two dates, each with how far off it is");
+  ok(/\d+ times, [\d,.]+ € paid so far/.test(insp) && /Price went up\s*From 11\.99 € to 13\.99 €/.test(insp) && await page.locator("#rec-insp .rec-pcard").count() === 1, "history counts both Netflix versions, and the price change has its own line");
+  ok(await page.locator("#rec-insp .rec-hbars i").count() >= 2 && await page.locator("#rec-insp .rec-hbars i.on").count() === 1, "the price moved, so the history bars show, the latest one in the accent");
   ok(page.url().includes("?id=" + netflix.id), "the selection is in the address");
   await page.click('#rec-insp [data-act="edit"]');
   await page.waitForTimeout(200);
@@ -342,7 +343,7 @@ try {
   page = await open(base, "/recurring?id=" + water.id);
   ok(/about 35\.00 €/.test(await text(page, '[data-rid="' + water.id + '"]')) && /about/.test(await text(page, "#rec-insp .rec-iamt")), "a bill that varies shows “about” its amount");
   ok((await text(page, '[data-rid="' + water.id + '"]')).includes("17.50 € a month"), "every 2 months counts half a month");
-  ok((await text(page, "#rec-insp")).includes("Nothing added yet. The first one is on"), "a new rule says when its first charge is");
+  ok(/Nothing added yet/.test(await text(page, "#rec-insp")) && /Next\s*\n?\s*\w{3}, \w{3} \d+\s*\n?\s*in 3 days/.test(await text(page, "#rec-insp")), "a new rule: nothing added yet, and Next says when its first charge is");
   await done(page, "varying bill");
 
   console.log("Arabic");

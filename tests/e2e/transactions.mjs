@@ -293,7 +293,7 @@ async function demo() {
   ok(await p.$eval("#tx-insp .tx-ih", (e) => !!e.querySelector('[data-act="edit"]')), "Edit sits at the panel's top right");
   ok(await p.$eval("#tx-insp .w-pacts", (e) => [...e.children].map((b) => b.textContent + (b.classList.contains("red") ? "*" : "")).join() === "Duplicate,Delete transaction*"), "Duplicate, then Delete in red, as rows");
   ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => r.textContent.startsWith("Who")) && !e.textContent.includes("Whose")), "“Who”, never “Whose”");
-  ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => r.textContent.startsWith("Added"))), "who added it, as the last row");
+  ok(await p.$eval("#tx-insp", (e) => /^Added (by \S+ )?on /.test((e.querySelector(".tx-iadd") || {}).textContent || "") && ![...e.querySelectorAll(".tx-kvr")].some((r) => r.textContent.startsWith("Added"))), "who added it, under the name, not as a row");
   ok(await p.$eval("#tx-insp", (e) => [...e.querySelectorAll(".tx-kvr")].some((r) => /^This year\d+ times/.test(r.textContent))), "the payee's year in one line");
   // A split receipt part, and an imported one: made through restore so they carry a group and a source
   const sp = await core(p, (c) => c.TODAY);
