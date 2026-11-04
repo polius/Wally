@@ -289,7 +289,7 @@ function render() {
   setHtml("add-tags", ad.tags.map((g) => '<button type="button" class="w-chip on" data-tg="' + esc(g) + '" aria-label="' + esc(t("Remove tag {tag}", { tag: g })) + '">' + esc(g) + icon("x", "x") + "</button>").join(""));
   const tagIn = $("add-tag");
   if (tagIn) {
-    tagIn.placeholder = ad.tags.length ? t("+ tag") : t("+ tag, like #holiday");
+    tagIn.placeholder = ad.tags.length ? t("+ tag") : t("Add a tag");
     setVal("add-tag", ad.tagDraft);
   }
   setHtml("add-taglist", cache.tags.filter((g) => !ad.tags.includes(g)).slice(0, 200).map((g) => '<option value="' + esc(g) + '">').join(""));
@@ -1218,7 +1218,16 @@ function onInput(ev) {
   if (id === "add-amt") { ad.amt = n.value; ad.amtTried = false; ad.custCents = null; render(); return; }
   if (id === "add-name") { ad.name = n.value; ad.hl = n.value.trim() ? 0 : -1; applyMemory(); renderSugg(); render(); return; }
   if (id === "add-note") { ad.note = n.value; return; }
-  if (id === "add-tag") { ad.tagDraft = n.value; if (n.value.includes(",")) { ad.tagDraft = n.value.replace(/,/g, ""); addTag(); } return; }
+  // A space or a comma ends a tag, so the next one can be typed straight away (a pasted "holiday food" is two)
+  if (id === "add-tag") {
+    if (!/[\s,]/.test(n.value)) { ad.tagDraft = n.value; return; }
+    const parts = n.value.split(/[\s,]+/), rest = parts.pop();
+    for (const p of parts) { const g = cleanTag(p); if (g && !ad.tags.includes(g)) ad.tags.push(g); }
+    ad.tagDraft = rest;
+    n.value = rest;
+    render();
+    return;
+  }
   if (id === "add-cat") { filterCat(n.value); return; }
   if (id === "add-split-r") { ad.sm = "custom"; ad.pct = +n.value; ad.custCents = null; render(); return; }
   if (id === "add-split-a") {
@@ -1344,6 +1353,8 @@ function init() {
     if (s) { ev.preventDefault(); pickSugg(+s.dataset.si); }
     const co = ev.target.closest("[data-co]");
     if (co) { ev.preventDefault(); pickCat(+co.dataset.co); }
+    // Removing a tag keeps the focus, and anything half typed, in the tag field
+    if (ev.target.closest("[data-tg]")) ev.preventDefault();
     // Keys leave the focus, and the caret, in the amount
     if (ev.target.closest("#add-keypad")) ev.preventDefault();
   });

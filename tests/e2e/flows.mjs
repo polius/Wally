@@ -69,12 +69,12 @@ async function open(width, height) {
 
   // Month in review → Summary on that month
   await page.goto(BASE + "/review", { waitUntil: "networkidle" });
-  const toDash = page.locator('a[href^="/?ym="]').first();
+  const toDash = page.locator('a[href^="/?month="]').first();
   if (await toDash.count()) {
     const href = await toDash.getAttribute("href");
     await toDash.click();
     await page.waitForTimeout(500);
-    const ym = href.match(/ym=(\d{4})-(\d\d)/);
+    const ym = href.match(/month=(\d{4})-(\d\d)/);
     const title = await page.locator("#s-title").textContent();
     const name = new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" }).format(Date.UTC(+ym[1], +ym[2] - 1, 15));
     ok(title.startsWith(name), `Month in review opens Summary on ${ym[1]}-${ym[2]} (${title.trim()})`);

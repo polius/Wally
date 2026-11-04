@@ -133,8 +133,8 @@ html.w-addopen{overflow:hidden}
 .w-atags .w-chip{height:26px;font-size:var(--fs-sub);font-weight:500;padding:0 7px;border:0;border-radius:6px;background:var(--w-accent-soft);color:var(--w-accent-ink)}
 .w-atags .w-chip svg.x{width:11px;height:11px}
 .w-atags .w-chip .x{margin-inline-start:2px;opacity:.7}
-.w-add #add-tag{border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--w-ink);text-align:end;width:10.5em;min-width:0;padding:0;flex:0 1 auto}
-.w-add #add-tags:not(:empty) + #add-tag:not(:focus){width:4em}
+/* The field takes the room the tags leave, the same width focused or not, so nothing jumps */
+.w-add #add-tag{border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--w-ink);text-align:end;width:auto;min-width:5em;padding:0;flex:1 1 5em}
 .w-add #add-tag::-webkit-calendar-picker-indicator{display:none!important}
 .w-add #add-note{font-size:15px}
 .w-add .w-gr.add{gap:10px}

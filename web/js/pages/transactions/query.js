@@ -184,8 +184,8 @@ export function fromQuery(q) {
   // Links from before 3 months and 12 months were retired open as Month and Year
   const mode = { "3m": "month", "12m": "year" }[q.get("mode")] || q.get("mode");
   if (RANGES.includes(mode) || mode === "custom") S.mode = mode;
-  if (S.mode === "year" && /^(19|20)\d\d$/.test(q.get("y") || "") && +q.get("y") <= +TODAY.slice(0, 4)) S.y = +q.get("y");
-  if (/^\d{4}-\d\d$/.test(q.get("ym") || "")) { const [y, m] = q.get("ym").split("-").map(Number); if (m >= 1 && m <= 12) S.ym = [y, m]; }
+  if (S.mode === "year" && /^(19|20)\d\d$/.test(q.get("year") || "") && +q.get("year") <= +TODAY.slice(0, 4)) S.y = +q.get("year");
+  if (/^\d{4}-\d\d$/.test(q.get("month") || "")) { const [y, m] = q.get("month").split("-").map(Number); if (m >= 1 && m <= 12) S.ym = [y, m]; }
   if (S.mode === "custom") {
     const a = q.get("from"), b = q.get("to");
     if (okDay(a) && okDay(b)) S.custom = a <= b ? [a, b] : [b, a];
@@ -216,17 +216,17 @@ export function toQuery() {
   const thisMonth = ym(TODAY);
   if (S.view === "cal") {
     q.set("view", "cal");
-    if (S.calDay) q.set("day", S.calDay); else if (S.ym[0] !== thisMonth[0] || S.ym[1] !== thisMonth[1]) q.set("ym", S.ym[0] + "-" + pad(S.ym[1]));
+    if (S.calDay) q.set("day", S.calDay); else if (S.ym[0] !== thisMonth[0] || S.ym[1] !== thisMonth[1]) q.set("month", S.ym[0] + "-" + pad(S.ym[1]));
   } else {
     const keepMode = !(S.q.trim() && S.searchAll); // a search in every month says nothing about the range
     if (S.day) q.set("day", S.day);
     else if (keepMode && S.mode !== "month") {
       q.set("mode", S.mode);
-      if (S.mode === "year" && S.y !== +TODAY.slice(0, 4)) q.set("y", S.y);
+      if (S.mode === "year" && S.y !== +TODAY.slice(0, 4)) q.set("year", S.y);
       if (S.mode === "custom" && S.custom) { q.set("from", S.custom[0]); q.set("to", S.custom[1]); }
     } else if (keepMode && (S.ym[0] !== thisMonth[0] || S.ym[1] !== thisMonth[1] || S.q.trim())) {
       if (S.q.trim()) q.set("mode", "month");
-      q.set("ym", S.ym[0] + "-" + pad(S.ym[1]));
+      q.set("month", S.ym[0] + "-" + pad(S.ym[1]));
     }
   }
   if (S.q.trim()) q.set("q", S.q.trim());

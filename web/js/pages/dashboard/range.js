@@ -43,6 +43,14 @@ export function setMode(mode, custom) {
   saveRange();
 }
 export function setMonth(y, m) { view.mode = "month"; view.ym = [y, m]; view.custom = null; saveRange(); }
+export function setYear(y) { view.mode = "year"; view.y = y; view.custom = null; saveRange(); }
+/* The address for what is shown: another month or year in it, the current one (or a range, which is remembered) plain */
+export function pageQuery() {
+  const [ty, tm] = ym(TODAY);
+  if (view.mode === "month" && (view.ym[0] !== ty || view.ym[1] !== tm)) return "?month=" + view.ym[0] + "-" + String(view.ym[1]).padStart(2, "0");
+  if (view.mode === "year" && view.y !== ty) return "?year=" + view.y;
+  return "";
+}
 /* ‹ ›: a month back or forward in Month mode, a year in Year mode */
 export function stepMonth(k) {
   if (!canStep(k)) return false;
@@ -110,7 +118,7 @@ export function prevOf(r) {
 export function rangeParams() {
   const r = rangeOf(), q = new URLSearchParams();
   q.set("mode", view.mode);
-  if (view.mode === "month") q.set("ym", r.start.slice(0, 7));
+  if (view.mode === "month") q.set("month", r.start.slice(0, 7));
   if (view.mode === "custom" || view.mode === "all" || (view.mode === "year" && view.y !== +TODAY.slice(0, 4))) { q.set("mode", "custom"); q.set("from", r.start); q.set("to", r.end); }
   return q;
 }
@@ -123,7 +131,7 @@ export function goTx(o) {
     q = new URLSearchParams();
     if (o.cat) q.set("cat", o.cat);
     if (o.q) q.set("q", o.q);
-    if (o.ym) { q.set("mode", "month"); q.set("ym", ds(o.ym[0], o.ym[1], 1).slice(0, 7)); }
+    if (o.ym) { q.set("mode", "month"); q.set("month", ds(o.ym[0], o.ym[1], 1).slice(0, 7)); }
     else rangeParams().forEach((v, k) => q.set(k, v));
   }
   navigate("/transactions?" + q.toString());

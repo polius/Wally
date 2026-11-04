@@ -314,7 +314,7 @@ function whereRows(m) {
   const { c, keys } = m;
   if (!keys.length) return '<p class="w-hint">' + t("No spending this month.") + "</p>";
   const top = c[keys[0]];
-  return '<div class="w-mrwhere">' + keys.map((k) => '<a class="w-mrwrow" href="/transactions?ym=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link data-cat="' + esc(k) + '">' +
+  return '<div class="w-mrwhere">' + keys.map((k) => '<a class="w-mrwrow" href="/transactions?month=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link data-cat="' + esc(k) + '">' +
     '<span class="n">' + tile(k, 30) + "<b>" + catName(k) + "</b></span>" + '<span class="bar">' + splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + "</span>" +
     '<b class="amt">' + f0(c[k]) + "</b>" + vsUsual(m, k) + "</a>").join("") + "</div>";
 }
@@ -383,7 +383,7 @@ function desktop(m) {
   html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-days"><h2 id="mr-days">' + t("Day by day") + "</h2>" + kvList(dayRows(m)) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-bills"><h2 id="mr-bills">' + t("Bills") + "</h2>" + kvList(billRows(m)) + "</section></div>";
   html += sec("mr-know", t("Worth knowing"), knowTiles(m));
-  html += '<footer class="w-mrf"><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></footer>";
+  html += '<footer class="w-mrf"><a class="w-btn ghost" href="/transactions?month=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?month=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></footer>";
   return html;
 }
 
@@ -427,7 +427,7 @@ function phoneStory(m) {
     keptBars(m, "ph") + tiles(m)]);
   const top = keys.length ? c[keys[0]] : 1;
   pages.push([t("Where it went"), '<h2 class="w-mrsh">' + t("Where it went") + "</h2>" + splitKey() +
-    (keys.length ? '<div class="w-mrcard">' + keys.slice(0, 6).map((k) => '<a class="w-mrpw" href="/transactions?ym=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link><span class="top">' + tile(k, 30) + "<b>" + catName(k) + '</b><span class="amt">' + f0(c[k]) + "</span></span>" +
+    (keys.length ? '<div class="w-mrcard">' + keys.slice(0, 6).map((k) => '<a class="w-mrpw" href="/transactions?month=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link><span class="top">' + tile(k, 30) + "<b>" + catName(k) + '</b><span class="amt">' + f0(c[k]) + "</span></span>" +
       splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + vsUsual(m, k) + "</a>").join("") + "</div>" : '<p class="w-hint">' + t("No spending this month.") + "</p>") +
     (couple() ? '<p class="w-mrnote">' + sharedText(m) + "</p>" : "")]);
   pages.push([t("What changed"), '<h2 class="w-mrsh">' + t("What changed") + "</h2>" + changed(m)]);
@@ -435,7 +435,7 @@ function phoneStory(m) {
   pages.push([t("Day by day"), '<h2 class="w-mrsh">' + t("Day by day") + '</h2><div class="w-mrcard">' + kvList(dayRows(m)) + "</div>" +
     '<h2 class="w-mrsh sm">' + t("Bills") + '</h2><div class="w-mrcard">' + kvList(billRows(m)) + "</div>" +
     '<h2 class="w-mrsh sm">' + t("Worth knowing") + "</h2>" + knowTiles(m) +
-    '<div class="w-mrsfoot"><a class="w-btn ghost" href="/transactions?ym=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?ym=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></div>"]);
+    '<div class="w-mrsfoot"><a class="w-btn ghost" href="/transactions?month=' + mkey(m.q) + '" data-link>' + t("See transactions") + '</a><a class="w-btn primary" href="/?month=' + mkey(m.q) + '" data-link>' + t("Open in Summary") + "</a></div>"]);
   const bars = '<div class="w-story" aria-hidden="true">' + pages.map((x, i) => '<i class="' + (i <= story ? "on" : "") + '"></i>').join("") + "</div>";
   return '<div class="w-mrstory" aria-roledescription="' + esc(t("story")) + '">' + bars +
     '<div class="w-mrstop"><span class="w-mrsm">' + esc(monthYear(m.q[0], m.q[1])) + "</span>" + tools(m, false) + "</div>" +

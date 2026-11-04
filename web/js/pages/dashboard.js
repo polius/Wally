@@ -5,7 +5,7 @@
 import { state, t, esc, icon, rerank, TODAY, ym, monthName } from "../core.js";
 import { navigate, headActions } from "../shell.js";
 import { hideTip, empty, stepLabels } from "../ui.js";
-import { view, loadRange, setMode, setMonth, stepMonth, canStep, steps, rangeOf, goTx, openRange, MODES } from "./dashboard/range.js";
+import { view, loadRange, setMode, setMonth, setYear, pageQuery, stepMonth, canStep, steps, rangeOf, goTx, openRange, MODES } from "./dashboard/range.js";
 import { summaryHtml, renderSummary, periodMenu, toggleCats } from "./dashboard/summary.js";
 
 const $ = (id) => document.getElementById(id);
@@ -52,6 +52,13 @@ function render() {
   $("s-steps").querySelector('[data-step="-1"]').disabled = !canStep(-1);
   $("s-steps").querySelector('[data-step="1"]').disabled = !canStep(1);
   renderSummary(r);
+  syncUrl();
+}
+/* The address follows ‹ › and the period menu, so a reload or a shared link opens the same month or year */
+function syncUrl() {
+  if (location.pathname !== "/") return;
+  const u = "/" + pageQuery();
+  if (location.pathname + location.search !== u) history.replaceState(history.state, "", u);
 }
 function pickCustom() { openRange(rangeOf(), render); }
 
@@ -100,9 +107,11 @@ function onTouchEnd(ev) {
 export function mount(el, route) {
   root = el;
   loadRange();
-  // Links such as Month in review's "Open in Summary" name a month: /?ym=2026-09
-  const q = route && route.query.get("ym");
-  if (/^\d{4}-\d\d$/.test(q || "")) setMonth(+q.slice(0, 4), +q.slice(5));
+  // The address names a month (/?month=2026-09, as Month in review's "Open in Summary" does) or a year (/?year=2025)
+  const q = route && route.query.get("month");
+  if (/^\d{4}-\d\d$/.test(q || "") && +q.slice(5) >= 1 && +q.slice(5) <= 12 && q <= TODAY.slice(0, 7)) setMonth(+q.slice(0, 4), +q.slice(5));
+  const y = route && route.query.get("year");
+  if (/^(19|20)\d\d$/.test(y || "") && +y <= +TODAY.slice(0, 4)) setYear(+y);
   root.addEventListener("click", onClick);
   root.addEventListener("s-day", onDay);
   root.addEventListener("touchstart", onTouchStart, { passive: true });

@@ -85,7 +85,10 @@ try {
   ok(!lines.includes("Bills"), "no Bills line in the headline card");
   ok((await text(page, "#c-hero")).includes(MONTH(pm)), "the dashed line names last month and its total");
   ok(await page.locator("#s-recapw a.s-recap").count() === 0 && (await text(page, "#s-recapw")) === "", "no recap card while the month runs");
-  ok((await text(page, "#s-catsnote")).startsWith("vs "), "Categories say what they're against: " + await text(page, "#s-catsnote"));
+  ok(await page.locator("#s-catsnote").count() === 0 && await page.evaluate(() => [...document.querySelectorAll("#s-cats .s-row")].every((r) => {
+    const ch = r.querySelector(".s-chg");
+    return !ch || (/^[↑↓] \d+\s?%$/.test(ch.textContent) && ch.classList.contains(ch.textContent[0] === "↑" ? "up-bad" : "dn-good"));
+  })), "Categories: no “vs” label; a change shows as ↑ in red or ↓ in green, in percent");
   ok((await text(page, '[data-w="people"]')).includes("share of shared costs"), "The household: own and shared, per person");
   ok((await text(page, '[data-w="year"] h4')) === "This year" && (await text(page, "#s-year")).includes("kept since January"), "This year: kept since January");
   ok(await page.locator('[data-w="notice"]').isHidden() || await page.locator("#s-notice .s-notice").count() <= 3, "Worth noticing: hidden or at most three lines");
@@ -105,8 +108,12 @@ try {
   ok((await text(page, "#s-recapw")).includes("Your " + MONTH(pm) + " recap") && await page.getAttribute("#s-recapw a.s-recap", "href") === "/review?m=" + ymStr(py, pm), "a finished month has its recap");
   await page.click('.s-steps [data-step="1"]');
   ok((await text(page, "#s-title")).startsWith(MONTH(CM)), "› steps forward");
+  ok(new URL(page.url()).search === "", "this month: a plain address", page.url());
   await page.click('.s-steps [data-step="-1"]');
   ok((await text(page, "#s-title")).startsWith(MONTH(pm)), "‹ steps back");
+  ok(new URL(page.url()).searchParams.get("month") === ymStr(py, pm), "the address names the month: ?month=" + ymStr(py, pm), page.url());
+  await page.reload({ waitUntil: "networkidle" });
+  ok((await text(page, "#s-title")).startsWith(MONTH(pm)), "a reload stays on that month");
   await page.locator("body").press("ArrowRight");
   ok((await text(page, "#s-title")).startsWith(MONTH(CM)), "→ steps forward");
   await page.locator("body").press("ArrowRight");
@@ -118,6 +125,7 @@ try {
   else ok((await text(page, "#s-lines")).includes("by Dec 31"), "Year projects to 31 December");
   await page.click('.s-steps [data-step="-1"]');
   ok((await text(page, "#s-title")) === String(CY - 1), "‹ in a year steps a year back");
+  ok(new URL(page.url()).searchParams.get("year") === String(CY - 1), "the address names the year: ?year=" + (CY - 1), page.url());
   await page.locator("body").press("4");
   ok((await text(page, "#s-title")) === "All time" && await page.locator(".s-steps").isHidden(), "key 4: All time, without arrows");
   await page.locator("body").press("1");
@@ -238,7 +246,7 @@ try {
     await backToDash(page);
   };
   await pickPeriod(page, "last");
-  await go("#s-cats [data-go-cat]", new RegExp("^/transactions\\?cat=[^&]+&mode=month&ym=" + ymStr(py, pm) + "$"), "category keeps Month");
+  await go("#s-cats [data-go-cat]", new RegExp("^/transactions\\?cat=[^&]+&mode=month&month=" + ymStr(py, pm) + "$"), "category keeps Month");
   await go("#s-upcoming [data-go-rule]", /^\/recurring\?id=/, "coming up opens the rule");
   await pickPeriod(page, "last");
   await go("#s-recapw a", new RegExp("^/review\\?m=" + ymStr(py, pm) + "$"), "the recap opens that month's review");

@@ -6,7 +6,7 @@
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
-  totals, amt, tile, pname, couple, icon, relDay, av, T,
+  totals, amt, tile, pname, couple, icon, relDay, av, T, cc,
 } from "../../core.js";
 import { chart, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
@@ -46,8 +46,8 @@ function againstWhat(r, p) {
 /* A card: a title, something on its right, and its body */
 const sec = (id, title, right) => '<section class="s-sec" data-w="' + id + '"><div class="s-sh"><h4>' + title + "</h4>" + (right || "") + '</div><div class="s-body" id="s-' + id + '"></div></section>';
 const seeAll = (href) => '<a class="w-link s-all" href="' + href + '" data-link>' + t("See all") + "</a>";
-const rowHtml = (attrs, lead, name, sub, amount, cls) => '<button type="button" class="s-row" ' + attrs + ">" + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
-  (sub ? "<small>" + esc(sub) + "</small>" : "") + '</span><span class="s-am amt' + (cls ? " " + cls : "") + '">' + esc(amount) + "</span></button>";
+const rowHtml = (attrs, lead, name, sub, amount, cls, under) => '<button type="button" class="s-row" ' + attrs + ">" + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
+  (sub ? "<small>" + esc(sub) + "</small>" : "") + '</span><span class="s-am amt' + (cls ? " " + cls : "") + '">' + esc(amount) + (under || "") + "</span></button>";
 /* The period in a card's corner: "this month", "October", "2026" */
 function periodWord(r) { return r.month ? (r.current ? t("this month") : monthName(+r.start.slice(5, 7))) : r.title; }
 
@@ -61,7 +61,7 @@ export function summaryHtml() {
         '<div class="s-lines" id="s-lines"></div>' +
         '<div class="cv s-chart" id="c-hero"></div><div id="s-heroempty" hidden></div>' +
       "</div></section>" +
-      sec("cats", t("Categories"), '<span class="s-note" id="s-catsnote"></span>') +
+      sec("cats", t("Categories")) +
       sec("recent", t("Recent"), seeAll("/transactions")) +
       sec("upcoming", t("Coming up"), seeAll("/recurring")) +
     "</div>" +
@@ -212,10 +212,23 @@ function renderCats(r) {
   const pm = p.ok && r.month ? monthName(+p.start.slice(5, 7)) : p.ok && r.mode === "year" ? p.start.slice(0, 4) : "";
   const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f0(prev[k] || 0) })
     : pm ? t("{period}: {amount}", { period: pm, amount: f0(prev[k] || 0) }) : t("Before: {amount}", { amount: f0(prev[k] || 0) });
-  const against = !p.ok ? "" : r.month && r.current ? dlab(p.end) : pm || p.label;
-  $("s-catsnote").textContent = against ? t("vs {when}", { when: against }) : "";
-  $("s-cats").innerHTML = shown.map((k) => rowHtml('data-go-cat="' + esc(k) + '"', tile(k), k, note(k), f0(cur[k] || 0))).join("") +
+  // How much it moved against the same period before, as Recurring shows a price change: up in red, down in green.
+  // Nothing when there was nothing before, or when it rounds to 0 %.
+  const change = (k) => {
+    const a = cur[k] || 0, b = prev ? prev[k] || 0 : 0;
+    if (!b || !a) return "";
+    const x = (a - b) / b;
+    if (Math.abs(x) < 0.005) return "";
+    const up = x > 0, label = (up ? t("went up") : t("went down")) + " " + pct(Math.abs(x));
+    return '<small class="s-chg ' + (up ? "up-bad" : "dn-good") + '" aria-label="' + esc(label) + '">' + (up ? "↑ " : "↓ ") + esc(pct(Math.abs(x))) + "</small>";
+  };
+  // One bar with every category's share of the spending, in the categories' own colors, biggest first
+  const tot = spent.reduce((s, k) => s + cur[k], 0);
+  const bar = tot > 0 ? '<div class="s-stack" role="img" aria-label="' + esc(spent.slice(0, 5).map((k) => k + " " + pct(cur[k] / tot)).join(", ")) + '">' +
+    spent.map((k) => '<i style="flex:' + cur[k].toFixed(2) + ";background:" + cc(k) + '" data-k="' + esc(k) + '"></i>').join("") + "</div>" : "";
+  $("s-cats").innerHTML = bar + shown.map((k) => rowHtml('data-go-cat="' + esc(k) + '"', tile(k), k, note(k), f0(cur[k] || 0), "", change(k))).join("") +
     (keys.length > top ? '<button type="button" class="s-more w-link" data-act="cats-all" aria-expanded="' + catsOpen + '">' + (catsOpen ? t("Show less") : t("Show all")) + "</button>" : "");
+  $("s-cats").querySelectorAll(".s-stack i").forEach((n) => hover(n, () => row(esc(n.dataset.k), f0(cur[n.dataset.k]) + " · " + pct(cur[n.dataset.k] / tot), cc(n.dataset.k))));
 }
 
 /* ---------- Coming up: the next three, however far away ---------- */

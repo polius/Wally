@@ -131,7 +131,7 @@ try {
     const cat0 = await page.getAttribute(".w-mrev a.w-mrwrow >> nth=0", "data-cat");
     await page.click(".w-mrev a.w-mrwrow >> nth=0");
     await page.waitForURL("**/transactions?**");
-    ok(page.url().includes("ym=" + LAST) && page.url().includes("cat=" + encodeURIComponent(cat0)), "link: a category opens its transactions for the month");
+    ok(page.url().includes("month=" + LAST) && page.url().includes("cat=" + encodeURIComponent(cat0)), "link: a category opens its transactions for the month");
     await page.goBack();
     await page.waitForSelector(".w-mrev");
     await page.click(".w-mrev [data-mr-close]");
@@ -148,7 +148,7 @@ try {
     await page.waitForTimeout(800);
     ok(new URL(page.url()).pathname === "/", "opening Wally is never interrupted by Month in review");
     // The recap card shows only once a recap is ready to read: on a closed month in Summary
-    await page.goto(base + "/?ym=" + LAST, { waitUntil: "networkidle" });
+    await page.goto(base + "/?month=" + LAST, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
     ok(await page.locator('#s-recapw a[href="/review?m=' + LAST + '"]').count() === 1, "Summary on last month offers its recap");
     await page.click("#s-recapw a");

@@ -85,16 +85,16 @@ async function demo() {
   await p.keyboard.press("ArrowLeft"); await wait(p);
   const pm = tm === 1 ? 12 : tm - 1, py = tm === 1 ? ty - 1 : ty;
   ok((await title(p)) === T(pm, py), "← previous month", await title(p));
-  ok(url(p).searchParams.get("ym") === py + "-" + String(pm).padStart(2, "0"), "address has ym", p.url());
+  ok(url(p).searchParams.get("month") === py + "-" + String(pm).padStart(2, "0"), "address has month", p.url());
   const rs = await rows(p);
   const prevMonthAll = await core(p, (c, k) => c.state.tx.filter((x) => x.d.slice(0, 7) === k).length, py + "-" + String(pm).padStart(2, "0"));
   ok(rs.length === prevMonthAll && rs.length > 0, "every transaction of the month is listed", [rs.length, prevMonthAll]);
   await p.click("#tx-list"); await p.keyboard.press("ArrowRight"); await wait(p);
   ok((await title(p)) === T(tm, ty), "→ back to this one");
   const first = await core(p, (c) => c.START);
-  await go(p, "/transactions?ym=" + first.slice(0, 7));
+  await go(p, "/transactions?month=" + first.slice(0, 7));
   await p.click("#tx-list"); await p.keyboard.press("ArrowLeft"); await wait(p);
-  ok(url(p).searchParams.get("ym") === first.slice(0, 7), "← stops at the first month");
+  ok(url(p).searchParams.get("month") === first.slice(0, 7), "← stops at the first month");
 
   section("The period menu and keys 1 to 3");
   await go(p, "/transactions");
@@ -117,9 +117,9 @@ async function demo() {
   ok((await p.$$("#tx-list .w-monh")).length >= 1, "All is grouped by month");
   await pick(p, "year");
   await p.click('#tx-step [data-act="prev"]'); await wait(p);
-  ok((await title(p)) === String(ty - 1) && url(p).searchParams.get("y") === String(ty - 1), "‹ in year view goes a year back", [await title(p), p.url()]);
+  ok((await title(p)) === String(ty - 1) && url(p).searchParams.get("year") === String(ty - 1), "‹ in year view goes a year back", [await title(p), p.url()]);
   await pick(p, "last");
-  ok(url(p).searchParams.get("ym") === ymOf(py, pm) && (await title(p)) === T(pm, py), "Last month opens it", p.url());
+  ok(url(p).searchParams.get("month") === ymOf(py, pm) && (await title(p)) === T(pm, py), "Last month opens it", p.url());
 
   section("Old 3 months and 12 months links");
   await go(p, "/transactions?mode=3m");
@@ -422,8 +422,8 @@ async function demo() {
   ok((await p.$eval("#tx-fl", (e) => e.textContent)) === "Filter · 1" && (await rows(p)).every((r) => r.sub.includes("Food")), "cat=");
   await go(p, "/transactions?mode=year");
   ok((await checked(p)).join() === "year", "mode=year");
-  await go(p, "/transactions?mode=month&ym=" + first.slice(0, 7));
-  ok((await title(p)) === T(+first.slice(5, 7), +first.slice(0, 4)), "mode=month&ym=");
+  await go(p, "/transactions?mode=month&month=" + first.slice(0, 7));
+  ok((await title(p)) === T(+first.slice(5, 7), +first.slice(0, 4)), "mode=month&month=");
   await go(p, "/transactions?q=mercadona");
   ok((await title(p)) === T(tm, ty) && (await p.inputValue("#tx-q")) === "mercadona" && (await p.$eval('#tx-scope [data-sc="all"]', (e) => e.getAttribute("aria-pressed"))) === "true", "q= searches every month");
   const old = await core(p, (c) => c.state.tx[c.state.tx.length - 5].id);
