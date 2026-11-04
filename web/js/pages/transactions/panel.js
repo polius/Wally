@@ -1,7 +1,7 @@
 /* Transactions: the side panel. One transaction with every field, or one day of the calendar.
    On phones the same panel is a full-screen detail, laid out as the phone mock. */
 import { state, t, tn, esc, f, amt, av, pname, person, tile, icon, bigMoney, dlab, dlabL, TODAY, couple } from "../../core.js";
-import { describe, shortDesc } from "../../sched.js";
+import { shortDesc } from "../../sched.js";
 import { txRow, owner } from "./list.js";
 
 const thisYear = () => +TODAY.slice(0, 4);
@@ -53,7 +53,8 @@ const muted = (s) => '<button type="button" class="tx-add" data-act="edit">' + e
 export function txPanel(x, phone) {
   if (!x) return '<div class="w-empty"><b>' + esc(t("Nothing selected")) + "</b>" + esc(t("Pick a transaction to see it here.")) + "</div>";
   const inc = x.type === "income", rule = ruleOf(x), pb = paidBy(x), sibs = siblings(x), h = history(x);
-  const repText = x.rec ? (rule ? describe(rule) : t("Repeats")) : null;
+  // Short, as in Calendar ("Monthly, day 1"): the row opens the rule, which has the whole story
+  const repText = x.rec ? (rule ? shortDesc(rule) : t("Repeats")) : null;
   // Tags read as in the list: plain text. Empty tags and notes are a quiet way in to Edit on phones only.
   const tags = x.tags.length ? '<span class="tx-ptags">' + x.tags.map((g) => esc(g)).join(" ") + "</span>" : phone ? muted(t("Add a tag")) : "";
   const fields = [

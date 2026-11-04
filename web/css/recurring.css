@@ -109,7 +109,7 @@
 .rec-kvs{display:grid}
 .rec-kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--w-line2);font-size:16px;min-height:50px}
 .rec-kv > span{color:var(--w-ink2);flex:none}
-.rec-kv > b{font-weight:500;text-align:end;min-width:0;text-wrap:balance}
+.rec-kv > b{font-weight:400;text-align:end;min-width:0;text-wrap:balance}
 .rec-kv > b.ic{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
 .rec-kv > b.dim{color:var(--w-ink2);font-weight:400}
 .rec-kv .w-ico{width:24px!important;height:24px!important;border-radius:6px}
@@ -240,3 +240,9 @@
 .rec-pnote{display:grid;gap:4px;padding:13px 0;border-top:1px solid var(--w-line2)}
 .rec-pnote > span{font-size:var(--fs-foot);color:var(--w-ink2)}
 .rec-pnote p{margin:0;font-size:16px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+/* Wide screens: the panel's text on the scale's wide-screen body size, as the list beside it */
+@media (min-width:768px){
+  .rec-kv{font-size:var(--fs-sub);min-height:44px;padding:10px 0}
+  .rec-pnote{padding:10px 0}
+  .rec-pnote p{font-size:var(--fs-sub)}
+}

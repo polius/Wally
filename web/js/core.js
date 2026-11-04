@@ -13,8 +13,11 @@ export function t(s, vars) {
   let out = DICT[s];
   if (typeof out !== "string" || !out) out = s;
   if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
-  return out;
+  return LANG === "ca" ? elide(out) : out;
 }
+/* Catalan drops the article's vowel before "1" and "11" (un, onze): "l'11 de set.", "fins a l'1 de maig" */
+const ELIDE = { el: "l'", El: "L'", al: "a l'", Al: "A l'", del: "de l'", Del: "De l'" };
+function elide(s) { return s.replace(/\b(el|El|al|Al|del|Del) (1|11)(?= d(?:e |'|’))/g, (m, a, n) => ELIDE[a] + n); }
 /* Plurals: tn(3, "{n} transaction", "{n} transactions"). A language with more forms gives an
    object {one, few, many, other} under the singular English text. */
 const PLURAL = {};
