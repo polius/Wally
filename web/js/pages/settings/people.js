@@ -149,8 +149,10 @@ function switchTo(id) {
   location.href = "/";
 }
 
-/* Eight colors, by the same numbers as categories; each swatch is the avatar as it will look */
-const COLOR_NAMES = () => [t("Red"), t("Orange"), t("Yellow"), t("Green"), t("Cyan"), t("Blue"), t("Violet"), t("Pink")];
+/* Twelve colors, kept by number (1 to 8 as they always were, 9 to 12 added later) and shown round the
+   rainbow; each swatch is the avatar as it will look */
+const COLOR_NAMES = () => [t("Red"), t("Orange"), t("Yellow"), t("Green"), t("Cyan"), t("Blue"), t("Violet"), t("Pink"), t("Lime"), t("Teal"), t("Sky"), t("Purple")];
+const COLOR_ORDER = [1, 2, 3, 9, 4, 10, 5, 11, 6, 12, 7, 8];
 function pickColor(id) {
   const p = person(id);
   if (!p) return;
@@ -159,8 +161,10 @@ function pickColor(id) {
   openDialog({
     kind: "sheet",
     title: t("Color for {name}", { name: esc(p.name) }),
-    body: '<div class="w-swatches w-avsw" role="radiogroup" aria-label="' + esc(t("Color")) + '">' + COLOR_NAMES().map((label, i) =>
-      '<button type="button" class="w-av c' + (i + 1) + '" role="radio" data-c="' + (i + 1) + '" aria-checked="' + (now === i + 1) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + face + "</button>").join("") + "</div>",
+    body: '<div class="w-swatches w-avsw" role="radiogroup" aria-label="' + esc(t("Color")) + '">' + COLOR_ORDER.map((c) => {
+      const label = COLOR_NAMES()[c - 1];
+      return '<button type="button" class="w-av c' + c + '" role="radio" data-c="' + c + '" aria-checked="' + (now === c) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + face + "</button>";
+    }).join("") + "</div>",
     ok: t("Done"),
     onOpen(root) {
       root.classList.add("w-sh400");

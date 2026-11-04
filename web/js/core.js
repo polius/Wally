@@ -252,9 +252,9 @@ export function personKey(id) { return id === null || id === undefined ? null : 
 export function person(key) { return state.people.find((p) => String(p.id) === String(key)) || null; }
 export function pname(key) { if (key === null || key === undefined || key === "shared") return t("Shared"); const p = person(key); return p ? p.name : t("Someone"); }
 export function pindex(key) { const i = state.people.findIndex((p) => String(p.id) === String(key)); return i < 0 ? 0 : i; }
-/* A person's own color, 1 to 8 (see .w-av.c1 to c8); people without one get it from their place, as avatars always did */
+/* A person's own color, 1 to 12 (see .w-av.c1 to c12); people without one get it from their place, as avatars always did */
 export const PCOLORS = [6, 2, 4, 7, 3, 5, 1, 8];
-export function pcolor(key) { const p = person(key); return p && p.color >= 1 && p.color <= 8 ? p.color : PCOLORS[pindex(key) % 6]; }
+export function pcolor(key) { const p = person(key); return p && p.color >= 1 && p.color <= 12 ? p.color : PCOLORS[pindex(key) % 6]; }
 export function initial(name) { return (name || "?").trim().charAt(0).toLocaleUpperCase(LANG); }
 export function av(key, cls) {
   if (key === null || key === undefined || key === "shared") return '<span class="w-av shared ' + (cls || "") + '" aria-hidden="true"></span>';

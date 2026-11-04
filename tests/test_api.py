@@ -549,7 +549,9 @@ def test_person_keeps_their_color(couple):
     # New people take the colors avatars always had, in turn: blue, then orange
     assert people[alex]["color"] == 6 and people[ana]["color"] == 2
     assert client.put(f"/people/{ana}", json={"color": 8}).json()["color"] == 8
-    assert client.put(f"/people/{ana}", json={"color": 9}).status_code == 422
+    assert client.put(f"/people/{ana}", json={"color": 12}).json()["color"] == 12
+    assert client.put(f"/people/{ana}", json={"color": 13}).status_code == 422
+    assert client.put(f"/people/{ana}", json={"color": 8}).json()["color"] == 8
     # Reordering or removing someone no longer changes anyone else's color
     carol = client.post("/people", json={"name": "Carol"}).json()
     assert carol["color"] == 2  # orange is free again once Ana took pink

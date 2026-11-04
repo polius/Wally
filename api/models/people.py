@@ -8,7 +8,8 @@ class Person(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
     position: int = Field(default=0)
-    # Their avatar's color, kept for good: 1 red, 2 orange, 3 yellow, 4 green, 5 cyan, 6 blue, 7 violet, 8 pink
+    # Their avatar's color, kept for good: 1 red, 2 orange, 3 yellow, 4 green, 5 cyan, 6 blue, 7 violet, 8 pink,
+    # 9 lime, 10 teal, 11 sky, 12 purple
     color: int | None = Field(default=None)
     # Everyone signs in with the household's one password: a person is who you say you are once it is typed
     prefs: dict = Field(default_factory=dict, sa_column=Column(JSON))
@@ -20,7 +21,7 @@ class PersonCreate(SQLModel):
 class PersonUpdate(SQLModel):
     name: str | None = Field(default=None, min_length=1, max_length=40)
     position: int | None = None
-    color: int | None = Field(default=None, ge=1, le=8)
+    color: int | None = Field(default=None, ge=1, le=12)
 
 class PersonPublic(SQLModel):
     id: int
@@ -29,7 +30,7 @@ class PersonPublic(SQLModel):
     color: int
 
 # The colors new people get, in turn: the order avatars always had before they could be chosen
-COLORS = [6, 2, 4, 7, 3, 5, 1, 8]
+COLORS = [6, 2, 4, 7, 3, 5, 1, 8, 12, 10, 9, 11]
 
 def next_color(taken) -> int:
     """The first color in turn that nobody has yet, or the least used one."""
