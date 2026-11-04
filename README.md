@@ -7,32 +7,27 @@
 <a href="https://github.com/polius/Wally/actions/workflows/release.yml"><img src="https://github.com/polius/Wally/actions/workflows/release.yml/badge.svg" alt="Release"></a>&nbsp;<a href="https://github.com/polius/Wally/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/polius/Wally"></a>&nbsp;<a href="https://hub.docker.com/r/poliuscorp/wally"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/poliuscorp/wally"></a>
 </p>
 
-<br>
-
 <p align="center">
 <b>Wally</b> is a lightweight, self-hosted money log for a household: what came in, where it went, and what's coming.
 </p>
 
-<br>
+<p align="center">
+  <img src="assets/dashboards-light.png?version=2.0" alt="Wally's Summary on a computer" width="73%" />
+  &nbsp;
+  <img src="assets/dashboards-light-mobile.png?version=2.0" alt="Wally's Summary on a phone" width="21%" />
+</p>
 
-| | Desktop View | Mobile View |
-| --- | --- | --- |
-| Light | <img src="assets/dashboards-light.png?version=2.0" alt="Dashboards Light" /> | <img src="assets/dashboards-light-mobile.png?version=2.0" alt="Dashboards Light Mobile" /> |
-| Dark | <img src="assets/dashboards-dark.png?version=2.0" alt="Dashboards Dark" /> | <img src="assets/dashboards-dark-mobile.png?version=2.0" alt="Dashboards Dark Mobile" /> |
+## Features
 
-<details>
-<summary>Expand this to see screenshots of other pages</summary>
+- **Summary**: this month against last month, where the money went, what you kept each month and what's coming. Every number opens the transactions behind it.
+- **Transactions**: search every month, filter and sort, a calendar, and bulk changes with Undo.
+- **Recurring**: rent, subscriptions and salaries, added on their day. Price rises stand out.
+- **A household**: each person's own spending, and shared costs split evenly, by income or by hand.
+- **Month in review**: a recap of last month, ready on the 1st.
+- **End-to-end encryption**, on by default with a password: whoever runs the server can't read your data.
+- **On your phone**: installs on the home screen and opens full screen. Light and dark, 13 languages.
 
-| | Desktop View | Mobile View |
-| --- | --- | --- |
-| Transactions Light | <img src="assets/transactions-light.png?version=2.0" alt="Transactions Light" /> | <img src="assets/transactions-light-mobile.png?version=2.0" alt="Transactions Light Mobile " /> |
-| Transactions Dark | <img src="assets/transactions-dark.png?version=2.0" alt="Transactions Dark" /> | <img src="assets/transactions-dark-mobile.png?version=2.0" alt="Transactions Dark Mobile" /> |
-| Settings Light | <img src="assets/settings-light.png?version=2.0" alt="Settings Light" /> | <img src="assets/settings-light-mobile.png?version=2.0" alt="Settings Light Mobile" /> |
-| Settings Dark | <img src="assets/settings-dark.png?version=2.0" alt="Settings Dark" /> | <img src="assets/settings-dark-mobile.png?version=2.0" alt="Settings Dark Mobile" /> |
-| Login Light | <img src="assets/login-light.png?version=2.0" alt="Login Light" /> | <img src="assets/login-light-mobile.png?version=2.0" alt="Login Light Mobile" /> |
-| Login Dark | <img src="assets/login-dark.png?version=2.0" alt="Login Dark" /> | <img src="assets/login-dark-mobile.png?version=2.0" alt="Login Dark Mobile" /> |
-
-</details>
+Wally never connects to a bank: you add what you spend.
 
 ## Quick Demo
 
@@ -48,20 +43,18 @@ Then open [http://localhost](http://localhost) in your browser.
 
 ## Installation
 
+Wally keeps its database in the folder you mount at `/wally/data`, so your data stays when the container restarts or is updated. Both examples use a `data` folder next to where you run them.
+
 ### Run with Docker CLI
 
 ```bash
 docker run -d \
   --name wally \
+  --restart unless-stopped \
   -p 80:80 \
-  -v $(pwd):/wally/data \
+  -v ./data:/wally/data \
   poliuscorp/wally
 ```
-
-- The `-v` flag ensures your data persists when the container restarts or is updated.
-- Replace `$(pwd)` with the folder on your host where you want Wally to store its database.
-
-Access Wally at: [http://localhost](http://localhost)
 
 ### Run with Docker Compose
 
@@ -74,118 +67,16 @@ services:
     ports:
       - "80:80"
     volumes:
-      - $(pwd):/wally/data
+      - ./data:/wally/data
 ```
 
-- Replace `$(pwd)` with the folder on your host where you want Wally to store its database.
+Then open [http://localhost](http://localhost).
 
-Access Wally at: [http://localhost](http://localhost)
+## Video
 
-## What's in Wally
-
-- **Dashboard**: what this month has spent against last month, where the money went, how much you kept each month, and what's coming. Every number opens the transactions behind it.
-- **Transactions**: any range, search across every month (`mercadona`, `#holiday`, `@ana`, `>50`, `march`), a calendar, bulk changes, and Undo.
-- **Recurring**: bills, subscriptions and salaries, added on their day by the server. Wally notices price rises and payees that look like they repeat.
-- **People**: each person's money, and shared costs split evenly, by income or by hand.
-- **Month in review** on the 1st, and a command bar (⌘K).
-- **One password for the household**: pick your name, type the password. Optional two-step sign-in, one code for everyone's phone. Sign-in is optional, as before.
-- **End-to-end encryption**, on by default with a password: your devices encrypt everything before it reaches the server, so whoever runs it can't read it. See [below](#end-to-end-encryption).
-- **Import** from your bank's CSV: rows you already typed are matched, not added twice, and Wally learns your categories.
-- **Backups** every night, in the data folder.
-- **Installs on your phone's home screen** and opens full screen. Light and dark, 13 languages.
-
-Wally never connects to a bank. You type what you spend, or import a file.
-
-## Upgrading from 1.x
-
-Nothing to do: start the new image with the same data folder. Every 1.x release, from 1.0 to 1.16, upgrades.
-
-- **Before**, Wally copies your database to `backups/pre-2.0-<date>.db` in the data folder.
-- **During**, before keeping anything, Wally compares the result with your old data, field by field: every transaction, recurring rule, category, tag, currency and setting. If anything differs that shouldn't, it puts your data back exactly as it was, opens read-only, and says why. The 1.x image opens the copy.
-- **After**, each person is welcomed to 2.0 once, with how many transactions came across. The full report of what was kept (transactions, totals, rules, categories) and what changed is saved as `upgrade-report-<date>.txt` in the data folder.
-
-To see the report before upgrading, run the check on a copy. It changes nothing:
-
-```bash
-docker run --rm -v /path/to/your/data:/wally/data poliuscorp/wally python3 -m api.upgrade --check
-```
-
-What changes on purpose:
-
-- The first time it opens, Wally asks who uses it. Existing transactions stay shared by the household; a tag you used for a person can become that person from the tag's page in **Settings › Tags**.
-- If you had a password, it stays the household's password: everyone picks their name and signs in with it. Choosing to encrypt during the upgrade also gives the household an Emergency Kit; without encryption it's optional (see [Forgot your password](#forgot-your-password)).
-- Recurring transactions are no longer created in advance: each one is added on its day. Those 1.x had already added for dates after today are taken out, listed in the report, and come back on their day.
-
-## Environment variables
-
-Wally supports the following environment variables:
-
-| Variable | Sample Value | Details |
-| --- | --- | --- |
-| DEMO | true | Pre-loads the app with sample data for a household of two. Nothing is kept. |
-| TZ | Europe/Madrid | The household's time zone, for when recurring transactions are added. Can also be set in **Settings › Language & Region**. |
-| WALLY_ENCRYPTION | required | For running Wally for someone else: every household is end-to-end encrypted from setup, and encryption and sign-in can't be turned off, so you can't read their data. Needs HTTPS. API keys are off, unless WALLY_API_KEYS is on. Ignored with DEMO. |
-| WALLY_API_KEYS | on | With WALLY_ENCRYPTION=required: allow API keys. While a call with a key runs, the server opens the data that call needs (see [API keys while encrypted](#api-keys-while-encrypted)). |
-
-## Forgot your password
-
-Everyone uses the same password, so first ask someone else in the household.
-
-Otherwise, use the **Emergency Kit**, if the household has one: a recovery key to print, download or keep in a password manager. Encrypting always makes one. Without encryption it's optional: make one in **Settings › Sign-in & Privacy › Emergency Kit**. On the sign-in screen, pick your name, choose **Forgot password**, type the recovery key, then choose a new household password. No two-step code is needed, so the kit also gets you in when no phone is at hand. Every other browser then signs in again with the new password. Making a new kit there replaces the old one, which stops working.
-
-No kit, or lost it too? Whoever runs the server can turn sign-in off, then you turn it on again with a new password:
-
-```bash
-docker exec wally python3 -m api.signin_off
-```
-
-This doesn't work while the household is encrypted: then nobody can open the data without the password or the kit.
-
-## End-to-end encryption
-
-When you set Wally up with a password, it is encrypted right then, before anything is saved: one button, with **Not now** under it. Upgrading from 1.x offers the same step. Browsers only encrypt on secure pages, so over plain HTTP (`http://192.168.1.20`) Wally isn't encrypted and the setup says so; open it over HTTPS and turn it on later in **Settings › Sign-in & Privacy** (sign-in must be on). `localhost` counts as secure. If you run Wally for other people, set `WALLY_ENCRYPTION=required`: setup then encrypts every household with no **Not now**, nothing is saved in the clear, and it can't be turned off. Your browser encrypts every transaction, rule, category and tag with a household key; the server keeps only what it can't open.
-
-- **What the server can still see**: people's names, sign-ins, settings, how many records there are and when they change. Not one amount, name or category.
-- **The password**: the household password is the key. Your browser turns it into keys (Argon2id) and never sends it, and each browser asks for it once. Everyone keeps using the same password; nobody needs a code to join.
-- **The Emergency Kit**: turning encryption on gives the household a new one; its recovery key also opens the household key, in your browser. **Forgot password** works as above, and it's the only way back in: whoever runs the server can't turn sign-in off. Turning encryption off removes the kit: without encryption it's optional again.
-- **If nobody can get in** (the password forgotten and the kit lost), the data can't be opened by anyone. That is the point, so keep your Emergency Kit.
-- **Off while encrypted**: turning sign-in off. API keys and phone shortcuts keep working: see below. Keys made before turning encryption on stop working; make new ones.
-- **Turning it on or off** builds a new database file next to the old one, checks it, and only then switches. Wally is read-only for about a minute. If Wally or the browser stops half-way, the old file is used, untouched. Turning it on deletes backups made before, which are in the clear; download them first if you want them.
-- **Limits**: the server sends the web app, so someone who controls the server could change it to capture a password the next time it is typed. It can also delete records or bring back old ones. End-to-end encryption protects what is stored, not a server that is actively attacking you.
-
-### API keys while encrypted
-
-The API works the same whether Wally is encrypted or not: every endpoint, read and write. A key made while Wally is encrypted is made by your browser, after the household password: 32 random bytes, with the household key locked under them. The server keeps that lock and a hash of the key, never the key.
-
-When a call with the key uses the household's data, the server opens the household key with it, opens the records in memory, answers the call, seals and saves anything it changed (all or nothing, and refused if a browser changed the same record at that moment), then forgets everything it opened. Stored data stays encrypted: a stolen disk or backup opens nothing, and deleting the key deletes its lock. While a call runs, though, the server holds the household key, so a server that is actively attacking you could catch it at the next call, just as it could change the web app to catch the password. Keys can be **read only** or **read and write**. Removing people and restoring backups are done in the app.
-
-## Data Import / Export
-
-Wally imports CSV files from **Settings › Import & Export**: its own exports, Wally 1.x exports, and bank exports (you choose which column is which). The preview shows what is new, what matches something you already typed, and what was imported before, before anything is saved.
-
-The Wally 1.x format is still accepted:
-
-```
-name,category,type,amount,date,tags
-An expense,Rent,expense,1000.0,2025-08-01,
-An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
-```
-
-Wally 2.0 exports add `person`, `paid_by`, `shares` and `note`.
-
-## API
-
-Wally's API is documented at http://localhost/api/docs. Create a key in **Settings › API keys**, read only or read and write, and send it as the `X-API-Key` header. It works the same when Wally is encrypted ([how](#api-keys-while-encrypted)). What you add with a key is added by the person who made it. Settings also shows how to add expenses from your phone's lock screen with a shortcut.
-
-## Development
-
-```bash
-pip install -r api/requirements.txt pytest httpx
-python -m pytest tests                                     # API tests
-WALLY_DATA=/tmp/wally DEMO=true python -m uvicorn utils.dev_server:app --port 8080
-python utils/i18n.py --check                               # every language has every string
-```
-
-## Acknowledgement
-
-Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
+<p align="center">
+  <a href="https://pol.alzina.dev/videos/wally.mp4">
+    <img src="assets/video-poster.png"
+      alt="Watch the Wally video — a one-minute tour: adding on a phone, the Summary, search, recurring, a shared household, encryption and self-hosting">
+  </a>
+</p>
