@@ -2,7 +2,7 @@
    Custom Range is a sheet (Cancel · Custom Range · Done) with Starts and Ends rows; the month opens under the one being set.
    Filter is a popover under its button on wide screens and a sheet (Reset · Filter · Done) on phones;
    either way, changes apply as they are made. */
-import { state, t, tn, esc, f0, ds, dim, ym, ymAdd, TODAY, START, LANG, cc, couple, isIncomeCat, monthYear, wkOff, dows, icon, F } from "../../core.js";
+import { state, t, tn, esc, f0, pname, ds, dim, ym, ymAdd, TODAY, START, LANG, cc, couple, isIncomeCat, monthYear, wkOff, dows, icon, F } from "../../core.js";
 import { openDialog, closeDialog, seg, sw } from "../../ui.js";
 import { S, parseQ, withoutWords, lastDay } from "./query.js";
 
@@ -83,7 +83,7 @@ export function openRangeSheet(apply) {
 /* ---------- Filter ---------- */
 export function filterCount(P) {
   P = P || parseQ(S.q);
-  return S.cats.size + (S.type !== "all" ? 1 : 0) + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0) + (S.sort !== "date" ? 1 : 0);
+  return S.cats.size + (S.type !== "all" ? 1 : 0) + (S.who ? 1 : 0) + (S.shared ? 1 : 0) + (P.min !== null || P.max !== null ? 1 : 0) + (S.sort !== "date" ? 1 : 0);
 }
 let fctx = null;
 function amounts() {
@@ -94,6 +94,8 @@ function filterBody(phone) {
   const cats = state.categories.filter((c) => !isIncomeCat(c)).concat(state.categories.filter(isIncomeCat));
   const am = amounts(), n = fctx ? fctx.list().length : 0;
   return seg("tx-ftype", [["all", t("All")], ["expense", t("Expenses")], ["income", t("Income")]], S.type, t("Type"), "tx-fseg") +
+    // Whose money: their own and their share of shared costs, as the person switch shows it, on this page only
+    (couple() ? '<div class="tx-flabel">' + esc(t("Who")) + "</div>" + seg("tx-fwho", [["all", esc(t("Everyone"))]].concat(state.people.map((p) => [String(p.id), esc(pname(String(p.id)))])), state.scope, t("Who"), "tx-fseg tx-fwho") : "") +
     '<div class="tx-flabel">' + esc(t("Categories")) + '</div><div class="w-chips tx-fchips">' +
       cats.map((c) => { const on = S.cats.has(c), col = cc(c); return '<button type="button" class="w-chip' + (on ? " tx-con" : "") + '" data-fc="' + esc(c) + '" aria-pressed="' + on + '"' + (on ? ' style="--cc:' + col + '"' : "") + '><span class="w-cdot" style="background:' + col + '"></span>' + esc(c) + "</button>"; }).join("") + "</div>" +
     '<div class="tx-flabel">' + esc(t("Amount")) + "</div>" + seg("tx-famt", am.map(([k, l]) => [k, l]), (am.find((x) => x[2]) || ["custom"])[0], t("Amount"), "tx-fseg") +
@@ -113,9 +115,10 @@ function change(b, host, phone) {
     if (b.dataset.v === "under") q = (q + " <10").trim();
     fctx.setQ(q);
   } else if (b.closest("#tx-fsort")) S.sort = b.dataset.v;
+  else if (b.closest("#tx-fwho")) fctx.setWho(b.dataset.v);
   else if (b.dataset.fc !== undefined) { const c = b.dataset.fc; if (S.cats.has(c)) S.cats.delete(c); else S.cats.add(c); }
   else if (b.id === "tx-fsw") S.shared = !S.shared;
-  else if (b.dataset.f === "reset") { S.type = "all"; S.cats = new Set(); S.shared = false; S.sort = "date"; fctx.setQ(""); }
+  else if (b.dataset.f === "reset") { S.type = "all"; S.cats = new Set(); S.shared = false; S.sort = "date"; fctx.setWho(null); fctx.setQ(""); }
   else return;
   S.sel = null;
   const sel = b.id ? "#" + b.id : b.closest(".w-seg") ? "#" + b.closest(".w-seg").id + ' [data-v="' + b.dataset.v + '"]' : b.dataset.fc !== undefined ? '[data-fc="' + CSS.escape(b.dataset.fc) + '"]' : null;
@@ -124,7 +127,7 @@ function change(b, host, phone) {
   const again = (sel && host.querySelector(sel)) || host.querySelector('[data-f="reset"]') || host.querySelector("button");
   if (again && host.contains(again)) again.focus();
 }
-/* ctx: {render, list, setQ, phone, button} */
+/* ctx: {render, list, setQ, setWho, phone, button} */
 export function openFilter(ctx) {
   if (ctx.phone) return openFilterSheet(ctx);
   const pop = document.getElementById("tx-fpop");

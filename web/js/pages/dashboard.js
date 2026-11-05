@@ -79,6 +79,7 @@ function onClick(ev) {
   if ((x = b("[data-hv]"))) { view.hv = x.dataset.hv; render(); return; }
   if (b('[data-act="cats-all"]')) { toggleCats(); render(); return; }
   if ((x = b("[data-go-cat]"))) { hideTip(); goTx({ cat: x.dataset.goCat }); return; }
+  if ((x = b("[data-go-person]"))) { hideTip(); goTx({ person: x.dataset.goPerson }); return; }
   if ((x = b("[data-go-id]"))) { hideTip(); goTx({ id: x.dataset.goId }); return; }
   // A month in Kept each month opens that month here
   if ((x = b("[data-go-month]"))) { hideTip(); const q = x.getAttribute("data-go-month"); setMonth(+q.slice(0, 4), +q.slice(5)); render(); return; }

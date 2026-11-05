@@ -337,8 +337,8 @@ function renderPeople(r) {
     const parts = [];
     if (own >= 0.5) parts.push(t("{amount} own", { amount: f0(own) }));
     if (share >= 0.5) parts.push(t("{amount} share of shared costs", { amount: f0(share) }));
-    return '<div class="s-person">' + av(k, "lg") + '<span class="s-nm"><span>' + esc(pp.name) + "</span><small>" +
-      esc(parts.length ? parts.join(" · ") : r.current ? t("Nothing yet this month") : t("Nothing in this period")) + '</small></span><span class="s-am amt">' + esc(f0(own + share)) + "</span></div>";
+    return '<button type="button" class="s-person" data-go-person="' + esc(k) + '">' + av(k, "lg") + '<span class="s-nm"><span>' + esc(pp.name) + "</span><small>" +
+      esc(parts.length ? parts.join(" · ") : r.current ? t("Nothing yet this month") : t("Nothing in this period")) + '</small></span><span class="s-am amt">' + esc(f0(own + share)) + "</span></button>";
   });
   // Who paid the shared costs, when one person paid them all
   const shared = state.tx.filter((x) => x.d >= r.start && x.d <= r.end && x.type === "expense" && x.p === null);

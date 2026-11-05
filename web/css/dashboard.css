@@ -47,7 +47,7 @@ button.s-title:hover{background:var(--w-fill)}
 /* ---------- rows: an icon, a name with a line under it, an amount ---------- */
 .s-row,.s-notice,.s-person{display:flex;align-items:center;gap:14px;width:100%;padding:11px 0;text-align:start;color:inherit;border-top:1px solid var(--w-line2)}
 .s-body > :first-child{border-top:0}
-@media (hover:hover){.s-row:hover .s-nm > span{color:var(--w-accent-ink)}}
+@media (hover:hover){:is(.s-row,.s-person):hover .s-nm > span{color:var(--w-accent-ink)}}
 .s-row .w-ico{width:40px;height:40px;border-radius:10px}
 .s-row .w-ico svg.i{width:18px;height:18px}
 .s-nm{flex:1;min-width:0;display:grid;gap:0}

@@ -3,9 +3,9 @@
    through it; a List | Calendar switch; search with a scope bar and recent searches; Filter (a popover
    on wide screens, a sheet on phones); a ••• menu (Select, export); Select mode for bulk changes, and a
    side panel with every field. */
-import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, couple } from "../core.js";
+import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, person, couple } from "../core.js";
 import { hideTip, empty, trapFocus, stepLabels } from "../ui.js";
-import { headActions } from "../shell.js";
+import { headActions, scopeSwitch } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
 import { S, RANGES, parseQ, txRange, txFiltered, scopeLabel, fromQuery, toQuery, clearHay, lastDay, firstDay, filtering, recent, addRecent, clearRecent, bySize } from "./transactions/query.js";
 import { TxList, buildItems } from "./transactions/list.js";
@@ -30,6 +30,7 @@ export function mount(main, route) {
   root = main;
   mounted = true;
   fromQuery(route.query);
+  if (S.who) state.scope = S.who;
   main.innerHTML = skeleton();
   list = new TxList($("tx-list"));
   main.addEventListener("click", onClick);
@@ -55,8 +56,22 @@ export function mount(main, route) {
   // The shell focuses the page once it is mounted; the search box takes it after that
   if (route.query.get("focus") === "search") setTimeout(focusSearch, 0);
 }
+/* The person the address picked is shown on this page only: elsewhere, the person switch's own choice */
+function savedScope() {
+  let sc = "all";
+  try { sc = localStorage.getItem("wally.scope") || "all"; } catch (e) { /* fine */ }
+  return sc === "all" || person(sc) ? sc : "all";
+}
+/* Show one person's money here (or everyone's); null, or the switch's own choice, goes back to it */
+function setWho(k) {
+  const saved = savedScope();
+  S.who = k && k !== saved ? k : null;
+  state.scope = S.who || saved;
+  document.querySelectorAll(".w-pswitch").forEach((w) => { w.outerHTML = scopeSwitch(); });
+}
 export function unmount() {
   mounted = false;
+  if (S.who) { S.who = null; state.scope = savedScope(); }
   if (list) list.destroy();
   closeFilter();
   document.removeEventListener("pointerdown", onOutside, true);
@@ -68,6 +83,8 @@ export function update(reason) {
   if (!mounted) return;
   reason = reason || {};
   clearHay();
+  // The person switch was used: its choice now holds here too, and the address stops naming one
+  if (reason.scope) S.who = null;
   if (typeof reason.restored === "string") S.sel = reason.restored;
   render();
   if (typeof reason.restored === "string") list.reveal(reason.restored);
@@ -402,7 +419,7 @@ function onClick(ev) {
   if (act && !act.disabled) {
     const a = act.dataset.act, x = selected();
     switch (a) {
-      case "filters": return openFilter({ render, list: () => cur.list, setQ, phone: layout() === "phone", button: act });
+      case "filters": return openFilter({ render, list: () => cur.list, setQ, setWho, phone: layout() === "phone", button: act });
       case "prev": return step(-1);
       case "next": return step(1);
       case "select": S.selMode = !S.selMode; S.picked = new Set(); S.open = false; lastPick = null; return render();
@@ -411,7 +428,7 @@ function onClick(ev) {
       case "qx": setQ(""); render(); $("tx-q").focus(); return;
       case "cancel": setQ(""); $("tx-q").blur(); return render();
       case "rclear": clearRecent(); searchState(); $("tx-q").focus(); return;
-      case "clear": setQ(""); S.cats = new Set(); S.type = "all"; S.shared = false; S.day = null; return render();
+      case "clear": setQ(""); S.cats = new Set(); S.type = "all"; S.shared = false; S.day = null; setWho(null); return render();
       case "dayx": S.day = null; return render();
       case "add": return openAdd();
       case "close": return closePanel();

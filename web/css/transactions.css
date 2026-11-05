@@ -316,6 +316,8 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
 .tx-flabel{font-size:var(--fs-foot);color:var(--w-ink2);padding:14px 0 6px}
 .tx-fseg{display:flex;width:100%;border-radius:9px}
 .tx-fseg button{flex:1;padding:5px 8px;font-size:14px;border-radius:7px}
+/* Names can be long: each keeps its share of the row and ends in … */
+.tx-fwho button{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tx-fchips{gap:6px}
 .tx-fchips .w-chip{height:27px;padding:0 10px;font-size:13px;border:0;background:var(--w-fill);color:var(--w-ink);gap:6px}
 .tx-fchips .tx-con{background:color-mix(in srgb,var(--cc) 18%,transparent);color:color-mix(in srgb,var(--cc) 75%,var(--w-ink));box-shadow:inset 0 0 0 1.5px var(--cc)}
