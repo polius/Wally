@@ -180,7 +180,7 @@ try {
     ok(await page.evaluate(() => document.activeElement.id) === "si-in", "signin: focus in the password field");
     ok(await page.getAttribute("#si-in", "autocomplete") === "current-password", "signin: password manager friendly");
     await page.click("#si-not");
-    ok(await page.locator("#gate .w-prof").count() === 2, "signin: Not Alex? goes back to the names");
+    ok(await page.locator("#gate .w-prof").count() === 2, "signin: Switch user goes back to the names");
     await page.click('[data-prof="1"]');
     await page.fill("#si-in", "wrong-one");
     await page.click("[data-eye]");

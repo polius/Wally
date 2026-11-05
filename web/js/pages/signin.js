@@ -111,7 +111,7 @@ function renderSignin() {
     sub = household ? t("Enter the household password") : "";
     input = (household ? "" : '<input type="text" class="w-sr" autocomplete="username" value="' + name + '" tabindex="-1" aria-hidden="true" readonly>') +
       '<input type="password" id="si-in" placeholder="' + esc(t("Household password")) + '" aria-label="' + esc(t("Household password")) + '" aria-invalid="' + bad + '" aria-describedby="si-msg" autocomplete="current-password">' + eye("si-in");
-    links = (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Not {name}?", { name }) + "</button>" : "") +
+    links = (!household && state.people.length > 1 ? '<button type="button" class="w-link w-silink" id="si-not">' + t("Switch user") + "</button>" : "") +
       '<button type="button" class="w-link w-silink" id="si-forgot">' + t("Forgot password?") + "</button>";
   }
   const msg = si.wait ? waitText() : si.err;
@@ -490,7 +490,7 @@ function renderWelcome() {
     Object.assign(o, { ico: "download", back: o.back && !onb.pwSaved, title: t("Bring your data"), sub: t("You can always import more later from Settings."), next: onb.data === "import" ? t("Choose a file") : t("Open Wally") });
     o.body = '<div class="w-gl w-onbgl w-onbpick" role="radiogroup" aria-labelledby="gate-h">' +
       [["import", "upload", t("Import a CSV"), t("From Wally 1, or from your bank. You map the columns before anything is saved.")],
-       ["add", "plus", t("Start empty"), t("Add your first expense right away.")]].map(([key, ic, b, sm]) =>
+       ["add", "plus", t("Start empty"), t("Add your first expense whenever you like.")]].map(([key, ic, b, sm]) =>
         '<button type="button" class="w-gr" role="radio" data-onb-data="' + key + '" aria-checked="' + (onb.data === key) + '"><span class="w-onbsico">' + icon(ic) + '</span><span class="k">' + b + "<small>" + sm + '</small></span><span class="w-onbradio">' + icon("check") + "</span></button>").join("") + "</div>";
     // Over plain HTTP there was no Encrypt step: say why, and how to turn it on later
     if ((onb.pw || mustEncrypt()) && !canEncrypt() && !mustEncrypt()) o.body += '<p class="w-glf">' + t("Your data isn’t encrypted: browsers only encrypt on secure pages. Open Wally at its https:// address, then turn it on in Settings › Sign-in & Privacy.") + "</p>";
@@ -594,7 +594,7 @@ async function encryptNow() {
 }
 async function openWally(choice) {
   try { await PUT("/config", { onboarded: true }); } catch (e) { return onbError(apiMessage(e)); }
-  location.href = choice === "import" ? "/settings/import" : choice === "add" ? "/?add=1" : "/";
+  location.href = choice === "import" ? "/settings/import" : "/";
 }
 
 /* ---------- after the upgrade from 1.x: there is data, but no people yet ---------- */

@@ -318,7 +318,11 @@
 /* Setup and the upgrade fill the window, as Setup Assistant does: no card. Back and the dots at the
    top of the window; the symbol, a large title and why, centred; then grouped rows and one button. */
 .w-gate .w-onb{width:100%;max-width:none;min-height:100%;align-self:stretch;margin:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 0 32px;position:relative}
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:104px 0 64px;position:relative}
+/* Centred by auto margins, not justify-content: a step taller than the window then starts under the
+   dots and scrolls, instead of overflowing upwards behind them */
+.w-gate .w-onbb{margin-top:auto}
+.w-gate .w-onbfoot{margin-bottom:auto}
 .w-gate:has(> .w-onb){padding:0}
 /* Back and the dots on one line, at the same height on every step (with or without Back) */
 .w-onbtop{position:absolute;top:0;left:0;right:0;padding:27px 34px 0;min-height:0;grid-template-rows:36px}
@@ -415,7 +419,9 @@
   .w-onbtop{padding:calc(9px + env(safe-area-inset-top,0px)) 10px 0;grid-template-rows:44px}
   .w-onbback{font-size:var(--fs-body)}
   .w-gate .w-onbb{width:100%;padding:0 20px 12px}
-  .w-onbico{margin-top:18px}
+  .w-gate .w-onbb{margin-top:0}
+  .w-gate .w-onbfoot{margin-bottom:0}
+  .w-onbico,.w-onbmark{margin-top:18px}
   .w-gate .w-onbhero h1{margin-top:18px;font-size:28px}
   .w-gate .w-onbp{margin-top:8px;font-size:16px}
   .w-gate .w-onbb > .w-gl{margin-top:26px}
