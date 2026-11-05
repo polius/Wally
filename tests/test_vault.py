@@ -156,7 +156,7 @@ def test_turning_on_keeps_only_counts_of_the_upgrade_report(make_client):
         "from": "1.x", "to": "2.0.0", "at": "2026-11-03T10:00:00+00:00", "today": "2026-11-03", "backup": None,
         "kept": {"transactions": 5, "first": "2026-10-01", "last": "2026-10-20", "expense": "139.74", "income": "0.00",
                  "rules": 1, "categories": 4, "tags": 2, "password": True, "settings": ["currency"]},
-        "removed": [{"date": "2026-12-01", "name": "Lloguer Pis Manresa", "amount": "469"}],
+        "removed": [{"date": "2026-12-01", "name": "Lloguer Pis Manresa", "amount": "469.83"}],
         "notes": [{"kind": "decimals", "count": 1, "examples": [{"date": "2026-10-02", "name": "Forn de pa", "amount": "1.005"}]}],
         "checked": ["transactions"],
     }
@@ -166,11 +166,15 @@ def test_turning_on_keeps_only_counts_of_the_upgrade_report(make_client):
     conn.commit()
     conn.close()
     assert list(database.DATA_DIR.glob("upgrade-report-*"))
+    # Long enough not to turn up by chance: three digits like "469" can, in ciphertext or in a timestamp
+    words = ("Lloguer", "Forn de pa", "469.83", "139.74")
+    before = b"".join(f.read_bytes() for f in database.DB_PATH.parent.glob(database.DB_PATH.name + "*"))
+    assert all(w.encode() in before for w in words)  # there to begin with, so their absence below means something
     assert client.post("/login", json={"person_id": alex, "password": PASS}).status_code == 200
     turn_on(client, alex, PASS)
     assert not list(database.DATA_DIR.glob("upgrade-report-*"))
     raw = database.DB_PATH.read_bytes()
-    for word in ("Lloguer", "Forn de pa", "469", "139.74"):
+    for word in words:
         assert word.encode() not in raw, word
     # The welcome still says how many came across, and the download says what was taken out
     assert client.get("/auth/status").json()["upgrade"]["kept"]["transactions"] == 5
