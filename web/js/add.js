@@ -636,24 +636,23 @@ function validWho(p) {
   if (p === "shared") return couple() ? "shared" : null;
   return person(p) ? String(p) : null;
 }
-/* A payee typed in full fills in what has not been chosen by hand */
+/* A payee typed in full fills in what has not been chosen by hand. Never the person: that stays
+   whoever is signed in, unless they change it */
 function applyMemory() {
   const q = ad.name.trim().toLowerCase();
   if (!q || isEdit()) return;
   const x = cache.payees.find((p) => p.type === ad.type && p.n.toLowerCase() === q);
   if (!x) return;
   if (!ad.touched.cat && ad.type === "expense" && !ad.split && x.c) ad.cat = x.c;
-  if (!ad.touched.who && validWho(x.p)) ad.who = validWho(x.p);
   if (!ad.tags.length) ad.tags = x.tags.slice();
 }
 function pickPayee(x, keepAmount) {
   ad.name = x.n;
   if (ad.type === "expense" && !ad.split && x.c) ad.cat = x.c;
-  if (validWho(x.p)) ad.who = validWho(x.p);
   ad.sm = "even";
   if (!amount() && !keepAmount) ad.amt = inAmount(x.avg);
   ad.tags = x.tags.slice();
-  ad.touched.cat = ad.touched.who = 1;
+  ad.touched.cat = 1;
 }
 function pickSugg(i) {
   const x = ad.sugg[i];
