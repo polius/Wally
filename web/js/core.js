@@ -423,13 +423,13 @@ export function extend(arr, len) { const o = []; for (let i = 0; i < len; i++) o
    that). Income is always green; a category Wally hasn't colored yet is grey. */
 export const CAT = {};
 const ICONS = [
-  ["income", /income|salary|salari|sueldo|n[oó]mina|wage|gehalt|salaire|stipendio|freelance|bonus|ingreso|ingr[eé]s|revenu|einkommen|reddito|renda|доход|зарплат|收入|工资|給料|収入|급여|수입|आय|वेतन|دخل|راتب/i],
+  ["income", /income|salary|salari|sueldo|n[oó]mina|wage|gehalt|salaire|stipendio|freelance|bonus|ingreso|ingr[eé]s|revenu|einkommen|einnahm|entrat|receita|reddito|renda|доход|зарплат|收入|工资|給料|収入|급여|수입|आय|वेतन|دخل|راتب/i],
   ["rent", /rent|alquiler|lloguer|loyer|miete|affitto|aluguel|mortgage|hipoteca|housing|home|house|casa|vivienda|habitatge|logement|wohnung|аренд|жиль|房租|住房|家賃|住宅|월세|주거|किराया|إيجار|سكن/i],
-  ["groceries", /grocer|supermarket|super|aliment|compra|courses|lebensmittel|spesa|mercado|продукт|超市|食品|食料|スーパー|식료품|장보기|किराना|بقالة|سوبر/i],
-  ["food", /food|restaurant|comida|menjar|dining|eat|café|cafe|coffee|repas|essen|cibo|ristorante|comer|еда|ресторан|餐|吃|外食|食事|식비|외식|भोजन|खाना|طعام|مطعم/i],
-  ["travel", /travel|viaje|viatge|voyage|reise|viaggi|viagem|holiday|vacation|vacaciones|vacances|urlaub|flight|vuelo|hotel|путешеств|отпуск|旅|旅行|여행|यात्रा|سفر/i],
+  ["groceries", /grocer|supermarket|super|aliment|compra(?!s)|courses|lebensmittel|spesa|mercado|продукт|超市|食品|食料|スーパー|식료품|장보기|किराना|بقالة|سوبر/i],
+  ["food", /food|restaurant|comida|menjar|dining|eat|café|cafe|coffee|repas|essen|cibo|ristorant|comer|еда|ресторан|餐|吃|外食|食事|식비|외식|भोजन|खाना|طعام|مطعم/i],
+  ["travel", /travel|viaje|viatge|voyage|reise|viaggi|viage[mn]|holiday|vacation|vacaciones|vacances|urlaub|flight|vuelo|hotel|путешеств|отпуск|旅|旅行|여행|यात्रा|سفر/i],
   ["utilities", /utilit|bills?|suministro|subministr|factur|électric|electric|water|agua|gas|internet|phone|tel[eé]fon|móvil|mobile|strom|nebenkosten|bollette|contas|коммунал|счет|水电|公共|光熱|公共料金|공과금|बिल|فواتير|مرافق/i],
-  ["shopping", /shop|compras|achats|einkauf|acquisti|clothes|ropa|roba|vêtements|kleidung|abbigliamento|roupa|amazon|покупк|одежд|购物|买|買い物|쇼핑|खरीदारी|تسوق/i],
+  ["shopping", /shop|compras|compres|achats|eink[aä]uf|acquisti|clothes|ropa|roba|vêtements|kleidung|abbigliamento|roupa|amazon|покупк|одежд|购物|买|買い物|쇼핑|खरीदारी|تسوق/i],
   ["healthcare", /health|salud|salut|santé|gesundheit|salute|saúde|medic|doctor|pharma|farmac|dental|gym|sport|fitness|здоров|медиц|医|健康|의료|건강|स्वास्थ्य|صحة|طب/i],
   ["entertainment", /entertain|ocio|oci|loisir|freizeit|svago|lazer|fun|movie|cine|music|streaming|netflix|spotify|game|juego|развлеч|娱乐|エンタメ|娯楽|오락|여가|मनोरंजन|ترفيه/i],
   ["car", /car|coche|cotxe|voiture|auto|carro|fuel|gasolina|benzin|petrol|parking|transport|taxi|uber|metro|bus|train|tren|машин|транспорт|汽车|交通|車|자동차|교통|गाड़ी|परिवहन|سيارة|مواصلات/i],

@@ -2,7 +2,7 @@
   "name": "wally-e2e",
   "private": true,
   "type": "module",
-  "description": "Browser tests for the Wally web app. npm install && npx playwright install chromium && ./run.sh",
+  "description": "Browser tests for the Wally web app. npm install && npx playwright install chromium webkit && ./run.sh",
   "devDependencies": {
     "playwright": "1.58.2"
   }

@@ -16,6 +16,9 @@
   --fs-large:28px;   /* page titles */
   --fs-xl:34px;      /* large titles on phones, a single amount */
   --fs-hero:52px;    /* the one number a page leads with */
+  /* The smallest a text field or a menu can be: iOS zooms into one set under 16px when it gets the
+     focus, and the page stays zoomed after. Every field's size is max(var(--field-min), its own) */
+  --field-min:0px;
   /* Three corner radii (plus pills and circles) */
   --r-ctl:8px;       /* controls, rows, chips */
   --r-card:14px;     /* cards and grouped lists */
@@ -97,6 +100,9 @@
   --av10-bg:#DCEBFD; --av10:#1A5FA8;
   --av11-bg:#EAE1FF; --av11:#5A33B8;
 }
+/* On a touch screen nothing typed in or picked from is under 16px */
+@media (pointer:coarse){:root{--field-min:16px}}
+
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
@@ -325,7 +331,7 @@ a.w-btn{text-decoration:none}
 .w-seg.sm button{padding:4px 9px;font-size:var(--fs-foot)}
 .w-head-r{margin-left:auto;display:flex;gap:8px;align-items:center}
 .w-search{display:flex;align-items:center;gap:8px;width:220px;height:32px;padding:0 10px;border-radius:var(--r-ctl);background:var(--w-panel);border:1px solid var(--w-line);color:var(--w-ink3)}
-.w-search input{border:0;background:none;outline:0;flex:1;min-width:0;color:var(--w-ink);font-size:var(--fs-foot)}
+.w-search input{border:0;background:none;outline:0;flex:1;min-width:0;color:var(--w-ink);font-size:max(var(--field-min),var(--fs-foot))}
 .w-search input::placeholder{color:var(--w-ink3)}
 .w-search kbd{margin-left:auto;font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 5px}
 .w-search:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
@@ -345,7 +351,10 @@ a.w-btn{text-decoration:none}
 .w-legend s{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px;text-decoration:none}
 .w-grid2{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:stretch}
 .cv{position:relative;width:100%;min-width:0}
-svg.chart{display:block;overflow:visible}
+/* A chart fills its box rather than setting its width: drawn as wide as the box was, it held the page
+   that wide when a phone turned to portrait (the page then zoomed out to fit). The box follows the
+   screen, and the chart is drawn again for it (chart() in ui.js) */
+svg.chart{display:block;overflow:visible;width:100%;height:100%}
 .chart .grid{stroke:var(--w-line2);stroke-width:1}
 .chart .base{stroke:var(--w-line);stroke-width:1}
 .chart .ax{fill:var(--w-ink3);font:var(--fs-cap) var(--w-font);font-variant-numeric:tabular-nums}
@@ -616,7 +625,7 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-cmdwrap{place-items:start center;padding-top:12vh}
 .w-cmd{width:100%;max-width:560px;background:var(--w-raised);border:1px solid var(--w-line);border-radius:var(--r-card);box-shadow:var(--w-shadow);overflow:hidden}
 .w-cmdin{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--w-line2);color:var(--w-ink3)}
-.w-cmdin input{flex:1;border:0;outline:0;background:none;font-size:var(--fs-sub);color:var(--w-ink)}
+.w-cmdin input{flex:1;border:0;outline:0;background:none;font-size:max(var(--field-min),var(--fs-sub));color:var(--w-ink)}
 .w-cmdin kbd{font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 5px}
 .w-cmdres{max-height:360px;overflow:auto;padding:6px}
 .w-cmdg{font-size:var(--fs-cap);color:var(--w-ink3);padding:8px 10px 4px;font-weight:500}
@@ -707,9 +716,9 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-gr.red,.w-gr.acc{justify-content:center;font-weight:400}
 .w-gr.red{color:var(--w-bad)}.w-gr.acc{color:var(--w-accent-ink)}
 .w-gr.add{color:var(--w-accent-ink)}
-.w-gr input:not([type=checkbox]):not([type=radio]),.w-gr textarea{border:0;background:none;outline:0;font:inherit;flex:1;min-width:0;color:var(--w-ink);padding:0}
+.w-gr input:not([type=checkbox]):not([type=radio]),.w-gr textarea{border:0;background:none;outline:0;font:inherit;font-size:max(var(--field-min),1em);flex:1;min-width:0;color:var(--w-ink);padding:0}
 .w-gr input::placeholder,.w-gr textarea::placeholder{color:var(--w-ink3)}
-.w-gr select{border:0;background:none;font:inherit;color:var(--w-ink2);text-align:end;outline:0;max-width:60%}
+.w-gr select{border:0;background:none;font:inherit;font-size:max(var(--field-min),1em);color:var(--w-ink2);text-align:end;outline:0;max-width:60%}
 button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(--w-fill)}
 .w-gr:focus-visible{outline:2px solid var(--w-accent);outline-offset:-2px}
 .w-glh{font-size:var(--fs-foot);color:var(--w-ink3);padding:0 16px 6px}
@@ -857,7 +866,7 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-amount input{border:0;background:none;outline:0;font-size:var(--fs-hero);font-weight:600;letter-spacing:-.045em;line-height:1.05;font-variant-numeric:tabular-nums;width:100%;min-width:0;padding:0;caret-color:var(--w-accent)}
 .w-amount input::placeholder{color:var(--w-ink3)}
 .w-input{position:relative}
-.w-input input{width:100%;height:42px;border:1px solid var(--w-line);border-radius:var(--r-card);padding:0 12px;font-size:var(--fs-sub);font-weight:500;background:var(--w-panel);outline:0}
+.w-input input{width:100%;height:42px;border:1px solid var(--w-line);border-radius:var(--r-card);padding:0 12px;font-size:max(var(--field-min),var(--fs-sub));font-weight:500;background:var(--w-panel);outline:0}
 .w-input input:focus{border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
 .w-sugg{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--w-raised);border:1px solid var(--w-line);border-radius:var(--r-card);box-shadow:var(--w-shadow);padding:5px;z-index:5;display:grid;gap:1px}
 .w-sugg button{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 8px;border-radius:var(--r-ctl);text-align:left}
@@ -886,7 +895,7 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-splitv small{color:var(--w-ink3);font-size:var(--fs-foot)}
 .w-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:var(--fs-foot);color:var(--w-ink2)}
 .w-inline .lbl{width:40px;color:var(--w-ink3)}
-.w-mini{height:30px;border:1px solid var(--w-line);border-radius:var(--r-ctl);background:var(--w-panel);padding:0 8px;font-size:var(--fs-foot);outline:0;color:var(--w-ink)}
+.w-mini{height:30px;border:1px solid var(--w-line);border-radius:var(--r-ctl);background:var(--w-panel);padding:0 8px;font-size:max(var(--field-min),var(--fs-foot));outline:0;color:var(--w-ink)}
 .w-mini:focus{border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
 .w-rsum{display:grid;gap:8px;border-top:1px solid var(--w-line2);padding-top:10px}
 .w-rsum p{font-size:var(--fs-foot);color:var(--w-ink);font-weight:500}
@@ -951,7 +960,7 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-table{width:100%;border-collapse:collapse;font-size:var(--fs-foot);font-variant-numeric:tabular-nums}
 .w-table th{text-align:left;font-weight:500;color:var(--w-ink3);padding:8px 12px;border-bottom:1px solid var(--w-line)}
 .w-table td{padding:8px 12px;border-bottom:1px solid var(--w-line2)}
-.w-table select{border:1px solid var(--w-line);border-radius:var(--r-ctl);background:var(--w-panel);padding:3px 6px;font-size:var(--fs-foot)}
+.w-table select{border:1px solid var(--w-line);border-radius:var(--r-ctl);background:var(--w-panel);padding:3px 6px;font-size:max(var(--field-min),var(--fs-foot))}
 .w-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-cap);font-weight:500;border-radius:999px;padding:2px 8px;background:var(--w-fill);color:var(--w-ink2)}
 .w-pill.good{background:var(--w-good-soft);color:var(--w-good)}
 .w-phones{display:flex;gap:28px;justify-content:center;padding:30px 20px;min-width:1060px;background:var(--w-canvas)}
@@ -981,7 +990,6 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-phone .w-dayh{padding:8px 4px 4px;position:static}
 .w-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .w-keys span{height:42px;border-radius:var(--r-ctl);background:var(--w-panel);display:grid;place-items:center;font-size:var(--fs-body);font-weight:500;box-shadow:0 1px 0 var(--w-line)}
-.w-grab{width:36px;height:5px;border-radius:3px;background:var(--w-line);margin:0 auto}
 .w-tip{position:fixed;z-index:60;pointer-events:none;font-family:var(--w-font);background:var(--w-raised);color:var(--w-ink);border:1px solid var(--w-line);box-shadow:var(--w-shadow);border-radius:var(--r-ctl);padding:8px 10px;font-size:var(--fs-foot);line-height:1.45;min-width:150px;max-width:260px;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s}
 .w-tip.on{opacity:1}
 .w-tip b{font-weight:600}

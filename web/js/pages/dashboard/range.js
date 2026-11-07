@@ -1,13 +1,12 @@
 /* Summary's range: a month, a year, all time or a custom range, the period it is compared with,
    the Custom Range sheet, and links into Transactions that keep the range. ‹ › step a month (or a
-   year). The last range is remembered on this browser. */
+   year). Wally opens on the current month: a range picked stays while Wally is open, as Summary is left
+   and come back to, and is forgotten when it's opened again (startFresh). */
 import { t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, mmin, mmax, monthName, monthIn, monthYear, F, dlab, dows, wkOff, icon, num, LANG } from "../../core.js";
 import { openDialog } from "../../ui.js";
 import { navigate } from "../../shell.js";
 
 export const MODES = ["month", "year", "custom", "all"];
-const KEY = "wally.dash.range";
-
 /* What Summary shows. Lives with the module, so it survives leaving and coming back. */
 export const view = {
   mode: "month",
@@ -18,32 +17,28 @@ export const view = {
   hoff: {},             // categories hidden from the legend
 };
 
+/* Summary shown again: in Month mode, the current month (another one comes from the address); a
+   custom range ends today at the latest */
 export function loadRange() {
   view.ym = ym(TODAY);
   view.y = +TODAY.slice(0, 4);
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY) || "null");
-    // 3 months and 12 months were retired: they open as Month and Year
-    if (s && (s.mode === "3m" || s.mode === "12m")) s.mode = s.mode === "3m" ? "month" : "year";
-    if (s && MODES.includes(s.mode)) {
-      const ok = s.mode !== "custom" || (Array.isArray(s.custom) && /^\d{4}-\d\d-\d\d$/.test(s.custom[0]) && /^\d{4}-\d\d-\d\d$/.test(s.custom[1]) && s.custom[0] <= s.custom[1]);
-      if (ok) { view.mode = s.mode; view.custom = s.mode === "custom" ? [s.custom[0], mmin(s.custom[1], TODAY)] : null; }
-    }
-  } catch (e) { /* the current month it is */ }
+  if (view.custom) view.custom = [view.custom[0], mmin(view.custom[1], TODAY)];
 }
-function saveRange() {
-  try { localStorage.setItem(KEY, JSON.stringify({ mode: view.mode, custom: view.custom })); } catch (e) { /* fine */ }
+/* Wally opened again: the current month, whatever was shown before */
+export function startFresh() {
+  Object.assign(view, { mode: "month", ym: ym(TODAY), y: +TODAY.slice(0, 4), custom: null });
 }
+// Before, the range was kept on the browser across launches: that copy goes
+try { localStorage.removeItem("wally.dash.range"); } catch (e) { /* fine */ }
 /* Month mode always opens on the current month, Year on this year; the other modes end today anyway */
 export function setMode(mode, custom) {
   view.mode = mode;
   if (mode === "month") view.ym = ym(TODAY);
   if (mode === "year") view.y = +TODAY.slice(0, 4);
   view.custom = mode === "custom" ? custom : null;
-  saveRange();
 }
-export function setMonth(y, m) { view.mode = "month"; view.ym = [y, m]; view.custom = null; saveRange(); }
-export function setYear(y) { view.mode = "year"; view.y = y; view.custom = null; saveRange(); }
+export function setMonth(y, m) { view.mode = "month"; view.ym = [y, m]; view.custom = null; }
+export function setYear(y) { view.mode = "year"; view.y = y; view.custom = null; }
 /* The address for what is shown: another month or year in it, the current one (or a range, which is remembered) plain */
 export function pageQuery() {
   const [ty, tm] = ym(TODAY);
@@ -235,6 +230,6 @@ export function openRange(r, onApply) {
 function applyDates(a, b) {
   const [y, m] = ym(b), monthEnd = ds(y, m, dim(y, m));
   if (a.slice(8) === "01" && a.slice(0, 7) === b.slice(0, 7) && (b === monthEnd || b === TODAY)) setMonth(+a.slice(0, 4), +a.slice(5, 7));
-  else if (a.slice(5) === "01-01" && a.slice(0, 4) === b.slice(0, 4) && (b.slice(5) === "12-31" || b === TODAY)) { view.mode = "year"; view.y = +a.slice(0, 4); view.custom = null; saveRange(); }
+  else if (a.slice(5) === "01-01" && a.slice(0, 4) === b.slice(0, 4) && (b.slice(5) === "12-31" || b === TODAY)) { view.mode = "year"; view.y = +a.slice(0, 4); view.custom = null; }
   else setMode("custom", [a, b]);
 }

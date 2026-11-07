@@ -1,6 +1,6 @@
 #!/bin/sh
 # Run every browser test, each against its own fresh server.
-#   cd tests/e2e && npm install && npx playwright install chromium && ./run.sh [suite ...]
+#   cd tests/e2e && npm install && npx playwright install chromium webkit && ./run.sh [suite ...]
 # PYTHON is the interpreter with Wally's API requirements installed (default: python3).
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -22,7 +22,7 @@ run() { # run <suite> [env...]
   if env "$@" node "$HERE/$name.mjs"; then echo "--- $name passed"; else echo "--- $name FAILED"; FAILED="$FAILED $name"; fi
 }
 
-SUITES=${*:-"dashboard transactions add recurring settings signin review flows vault vault-parity vault-setup"}
+SUITES=${*:-"dashboard transactions add recurring settings signin review flows vault vault-parity vault-setup touch"}
 for s in $SUITES; do
   case $s in
     dashboard|add|flows)
@@ -30,7 +30,7 @@ for s in $SUITES; do
     transactions)
       serve 8891 "$TMP/$s" true && run "$s" BASE=http://localhost:8891 SUITE=demo; stop 8891
       serve 8892 "$TMP/$s-perf" && run "$s" BASE=http://localhost:8892 SUITE=perf; stop 8892 ;;
-    settings)
+    settings|touch)
       serve 8891 "$TMP/$s" true && serve 8892 "$TMP/$s-empty" && run "$s" BASE=http://localhost:8891 EMPTY=http://localhost:8892; stop 8891; stop 8892 ;;
     recurring|signin|review|vault|vault-parity|vault-setup)
       run "$s" REPO="$REPO" PYTHON="$PYTHON" PORT=8893 ;;

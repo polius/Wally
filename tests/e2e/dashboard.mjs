@@ -153,7 +153,7 @@ try {
   ok((await text(page, "#s-title")).includes("–"), "custom range applied: " + await text(page, "#s-title"));
   ok(await page.locator("#s-view").isHidden() && await page.locator(".s-steps").isHidden(), "a short custom range: no chart views, no arrows");
   await page.reload({ waitUntil: "networkidle" }); await page.waitForSelector("#s-title");
-  ok((await text(page, "#s-title")).includes("–"), "the range is remembered after a reload");
+  ok(!(await text(page, "#s-title")).includes("–") && (await text(page, "#s-title")).includes(await page.evaluate(async () => { const c = await import("/js/core.js"); return c.monthName(+c.TODAY.slice(5, 7)); })), "opened again, Summary is on the current month", await text(page, "#s-title"));
   await pickPeriod(page, "all");
   ok(!(await page.locator("#s-view").isHidden()), "All time shows the chart views");
   ok(await page.locator("#c-kept [data-go-month]").count() > 12, "All time: Kept each month shows every month (" + await page.locator("#c-kept [data-go-month]").count() + ")");
@@ -324,6 +324,60 @@ try {
   ok(await noOverflow(p2), "empty Summary on a phone");
   await p2.close();
   await page.close();
+} catch (e) {
+  failures++;
+  console.log("  FAIL " + (e && e.stack || e));
+}
+
+/* ---------- Wally opens on the current month ---------- */
+console.log("\nWally opens on the current month");
+try {
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const earlier = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 2); return d.toISOString().slice(0, 7); })();
+  const launch = async (standalone, url) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block", hasTouch: true, isMobile: true });
+    await ctx.addInitScript((sa) => { localStorage.setItem("wally.person", "1"); if (sa) Object.defineProperty(navigator, "standalone", { get: () => true }); }, standalone);
+    const p = await ctx.newPage();
+    p.on("pageerror", (e) => errors.push("PAGEERROR " + e.message));
+    await p.clock.install();
+    await p.goto(BASE + url, { waitUntil: "networkidle" });
+    await p.waitForSelector("#main[data-page=dashboard] > *");
+    await p.waitForTimeout(200);
+    return p;
+  };
+  const shown = (p) => p.evaluate(async () => { const r = await import("/js/pages/dashboard/range.js"); return r.view.mode + " " + r.view.ym[0] + "-" + String(r.view.ym[1]).padStart(2, "0"); });
+  // A browser tab keeps its address: a reload shows the same month
+  let p = await launch(false, "/?month=" + earlier);
+  ok(await shown(p) === "month " + earlier, "a browser tab with a month in its address shows that month", await shown(p));
+  await p.reload({ waitUntil: "networkidle" }); await p.waitForSelector("#main[data-page=dashboard] > *");
+  ok(await shown(p) === "month " + earlier, "and so does reloading it");
+  await p.context().close();
+  // From the home screen, the address kept from last time doesn't count: the current month
+  p = await launch(true, "/?month=" + earlier);
+  ok(await shown(p) === "month " + thisMonth && await p.evaluate(() => location.search) === "", "opened from the home screen: the current month, whatever the address said", [await shown(p), await p.evaluate(() => location.search)]);
+  // A range picked stays while Wally is open, Summary left and come back to
+  await p.evaluate(async () => { const r = await import("/js/pages/dashboard/range.js"); r.setMode("all"); (await import("/js/shell.js")).navigate("/transactions"); });
+  await p.waitForSelector("#main[data-page=transactions]");
+  await p.evaluate(async () => (await import("/js/shell.js")).navigate("/"));
+  await p.waitForSelector("#main[data-page=dashboard] > *"); await p.waitForTimeout(150);
+  ok((await shown(p)).startsWith("all"), "a range picked stays while Wally is open", await shown(p));
+  // A quick look at another app keeps it; back after a while is opening Wally again
+  const away = async (ms) => {
+    await p.evaluate(() => { Object.defineProperty(document, "hidden", { configurable: true, get: () => true }); document.dispatchEvent(new Event("visibilitychange")); });
+    await p.clock.fastForward(ms);
+    await p.evaluate(() => { Object.defineProperty(document, "hidden", { configurable: true, get: () => false }); document.dispatchEvent(new Event("visibilitychange")); });
+    await p.waitForTimeout(300);
+  };
+  await away(60 * 1000);
+  ok((await shown(p)).startsWith("all"), "back after a minute: still as it was", await shown(p));
+  await p.evaluate(async () => { const r = await import("/js/pages/dashboard/range.js"); r.setMonth(...(await import("/js/core.js")).ymAdd(r.view.ym[0], r.view.ym[1], -2)); (await import("/js/shell.js")).navigate("/?month=" + r.view.ym[0] + "-" + String(r.view.ym[1]).padStart(2, "0")); });
+  await p.waitForTimeout(300);
+  ok((await shown(p)) === "month " + earlier, "another month picked", await shown(p));
+  await away(11 * 60 * 1000);
+  ok(await shown(p) === "month " + thisMonth && await p.evaluate(() => location.search) === "", "back after more than 10 minutes: the current month", [await shown(p), await p.evaluate(() => location.search)]);
+  // Before, the range was kept on the browser: that copy is gone
+  ok(await p.evaluate(() => localStorage.getItem("wally.dash.range")) === null, "nothing kept on the browser");
+  await p.context().close();
 } catch (e) {
   failures++;
   console.log("  FAIL " + (e && e.stack || e));

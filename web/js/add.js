@@ -20,7 +20,7 @@ import { describe, nextOf } from "./sched.js";
 import * as C from "./add/calc.js";
 import * as Q from "./add/queue.js";
 import { fqOf, formRule, nextText, notesHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
-import { isPhone, typeSeg, catBox, press, pickList, freqCells, KEYPAD, chev, phoneAmount, repeatPage, catPage, splitPage } from "./add/phone.js";
+import { isPhone, typeSeg, catBox, press, pickList, freqCells, KEYPAD, chev, pickRow, syncPicks, phoneAmount, repeatPage, catPage, splitPage } from "./add/phone.js";
 import { calHtml, calKey, monthStep } from "./add/datepick.js";
 
 export { flushQueue } from "./add/queue.js";
@@ -30,7 +30,7 @@ let ad = blank("expense");
 let opener = null;          // where focus goes back to on close
 let layout = "";            // "desk" or "phone"
 let cache = { payees: [], cats: [], tags: [], incomeW: {} };
-let built = { split: "", parts: "" }; // which structure the share and part rows were drawn for
+let built = { split: "", parts: "", sm: "", by: "" }; // which structure the share and part rows, and the two menus' options, were drawn for
 
 function me() { return state.me && person(state.me) ? state.me : state.people.length ? String(state.people[0].id) : null; }
 function keys() { return C.peopleKeys(); }
@@ -184,13 +184,12 @@ function sheetHtml() {
   const splitRows = phone
     ? '<button type="button" class="w-gr" data-step="split" id="add-smrow"><span class="k">' + t("Split") + '</span><span class="v" id="add-smv"></span>' + chev() + "</button>" +
       '<button type="button" class="w-gr" data-step="split" id="add-byrow"><span class="k">' + t("Paid by") + '</span><span class="v" id="add-byv"></span>' + chev() + "</button>"
-    : '<div class="w-gr"><span class="k" id="lbl-sm">' + t("Split") + '</span><span class="v w-apop"><select id="add-smsel" aria-labelledby="lbl-sm"></select>' + chev(true) + "</span></div>" +
-      '<div class="w-gr" id="add-byrow"><span class="k" id="lbl-by">' + t("Paid by") + '</span><span class="v w-apop"><select id="add-bysel" aria-labelledby="lbl-by"></select>' + chev(true) + "</span></div>" +
+    : pickRow("", "add-smsel", "lbl-sm", t("Split"), true) + pickRow("add-byrow", "add-bysel", "lbl-by", t("Paid by"), true) +
       '<div id="add-custrows" class="w-acust" hidden></div>';
   const dateRow = dateSeg
     ? '<div class="w-gr" id="add-daterow"><span class="k" id="lbl-date"></span><div class="w-seg w-aseg" id="add-date" role="group" aria-labelledby="lbl-date"></div></div>'
     : '<button type="button" class="w-gr" id="add-datecell" aria-expanded="false" aria-controls="add-cal"><span class="k" id="lbl-date"></span><span class="v" id="add-datev"></span>' + chev() + "</button>";
-  const main = '<section class="w-apage" data-pstep="main">' + (phone ? '<div class="w-grab" aria-hidden="true"></div>' : "") + headHtml() +
+  const main = '<section class="w-apage" data-pstep="main">' + headHtml() +
     (phone ? phoneAmount() : amountRow()) +
     '<p class="w-acap" id="add-editing" hidden></p>' +
     '<p class="w-err w-acenter" id="add-aerr" hidden role="alert"></p>' +
@@ -210,7 +209,7 @@ function sheetHtml() {
       dateRow +
       '<div class="w-dcal w-acal" id="add-cal" hidden role="group" aria-labelledby="lbl-date"></div>' +
       '<button type="button" class="w-gr" id="add-reprow" data-step="repeat"><span class="k">' + t("Repeat") + '</span><span class="v" id="add-repv"></span>' + chev(dateSeg) + "</button>" +
-      '<div class="w-gr" id="add-tagrow"><span class="k" id="lbl-tags">' + t("Tags") + '</span><span class="v w-atags" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
+      '<div class="w-gr" id="add-tagrow"><label class="k" id="lbl-tags" for="add-tag">' + t("Tags") + '</label><span class="v w-atags" role="group" aria-labelledby="lbl-tags"><span id="add-tags" class="w-contents"></span>' +
         '<input id="add-tag" list="add-taglist" autocomplete="off" aria-label="' + esc(t("Add a tag")) + '"><datalist id="add-taglist"></datalist></span></div>' +
       '<label class="w-gr" id="add-noterow"><input id="add-note" autocomplete="off" placeholder="' + esc(t("Note")) + '" aria-label="' + esc(t("Note")) + '"></label>' +
     "</div>" +
@@ -286,7 +285,9 @@ function render() {
   renderDate();
 
   // tags and note: once there is an amount, or when they hold something; always when editing
-  setHtml("add-tags", ad.tags.map((g) => '<button type="button" class="w-chip on" data-tg="' + esc(g) + '" aria-label="' + esc(t("Remove tag {tag}", { tag: g })) + '">' + esc(g) + icon("x", "x") + "</button>").join(""));
+  // A tag is a label with its own × to remove it: a tap on the tag itself goes to the tag field, as
+  // anywhere else on the row does
+  setHtml("add-tags", ad.tags.map((g) => '<span class="w-chip on">' + esc(g) + '<button type="button" class="w-chipx" data-tg="' + esc(g) + '" aria-label="' + esc(t("Remove tag {tag}", { tag: g })) + '">' + icon("x", "x") + "</button></span>").join(""));
   const tagIn = $("add-tag");
   if (tagIn) {
     tagIn.placeholder = ad.tags.length ? t("+ tag") : t("Add a tag");
@@ -334,6 +335,7 @@ function render() {
 
   if (phone) renderPhone(a);
   renderPages();
+  syncPicks(form());
 }
 
 /* The amount field is as wide as what is typed, so the currency sign sits next to it */
@@ -381,13 +383,13 @@ function renderSplit() {
   const smSel = $("add-smsel");
   if (smSel) {
     const opts = ["even", "income", "custom"].map((k) => '<option value="' + k + '">' + esc(smLabel(k)) + "</option>").join("");
-    if (smSel.dataset.k !== opts) { smSel.innerHTML = opts; smSel.dataset.k = opts; }
+    if (built.sm !== opts) { smSel.innerHTML = opts; built.sm = opts; }
     smSel.value = ad.sm;
   }
   const by = $("add-bysel");
   if (by) {
     const opts = ks.map((k) => '<option value="' + esc(k) + '">' + (layout === "phone" ? payerLabel(k) : esc(pname(k))) + "</option>").join("");
-    if (by.dataset.k !== opts) { by.innerHTML = opts; by.dataset.k = opts; }
+    if (built.by !== opts) { by.innerHTML = opts; built.by = opts; }
     by.value = payer();
   }
   show("add-byrow", exp);
@@ -794,7 +796,7 @@ function fill(o) {
 }
 function build() {
   layout = isPhone() ? "phone" : "desk";
-  built = { split: "", parts: "" };
+  built = { split: "", parts: "", sm: "", by: "" };
   $("add-modal").innerHTML = '<form class="w-sheet w-add' + (layout === "phone" ? " w-addp" : "") + '" id="add-form" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-title" autocomplete="off" novalidate>' +
     sheetHtml() + "</form>";
 }
@@ -1167,7 +1169,17 @@ function onClick(ev) {
   if (at("[data-close]")) return requestClose();
   if ((x = at("[data-at]"))) return setType(x.dataset.at);
   if (at("[data-nosplit]")) return toggleSplit();
-  if (at("#add-cat")) { if (!catOpen()) openCat(); return; }
+  if ((x = at("[data-si]"))) return pickSugg(+x.dataset.si);
+  if ((x = at("[data-co]"))) return pickCat(+x.dataset.co);
+  // Anywhere on the desktop's category row opens its list: the label, the icon, the field, the chevron
+  // (which closes it again)
+  if (at(".w-acatrow")) {
+    const inp = $("add-cat");
+    if (at(".w-catchev") && catOpen()) { closeCat(); inp.select(); return; }
+    if (document.activeElement !== inp) inp.focus(); // opens it
+    else if (!catOpen()) openCat();
+    return;
+  }
   if ((x = at("[data-aw]"))) {
     ad.who = x.dataset.aw; ad.touched.who = 1; render(); refocus("add-who", "data-aw", ad.who); return;
   }
@@ -1190,6 +1202,10 @@ function onClick(ev) {
     return;
   }
   if ((x = at("[data-tg]"))) { ad.tags = ad.tags.filter((g) => g !== x.dataset.tg); render(); const i = $("add-tag"); if (i) i.focus(); return; }
+  // Anywhere else on the tags row, its label too, is where the next tag is typed. Done here rather than
+  // by the label: with the text in another field still selected, a browser takes a click on a label for
+  // one on that selection, and does nothing
+  if (at("#add-tagrow") && !at("#add-tag")) { ev.preventDefault(); $("add-tag").focus(); return; }
   if ((x = at("[data-pfq]"))) {
     const k = x.dataset.pfq;
     if (k === "never") ad.rep = false; else { ad.rep = true; ad.fq = k; }
@@ -1201,7 +1217,9 @@ function onClick(ev) {
   if ((x = at("[data-rmpart]"))) { ad.parts.splice(+x.dataset.rmpart, 1); render(); const s = form().querySelector("[data-addpart]"); if (s) s.focus(); return; }
   if (at("#add-del")) return deleteCurrent();
   if (at("[data-rule-edit]")) { const rr = state.rules.find((r) => r.id === ad.edit.rid); if (rr) switchTo({ rule: rr }); return; }
-  if ((x = at("[data-k]"))) {
+  // A key of the phone's keypad: only those (the menus once kept their options in a data-k too, and a tap on
+  // one typed its markup into the amount)
+  if ((x = at("#add-keypad [data-k]"))) {
     const k = x.dataset.k;
     if (k === "next") return keypadDone();
     ad.amt = press(ad.amt, k);
@@ -1348,21 +1366,30 @@ function init() {
   wrap.dataset.ready = "1";
   wrap.addEventListener("mousedown", (ev) => {
     if (ev.target === wrap) { ev.preventDefault(); requestClose(); return; }
-    const s = ev.target.closest("[data-si]");
-    if (s) { ev.preventDefault(); pickSugg(+s.dataset.si); }
-    const co = ev.target.closest("[data-co]");
-    if (co) { ev.preventDefault(); pickCat(+co.dataset.co); }
-    // Removing a tag keeps the focus, and anything half typed, in the tag field
-    if (ev.target.closest("[data-tg]")) ev.preventDefault();
+    // A payee or a category from a list is picked on click, with the focus kept in its field until
+    // then: picked on mousedown, the list closed under the pointer and the click went to the row below
+    if (ev.target.closest("[data-si], [data-co]")) ev.preventDefault();
+    // The rest of the category row and the tag row open or go to their field on click, without the
+    // focus leaving it first (that would close the list, or add the tag half typed)
+    if (ev.target.closest(".w-acatrow, #add-tagrow") && !ev.target.closest("input")) ev.preventDefault();
     // Keys leave the focus, and the caret, in the amount
     if (ev.target.closest("#add-keypad")) ev.preventDefault();
   });
-  // A tap on the amount opens the keypad, also when the field still has focus; a tap anywhere else closes it
-  wrap.addEventListener("pointerdown", (ev) => {
+  /* A tap on the amount opens the keypad, also when the field still has focus; a tap anywhere else
+     closes it. Only once the tap has landed (its click), never while the finger is down: the keypad
+     going changes the sheet, so the rows moved under the finger and the tap went to another one, and
+     iOS takes a change on touch for a hover and waits for a second tap. Focus that comes from a tap
+     waits for its click too; focus from the keyboard or the code opens and closes it straight away. */
+  let tapping = false;
+  wrap.addEventListener("pointerdown", () => { tapping = true; }, true);
+  wrap.addEventListener("pointercancel", () => { tapping = false; }, true);
+  wrap.addEventListener("keydown", () => { tapping = false; }, true);
+  wrap.addEventListener("click", (ev) => {
+    tapping = false;
     if (layout !== "phone" || !form()) return;
     if (ev.target.closest("#add-amtrow")) keypad(true);
     else if (!ev.target.closest("#add-keypad, #add-type")) keypad(false);
-  });
+  }, true);
   wrap.addEventListener("click", onClick);
   wrap.addEventListener("input", onInput);
   wrap.addEventListener("change", onChange);
@@ -1371,6 +1398,7 @@ function init() {
     const id = ev.target.id;
     if (id === "add-name") { if (!ad.name.trim()) ad.hl = -1; renderSugg(); }
     if (id === "add-cat") { openCat(); ev.target.select(); }
+    if (tapping) return; // its click opens or closes the keypad
     if (id === "add-amt") keypad(true);
     else if (/^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) keypad(false);
   });

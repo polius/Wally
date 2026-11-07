@@ -89,7 +89,7 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
 .w-shero .w-sico svg.i{width:30px;height:30px}
 /* Searching a long list */
 .w-gsearch{display:flex;align-items:center;gap:8px;height:38px;border-radius:10px;background:var(--w-fill);padding:0 12px;color:var(--w-ink3);margin:0 0 16px}
-.w-gsearch input{border:0;background:none;outline:0;font:inherit;font-size:var(--fs-sub);flex:1;min-width:0;color:var(--w-ink)}
+.w-gsearch input{border:0;background:none;outline:0;font:inherit;font-size:max(var(--field-min),var(--fs-sub));flex:1;min-width:0;color:var(--w-ink)}
 .w-gsearch svg.i{width:17px;height:17px}
 .w-sym{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);font-size:12px;font-weight:600;color:var(--w-ink2);flex:none;overflow:hidden}
 /* Code and steps */
@@ -122,7 +122,7 @@ code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:n
 }
 .w-pop2{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px 0 10px;margin-top:8px;border-radius:8px;background:var(--w-fill);font-size:14px;text-align:start}
 .w-pop2 span{color:var(--w-ink2)}
-.w-pop2 select{-webkit-appearance:none;appearance:none;border:0;font:inherit;color:var(--w-ink);text-align:end;text-align-last:end;outline:0;max-width:60%;padding:4px 18px 4px 4px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E") no-repeat right center/14px}
+.w-pop2 select{-webkit-appearance:none;appearance:none;border:0;font:inherit;font-size:max(var(--field-min),1em);color:var(--w-ink);text-align:end;text-align-last:end;outline:0;max-width:60%;padding:4px 18px 4px 4px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E") no-repeat right center/14px}
 .w-pop2 select:focus-visible{outline:2px solid var(--w-accent);border-radius:6px}
 /* Colours to pick from */
 .w-swatches{display:grid;grid-template-columns:repeat(5,44px);gap:16px;justify-content:center;padding:18px 10px;background:var(--w-panel2);border-radius:var(--r-card)}
@@ -393,7 +393,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-secbtns .w-btn{height:34px;border-radius:999px;font-size:14px;font-weight:600;padding:0 14px;gap:6px}
 .w-secbtns .w-btn svg.i{width:15px;height:15px}
 .w-kitsheet .w-shh{margin-bottom:6px}
-.w-dialog.w-kitsheet{max-width:480px}
+@media (min-width:768px){.w-dialog.w-kitsheet{max-width:480px}}
 .w-dialog.w-sh520{max-width:520px}
 @media (min-width:768px){.w-dialog.w-sh400{max-width:400px}.w-dialog.w-sh420{max-width:420px}.w-dialog.w-sh440{max-width:440px}}
 .w-shfull .w-shb > .w-gl + .w-gl{margin-top:6px}
@@ -513,11 +513,21 @@ label.w-btn{cursor:pointer;position:relative}
 #ic-list{display:grid;align-content:start}
 #ic-list > .w-glh:first-child{margin-top:4px}
 #ic-list > .w-icgrp + .w-glh{margin-top:20px}
-.w-icgrp{display:grid;padding:9px 5px;background:var(--w-panel2);border-radius:var(--r-card)}
-/* Each block draws only on screen, and clips at its edges: 5px inside it keep the pick's ring whole */
-.w-icons{display:grid;grid-template-columns:repeat(8,1fr);gap:10px 6px;justify-items:center;padding:5px;content-visibility:auto;contain-intrinsic-block-size:auto 390px}
-.w-icons button{width:100%;max-width:40px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2)}
+.w-icgrp{display:grid;padding:9px 5px;background:var(--w-panel2);border-radius:var(--r-card);container-type:inline-size}
+/* Blocks of eight rows, drawn as they come near the screen (iconGrid in settings/categories.js); 5px
+   inside each keep the pick's ring whole. Each icon is a circle as wide as its column, at most 40px,
+   from the grid's own width: so a block not drawn yet is exactly as tall as it will be, at any width */
+.w-icons{--p:5px;--rg:10px;--cg:6px;--max:40px;--cell:min(var(--max),(100cqi - 2 * var(--p) - 7 * var(--cg)) / 8);
+  display:grid;grid-template-columns:repeat(8,1fr);grid-auto-rows:var(--cell);gap:var(--rg) var(--cg);justify-items:center;padding:var(--p)}
+.w-icons:empty{height:calc(2 * var(--p) + var(--rows) * var(--cell) + (var(--rows) - 1) * var(--rg))}
+.w-icons button{width:var(--cell);height:var(--cell);border-radius:50%;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2)}
 .w-icons button svg.i{width:19px;height:19px}
+/* Off a phone: a wider sheet, and bigger icons that are easier to tell apart */
+@media (min-width:768px){
+  .w-dialog.w-icdlg{max-width:560px}
+  .w-icons{--max:52px;--rg:12px;--cg:10px}
+  .w-icons button svg.i{width:24px;height:24px}
+}
 .w-icons button:hover{background:var(--w-fill2)}
 .w-icons button[aria-checked="true"]{background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink));box-shadow:0 0 0 2px var(--w-raised),0 0 0 4px color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
 .w-icnone{padding:28px 12px;text-align:center;color:var(--w-ink3);font-size:var(--fs-sub)}
