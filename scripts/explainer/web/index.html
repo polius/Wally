@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Wally film</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <div id="bg">
+      <div class="glow g1"></div>
+      <div class="glow g2"></div>
+      <!-- a ledger's dot grid: ink runs through it at every cut -->
+      <canvas id="dots" width="1920" height="1080"></canvas>
+    </div>
+    <div id="scenes"></div>
+    <!-- the film's own category bar: a segment per chapter, filling as it plays -->
+    <div id="ledger"></div>
+    <!-- every cut is a receipt going by: it prints the next chapter, then tears off -->
+    <div id="receipts"></div>
+    <div id="fade"></div>
+  </div>
+  <script src="engine.js"></script>
+  <script src="scenes.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+/* Wally film — stage styling.
+   Fixed 1920x1080; every animation is driven from JS by absolute time, so the
+   page is fully deterministic frame by frame (no CSS animations or transitions).
+
+   The look is Wally's own light theme: the app's pale canvas and white panels,
+   its indigo accent, money green and red, the twelve category colours, and the
+   logo's wallet (tan leather, dark stitching, green notes). Geist for type (the
+   app bundles it), Geist Mono for everything printed on a receipt. */
+
+@font-face { font-family: "Geist"; src: url(/fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist Mono"; src: url(/film/fonts/GeistMono-Variable.woff2) format("woff2"); font-weight: 100 900; }
+
+:root {
+  --canvas: #f4f5f8;
+  --panel: #ffffff;
+  --paper: #fffdf8;
+  --ink: #14161b;
+  --ink2: #5b606c;
+  --ink3: #8a8f9b;
+  --line: #e6e8ee;
+  --fill: rgba(20, 22, 27, 0.055);
+  --accent: #4f5bd5;
+  --accent-soft: #e8eafb;
+  --good: #14804a;
+  --good-soft: #e3f3ea;
+  --bad: #d13b40;
+  --bad-soft: #fbe6e7;
+  --tan: #e1a365;
+  --leather: #d99857;
+  --brown: #3f342c;
+  --note: #81af85;
+  --shadow: 0 1px 2px rgba(20, 22, 40, 0.06), 0 12px 30px -8px rgba(20, 22, 40, 0.14), 0 40px 80px -30px rgba(20, 22, 40, 0.22);
+  --ui: "Geist", -apple-system, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px; height: 1080px; overflow: hidden; background: var(--canvas);
+  font-family: var(--ui); color: var(--ink);
+  -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
+  font-feature-settings: "ss01", "tnum" 0;
+}
+
+#stage { position: relative; width: 1920px; height: 1080px; background: var(--canvas); overflow: hidden; }
+#scenes { position: absolute; inset: 0; }
+
+/* ---- the persistent background --------------------------------------------- */
+#bg { position: absolute; inset: 0; overflow: hidden; }
+#bg .glow { position: absolute; left: 0; top: 0; border-radius: 50%; }
+#bg .g1 {
+  width: 1700px; height: 1700px;
+  background: radial-gradient(circle, rgba(225, 163, 101, 0.22) 0%, rgba(225, 163, 101, 0.07) 36%, transparent 64%);
+}
+#bg .g2 {
+  width: 1500px; height: 1500px;
+  background: radial-gradient(circle, rgba(79, 91, 213, 0.13) 0%, rgba(79, 91, 213, 0.04) 36%, transparent 64%);
+}
+#dots { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+/* ---- layers ------------------------------------------------------------------- */
+.layer { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.abs { position: absolute; }
+.ctr { position: absolute; width: 0; height: 0; display: flex; align-items: center; justify-content: center; }
+.ctr > * { flex: none; }
+
+/* ---- type ------------------------------------------------------------------------ */
+.kt { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.08em 0.04em 0.14em; margin: -0.08em -0.04em -0.14em; }
+.kt > span { display: inline-block; will-change: transform; }
+
+.headline {
+  font-weight: 700; letter-spacing: -0.038em; line-height: 1.04; font-size: 92px;
+  text-align: center; white-space: nowrap; color: var(--ink);
+}
+.headline.md { font-size: 72px; }
+.headline.sm { font-size: 60px; }
+.headline .acc { color: var(--accent); }
+.headline .good { color: var(--good); }
+.headline .bad { color: var(--bad); }
+.headline .tan { color: #c27a3a; }
+.sub { font-weight: 500; font-size: 32px; color: var(--ink2); letter-spacing: -0.012em; white-space: nowrap; text-align: center; }
+
+.word {
+  font-weight: 700; letter-spacing: -0.05em; white-space: nowrap; line-height: 1; color: var(--ink);
+  display: flex; align-items: baseline;
+}
+
+/* rolling digits: each digit a column of 0-9 behind a mask */
+.odo { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.odo .col { display: inline-block; height: 1em; overflow: hidden; line-height: 1; vertical-align: top; }
+.odo .col > span { display: block; will-change: transform; }
+.odo .col > span > b { display: block; height: 1em; font-weight: inherit; }
+.odo .ch { display: inline-block; line-height: 1; }
+.odo .cents { font-size: 0.52em; color: var(--ink3); letter-spacing: -0.02em; }
+
+/* ---- devices ---------------------------------------------------------------------- */
+.browser {
+  position: absolute; border-radius: 18px; overflow: hidden; background: var(--canvas);
+  box-shadow: 0 0 0 1px rgba(20, 22, 40, 0.08), 0 2px 4px rgba(20, 22, 40, 0.04),
+    0 30px 60px -20px rgba(20, 22, 40, 0.22), 0 80px 140px -40px rgba(20, 22, 40, 0.24);
+}
+.browser .chrome {
+  position: absolute; left: 0; right: 0; top: 0; height: 46px; background: #eceef3;
+  border-bottom: 1px solid #e0e2e8;
+}
+.browser .lights { position: absolute; left: 18px; top: 17px; display: flex; gap: 8px; }
+.browser .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.browser .lights i:nth-child(1) { background: #ff5f57; }
+.browser .lights i:nth-child(2) { background: #febc2e; }
+.browser .lights i:nth-child(3) { background: #28c840; }
+.browser .tab {
+  position: absolute; left: 90px; bottom: 0; height: 36px; width: 290px; border-radius: 10px 10px 0 0;
+  background: var(--canvas); display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  font: 500 15px/1 var(--ui); color: #3d414b;
+}
+.browser .tab img { width: 18px; height: 18px; }
+.browser .view { position: absolute; left: 0; right: 0; bottom: 0; top: 46px; overflow: hidden; background: var(--canvas); }
+.browser .view img, .shot { position: absolute; left: 0; top: 0; display: block; }
+
+.phone {
+  position: absolute; border-radius: 66px; background: #1b1d22;
+  box-shadow: inset 0 0 0 2px #3a3d45, inset 0 0 0 7px #111216,
+    0 2px 4px rgba(20, 22, 40, 0.08), 0 40px 80px -20px rgba(20, 22, 40, 0.34), 0 90px 140px -50px rgba(20, 22, 40, 0.3);
+}
+.phone .screen { position: absolute; left: 14px; top: 14px; width: 390px; height: 844px; border-radius: 52px; overflow: hidden; background: var(--canvas); }
+.phone .screen img { position: absolute; left: 0; top: 0; width: 390px; display: block; }
+.phone .island { position: absolute; left: 50%; top: 26px; width: 120px; height: 35px; margin-left: -60px; border-radius: 20px; background: #000; z-index: 5; }
+.phone .btn { position: absolute; width: 5px; border-radius: 3px; background: #2a2c32; }
+
+/* ---- panels, chips, receipts ------------------------------------------------------------- */
+.card {
+  position: absolute; background: var(--panel); border-radius: 26px; box-shadow: var(--shadow);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 14px; padding: 18px 28px; border-radius: 999px;
+  background: var(--panel); box-shadow: var(--shadow); font: 600 30px/1 var(--ui); color: var(--ink);
+  letter-spacing: -0.01em; white-space: nowrap;
+}
+.chip svg { width: 30px; height: 30px; flex: none; }
+.chip.on { background: var(--accent); color: #fff; }
+.tok {
+  display: inline-flex; align-items: center; padding: 14px 24px; border-radius: 16px; background: var(--panel);
+  box-shadow: var(--shadow); font: 500 30px/1 var(--mono); color: var(--ink2); white-space: nowrap;
+}
+.tok.on { background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+
+.ico { display: inline-flex; align-items: center; justify-content: center; border-radius: 22%; }
+.ico svg { width: 46%; height: 46%; }
+
+.av {
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  font-weight: 600; letter-spacing: -0.02em;
+}
+.av.alex { background: #e5e7fb; color: #3a44b8; }
+.av.ana { background: #fde4d7; color: #b4441b; }
+
+/* the receipt: thermal paper, a torn zigzag top and bottom */
+.paper {
+  position: absolute; background: var(--paper);
+  filter: drop-shadow(0 18px 30px rgba(20, 22, 40, 0.16)) drop-shadow(0 2px 3px rgba(20, 22, 40, 0.08));
+}
+.paper .print { position: absolute; left: 0; right: 0; font: 500 30px/1.5 var(--mono); color: #23252b; white-space: pre; }
+.mono { font-family: var(--mono); }
+.dots-line { letter-spacing: 0.02em; }
+
+/* terminal */
+.term {
+  position: absolute; border-radius: 20px; background: #ffffff; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(20, 22, 40, 0.08), var(--shadow);
+  font: 500 30px/1.6 var(--mono); color: #2b2e36;
+}
+.term .bar { height: 50px; background: #eceef3; border-bottom: 1px solid #e0e2e8; position: relative; }
+.term .bar .lights { position: absolute; left: 20px; top: 19px; display: flex; gap: 9px; }
+.term .bar .lights i { width: 13px; height: 13px; border-radius: 50%; display: block; }
+.term .bar .lights i:nth-child(1) { background: #ff5f57; }
+.term .bar .lights i:nth-child(2) { background: #febc2e; }
+.term .bar .lights i:nth-child(3) { background: #28c840; }
+.term .bar span { position: absolute; left: 0; right: 0; top: 15px; text-align: center; font: 500 17px/1 var(--ui); color: #6a6f7b; }
+.term .body { padding: 30px 40px; white-space: pre; }
+.term .p { color: var(--accent); }
+.term .ok { color: var(--good); }
+.term .dim { color: #8a8f9b; }
+.term .caret { display: inline-block; width: 15px; height: 32px; background: var(--accent); vertical-align: -6px; margin-left: 2px; }
+
+.ring { position: absolute; border-radius: 999px; border: 3px solid var(--accent); }
+.tap { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(79, 91, 213, 0.22); border: 2px solid rgba(79, 91, 213, 0.5); }
+
+/* the film's category bar along the bottom */
+#ledger { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; z-index: 700; display: flex; }
+#ledger i { display: block; height: 100%; }
+
+#receipts { position: absolute; inset: 0; z-index: 800; pointer-events: none; }
+#fade { position: absolute; inset: 0; z-index: 950; background: var(--canvas); pointer-events: none; }
+
+/* ---- poster affordance (README thumbnail only, never in the video) ------- */
+#poster-play {
+  --d: 170px; --x: 960px; --y: 540px;
+  position: absolute; inset: 0; z-index: 1000; background: rgba(244, 245, 248, 0.14);
+}
+#poster-play::before {
+  content: ""; position: absolute; left: var(--x); top: var(--y); width: var(--d); height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2); border-radius: 50%; background: rgba(79, 91, 213, 0.96);
+  box-shadow: 0 calc(var(--d) * 0.2) calc(var(--d) * 0.5) calc(var(--d) * -0.1) rgba(20, 22, 40, 0.45),
+              0 0 0 calc(var(--d) * 0.067) rgba(79, 91, 213, 0.22);
+}
+#poster-play::after {
+  content: ""; position: absolute; left: calc(var(--x) - var(--d) * 0.113); top: calc(var(--y) - var(--d) * 0.2);
+  border-left: calc(var(--d) * 0.333) solid #fff;
+  border-top: calc(var(--d) * 0.2) solid transparent; border-bottom: calc(var(--d) * 0.2) solid transparent;
+}

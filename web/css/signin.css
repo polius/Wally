@@ -1,0 +1,547 @@
+/* Sign-in and the other full-screen steps before the app (#gate): a centred card on
+   desktop, the whole screen on a phone. Base pieces (.w-signcard, .w-sihead, .w-onb…) are in wally.css. */
+.w-gate{position:fixed;inset:0;z-index:20;overflow-y:auto;overscroll-behavior:contain;background:var(--w-canvas);display:grid;place-items:start center;padding:32px 16px;padding-top:calc(32px + env(safe-area-inset-top,0px))}
+/* Centred with auto margins, not place-items: a card taller than the window then starts at the top
+   and scrolls, instead of losing its top above the screen where scrolling can't reach */
+.w-gate > *{margin-block:auto}
+.has-banner .w-gate{top:34px}
+.w-gate:not([hidden]){animation:w-fade 300ms var(--ease)}
+/* Room between the mark, the heading and the form, and a form that is easy to hit */
+.w-gate .w-signcard{width:min(400px,100%);padding:44px 40px 40px;gap:24px}
+.w-gate .w-sihead p{margin-top:8px;font-size:var(--fs-sub)}
+.w-gate .w-signcard.wide{width:min(460px,100%)}
+.w-gate .w-sihead h1{font-size:var(--fs-large);font-weight:600;letter-spacing:-.03em;line-height:1.2;text-wrap:balance}
+.w-gate .w-sihead p{text-wrap:pretty}
+.w-av.xl{width:64px;height:64px;font-size:var(--fs-large)}
+.w-siform{display:grid;gap:14px;width:100%;margin-top:4px}
+.w-gate .w-input input{height:46px;font-size:var(--fs-sub)}
+.w-gate .w-eye{top:10px}
+.w-gate .w-signcard .w-submit{height:46px;font-size:var(--fs-sub)}
+.w-siform .w-err{text-align:start;margin:0}
+.w-siform .w-input input[type="password"]{padding-inline-end:44px}
+.w-gate .w-eye{right:auto;inset-inline-end:8px}
+.w-gate .w-eye[aria-pressed="true"]{color:var(--w-accent-ink)}
+.w-silinks{display:flex;gap:10px 18px;justify-content:center;flex-wrap:wrap}
+.w-silink{font-size:var(--fs-foot);min-height:32px;padding:4px 6px;border-radius:var(--r-ctl)}
+.w-wide{width:100%}
+.w-gate .w-sip{text-align:start}
+.w-sifile{width:100%;text-align:start}
+.w-sifile code{word-break:break-all}
+/* Only for password managers: a username they can save with the password */
+.w-sr{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0!important}
+
+/* Who is using this browser: a profile picker, no card. Big faces that lift under the pointer,
+   come in one after another, and the chosen one comes forward while the rest step back. */
+.w-who{--who-av:112px;--who-hl:rgba(255,255,255,.6);--who-sh:rgba(20,22,27,.16);width:min(720px,100%);display:grid;justify-items:center;text-align:center;gap:52px;padding:24px 0;outline:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-who{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}}
+:root[data-theme="dark"] .w-who{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}
+.w-whohead{display:grid;gap:12px;max-width:460px;animation:w-whoin 600ms var(--ease) both}
+.w-whohead h1{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.035em;line-height:1.08;text-wrap:balance}
+.w-whohead p{font-size:var(--fs-body);line-height:1.5;color:var(--w-ink2);text-wrap:pretty}
+.w-wholist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:28px 36px}
+.w-wholist li{animation:w-whoin 600ms var(--ease) both;animation-delay:calc(120ms + var(--i) * 70ms)}
+.w-whop{display:grid;justify-items:center;gap:16px;padding:10px;border-radius:var(--r-sheet);color:var(--w-ink2);-webkit-tap-highlight-color:transparent;transition:opacity 280ms var(--ease),transform 380ms var(--ease)}
+.w-whop .w-av.w-whoav{width:var(--who-av);height:var(--who-av);font-size:calc(var(--who-av) * .4);font-weight:600;letter-spacing:-.03em;
+  background-image:linear-gradient(165deg,var(--who-hl),transparent 62%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 10px 28px -14px var(--who-sh);
+  transition:transform 380ms var(--ease),box-shadow 380ms var(--ease)}
+.w-whon{font-size:var(--fs-body);font-weight:500;letter-spacing:-.01em;max-width:calc(var(--who-av) + 32px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color 200ms var(--ease)}
+.w-whop:focus-visible{outline:0}
+.w-whop:focus-visible .w-whoav{box-shadow:0 0 0 4px var(--w-canvas),0 0 0 7px var(--w-accent),0 10px 28px -14px var(--who-sh)}
+.w-whop:focus-visible .w-whon{color:var(--w-ink)}
+@media (hover:hover){
+  .w-whop:hover .w-whoav{transform:scale(1.06);box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 18px 36px -16px var(--who-sh)}
+  .w-whop:hover .w-whon{color:var(--w-ink)}
+}
+.w-whop:active .w-whoav{transform:scale(.97);transition-duration:120ms}
+.w-who.picked .w-whop:not(.on){opacity:0;transform:scale(.9)}
+.w-who.picked .w-whop.on .w-whoav{transform:scale(1.12)}
+.w-who.picked .w-whop.on .w-whon{color:var(--w-ink)}
+.w-who.picked :is(.w-whohead,.w-whofoot){opacity:0;transition:opacity 280ms var(--ease)}
+.w-whofoot{font-size:var(--fs-foot);color:var(--w-ink3);animation:w-whoin 600ms var(--ease) both;animation-delay:400ms}
+@keyframes w-whoin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:767px){
+  .w-who{--who-av:96px;min-height:100%;align-content:center;gap:44px;padding:calc(40px + env(safe-area-inset-top,0px)) 24px calc(32px + env(safe-area-inset-bottom,0px))}
+  .w-whohead h1{font-size:var(--fs-large)}
+  .w-whohead p{font-size:var(--fs-sub)}
+  .w-wholist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px;width:100%;max-width:320px}
+  .w-wholist li{display:grid;justify-items:center}
+}
+@media (max-width:767px) and (max-height:640px){.w-who{--who-av:80px;gap:32px}}
+
+/* Signing in, as a Mac's login window: no card. A face, a name, one rounded field with the arrow
+   inside it. A mistake shakes the field; its message has a place kept for it, so nothing moves. */
+/* Grouped, not evenly spaced: who (face and name), then a clear break, then the field with its message and links.
+   Bottom padding lifts it a little above the middle, where the eye expects it. */
+.w-lock{--who-hl:rgba(255,255,255,.6);--who-sh:rgba(20,22,27,.16);width:min(340px,100%);display:grid;justify-items:center;text-align:center;padding:24px 0 calc(24px + 8vh)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}}
+:root[data-theme="dark"] .w-lock{--who-hl:rgba(255,255,255,.1);--who-sh:rgba(0,0,0,.5)}
+.w-lockhero{display:grid;justify-items:center;animation:w-whoin .5s var(--ease) both}
+.w-lockhero h1{margin-top:20px;font-size:28px;font-weight:650;letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
+.w-lockhero p{margin-top:8px;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
+.w-av.w-lockav{width:104px;height:104px;font-size:42px;font-weight:600;letter-spacing:-.03em;
+  background-image:linear-gradient(165deg,var(--who-hl),transparent 62%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 12%,transparent),0 12px 30px -14px var(--who-sh)}
+/* The wallet is drawn edge to edge: 64px reads like the old padded 88px mark */
+.w-lockmark{width:64px;height:64px}
+.w-lockform{width:100%;display:grid;margin-top:36px;animation:w-whoin .5s var(--ease) both;animation-delay:80ms}
+.w-lockfield{display:flex;align-items:center;gap:2px;height:50px;padding-inline:20px 7px;border-radius:25px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:0 1px 2px rgba(20,22,27,.05);transition:border-color .15s,box-shadow .15s}
+.w-lockfield:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 4px var(--w-accent-soft)}
+.w-lockfield.err{border-color:var(--w-bad)}
+.w-lockfield.err:focus-within{box-shadow:0 0 0 4px color-mix(in srgb,var(--w-bad) 18%,transparent)}
+.w-lockfield input:not(.w-sr){flex:1;min-width:0;height:100%;border:0;background:none;outline:none;padding:0;font:inherit;font-size:var(--fs-body);color:var(--w-ink)}
+.w-lockfield input::placeholder{color:var(--w-ink3)}
+.w-lockfield input.w-sicode{text-align:start;letter-spacing:.18em}
+.w-gate .w-lockfield .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%}
+.w-lockgo{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--w-accent);color:var(--w-on-accent);transition:opacity .15s,transform .15s,background-color .15s}
+.w .w-lockgo svg.i,.w-lockgo svg.i{width:18px;height:18px;stroke-width:2.4}
+[dir="rtl"] .w-lockgo svg.i{transform:scaleX(-1)}
+.w-lockgo:hover{filter:brightness(1.08)}
+.w-lockgo:active{transform:scale(.92)}
+/* Dim until there is something to send */
+.w-lockfield:has(input:placeholder-shown) .w-lockgo{opacity:.35}
+.w-lockgo:disabled{background:var(--w-fill2);color:var(--w-ink3);cursor:not-allowed}
+.w-lockgo[aria-busy="true"]{position:relative;opacity:1!important}
+.w-lockgo[aria-busy="true"] svg{opacity:0}
+.w-lockgo[aria-busy="true"]::after{content:"";position:absolute;inset:9px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:w-spin .7s linear infinite}
+@keyframes w-spin{to{transform:rotate(360deg)}}
+.w-lockmsg{margin:8px 0 0;min-height:1.45em;font-size:var(--fs-foot);line-height:1.45;color:var(--w-bad);text-wrap:pretty}
+.w-locklinks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 24px;margin-top:2px}
+.w-gate .w-locklinks .w-silink{color:var(--w-ink2)}
+.w-gate .w-locklinks .w-silink:hover{color:var(--w-ink)}
+.w-lock .w-sienc{margin-top:28px}
+.shake{animation:w-shake .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes w-shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@media (prefers-reduced-motion:reduce){.shake,.w-lockhero,.w-lockform{animation:none}}
+@media (max-width:767px){
+  .w-lock{min-height:100%;align-content:start;padding:calc(12vh + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));width:100%}
+  .w-av.w-lockav{width:92px;height:92px;font-size:38px}
+  .w-lockfield{height:52px}
+  .w-gate .w-locklinks .w-silink{min-height:44px}
+}
+
+/* Two-step setup */
+.w-tsteps{list-style:none;margin:0;padding:0;counter-reset:ts;display:grid;gap:18px;width:100%;text-align:start}
+.w-tsteps > li{display:grid;gap:10px;counter-increment:ts;padding-inline-start:30px;position:relative}
+.w-tsteps > li::before{content:counter(ts);position:absolute;inset-inline-start:0;top:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:var(--fs-cap);font-weight:600;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-tsteps b{font-weight:600;font-size:var(--fs-sub)}
+.w-qr{width:176px;height:176px;padding:6px;border-radius:var(--r-card);background:#fff;border:1px solid var(--w-line)}
+.w-qr svg{width:100%;height:100%;display:block}
+.w-tsteps .w-keybox code{letter-spacing:.06em;word-break:break-all;direction:ltr;unicode-bidi:isolate}
+.w-codes{list-style:none;margin:0;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;width:100%;border-radius:var(--r-card);background:var(--w-panel2);border:1px solid var(--w-line)}
+.w-codes code{font:500 var(--fs-sub) ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:var(--w-ink)}
+.w-gate .w-btn .i{width:15px;height:15px}
+
+/* First run and the upgrade: one shape for every step, as a phone's setup has.
+   Back and the dots at the top; a symbol, the title and why; what to do; one wide button, and
+   "Not now" under it. A new step comes in from the side. */
+.w-gate .w-onb{width:min(520px,100%);display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
+/* Nothing inside may widen the card: long text wraps or ends in "…" */
+.w-gate .w-onbb{grid-template-columns:minmax(0,1fr)}
+.w-gate .w-onbb > *{min-width:0}
+.w-onbtop{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;min-height:52px;padding:10px 14px 0}
+.w-onbback{justify-self:start;display:inline-flex;align-items:center;gap:2px;min-height:36px;padding:0 10px 0 4px;border-radius:var(--r-ctl);color:var(--w-accent-ink);font-size:var(--fs-sub);font-weight:500}
+.w-onbback:hover{background:var(--w-accent-soft)}
+.w-onbback svg.i{width:18px;height:18px;stroke-width:2.2}
+[dir="rtl"] .w-onbback svg.i{transform:scaleX(-1)}
+.w-onbdots{display:flex;gap:7px;margin:0;padding:0;list-style:none}
+.w-onbdots li{width:7px;height:7px;border-radius:4px;background:var(--w-fill2);transition:width .3s var(--ease),background-color .3s var(--ease)}
+.w-onbdots li.done{background:color-mix(in srgb,var(--w-accent) 40%,transparent)}
+.w-onbdots li.on{width:20px;background:var(--w-accent)}
+.w-gate .w-onbb{padding:14px 48px 8px;gap:14px;min-height:0}
+.w-onbhero{display:grid;justify-items:center;text-align:center;gap:10px;margin-bottom:10px}
+.w-onbico{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent);margin-bottom:6px}
+.w .w-onbico svg.i,.w-onbico svg.i{width:30px;height:30px;stroke-width:1.6}
+.w-onbmark{width:60px;height:60px;margin-bottom:6px}
+.w-gate .w-onbhero h1{font-size:26px;font-weight:650;letter-spacing:-.025em;line-height:1.2;text-wrap:balance}
+.w-gate .w-onbp{font-size:var(--fs-sub);line-height:1.5;max-width:400px;text-wrap:pretty}
+.w-onbp b{color:var(--w-ink);font-weight:600}
+.w-gate .w-onbf{gap:14px}
+.w-gate .w-onbb .w-mini{height:40px;font-size:var(--fs-sub);border-radius:var(--r-ctl);padding:0 12px}
+.w-gate .w-onbb > .w-err{margin:0}
+.w-gate .w-onbf label,.w-gate .w-onbrow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:center;font-size:var(--fs-sub)}
+.w-gate .w-onbrow > span:first-child{color:var(--w-ink2)}
+.w-gate .w-onbf select.w-mini{width:100%}
+.w-gate .w-onbrow .w-seg{justify-self:start}
+.w-gate .w-onbrow .w-seg button{padding:6px 14px;font-size:var(--fs-sub)}
+.w-onbnote{text-align:center;text-wrap:pretty}
+.w-onbprog{text-align:center}
+.w-gate .w-onbtick{justify-self:center;margin-top:2px;font-size:var(--fs-sub);color:var(--w-ink)}
+.w-gate .w-onbtick input{width:17px;height:17px}
+.w-onblabel{font-size:var(--fs-sub);font-weight:600;margin-top:8px}
+.w-onbfields{display:grid;gap:10px}
+.w-gate .w-onbfields input{padding-inline-end:44px}
+.w-gate .w-onbfoot{padding:20px 48px 28px}
+.w-gate .w-onbfoot .w-btn{width:100%;height:46px;font-size:var(--fs-sub);border-radius:12px}
+.w-onbalt{justify-self:center;font-size:var(--fs-sub);min-height:40px;padding:4px 12px;border-radius:var(--r-ctl)}
+.w-gate .w-switch{cursor:pointer}
+.w-choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.w-gate .w-choice{text-align:start;min-height:130px}
+.w-gate .w-choice .w-ico{background:var(--w-fill);color:var(--w-ink2)}
+.w-gate .w-choice[aria-checked="true"] .w-ico{background:var(--w-accent);color:var(--w-on-accent)}
+.w-onb.enter .w-onbb{animation:w-onbin .38s var(--ease) both}
+.w-onb.enter .w-onbhero > :first-child{animation:w-onbpop .45s var(--ease) both}
+@keyframes w-onbin{from{opacity:0;transform:translateX(18px)}}
+[dir="rtl"] .w-onb.enter .w-onbb{animation-name:w-onbinr}
+@keyframes w-onbinr{from{opacity:0;transform:translateX(-18px)}}
+@keyframes w-onbpop{from{opacity:0;transform:scale(.8)}}
+@media (prefers-reduced-motion:reduce){.w-onb.enter .w-onbb,.w-onb.enter .w-onbhero > :first-child{animation:none}}
+
+/* Phone: the whole screen, no card */
+@media (max-width:767px){
+  .w-gate{place-items:start stretch;padding:0;background:var(--w-canvas)}
+  .w-gate .w-signcard,.w-gate .w-signcard.wide{width:100%;max-width:none;min-height:100%;border:0;border-radius:0;box-shadow:none;background:transparent;padding:calc(80px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));align-content:start;gap:28px}
+  .w-gate .w-signcard .w-submit{height:52px;font-size:var(--fs-sub)}
+  .w-gate .w-input input{height:52px;font-size:var(--fs-body)}
+  .w-gate .w-eye{top:13px}
+  .w-silink{min-height:44px}
+  .w-gate .w-onb{width:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;background:var(--w-canvas)}
+  .w-onbtop{padding:calc(8px + env(safe-area-inset-top,0px)) 10px 0}
+  .w-onbback{min-height:44px}
+  .w-gate .w-onbb{padding:20px 24px 12px}
+  .w-gate .w-onbhero h1{font-size:24px}
+  .w-gate .w-onbf label,.w-gate .w-onbrow{grid-template-columns:1fr;gap:6px}
+  .w-gate .w-onbf select.w-mini,.w-gate .w-onbb .w-mini{max-width:none;width:100%;height:44px;font-size:var(--fs-body)}
+  .w-choices.two{grid-template-columns:1fr}
+  .w-gate .w-choice{min-height:0}
+  .w-gate .w-onbfoot{position:sticky;bottom:0;background:var(--w-canvas);padding:12px 24px calc(16px + env(safe-area-inset-bottom,0px))}
+  .w-gate .w-onbfoot .w-btn{height:50px}
+  .w-onbalt{min-height:44px}
+  .w-codes code{font-size:var(--fs-sub)}
+  .w-gate .w-seg button{min-height:44px;padding:0 14px}
+}
+
+/* ---------- encryption: the recovery key, codes, the Emergency Kit ---------- */
+.w-sikey{width:100%;resize:none;border:0;background:none;outline:none;font:500 var(--fs-sub)/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--w-ink);text-align:center;padding:10px 4px;direction:ltr}
+.w-input:has(.w-sikey){height:auto}
+.w-gate .w-sicode[placeholder^="XXXXX"]{letter-spacing:.08em;text-transform:uppercase;direction:ltr}
+.w-kit{display:grid;justify-items:center;gap:14px;width:100%;padding:16px;border-radius:var(--r-card);background:var(--w-panel2);border:1px solid var(--w-line)}
+.w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:6px 12px;font:600 var(--fs-sub)/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:var(--w-ink);direction:ltr;unicode-bidi:isolate}
+.w-dialog .w-kitkey{font-size:var(--fs-body)}
+.w-kit .w-qr{width:148px;height:148px;margin:0}
+.w-gate .w-silinks .w-btn{gap:6px}
+.w-gate .w-silinks .w-btn svg.i{width:15px;height:15px}
+
+/* First run: what encrypting means, the kit and the codes */
+.w-onbmeans{list-style:none;margin:0;padding:16px 18px;display:grid;gap:14px;border-radius:var(--r-card);background:var(--w-panel2);border:1px solid var(--w-line2)}
+.w-onbmeans li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;align-items:start;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-align:start}
+.w-onbmeans li svg.i{width:20px;height:20px;margin-top:1px;color:var(--w-accent)}
+.w-onbmeans b{color:var(--w-ink);font-weight:600}
+.w-onbf .w-keybox{flex:1;min-width:0}
+.w-onbf .w-keybox code{letter-spacing:.06em;direction:ltr}
+.w-choice[disabled]{opacity:.55;cursor:not-allowed}
+.w-choice .w-badge{margin-inline-start:6px;vertical-align:1px}
+.w-sienc{display:flex;gap:6px;align-items:center;justify-content:center;font-size:var(--fs-cap);color:var(--w-ink3);margin:0}
+.w-sienc svg.i{width:13px;height:13px;flex:none}
+
+/* After the upgrade from 1.x: what was kept */
+.w-onbf .w-onbrow > b{font-weight:600;color:var(--w-ink);text-align:end;font-variant-numeric:tabular-nums}
+.w-onblist{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:var(--fs-foot)}
+.w-onblist li{display:grid;grid-template-columns:7.5em minmax(0,1fr) auto;gap:10px;color:var(--w-ink2)}
+.w-onblist li b{font-weight:600;color:var(--w-ink);font-variant-numeric:tabular-nums}
+.w-onblist li.w-hint{display:block}
+.w-onbfoot a.w-btn{text-decoration:none;gap:6px}
+.w-onbfoot a.w-btn svg.i{width:15px;height:15px}
+
+/* ---------- Setup and the upgrade: people and tags ---------- */
+/* A person: a face that fills in as the name is typed, the name, then You or remove */
+.w-onbpl{display:grid;gap:10px;margin-top:6px}
+.w-onbper{display:flex;align-items:center;gap:12px}
+.w-onbper .w-av{width:38px;height:38px;font-size:16px;flex:none;transition:background-color .2s var(--ease)}
+.w-onbper .w-av.none{background:var(--w-fill);color:var(--w-ink3)}
+.w-onbper .w-av.none svg.i{width:18px;height:18px}
+.w-onbpin{flex:1;min-width:0;height:44px;padding:0 14px;border:1px solid var(--w-line);border-radius:12px;background:var(--w-panel);color:var(--w-ink);font:inherit;font-size:var(--fs-sub);transition:border-color .15s,box-shadow .15s}
+.w-onbpin::placeholder{color:var(--w-ink3)}
+.w-onbpin:focus{outline:none;border-color:var(--w-accent);box-shadow:0 0 0 3px var(--w-accent-soft)}
+.w-onbpend{width:44px;flex:none;display:grid;place-items:center}
+.w-onbpend .w-x{width:36px;height:36px}
+.w-onbghost{width:38px;height:38px;flex:none;background:none!important}
+.w-onbadd{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:1.5px dashed var(--w-line);border-radius:12px;background:none;color:var(--w-accent-ink);font:inherit;font-size:var(--fs-sub);font-weight:600;cursor:pointer;transition:background-color .15s,border-color .15s}
+.w-onbadd:hover{background:var(--w-accent-soft);border-color:var(--w-accent-line)}
+.w-onbadd svg.i{width:16px;height:16px}
+/* A tag for each person: who, how many become theirs, and the tag */
+.w-onbtags{display:grid;grid-template-columns:minmax(0,1fr);margin-top:6px;border-top:1px solid var(--w-line2)}
+.w-onbtagrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--w-line2)}
+.w-onbtagwho{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.w-onbtagwho > span{min-width:0}
+.w-onbtagwho .w-av{width:38px;height:38px;font-size:16px;flex:none}
+.w-onbtagwho b{display:block;font-size:var(--fs-sub);font-weight:600}
+.w-onbtagwho small{display:block;font-size:var(--fs-foot);color:var(--w-ink2);min-height:1.3em;overflow-wrap:anywhere}
+.w-onbseen{display:block;color:var(--w-ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-onbtagrow select.w-mini{width:160px;flex:none;height:40px}
+.w-gate .w-onbb > .w-hint{margin-top:4px}
+@media (max-width:560px){
+  .w-onbtagrow{flex-wrap:wrap}
+  .w-onbtagrow select.w-mini{width:100%;height:44px}
+}
+
+/* ---------- Welcome to Wally 2.0 (js/welcome.js): once per person, after the upgrade from 1.x ----------
+   Apple's "What's New" shape: the mark, one title, the reassurance, a plain list, one button that stays in view. */
+.w-welwrap{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(10,12,20,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .24s var(--ease)}
+.w-welwrap.on{opacity:1}
+.w-wel:focus,.w-wel:focus-visible,.w .w-wel:focus-visible{outline:none}
+.w-wel{width:min(460px,100%);max-height:calc(100dvh - 40px);display:flex;flex-direction:column;background:var(--w-panel);border:1px solid var(--w-line);border-radius:24px;box-shadow:var(--w-shadow);overflow:hidden;
+  background-image:radial-gradient(120% 60% at 50% -10%,var(--w-accent-soft),transparent 70%)}
+.w-welwrap .w-wel{transform:translateY(12px) scale(.98);transition:transform .3s var(--ease)}
+.w-welwrap.on .w-wel{transform:none}
+.w-welbody{overflow-y:auto;overscroll-behavior:contain;padding:36px 32px 20px;text-align:center}
+.w-welmark{width:56px;height:56px;animation:w-welpop .5s var(--ease) both}
+.w-welh{margin:14px 0 6px;font-size:30px;line-height:1.15;font-weight:750;letter-spacing:-.025em;color:var(--w-ink);text-wrap:balance}
+.w-welapp{color:var(--w-accent)}
+.w-welok{display:inline-flex;align-items:center;gap:6px;margin:16px 0 0;padding:6px 12px;border-radius:999px;background:var(--w-good-soft);color:var(--w-good);font-size:var(--fs-foot);font-weight:600;text-align:start}
+.w .w-welok svg.i,.w-welok svg.i{flex:none;width:15px;height:15px;stroke-width:2.2}
+.w-welfeat{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:20px;text-align:start}
+.w-welfeat li{display:flex;gap:14px;align-items:flex-start;animation:w-welrise .45s var(--ease) both;animation-delay:calc(var(--i) * 60ms + 120ms)}
+.w-welfeat b{display:block;font-size:var(--fs-sub);font-weight:650}
+.w-welfeat small{display:block;margin-top:2px;font-size:var(--fs-foot);line-height:1.4;color:var(--w-ink2)}
+.w-welico{flex:none;width:36px;height:36px;display:grid;place-items:center;color:var(--w-accent)}
+.w .w-welico svg.i,.w-welico svg.i{width:24px;height:24px;stroke-width:1.6}
+.w-welfoot{position:relative;display:grid;gap:12px;justify-items:center;padding:16px 32px 24px;background:var(--w-panel)}
+/* When the list scrolls under the button, it fades out instead of being cut */
+.w-welfoot::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:28px;background:linear-gradient(to bottom,transparent,var(--w-panel));pointer-events:none}
+.w-welgo{width:100%;height:46px;font-size:16px}
+.w-gate .w-wel{margin:auto}
+@keyframes w-welpop{from{opacity:0;transform:scale(.6)}}
+@keyframes w-welrise{from{opacity:0;transform:translateY(8px)}}
+@media (max-width:560px){
+  .w-welbody{padding:30px 22px 8px}
+  .w-welfoot{padding:14px 22px calc(20px + env(safe-area-inset-bottom,0px))}
+  .w-welh{font-size:27px}
+  .w-gate .w-wel{width:100%;height:100%;max-height:none;border:0;border-radius:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .w-welwrap,.w-welwrap .w-wel{transition:none}
+  .w-welmark,.w-welfeat li{animation:none}
+}
+
+/* ======================= Wally 2.0 redesign (27, 26, 15) ======================= */
+/* Setup and the upgrade fill the window, as Setup Assistant does: no card. Back and the dots at the
+   top of the window; the symbol, a large title and why, centred; then grouped rows and one button. */
+.w-gate .w-onb{width:100%;max-width:none;min-height:100%;align-self:stretch;margin:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:104px 0 64px;position:relative}
+/* Centred by auto margins, not justify-content: a step taller than the window then starts under the
+   dots and scrolls, instead of overflowing upwards behind them */
+.w-gate .w-onbb{margin-top:auto}
+.w-gate .w-onbfoot{margin-bottom:auto}
+.w-gate:has(> .w-onb){padding:0}
+/* Back and the dots on one line, at the same height on every step (with or without Back) */
+.w-onbtop{position:absolute;top:0;left:0;right:0;padding:27px 34px 0;min-height:0;grid-template-rows:36px}
+.w-onbdots{gap:6px}
+/* Only the step you are on stands out */
+.w-onbdots li.done{background:var(--w-fill2)}
+/* Taller than the window: the step scrolls, it is never squeezed */
+.w-gate .w-onbb{width:min(560px,100%);padding:0;gap:0;flex-shrink:0}
+.w-onbhero{gap:0;margin-bottom:0}
+.w-onbico{width:64px;height:64px;border-radius:16px;margin-bottom:0;color:var(--w-accent-ink)}
+.w .w-onbico svg.i,.w-onbico svg.i{width:30px;height:30px;stroke-width:1.7}
+.w-onbmark{width:64px;height:64px;margin-bottom:0}
+.w-gate .w-onbhero h1{margin-top:22px;font-size:34px;font-weight:700;letter-spacing:-.035em;line-height:1.12}
+.w-gate .w-onbp{margin-top:10px;font-size:var(--fs-body);line-height:1.45;max-width:480px;color:var(--w-ink2)}
+.w-gate .w-onbb > :is(.w-gl,.w-kitbox){margin-top:32px}
+.w-gate .w-onbb > .w-onbmeans{margin-top:34px}
+.w-gate .w-onbb > .w-gl + .w-gl,.w-gate .w-onbb > .w-kitbox + .w-gl,.w-gate .w-onbb > .w-glf + .w-gl{margin-top:24px}
+.w-gate .w-onbb > .w-glh{margin-top:32px;padding:0 16px;text-align:start;font-weight:400;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-gate .w-onbb > .w-glh + .w-gl{margin-top:16px}
+.w-gate .w-onbb > .w-glf{text-align:start;margin-top:10px;padding:8px 16px 0;color:var(--w-ink2)}
+.w-gate .w-onbb > .w-onbnote{color:var(--w-ink2)}
+.w-gate .w-onbgl .w-badge{font-size:12px;font-weight:600;padding:2px 7px;border-radius:999px}
+.w-gate .w-onbb > .w-onbnote{margin-top:10px}
+.w-gate .w-onbb > .w-err,.w-gate .w-onbb > .w-onbprog{margin-top:12px;text-align:center}
+.w-gate .w-onbgl{text-align:start;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-gate .w-onbgl .w-gr{font-size:var(--fs-body);min-height:52px;gap:14px}
+.w-gate .w-onbgl .w-gr > .v{font-size:var(--fs-body)}
+.w-gate .w-onbgl .w-seg{margin-inline-start:auto}
+.w-gate .w-onbgl .w-seg{padding:2px;border-radius:9px}
+.w-gate .w-onbgl .w-seg button{font-size:14px;line-height:20px;padding:5px 12px;border-radius:7px}
+.w-gate .w-onbfoot{width:min(340px,100%);padding:38px 0 0;display:grid;gap:10px;justify-items:center}
+.w-gate .w-onbfoot .w-btn{width:100%;height:50px;font-size:var(--fs-body);border-radius:999px}
+.w-gate .w-onbfoot .w-btn[disabled]{opacity:1;background:var(--w-fill2);color:var(--w-ink3)}
+.w-onbalt{font-size:var(--fs-body);font-weight:400;color:var(--w-accent-ink);min-height:40px}
+/* A row that opens a list: the native list sits under the whole row */
+.w-grpick{position:relative;cursor:pointer}
+.w-grpick > .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w .w-gr.w-grpick > select{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;cursor:pointer;font-size:16px}
+.w-grpick:has(select:focus-visible){outline:2px solid var(--w-accent);outline-offset:-2px}
+/* People: one group of rows */
+.w-onbpl{gap:0;margin:0;padding:0;list-style:none}
+.w-onbper .w-av{width:34px;height:34px;font-size:15px}
+.w-onbpin{height:auto;padding:0;border:0;border-radius:0;background:none;font-size:var(--fs-body)}
+.w-onbpin:focus{box-shadow:none}
+.w-onbdrop{width:22px;height:22px;border-radius:50%;background:var(--w-bad);color:#fff;display:grid;place-items:center;flex:none}
+.w .w-onbdrop svg.i{width:14px;height:14px;stroke-width:2.6}
+.w-onbdrop:hover{filter:brightness(1.1)}
+.w-onbadd{flex:initial;height:auto;border:0;border-radius:0;justify-content:flex-start;font-weight:400;font-size:var(--fs-body);gap:14px}
+.w-onbadd:hover{background:var(--w-fill);border:0}
+.w-onbaddi{width:34px;display:grid;place-items:center;flex:none}
+.w .w-onbaddi svg.i{width:20px;height:20px}
+/* Passwords: two rows of one group */
+.w-gate .w-onbfields .w-gr{min-height:52px}
+/* Typed passwords as large, spaced dots */
+.w-gate .w-onbfields{gap:0}
+.w-gate .w-onbfields input[type="password"]:not(:placeholder-shown){font-size:20px;letter-spacing:3px}
+.w-gate .w-onbfields .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--w-ink3)}
+/* What encrypting means: Apple's What's New list, no box */
+.w-onbmeans{padding:0;border:0;background:none;border-radius:0;gap:18px}
+.w-onbmeans li{grid-template-columns:40px minmax(0,1fr);gap:14px;font-size:var(--fs-sub);line-height:1.4}
+.w-onbmeans li svg.i{width:26px;height:26px;margin:2px auto 0;color:var(--w-accent-ink);stroke-width:1.7}
+.w-onbmeans b{display:block;font-size:var(--fs-body);font-weight:600;margin-bottom:1px}
+/* The Emergency Kit: the key beside its QR code, then a switch */
+.w-kitbox{display:flex;gap:22px;align-items:center;background:var(--w-panel);border-radius:16px;padding:20px 22px;text-align:start;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-kitqr{width:116px;height:116px;flex:none;border-radius:10px;background:#fff;padding:3px;box-shadow:0 0 0 1px var(--w-line);color:#111;display:block}
+.w-kitqr .w-qr{width:100%;height:100%;padding:0;border:0;border-radius:0;display:block}
+.w-kitside{display:grid;gap:14px;min-width:0}
+.w-kitbox .w-kitkey{grid-template-columns:repeat(4,auto);justify-content:start;gap:2px 12px;font-size:var(--fs-body);line-height:1.75;font-weight:600}
+.w-kitbtns{display:flex;gap:10px;flex-wrap:wrap}
+.w-gate .w-kitbtns .w-btn{height:38px;font-size:var(--fs-sub);font-weight:600;border-radius:999px;padding:0 16px;gap:6px}
+.w-gate .w-kitbtns .w-btn svg.i{width:16px;height:16px}
+/* Bring your data: two rows to pick from */
+.w-onbpick .w-gr{text-align:start}
+.w-onbpick .w-gr .k{font-weight:400}
+/* Each line of the explanation as tall as a line of the row */
+.w-onbpick .w-gr .k small{font-weight:400;font-size:var(--fs-foot);line-height:calc(var(--fs-body) * 1.45);color:var(--w-ink2)}
+.w-onbsico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink);flex:none}
+.w .w-onbsico svg.i{width:16px;height:16px}
+.w-onbradio{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--w-line);display:grid;place-items:center;flex:none;color:transparent}
+.w .w-onbradio svg.i{width:14px;height:14px;stroke-width:2.6}
+.w-onbpick [aria-checked="true"] .w-onbradio{background:var(--w-accent);border-color:var(--w-accent);color:var(--w-on-accent)}
+/* Tags: a row per person */
+.w-onbtags{border:0;margin:0}
+.w-onbtagrow{padding:10px 16px;border-bottom:0;justify-content:flex-start}
+.w-onbtagrow .w-av{width:34px;height:34px;font-size:15px}
+.w-onbtagrow .k small{font-size:var(--fs-foot);color:var(--w-ink2);line-height:1.4}
+.w-onbtagrow .w-onbseen{display:block;color:var(--w-ink2)}
+@media (min-width:768px){
+  .w-onbtop .w-onbback{padding:0 8px 0 0}
+}
+@media (max-width:767px){
+  /* The phone keeps Setup Assistant: the button pinned at the bottom */
+  .w-gate .w-onb{justify-content:flex-start;padding:calc(56px + env(safe-area-inset-top,0px)) 0 0;min-height:100%}
+  .w-onbtop{padding:calc(9px + env(safe-area-inset-top,0px)) 10px 0;grid-template-rows:44px}
+  .w-onbback{font-size:var(--fs-body)}
+  .w-gate .w-onbb{width:100%;padding:0 20px 12px}
+  .w-gate .w-onbb{margin-top:0}
+  .w-gate .w-onbfoot{margin-bottom:0}
+  .w-onbico,.w-onbmark{margin-top:18px}
+  .w-gate .w-onbhero h1{margin-top:18px;font-size:28px}
+  .w-gate .w-onbp{margin-top:8px;font-size:16px}
+  .w-gate .w-onbb > .w-gl{margin-top:26px}
+  .w-gate .w-onbb > .w-kitbox{margin-top:30px}
+  .w-gate .w-onbb > .w-onbmeans{margin-top:32px}
+  .w-gate .w-onbb > .w-gl + .w-gl,.w-gate .w-onbb > .w-kitbox + .w-gl,.w-gate .w-onbb > .w-glf + .w-gl{margin-top:22px}
+  .w-gate .w-onbb > .w-glf{margin-top:8px}
+  .w-gate .w-onbb > .w-glh{margin-top:30px}
+  .w-gate .w-onbb > .w-glh + .w-gl{margin-top:14px}
+  .w-gate .w-onbgl .w-gr{min-height:50px}
+  .w-gate .w-onbfoot{position:sticky;bottom:0;width:100%;margin-top:auto;padding:12px 20px calc(26px + env(safe-area-inset-bottom,0px));background:var(--w-canvas);gap:6px}
+  .w-gate .w-onbfoot:has(.w-onbalt){padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .w-gate .w-onbfoot .w-btn{height:52px}
+  .w-kitbox{flex-direction:column;gap:14px;padding:18px}
+  .w-kitbox .w-kitkey{justify-content:center}
+  .w-kitbtns{justify-content:center}
+  .w-kitside{justify-items:center}
+  .w-onbmeans li{font-size:var(--fs-foot)}
+}
+
+/* Unlock and recovery: the sign-in look (26) */
+.w-lock.wide{width:min(380px,100%)}
+.w-lock.wide .w-lockhero p{max-width:340px}
+.w-lockkey{width:84px;height:84px;border-radius:22px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w .w-lockkey svg.i{width:38px;height:38px;stroke-width:1.6}
+.w-lockfield.key{height:auto;min-height:52px;border-radius:20px;padding:7px 7px 7px 18px;align-items:center}
+.w-lockfield.key .w-sikey{flex:1;min-width:0;padding:5px 0;text-align:start;font:500 14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em;overflow:hidden}
+.w-lockfield.key .w-sikey::placeholder{color:var(--w-ink3);text-transform:none}
+.w-lockfield:has(textarea:placeholder-shown) .w-lockgo{opacity:.35}
+.w-lockgroup{display:grid;border-radius:20px;background:var(--w-panel);border:1px solid var(--w-line);box-shadow:0 1px 2px rgba(20,22,27,.05);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.w-lockgroup:focus-within{border-color:var(--w-accent);box-shadow:0 0 0 4px var(--w-accent-soft)}
+.w-lockgroup.err{border-color:var(--w-bad)}
+.w-lockrow{display:flex;align-items:center;gap:2px;height:52px;padding-inline:20px 7px}
+.w-lockrow + .w-lockrow{border-top:1px solid var(--w-line2)}
+.w-lockrow input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;padding:0;font:inherit;font-size:var(--fs-body);color:var(--w-ink)}
+.w-lockrow input::placeholder{color:var(--w-ink3)}
+.w-gate .w-lockrow .w-eye{position:static;inset:auto;flex:none;width:34px;height:34px;border-radius:50%}
+.w-lockgap{width:36px;flex:none}
+.w-lockgroup:has(input:placeholder-shown) .w-lockgo{opacity:.35}
+.w-gate .w-locklinks .w-silink.acc{color:var(--w-accent-ink)}
+.w-lock > .w-locklinks:first-of-type{margin-top:14px}
+.w-lockhero + .w-locklinks{margin-top:18px}
+.w-sienc.w-lnote{margin-top:26px;font-size:var(--fs-foot);line-height:1.4;align-items:flex-start;text-align:start;max-width:320px;margin-inline:auto}
+.w-sienc.w-lnote svg.i{width:14px;height:14px;margin-top:2px}
+.w-lock.wide .w-lnote{max-width:300px}
+.w-lock.wide .w-lockhero + .w-locklinks + .w-lnote{max-width:320px}
+/* Unlock and recovery, spaced as drawn: centred in the window, a 96 px face, the field close under the words,
+   the message only when there is one, plain 15 px links and the note under them */
+.w-lock.wide .w-av.w-lockav{width:96px;height:96px;font-size:40px;box-shadow:0 8px 24px -8px rgba(20,22,27,.3)}
+/* Lines break where they fall, as drawn */
+.w-lock.wide :is(.w-lockhero h1,.w-lockhero p,.w-lockmsg),.w-gate .w-onb :is(.w-onbhero h1,.w-onbp){text-wrap:wrap}
+.w-lock.wide .w-lockfield.key{gap:10px}
+/* The rounded field or group shows focus; the text box inside it doesn't draw a second ring */
+.w-gate .w-lockfield .w-sikey:focus-visible,.w-gate .w-lockrow input:focus-visible{outline:none}
+/* Back sits a touch above the dots' line, as drawn */
+.w-onbback{translate:0 -3px}
+.w-lock.wide .w-lockmark{width:72px;height:72px}
+.w-lock.wide .w-lockhero h1{margin-top:20px;font-weight:700}
+.w-lock.wide .w-lockhero p{margin-top:8px;max-width:320px;margin-inline:auto}
+.w-lock.wide .w-lockform{margin-top:26px}
+.w-lock.wide .w-lockfield{height:52px}
+.w-lock.wide .w-lockfield.key{height:auto;padding:12px 7px 12px 18px}
+.w-lock.wide .w-lockfield.key .w-sikey{padding:0}
+.w-lock.wide .w-lockgo{width:38px;height:38px}
+.w-lock.wide .w-lockmsg{margin-top:12px;min-height:0;font-size:14px}
+.w-lock.wide .w-lockmsg:empty{display:none}
+.w-lock.wide .w-locklinks .w-silink{font-size:15px;font-weight:400;padding-inline:0}
+.w-lock.wide .w-lockform + .w-locklinks{margin-top:9px}
+/* A message with no field: the paragraph is the content, so it gets room under the title, and the
+   link the room a field would take, not the 9px it keeps from a field above it */
+.w-lock.wide .w-lockhero:has(+ .w-locklinks) h1 + p{margin-top:12px}
+/* and the width to read it: in Catalan or German the title stays on one line, the paragraph in three */
+.w-lock.wide:has(> .w-lockhero + .w-locklinks){width:min(480px,100%)}
+.w-lock.wide .w-lockhero:has(+ .w-locklinks) p{max-width:460px}
+/* The command to turn sign-in off: wider still, so it fits on one line, in a field like the password's with Copy inside */
+.w-lock.wide:has(> .w-lockcmd){width:min(540px,100%)}
+.w-lock.wide .w-lockhero:has(+ .w-lockcmd) h1 + p{margin-top:12px;max-width:500px}
+.w-lockcmd{width:100%;margin-top:24px}
+.w-lock.wide .w-lockfield.w-cmd{height:auto;min-height:52px;padding:7px 7px 7px 20px;gap:12px}
+.w-cmd code{flex:1;min-width:0;text-align:start;font:500 14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--w-ink);overflow-wrap:normal;word-break:keep-all;direction:ltr;unicode-bidi:isolate}
+.w-cmd code span{white-space:nowrap}
+.w-cmdcopy{flex:none;height:38px;padding-inline:16px;border:0;border-radius:19px;background:var(--w-accent-soft);color:var(--w-accent-ink);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.w-cmdcopy:hover{filter:brightness(.97)}
+.w-cmdcopy:focus-visible{outline:2px solid var(--w-accent);outline-offset:2px}
+.w-lockhint{margin-top:12px;font-size:var(--fs-foot);line-height:1.45;color:var(--w-ink2);text-wrap:pretty}
+.w-lock.wide .w-lockcmd + .w-locklinks{margin-top:24px}
+.w-lock.wide .w-lockhero + .w-locklinks{margin-top:24px}
+.w-lock.wide .w-sienc.w-lnote{margin-top:29px}
+@media (min-width:768px){
+  .w-lock.wide{padding:24px 0}
+  /* The links' tap area reaches past the text: centred on the text, not on the tap area */
+  .w-lock.wide > .w-locklinks:last-child{margin-bottom:-5px}
+  /* Not now: the same room under the button as a line of text */
+  .w-gate .w-onbalt{margin-bottom:-7px}
+}
+@media (max-width:767px){
+  .w-lock.wide{width:100%;padding-top:calc(120px + env(safe-area-inset-top,0px));padding-inline:25px}
+  /* The key centred under its code, the last group too */
+  .w-kitbox .w-kitkey{display:flex;flex-wrap:wrap;justify-content:center;max-width:calc(19 * (1ch + .04em) + 1px)}
+  .w-lock.wide .w-lockform + .w-locklinks{margin-top:3px}
+  .w-lock.wide .w-lockhero + .w-locklinks{margin-top:18px}
+  .w-lock.wide .w-lockcmd + .w-locklinks{margin-top:18px}
+  .w-lockcmd{margin-top:20px}
+  .w-lock.wide .w-sienc.w-lnote{margin-top:23px}
+}
+/* fine spacing, checked against the mockups */
+.w-gate .w-onbb > .w-onbnote{margin-top:18px}
+@media (max-width:767px){.w-gate .w-onbb > .w-onbnote{margin-top:16px}}
+/* The groups of four a space apart, as typed */
+.w-kitbox .w-kitkey{gap:0 calc(1ch + .04em);letter-spacing:.04em}
+.w-onbtagrow .k small{line-height:calc(var(--fs-body) * 1.45)}
+.w-gate .w-onbfields .w-gr{padding-block:6px}
+@media (min-width:768px){.w-onbback{font-size:var(--fs-body)}}
+@media (max-width:767px){.w-gate .w-onbgl .w-seg button{min-height:0;padding:5px 12px;font-size:14px;line-height:20px}}
+/* Spacing pass: Add someone is a row like the others (its separator, the people rows' height); a
+   two-line choice gets the same 12 px above and below as a list row; the What's New pill keeps its
+   text off the rounded ends when it wraps; on a phone its list fills the screen with the button at
+   the bottom, and the last line clears the fade above the button. */
+.w-gate .w-onbpl > .w-onbadd{border-top:1px solid var(--w-line2);min-height:54px}
+.w-onbpick .w-gr{padding-block:12px}
+.w-welok{padding:7px 14px;border-radius:16px;text-wrap:balance}
+.w-welbody{flex:1 1 auto;padding-bottom:28px}
+@media (max-width:560px){.w-welbody{padding-bottom:24px}}

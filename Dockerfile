@@ -50,4 +50,4 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 EXPOSE 80
 
 # Start FastAPI + Nginx
-CMD ["sh", "-c", "python3 -m uvicorn api.main:app --host 0.0.0.0 --port 8000 & nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --root-path /api --proxy-headers & nginx -g 'daemon off;'"]

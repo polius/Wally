@@ -24,20 +24,30 @@ jobs:
           username: poliuscorp
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
+      # Releases are tagged vMAJOR.MINOR.PATCH (v2.0.0) and must match VERSION in api/main.py.
+      - name: Check the tag matches the app version
+        run: |
+          VERSION=$(sed -n 's/^VERSION = "\(.*\)"$/\1/p' api/main.py)
+          if ! echo "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH (for example v2.0.0)"; exit 1
+          fi
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match VERSION \"$VERSION\" in api/main.py"; exit 1
+          fi
+
+      # v2.0.0 pushes 2.0.0, 2.0, 2 and latest. Pre-releases (v2.1.0-beta.1) push only their own tag.
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: poliuscorp/wally
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Set tag without first two chars
-        id: tag
-        run: |
-          SHORT_TAG="${GITHUB_REF_NAME:2}"
-          echo "SHORT_TAG=$SHORT_TAG" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         id: push
@@ -46,9 +56,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            poliuscorp/wally:latest 
-            poliuscorp/wally:${{ steps.tag.outputs.short_tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 

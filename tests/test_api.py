@@ -1,0 +1,757 @@
+"""API tests: money maths, the recurring engine, sign-in, import matching, the upgrade from 1.x.
+
+Run with: pytest tests
+"""
+import shutil
+import sqlite3
+import sqlmodel
+import time
+from datetime import date
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+from api import database
+from api.routers import auth as auth_router
+from api.services import totp
+
+FIXTURES = Path(__file__).parent / "fixtures"
+TODAY = "2026-10-24"
+
+@pytest.fixture
+def make_client(tmp_path, monkeypatch):
+    monkeypatch.setenv("WALLY_TODAY", TODAY)
+    auth_router._failures.clear()
+    auth_router._last_counter["value"] = -1
+    clients = []
+
+    def make(db_file: Path | None = None):
+        if db_file:
+            shutil.copy(db_file, tmp_path / "wally.db")
+        database.configure(tmp_path)
+        from api.main import app
+        client = TestClient(app)
+        client.__enter__()
+        clients.append(client)
+        return client
+
+    yield make
+    for client in clients:
+        client.__exit__(None, None, None)
+
+@pytest.fixture
+def client(make_client):
+    return make_client()
+
+@pytest.fixture
+def couple(client):
+    alex = client.post("/people", json={"name": "Alex"}).json()
+    ana = client.post("/people", json={"name": "Ana"}).json()
+    client.headers["x-wally-person"] = str(alex["id"])
+    return client, alex["id"], ana["id"]
+
+def expense(client, **kw):
+    body = {"name": "Mercadona", "category": "Groceries", "amount": "10.00", "date": TODAY, **kw}
+    r = client.post("/transactions", json=body)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+# ---------- shares ----------
+def test_shared_cost_rounds_spare_cent_to_payer(couple):
+    client, alex, ana = couple
+    t = expense(client, amount="10.01", paid_by=alex)
+    assert t["shares"] == {str(alex): 501, str(ana): 500}
+    t = expense(client, amount="10.01", paid_by=ana)
+    assert t["shares"] == {str(alex): 500, str(ana): 501}
+
+def test_custom_shares_must_add_up(couple):
+    client, alex, ana = couple
+    r = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "30", "date": TODAY, "shares": {str(alex): 1000, str(ana): 1000}})
+    assert r.status_code == 400
+    t = expense(client, amount="30", shares={str(alex): 2000, str(ana): 1000})
+    assert t["shares"] == {str(alex): 2000, str(ana): 1000}
+
+def test_own_transaction_has_no_shares(couple):
+    client, alex, ana = couple
+    t = expense(client, person_id=ana, paid_by=alex, shares={str(ana): 1000})
+    assert t["person_id"] == ana and t["shares"] is None and t["paid_by"] is None
+    assert t["created_by"] == alex
+
+def test_changing_amount_resplits(couple):
+    client, alex, ana = couple
+    t = expense(client, amount="10.00", paid_by=alex)
+    r = client.put(f"/transactions/{t['id']}", json={"amount": "7.03"})
+    assert r.json()["shares"] == {str(alex): 352, str(ana): 351}
+
+def test_tags_are_cleaned_and_created(couple):
+    client, *_ = couple
+    t = expense(client, tags=["#coffee", "coffee", " holiday "])
+    assert t["tags"] == ["coffee", "holiday"]
+    assert {"coffee", "holiday"} <= set(client.get("/tags").json())
+
+# ---------- recurring engine ----------
+def rule(client, **kw):
+    body = {"name": "Netflix", "category": "Entertainment", "amount": "13.99", "frequency": "monthly", "startDate": "2026-01-31", **kw}
+    r = client.post("/recurring", json=body)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+def made(client, rule_id):
+    return sorted(t["date"] for t in client.get("/transactions").json() if t["recurringID"] == rule_id)
+
+def test_month_end_falls_on_last_day_and_never_drifts(client):
+    r = rule(client)
+    assert made(client, r["id"]) == ["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31", "2026-06-30", "2026-07-31", "2026-08-31", "2026-09-30"]
+
+def test_future_dates_are_never_stored(client):
+    r = rule(client, startDate="2026-10-20")
+    assert made(client, r["id"]) == ["2026-10-20"]
+    assert r["last_run"] == TODAY
+
+def test_29_february_falls_on_28(client):
+    r = rule(client, startDate="2024-02-29", frequency="yearly")
+    assert made(client, r["id"]) == ["2024-02-29", "2025-02-28", "2026-02-28"]
+
+def test_every_n_and_end_after(client):
+    r = rule(client, name="Swim", startDate="2026-09-05", frequency="weekly", interval=2, endDate="2026-10-03")
+    assert made(client, r["id"]) == ["2026-09-05", "2026-09-19", "2026-10-03"]
+
+def test_engine_catches_up_and_never_duplicates(client, monkeypatch):
+    from api.services.engine import run_all
+    r = rule(client, startDate="2026-10-01", frequency="daily")
+    assert len(made(client, r["id"])) == 24
+    monkeypatch.setenv("WALLY_TODAY", "2026-10-30")
+    with database.Session(database.engine) as db:
+        assert run_all(db) == 6
+        assert run_all(db) == 0
+    assert len(made(client, r["id"])) == 30
+
+def test_pause_adds_nothing_and_resume_offers_missed(client, monkeypatch):
+    from api.services.engine import run_all
+    r = rule(client, startDate="2026-10-01", frequency="daily")
+    client.post(f"/recurring/{r['id']}/pause")
+    monkeypatch.setenv("WALLY_TODAY", "2026-10-27")
+    with database.Session(database.engine) as db:
+        run_all(db)
+    assert len(made(client, r["id"])) == 24
+    resumed = client.post(f"/recurring/{r['id']}/resume").json()
+    assert resumed["missed"] == ["2026-10-25", "2026-10-26", "2026-10-27"]
+    assert len(made(client, r["id"])) == 24
+    client.post(f"/recurring/{r['id']}/missed", json={"add": True})
+    assert len(made(client, r["id"])) == 27
+
+def test_change_from_next_charge_splits_the_rule(client):
+    r = rule(client)
+    new = client.put(f"/recurring/{r['id']}", json={"amount": "15.99", "applyTo": "later"}).json()
+    assert new["id"] != r["id"]
+    assert new["startDate"] == "2026-10-31" and new["anchor_day"] == 31
+    old = client.get(f"/recurring/{r['id']}").json()[0]
+    assert old["endDate"] == "2026-10-30"
+    past = [t for t in client.get("/transactions").json() if t["recurringID"] == r["id"]]
+    assert {t["amount"] for t in past} == {"13.99"}
+
+def test_split_rule_keeps_the_31st_after_a_short_month(client, monkeypatch):
+    from api.services.engine import run_all
+    monkeypatch.setenv("WALLY_TODAY", "2026-11-05")
+    r = rule(client)
+    new = client.put(f"/recurring/{r['id']}", json={"amount": "15.99", "applyTo": "later"}).json()
+    assert new["startDate"] == "2026-11-30"
+    monkeypatch.setenv("WALLY_TODAY", "2027-01-05")
+    with database.Session(database.engine) as db:
+        run_all(db)
+    assert made(client, new["id"]) == ["2026-11-30", "2026-12-31"]
+
+def test_change_all_rewrites_past(client):
+    r = rule(client)
+    client.put(f"/recurring/{r['id']}", json={"amount": "15.99", "category": "Utilities", "applyTo": "all"})
+    past = [t for t in client.get("/transactions").json() if t["recurringID"] == r["id"]]
+    assert len(past) == 9 and {(t["amount"], t["category"]) for t in past} == {("15.99", "Utilities")}
+
+def test_delete_rule_keeps_or_removes_past(client):
+    r1, r2 = rule(client), rule(client, name="Gym")
+    client.request("DELETE", f"/recurring/{r1['id']}", json={"applyTo": "future"})
+    client.request("DELETE", f"/recurring/{r2['id']}", json={"applyTo": "all"})
+    names = [t["name"] for t in client.get("/transactions").json()]
+    assert names.count("Netflix") == 9 and names.count("Gym") == 0
+
+# ---------- sign-in: one password, one two-step, for the household ----------
+PW = "household-pass-1"
+
+def turn_on_signin(client, alex, ana):
+    """Sign-in on, with no Emergency Kit: without encryption it's optional"""
+    r = client.put("/signin", json={"enabled": True, "password": PW})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"signin": True}
+    client.headers.pop("x-wally-person", None)
+    client.cookies.clear()
+
+def login(client, person_id, password=PW):
+    return client.post("/login", json={"person_id": person_id, "password": password})
+
+def two_step(client) -> tuple[str, list[str]]:
+    setup = client.post("/two-step/setup").json()
+    codes = client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": PW}).json()["recovery_codes"]
+    auth_router._last_counter["value"] = -1
+    return setup["secret"], codes
+
+def test_everyone_signs_in_with_the_household_password(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    assert client.get("/transactions").status_code == 401
+    status = client.get("/auth/status").json()
+    assert status["signin"] and not status["signed_in"] and [p["name"] for p in status["people"]] == ["Alex", "Ana"]
+    assert "has_password" not in status["people"][0] and not status["two_step"]
+    # Who you are comes first: one password, so the name is needed
+    assert client.post("/login", json={"password": PW}).status_code == 400
+
+    r = login(client, ana, "wrong")
+    assert r.status_code == 401 and r.json()["detail"]["tries_left"] == 9
+    r = login(client, ana)
+    assert r.json() == {"ok": True, "code_needed": False}
+    cookie = r.headers["set-cookie"]
+    assert "HttpOnly" in cookie and "Max-Age=31536000" in cookie
+    me = client.get("/auth/status").json()
+    assert me["me"]["name"] == "Ana" and me["kit"] is None
+
+    # Created by comes from sign-in, not from what the browser says
+    t = client.post("/transactions", json={"name": "x", "category": "Food", "amount": "5", "date": TODAY}, headers={"x-wally-person": str(alex)}).json()
+    assert t["created_by"] == ana
+
+    # The same password for Alex, on another browser
+    other = TestClient(client.app)
+    assert login(other, alex).status_code == 200 and other.get("/auth/status").json()["me"]["name"] == "Alex"
+
+def test_ten_wrong_tries_wait_whoever_types_them(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    # One password, so one count: trying every name doesn't give more guesses
+    for who in (alex, ana) * 5:
+        assert login(client, who, "nope").status_code == 401
+    r = login(client, ana)
+    assert r.status_code == 429 and 0 < r.json()["detail"]["retry_after"] <= 30
+    auth_router._failures[-1] -= 31
+    assert login(client, ana).status_code == 200
+
+def test_two_step_is_one_for_the_household(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    setup = client.post("/two-step/setup").json()
+    assert setup["uri"].startswith("otpauth://totp/Wally:Household?secret=")
+    # It changes everyone's sign-in, so it asks for the password, then a code from the new secret
+    assert client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": "wrong-pass"}).status_code == 401
+    assert client.post("/two-step/confirm", json={"code": "000000", "password": PW}).status_code == 400
+    codes = client.post("/two-step/confirm", json={"code": totp.code_at(setup["secret"], int(time.time() // 30)), "password": PW}).json()["recovery_codes"]
+    assert len(codes) == 10 and len(set(codes)) == 10
+    assert client.get("/auth/status").json()["two_step"]
+    auth_router._last_counter["value"] = -1
+
+    # Ana's phone has the same secret: her code is the same code
+    other = TestClient(client.app)
+    r = login(other, ana)
+    assert r.json()["code_needed"] is True
+    assert other.get("/transactions").status_code == 401
+    r = other.post("/login/code", json={"code": "123456"})
+    assert r.status_code == 401 and "30 seconds" in r.json()["detail"]["message"]
+    assert other.post("/login/code", json={"code": totp.code_at(setup["secret"], int(time.time() // 30))}).status_code == 200
+    assert other.get("/auth/status").json()["me"]["name"] == "Ana"
+
+    # Adding a phone shows the same secret again, after the password
+    assert client.post("/two-step/show", json={"password": "wrong-pass"}).status_code == 401
+    assert client.post("/two-step/show", json={"password": PW}).json()["secret"] == setup["secret"]
+
+    # A recovery code works once, for anyone
+    client.post("/logout")
+    login(client, alex)
+    r = client.post("/login/code", json={"recovery_code": codes[0].upper()})
+    assert r.status_code == 200 and r.json()["recovery_codes_left"] == 9
+    client.post("/logout")
+    login(client, ana)
+    assert client.post("/login/code", json={"recovery_code": codes[0]}).status_code == 401
+
+    # Off for everyone, with the password
+    login(client, ana)
+    client.post("/login/code", json={"recovery_code": codes[1]})
+    assert client.request("DELETE", "/two-step", json={"password": "wrong-pass"}).status_code == 401
+    assert client.request("DELETE", "/two-step", json={"password": PW}).status_code == 200
+    client.post("/logout")
+    assert login(client, alex).json()["code_needed"] is False
+
+def test_recovery_keys_of_both_sizes_are_read():
+    from api.services import kit
+    new = kit.new_key()
+    assert len(new.replace("-", "")) == 48 and kit.normalize(new.lower().replace("-", " ")) == new.replace("-", "")
+    # A kit made before 2.0 shipped: 52 characters, 31 random bytes and a check byte
+    import hashlib, secrets
+    body = secrets.token_bytes(31)
+    old = kit._base32(body + hashlib.sha256(body).digest()[:1], 52)
+    assert kit.normalize("-".join(old[i:i + 4] for i in range(0, 52, 4))) == old
+    # One character off fails the check byte; a length in between is never a key
+    assert kit.normalize(old[:-1] + ("0" if old[-1] != "0" else "1")) is None
+    assert kit.normalize(new[:-5]) is None
+
+def test_the_emergency_kit_gets_in_without_the_password_or_two_step(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    # Optional without encryption, made in Settings: with the password, as a kit is a way in
+    assert client.post("/kit/recover", json={"person_id": alex, "key": __import__("api.services.kit", fromlist=["new_key"]).new_key()}).status_code == 401
+    assert client.post("/kit", json={}).status_code == 400
+    assert client.post("/kit", json={"current": "wrong-pass"}).status_code == 401
+    kit = client.post("/kit", json={"current": PW}).json()["key"]
+    # Twelve groups of four: three even rows on the kit
+    assert len(kit) == 59 and kit.count("-") == 11 and client.get("/auth/status").json()["kit"]
+    two_step(client)
+    other = TestClient(client.app)
+    login(other, ana)
+    other.post("/login/code", json={"code": totp.code_at(client.post("/two-step/show", json={"password": PW}).json()["secret"], int(time.time() // 30) + 1)})
+    assert other.get("/transactions").status_code == 200
+    client.post("/logout")
+
+    # Password forgotten and phone lost: the kit alone, typed any old way
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit[:-1] + ("0" if kit[-1] != "0" else "1")}).status_code == 400
+    wrong = __import__("api.services.kit", fromlist=["new_key"]).new_key()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": wrong}).json()["detail"]["tries_left"] == 9
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 401
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit.lower().replace("-", " ")}).status_code == 200
+    assert client.post("/kit/password", json={"new": "short"}).status_code == 400
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 200
+    # Signed in as Alex; every other browser signs in again, with the new password. Two-step stays on.
+    status = client.get("/auth/status").json()
+    assert status["me"]["name"] == "Alex" and status["two_step"]
+    assert other.get("/transactions").status_code == 401
+    assert login(other, ana, PW).status_code == 401
+    assert login(other, ana, "a-new-password").json()["code_needed"]
+    # The kit keeps working until a new one is made, with the password
+    client.cookies.clear()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 200
+    assert client.post("/kit/password", json={"new": "a-new-password"}).status_code == 200
+    assert client.post("/kit", json={"current": "wrong-pass"}).status_code == 401
+    new = client.post("/kit", json={"current": "a-new-password"}).json()["key"]
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 401
+    assert client.post("/kit/recover", json={"person_id": alex, "key": new}).status_code == 200
+
+def test_whoever_runs_the_server_can_turn_sign_in_off(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    two_step(client)
+    from api import signin_off
+    assert signin_off.main() == 0
+    client.headers["x-wally-person"] = str(alex)
+    status = client.get("/auth/status").json()
+    assert not status["signin"] and not status["two_step"] and status["kit"] is None
+    assert client.get("/transactions").status_code == 200
+    assert signin_off.main() == 0
+
+def test_password_change_ends_other_sessions(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    other = TestClient(client.app)
+    login(other, ana)
+    assert other.get("/transactions").status_code == 200
+    # This browser, Ana's, and the one that turned sign-in on, with who is on each
+    sessions = client.get("/sessions").json()
+    assert len(sessions) == 3 and {s["person_id"] for s in sessions} == {alex, ana}
+    assert client.put("/password", json={"current": "wrong-pass", "new": "another-pass"}).status_code == 401
+    assert client.put("/password", json={"current": PW, "new": "another-pass"}).status_code == 200
+    assert other.get("/transactions").status_code == 401
+    assert client.get("/transactions").status_code == 200
+    assert len(client.get("/sessions").json()) == 1
+
+def test_sign_out_others(couple):
+    client, alex, ana = couple
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    other = TestClient(client.app)
+    login(other, ana)
+    client.delete("/sessions/others")
+    assert other.get("/transactions").status_code == 401
+    assert [s["current"] for s in client.get("/sessions").json()] == [True]
+
+def test_api_key_belongs_to_person(couple):
+    client, alex, ana = couple
+    client.headers["x-wally-person"] = str(ana)
+    key = client.post("/api-keys", json={"name": "Shortcut"}).json()
+    assert key["key"].startswith("wly_") and key["person_id"] == ana
+    turn_on_signin(client, alex, ana)
+    t = client.post("/transactions", json={"name": "Café", "category": "Food", "amount": "2.5", "date": TODAY}, headers={"x-api-key": key["key"]}).json()
+    assert t["created_by"] == ana
+    assert client.get("/transactions", headers={"x-api-key": "wly_nope"}).status_code == 401
+
+def test_turning_signin_on_and_off(couple):
+    client, alex, ana = couple
+    assert client.put("/signin", json={"enabled": True, "password": "short"}).status_code == 400
+    turn_on_signin(client, alex, ana)
+    login(client, alex)
+    two_step(client)
+    # People added later use the same password and kit: nothing to set for them
+    sam = client.post("/people", json={"name": "Sam"}).json()["id"]
+    other = TestClient(client.app)
+    assert login(other, sam).json()["code_needed"]
+    # Off: no password and no two-step are left, and turning it on again asks for a new one
+    assert client.put("/signin", json={"enabled": False, "current": "wrong-pass"}).status_code == 401
+    assert client.put("/signin", json={"enabled": False, "current": PW}).status_code == 200
+    client.headers["x-wally-person"] = str(alex)
+    status = client.get("/auth/status").json()
+    assert not status["signin"] and not status["two_step"] and status["kit"] is None
+    assert client.put("/signin", json={"enabled": True}).status_code == 400
+    assert client.put("/signin", json={"enabled": True, "password": "fresh-pass-1"}).status_code == 200
+    client.headers.pop("x-wally-person")
+    client.cookies.clear()
+    assert login(client, ana, PW).status_code == 401
+    assert login(client, ana, "fresh-pass-1").json()["code_needed"] is False
+
+# ---------- settle up is gone ----------
+def test_settle_up_is_gone(couple):
+    client, alex, ana = couple
+    assert client.get("/settlements").status_code == 404
+    assert "settlement" not in sqlmodel.SQLModel.metadata.tables
+
+# ---------- summary and search ----------
+def test_monthly_summary_counts_shares(couple):
+    client, alex, ana = couple
+    expense(client, amount="10.01", paid_by=alex)
+    expense(client, amount="20", person_id=ana, date="2026-09-03")
+    client.post("/transactions", json={"name": "Salary", "category": "Income", "type": "income", "amount": "2000", "date": TODAY, "person_id": alex})
+    s = client.get("/summary/monthly", params={"from": "2026-09", "to": "2026-10"}).json()
+    sep, octo = s["months"]
+    assert sep["expense"] == 2000 and sep["people"][str(ana)]["expense"] == 2000
+    assert octo["expense"] == 1001 and octo["income"] == 200000
+    assert octo["categories"]["Groceries"]["people"] == {str(alex): 501, str(ana): 500}
+
+def test_search_every_month(couple):
+    client, alex, ana = couple
+    expense(client, name="Mercadona", date="2025-03-02", tags=["weekly"], person_id=ana)
+    expense(client, name="Lidl", amount="120", date="2026-05-02")
+    expense(client, name="Café Nómada", category="Food", amount="3.5", tags=["coffee"], person_id=ana)
+    q = lambda **p: [t["name"] for t in client.get("/transactions/search", params=p).json()]
+    assert q(text=["merca"]) == ["Mercadona"]
+    assert q(tags=["#coffee"]) == ["Café Nómada"]
+    assert q(min="100") == ["Lidl"]
+    assert q(person=str(ana)) == ["Café Nómada", "Mercadona"]
+    assert q(person="shared") == ["Lidl"]
+    assert q(text=["ana"]) == ["Café Nómada", "Mercadona"]
+    assert q(categories=["Food"]) == ["Café Nómada"]
+
+def test_payee_memory(couple):
+    client, alex, ana = couple
+    for _ in range(3):
+        expense(client, name="Mercadona", person_id=ana, tags=["weekly"], amount="40")
+    expense(client, name="Mercadona", amount="20")
+    s = client.get("/transactions/names/search", params={"q": "mer"}).json()[0]
+    assert s["name"] == "Mercadona" and s["person_id"] == ana and s["tags"] == ["weekly"] and s["amount"] == "35.00"
+
+# ---------- import ----------
+def test_import_matches_skips_and_learns(couple):
+    client, alex, ana = couple
+    typed = expense(client, name="Mercadona", amount="54.20", date="2026-10-20", person_id=ana)
+    expense(client, name="Bar Pinotxo", category="Food", amount="12.00", date="2026-10-21")
+    client.post("/rules", json={"match": "netflix", "category": "Entertainment", "person_id": None})
+    rows = [
+        {"date": "2026-10-21", "name": "MERCADONA 4521 BCN", "amount": "-54.20"},
+        {"date": "2026-10-21", "name": "TPV LA BOQUERIA", "amount": "12.00"},
+        {"date": "2026-10-22", "name": "NETFLIX.COM", "amount": "13.99"},
+        {"date": "2026-10-23", "name": "UNKNOWN SHOP", "amount": "8.00"},
+    ]
+    p = client.post("/import/preview", json=rows).json()
+    assert p["counts"] == {"new": 2, "matched": 1, "possible": 1, "skipped": 0}
+    assert p["rows"][0]["match"]["id"] == typed["id"]
+    assert p["rows"][2]["category"] == "Entertainment" and p["rows"][2]["shared"] is True
+
+    commit = [{**rows[i], **{k: p["rows"][i][k] for k in ("import_ref", "category", "person_id", "shared")},
+               "action": {"matched": "match", "possible": "skip", "new": "add"}[p["rows"][i]["status"]],
+               "match_id": (p["rows"][i]["match"] or {}).get("id")} for i in range(4)]
+    assert client.post("/import/commit", json={"rows": commit}).json() == {"added": 2, "matched": 1}
+    kept = client.get(f"/transactions/id/{typed['id']}").json()[0]
+    assert kept["name"] == "Mercadona" and kept["source"] == {"name": "MERCADONA 4521 BCN", "date": "2026-10-21"}
+
+    again = client.post("/import/preview", json=rows).json()
+    assert again["counts"]["skipped"] == 3
+
+    # Fixing an imported row teaches a rule
+    shop = next(t for t in client.get("/transactions").json() if t["name"] == "UNKNOWN SHOP")
+    client.put(f"/transactions/{shop['id']}", json={"category": "Shopping"})
+    learned = [r for r in client.get("/rules").json() if r["learned"]]
+    assert learned and learned[0]["match"] == "UNKNOWN SHOP" and learned[0]["category"] == "Shopping"
+
+def test_import_remembers_past_payees(couple):
+    client, alex, ana = couple
+    expense(client, name="Lidl", category="Groceries", amount="30.00", date="2026-09-02", person_id=ana)
+    expense(client, name="Lidl", category="Groceries", amount="25.00", date="2026-09-20")
+    rows = [{"date": "2026-10-21", "name": "lidl", "amount": "18.40"}, {"date": "2026-10-21", "name": "NEW PLACE", "amount": "5.00"}]
+    p = client.post("/import/preview", json=rows).json()["rows"]
+    # The latest Lidl was shared, so the import is too
+    assert p[0]["category"] == "Groceries" and p[0]["shared"] is True and p[0]["rule_id"] is None
+    assert p[1]["category"] in ("", None)
+
+# ---------- categories, tags, people ----------
+def test_delete_category_moves_transactions(couple):
+    client, *_ = couple
+    expense(client, category="Snacks")
+    assert client.delete("/categories/Snacks").status_code == 400
+    assert client.delete("/categories/Snacks", params={"move_to": "Food"}).status_code == 200
+    assert {t["category"] for t in client.get("/transactions").json()} == {"Food"}
+
+def test_category_colors_are_not_stored(couple):
+    """The app colors categories by spending; the server keeps no color and ignores one sent."""
+    client, *_ = couple
+    expense(client, category="Food", amount="40.00")
+    assert client.get("/categories/colors").status_code != 200
+    assert client.put("/categories/Food", json={"color": 6}).json() == {"name": "Food", "icon": None}
+    assert client.put("/categories/Food", json={"name": "Eating out"}).json() == {"name": "Eating out", "icon": None}
+    assert "Food" not in client.get("/categories").json()
+
+def test_category_icon_is_picked_kept_and_given_back(couple):
+    client, *_ = couple
+    expense(client, category="Snacks")
+    # None picked: the app picks one from the name
+    assert client.get("/categories/icons").json() == {}
+    assert client.put("/categories/Snacks", json={"icon": "cake"}).json()["icon"] == "cake"
+    assert client.get("/categories/icons").json() == {"Snacks": "cake"}
+    # Only an icon's id
+    assert client.put("/categories/Snacks", json={"icon": "<svg>"}).status_code == 422
+    assert client.put("/categories/Snacks", json={"icon": "l-square-arrow-out-up-right"}).status_code == 200
+    assert client.put("/categories/Snacks", json={"icon": "cake"}).status_code == 200
+    # A rename keeps it
+    assert client.put("/categories/Snacks", json={"name": "Treats"}).json() == {"name": "Treats", "icon": "cake"}
+    assert client.get("/categories/icons").json() == {"Treats": "cake"}
+    # "" goes back to the name's icon
+    assert client.put("/categories/Treats", json={"icon": ""}).json()["icon"] is None
+    assert client.get("/categories/icons").json() == {}
+    # A new category can come with one, and deleting it takes the icon too
+    assert client.post("/categories", json={"name": "Vet", "icon": "dog"}).json() == {"name": "Vet", "icon": "dog"}
+    assert client.delete("/categories/Vet").status_code == 200
+    assert client.get("/categories/icons").json() == {}
+
+def test_rename_tag_into_existing_merges(couple):
+    client, *_ = couple
+    expense(client, tags=["cafe", "coffee"])
+    client.put("/tags/cafe", json={"name": "coffee"})
+    assert client.get("/transactions").json()[0]["tags"] == ["coffee"]
+    assert "cafe" not in client.get("/tags").json()
+
+def test_remove_person_moves_their_part(couple):
+    client, alex, ana = couple
+    carol = client.post("/people", json={"name": "Carol"}).json()["id"]
+    shared = expense(client, amount="30", paid_by=carol)
+    own = expense(client, person_id=carol)
+    client.request("DELETE", f"/people/{carol}", json={"move_to": ana})
+    t = {x["id"]: x for x in client.get("/transactions").json()}
+    assert t[own["id"]]["person_id"] == ana
+    assert t[shared["id"]]["paid_by"] == ana and sum(t[shared["id"]]["shares"].values()) == 3000
+
+def test_person_keeps_their_color(couple):
+    client, alex, ana = couple
+    people = {p["id"]: p for p in client.get("/people").json()}
+    # New people take the colors avatars always had, in turn: blue, then orange
+    assert people[alex]["color"] == 6 and people[ana]["color"] == 2
+    assert client.put(f"/people/{ana}", json={"color": 8}).json()["color"] == 8
+    assert client.put(f"/people/{ana}", json={"color": 12}).json()["color"] == 12
+    assert client.put(f"/people/{ana}", json={"color": 13}).status_code == 422
+    assert client.put(f"/people/{ana}", json={"color": 8}).json()["color"] == 8
+    # Reordering or removing someone no longer changes anyone else's color
+    carol = client.post("/people", json={"name": "Carol"}).json()
+    assert carol["color"] == 2  # orange is free again once Ana took pink
+    client.put("/people/order", json=[carol["id"], ana, alex])
+    client.request("DELETE", f"/people/{alex}", json={})
+    after = {p["id"]: p["color"] for p in client.get("/people").json()}
+    assert after == {ana: 8, carol["id"]: 2}
+
+def test_tag_into_person(couple):
+    client, alex, ana = couple
+    expense(client, tags=["ana", "weekly"])
+    assert client.get("/people/from-tag/preview", params={"tag": "#ana"}).json()["count"] == 1
+    client.post(f"/people/{ana}/from-tag", json={"tag": "ana"})
+    t = client.get("/transactions").json()[0]
+    assert t["person_id"] == ana and t["tags"] == ["weekly"]
+
+def test_tag_into_person_includes_recurring(couple):
+    client, alex, ana = couple
+    rule(client, tags=["ana"], startDate=TODAY)
+    client.post(f"/people/{ana}/from-tag", json={"tag": "ana"})
+    r = client.get("/recurring").json()[0]
+    assert r["person_id"] == ana and r["shares"] is None and r["tags"] == []
+
+def test_tags_into_people_together(couple):
+    client, alex, ana = couple
+    expense(client, tags=["ana"])
+    expense(client, tags=["Alex"])
+    both = expense(client, tags=["ana", "Alex", "weekly"])
+    rule(client, tags=["Alex"], startDate=TODAY)
+    body = {"tags": {"ana": ana, "#Alex": alex}}
+    preview = client.post("/people/from-tags/preview", json=body).json()
+    assert {k: preview[k] for k in ("counts", "shared")} == {"counts": {str(ana): 1, str(alex): 2}, "shared": 1}
+    # A few of each person's by name, so it's plain what the tag meant
+    assert set(preview["examples"]) == {str(ana), str(alex)} and all(0 < len(v) <= 3 for v in preview["examples"].values())
+    # The preview changes nothing
+    assert all(t["person_id"] is None for t in client.get("/transactions").json())
+    assert client.post("/people/from-tags", json=body).json()["counts"] == preview["counts"]
+    t = {x["id"]: x for x in client.get("/transactions").json()}
+    # With both people's tags it stays shared, without them
+    assert t[both["id"]]["person_id"] is None and t[both["id"]]["shares"] == both["shares"] and t[both["id"]]["tags"] == ["weekly"]
+    assert client.get("/recurring").json()[0]["person_id"] == alex
+    assert client.post("/people/from-tags", json={"tags": {"ana": 999}}).status_code == 404
+
+def test_tags_into_people_with_the_rest(client):
+    # As 1.x leaves them: no people yet, so nobody's and no shares
+    tagged = expense(client, tags=["ana"])
+    plain = expense(client)
+    rule(client, startDate=TODAY)
+    alex = client.post("/people", json={"name": "Alex"}).json()["id"]
+    ana = client.post("/people", json={"name": "Ana"}).json()["id"]
+    client.headers["x-wally-person"] = str(alex)
+    # Made in 2.0: a split someone chose, and one shared evenly, stay as they are
+    split = expense(client, shares={str(alex): 700, str(ana): 300})
+    even = expense(client)
+    body = {"tags": {"ana": ana}, "rest": alex, "remove_tag": False}
+    preview = client.post("/people/from-tags/preview", json=body).json()
+    # The rest: the plain one and the charge the rule made today
+    assert preview["counts"] == {str(ana): 1} and preview["rest"] == 2
+    client.post("/people/from-tags", json=body)
+    t = {x["id"]: x for x in client.get("/transactions").json()}
+    assert t[tagged["id"]]["person_id"] == ana and t[plain["id"]]["person_id"] == alex
+    assert all(t[x["id"]]["person_id"] is None and t[x["id"]]["shares"] == x["shares"] for x in (split, even))
+    assert client.get("/recurring").json()[0]["person_id"] == alex
+    assert client.post("/people/from-tags", json={"tags": {}, "rest": 999}).status_code == 404
+
+# ---------- settings and backups ----------
+def test_config_validates(client):
+    assert client.put("/config", json={"savings_target": 120}).status_code == 400
+    assert client.put("/config", json={"week_start": "tue"}).status_code == 400
+    c = client.put("/config", json={"savings_target": 20, "saved_views": [{"name": "Holidays", "query": "#holiday"}]}).json()
+    assert c["savings_target"] == 20 and c["saved_views"] == [{"name": "Holidays", "query": "#holiday"}]
+
+def test_budgets_and_goals_are_gone(client):
+    assert client.get("/budgets").status_code == 404 and client.get("/goals").status_code == 404
+    assert not {"budget", "goal", "goalentry"} & set(sqlmodel.SQLModel.metadata.tables)
+
+def test_backup_and_restore(couple):
+    client, *_ = couple
+    expense(client, name="Before")
+    backup = client.post("/backups").json()
+    expense(client, name="After")
+    r = client.post(f"/backups/{backup['name']}/restore").json()
+    assert r["previous"].startswith("before-restore-")
+    assert [t["name"] for t in client.get("/transactions").json()] == ["Before"]
+    assert client.post("/backups/../wally.db/restore").status_code in (400, 404)
+
+# ---------- upgrade from 1.x ----------
+def test_upgrade_from_v1(make_client, tmp_path):
+    client = make_client(FIXTURES / "v1.db")
+    assert (tmp_path / "backups" / f"pre-2.0-{TODAY}.db").exists()
+    conn = sqlite3.connect(tmp_path / "wally.db")
+    assert conn.execute("SELECT value FROM appconfig WHERE key='SCHEMA_VERSION'").fetchone() == ("1",)
+    conn.close()
+
+    status = client.get("/auth/status").json()
+    assert status["signin"] and status["onboarded"] and status["people"] == []
+
+    # Before anyone is added, the household password still signs in
+    assert client.post("/login", json={"password": "household"}).status_code == 200
+    txs = client.get("/transactions").json()
+    netflix = sorted(t["date"] for t in txs if t["name"] == "Netflix")
+    assert netflix[0] == "2026-01-31" and netflix[-1] == "2026-09-30" and len(netflix) == 9
+    assert {t["name"] for t in txs} >= {"Coffee 0", "Salary", "Mercadona"}
+    r = client.get("/recurring").json()[0]
+    assert r["interval"] == 1 and r["last_run"] == TODAY and r["endDate"] == "2027-12-31"
+
+    # The people are added, and this browser becomes the one on the "You" row: no second sign-in
+    assert client.get("/auth/status").json()["kit"] is None
+    alex = client.post("/people", json={"name": "Alex"}).json()["id"]
+    ana = client.post("/people", json={"name": "Ana"}).json()["id"]
+    assert client.post("/me/claim", json={"person_id": 999}).status_code == 404
+    assert client.post("/me/claim", json={"person_id": alex}).status_code == 200
+    assert client.get("/auth/status").json()["me"]["name"] == "Alex"
+    # Once someone, always: a browser can't become someone else this way
+    assert client.post("/me/claim", json={"person_id": ana}).status_code == 400
+    # Everyone signs in with the same household password, as before: nothing to choose
+    other = TestClient(client.app)
+    assert other.post("/login", json={"person_id": ana, "password": "household"}).json() == {"ok": True, "code_needed": False}
+    # 1.x had no Emergency Kit, and without encryption none is needed: one can be made, with the password
+    assert client.get("/auth/status").json()["kit"] is None
+    assert client.post("/kit", json={}).status_code == 400
+    kit = client.post("/kit", json={"current": "household"}).json()["key"]
+    assert client.get("/auth/status").json()["kit"]
+    client.cookies.clear()
+    assert client.post("/kit/recover", json={"person_id": alex, "key": kit}).status_code == 200
+    assert client.post("/kit/password", json={"new": "new-household-pass"}).status_code == 200
+
+    # Old API keys keep working
+    assert client.get("/api-keys").json()[0]["prefix"] == ""
+
+    # And so do the 1.x routes scripts may call
+    for route in ("past-3-months", "past-6-months", "past-12-months", "year-to-date", "to-date"):
+        assert client.get(f"/transactions/{route}").status_code == 200
+    recent = client.get("/transactions/past-3-months").json()
+    assert {t["name"] for t in recent} >= {"Coffee 0", "Salary", "Mercadona"}
+    assert [t["date"] for t in recent if t["name"] == "Netflix"] == ["2026-09-30", "2026-08-31"]
+    assert len(client.get("/transactions/to-date").json()) == len(client.get("/transactions").json())
+
+def test_failed_upgrade_restores_and_opens_read_only(make_client, tmp_path, monkeypatch):
+    def broken(conn, today):
+        conn.exec_driver_sql("ALTER TABLE \"transaction\" ADD COLUMN person_id INTEGER")
+        raise RuntimeError("disk full")
+    monkeypatch.setitem(database.STEPS, 1, broken)
+    client = make_client(FIXTURES / "v1.db")
+    status = client.get("/auth/status").json()
+    assert "disk full" in status["read_only"]
+    conn = sqlite3.connect(tmp_path / "wally.db")
+    columns = [r[1] for r in conn.execute('PRAGMA table_info("transaction")')]
+    conn.close()
+    assert "person_id" not in columns
+    assert client.post("/login", json={"password": "household"}).status_code == 503
+    assert client.get("/transactions").status_code == 503
+
+def test_demo_generates(tmp_path, monkeypatch):
+    monkeypatch.setenv("WALLY_TODAY", TODAY)
+    database.configure(tmp_path)
+    from api.demo import generate_demo
+    generate_demo()
+    with database.Session(database.engine) as db:
+        from sqlmodel import select, func
+        from api.models.transactions import Transaction
+        count = db.exec(select(func.count()).select_from(Transaction)).one()
+    assert count > 500
+
+def test_ledger_is_compact_and_complete(couple):
+    client, alex, ana = couple
+    t = expense(client, amount="10.01", paid_by=alex, tags=["coffee"], note="with Ana")
+    own = expense(client, amount="2.50", person_id=ana)
+    ledger = client.get("/ledger").json()
+    rows = {r[0]: dict(zip(ledger["columns"], r)) for r in ledger["rows"]}
+    shared = rows[t["id"].replace("-", "")]
+    assert shared["cents"] == 1001 and shared["type"] == "e" and shared["shares"] == {str(alex): 501, str(ana): 500}
+    assert shared["paid_by"] == alex and shared["tags"] == ["coffee"] and shared["note"] == "with Ana" and shared["created_by"] == alex
+    # Trailing empty values are left out
+    assert len(next(r for r in ledger["rows"] if r[0] == own["id"].replace("-", ""))) == 9
+
+def test_restore_keeps_id_and_created_date(couple):
+    client, alex, ana = couple
+    t = expense(client, note="kept")
+    client.delete(f"/transactions/{t['id']}")
+    back = client.post("/transactions/restore", json=[{**t}]).json()[0]
+    assert back["id"] == t["id"] and back["created_date"] == t["created_date"] and back["note"] == "kept"
+
+def test_rename_category_carries_rules(client):
+    client.post("/rules", json={"match": "glovo", "category": "Food"})
+    client.put("/categories/Food", json={"name": "Eating out"})
+    assert client.get("/rules").json()[0]["category"] == "Eating out"
+
+def test_reimporting_own_export_skips_matched_rows(couple):
+    client, alex, ana = couple
+    expense(client, name="Mercadona", amount="54.20", date="2026-10-20")
+    bank = [{"date": "2026-10-21", "name": "MERCADONA 4521", "amount": "54.20"}]
+    p = client.post("/import/preview", json=bank).json()["rows"][0]
+    client.post("/import/commit", json={"rows": [{**bank[0], "import_ref": p["import_ref"], "action": "match", "match_id": p["match"]["id"]}]})
+    # Wally's export says what Wally kept: the typed name and date
+    again = client.post("/import/preview", json=[{"date": "2026-10-20", "name": "Mercadona", "amount": "54.20", "category": "Groceries"}]).json()
+    assert again["counts"]["skipped"] == 1
+
+def test_an_impossible_rule_change_is_refused_not_a_crash(client):
+    r = rule(client, name="Gym", startDate="2026-10-20", frequency="daily")
+    assert client.put(f"/recurring/{r['id']}", json={"endDate": "2026-10-21", "applyTo": "all"}).status_code == 200
+    bad = client.put(f"/recurring/{r['id']}", json={"startDate": "2026-10-23", "applyTo": "all"})
+    assert bad.status_code == 422 and "endDate" in bad.text

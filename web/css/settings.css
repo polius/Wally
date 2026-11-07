@@ -1,712 +1,532 @@
-body {
-  opacity: 0;
-  transition: opacity 0.2s ease-in;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-}
-body.i18n-loaded {
-  opacity: 1;
-}
-
-:root[data-bs-theme="light"] {
-  --header-bg: #ffffff;
-  --pill-bg: #f0f2f5;
-  --pill-color: #1a1a2e;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --nav-active-color: #0d6efd;
-  --focus-ring: 0 0 0 3px rgba(13, 110, 253, 0.15);
-}
-:root[data-bs-theme="dark"] {
-  --header-bg: #262a2e;
-  --pill-bg: #282c30;
-  --pill-color: #FFF;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
-  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-  --nav-active-color: #ffffff;
-  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.15);
-}
-header {
-  background-color: var(--header-bg);
-  border-bottom: 1px solid var(--bs-border-color);
-  position: sticky;
-  top: 0;
-  z-index: 1030;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-input, .option {
-  color: var(--pill-color)!important;
-}
-
-.ts-control .item {
-  background-color: var(--pill-bg)!important;
-  color: var(--pill-color)!important;
-  border-radius: 6px !important;
-}
-
-.ts-control .item .remove {
-  border-color: var(--header-bg)!important;
-}
-
-.badge {
-  background-color: var(--pill-bg);
-  color: var(--pill-color);
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.badge:hover {
-  transform: scale(1.03);
-}
-
-.badge.selected {
-  background-color: var(--bs-primary);
-  color: #fff;
-  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
-}
-
-/* Card header layout for selectable pill sections (Categories, Tags) */
-.pill-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  /* Reserve height for the action row so the header doesn't jump
-     when the contextual Edit/Delete buttons appear or disappear. */
-  min-height: 60px;
-}
-
-.pill-card-header-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pill-card-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pill-selection-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 2px 8px 2px 10px;
-  background-color: var(--pill-bg);
-  color: var(--pill-color);
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.15s ease;
-}
-
-.pill-selection-chip:hover {
-  background-color: rgba(128, 128, 128, 0.2);
-}
-
-.pill-selection-chip svg {
-  opacity: 0.7;
-}
-
-
-.text-green {
-  color: #198754;
-}
-
-.text-red {
-  color: #dc3545;
-}
-
-/* Toast close button: white on colored backgrounds */
-.toast[class*="text-bg-"] .btn-close {
-  filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-/* Toast width customization */
-.toast {
-  min-width: 250px;
-  max-width: 350px;
-  border-radius: 12px;
-}
-
-/* Wider toasts for error messages */
-.toast.text-bg-danger {
-  min-width: 400px;
-  max-width: 600px;
-  width: max-content;
-}
-
-/* Ensure toast body wraps text properly */
-.toast-body {
-  word-wrap: break-word;
-  white-space: normal;
-}
-
-/* Enhanced Navbar */
-.navbar {
-  padding-top: 0.6rem;
-  padding-bottom: 0.6rem;
-}
-
-.navbar-brand span {
-  letter-spacing: -0.02em;
-}
-
-.navbar-nav .nav-link {
-  position: relative;
-  padding-bottom: 0.4rem;
-  transition: color 0.2s ease;
-}
-
-.navbar-nav .nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 2.5px;
-  background-color: var(--nav-active-color);
-  border-radius: 2px;
-}
-
-@media (max-width: 991.98px) {
-  .navbar-nav .nav-link.active::after {
-    display: none;
-  }
-}
-
-.navbar-nav .nav-link.active {
-  color: var(--nav-active-color) !important;
-}
-
-/* Enhanced Cards */
-.card {
-  border-radius: 14px;
-  border: 1px solid var(--bs-border-color);
-  box-shadow: var(--card-shadow);
-  transition: box-shadow 0.3s ease;
-  overflow: visible;
-}
-
-.card:hover {
-  box-shadow: var(--card-shadow-hover);
-}
-
-.card-header {
-  border-bottom: 1px solid var(--bs-border-color);
-  background-color: transparent;
-  padding: 0.9rem 1.1rem;
-}
-
-/* Enhanced form controls */
-.form-control, .form-select {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  border-radius: 8px;
-}
-
-.form-control:focus, .form-select:focus {
-  box-shadow: var(--focus-ring);
-}
-
-/* Enhanced buttons */
-.btn {
-  transition: all 0.2s ease;
-  border-radius: 8px;
-}
-
-.btn:active {
-  transform: scale(0.97);
-}
-
-/* Enhanced Modals */
-.modal .modal-content {
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-}
-
-/* Fix input-group inside cards (category/tag forms reuse modal-content class) */
-.card .modal-content {
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-  overflow: visible;
-}
-
-.modal-header {
-  border-bottom: 1px solid var(--bs-border-color);
-  padding: 1.1rem 1.25rem;
-}
-
-.modal-footer {
-  border-top: 1px solid var(--bs-border-color);
-  padding: 1rem 1.25rem;
-}
-
-.modal-body {
-  padding: 1.25rem;
-}
-
-.modal-title {
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.dialog-warning-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: rgba(220, 53, 69, 0.1);
-  color: var(--bs-danger);
-}
-
-.dialog-warning-icon.warning {
-  background-color: rgba(255, 193, 7, 0.12);
-  color: var(--bs-warning);
-}
-
-/* Currency Modal */
-.currency-search-wrap {
-  position: relative;
-  margin-bottom: 14px;
-}
-
-.currency-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--bs-secondary-color);
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.currency-search-input {
-  padding-left: 36px !important;
-  font-size: 0.9rem;
-  border-radius: 10px !important;
-  height: 42px;
-}
-
-.recurring-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.4;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.recurring-search-input {
-  padding-left: 36px !important;
-  font-size: 0.9rem;
-  border: 1px solid var(--bs-border-color) !important;
-}
-
-.recurring-search-input:focus {
-  border-color: var(--bs-primary) !important;
-}
-
-.currency-list-container {
-  max-height: 370px;
-  overflow-y: auto;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-
-.currency-table {
-  font-size: 0.88rem;
-  margin-bottom: 0;
-}
-
-.currency-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bs-secondary-bg);
-}
-
-.currency-table thead th {
-  padding: 10px 16px;
-  font-weight: 600;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--bs-secondary-color);
-  border-bottom: 2px solid var(--bs-border-color);
-}
-
-.currency-row {
-  transition: background-color 0.15s ease;
-}
-
-.currency-row-active {
-  background-color: var(--bs-primary-bg-subtle) !important;
-}
-
-.currency-cell-name {
-  padding: 10px 16px;
-  font-weight: 500;
-}
-
-.currency-code {
-  font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.88rem;
-  letter-spacing: 0.3px;
-}
-
-.currency-active-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  margin-left: 8px;
-  background: var(--bs-primary);
-  color: #fff;
-  border-radius: 20px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  vertical-align: middle;
-}
-
-.currency-cell-symbol {
-  padding: 10px 16px;
-}
-
-.currency-symbol-display {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 6px;
-  background: var(--bs-tertiary-bg);
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--bs-emphasis-color);
-}
-
-.currency-cell-actions {
-  padding: 8px 16px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.currency-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1.5px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  margin: 0 2px;
-}
-
-.currency-action-btn:active {
-  transform: scale(0.88);
-}
-
-.currency-btn-edit {
-  color: var(--bs-primary);
-}
-
-.currency-btn-edit:hover {
-  background-color: rgba(13, 110, 253, 0.12);
-  border-color: rgba(13, 110, 253, 0.25);
-  color: #0d6efd;
-  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.15);
-}
-
-.currency-btn-delete {
-  color: var(--bs-danger);
-}
-
-.currency-btn-delete:hover:not(:disabled) {
-  background-color: rgba(220, 53, 69, 0.12);
-  border-color: rgba(220, 53, 69, 0.25);
-  color: #dc3545;
-  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.15);
-}
-
-.currency-btn-delete:disabled,
-.currency-btn-delete.disabled {
-  color: var(--bs-secondary-color);
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-/* Add currency form */
-.currency-add-form {
-  padding-top: 0;
-}
-
-.currency-add-row {
-  display: flex;
-  gap: 8px;
-}
-
-.currency-add-row .form-control {
-  font-size: 0.9rem;
-  border-radius: 8px;
-  height: 40px;
-}
-
-.currency-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 8px !important;
-  padding: 0 16px;
-  white-space: nowrap;
-  height: 40px;
-}
-
-/* API Keys */
-.api-keys-list-container {
-  max-height: 370px;
-  overflow-y: auto;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 10px;
-}
-
-.api-keys-list-container table {
-  margin-bottom: 0;
-}
-
-.api-keys-list-container thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bs-secondary-bg);
-}
-
-.api-keys-list-container thead th {
-  padding: 10px 16px;
-  font-weight: 600;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--bs-secondary-color);
-  border-bottom: 2px solid var(--bs-border-color);
-}
-
-.api-keys-list-container tbody td {
-  padding: 10px 16px;
-  vertical-align: middle;
-  font-size: 0.88rem;
-}
-
-.api-keys-empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background-color: var(--bs-tertiary-bg);
-  color: var(--bs-secondary-color);
-}
-
-.api-key-success-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: rgba(25, 135, 84, 0.1);
-  color: var(--bs-success);
-}
-
-.api-key-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: var(--bs-tertiary-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: 8px;
-  width: 100%;
-}
-
-.api-key-display code {
-  flex: 1;
-  font-size: 0.85rem;
-  word-break: break-all;
-  text-align: left;
-  color: var(--bs-body-color);
-}
-
-.api-key-copy-btn {
-  flex-shrink: 0;
-  border-radius: 6px !important;
-}
-
-/* API Usage Guide */
-.api-usage-section-container {
-  border: 1px solid var(--bs-border-color);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.api-usage-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  font-weight: 600;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--bs-secondary-color);
-  background: var(--bs-secondary-bg);
-  border-bottom: 1px solid var(--bs-border-color);
-}
-
-.api-usage-content {
-  padding: 16px;
-}
-
-.api-usage-endpoint {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--bs-border-color);
-}
-
-.api-endpoint-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.api-method-badge {
-  display: inline-block;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: rgba(25, 135, 84, 0.1);
-  color: var(--bs-success);
-  padding: 2px 7px;
-  border-radius: 4px;
-  line-height: 1.4;
-}
-
-.api-method-badge.api-method-post {
-  background: rgba(13, 110, 253, 0.1);
-  color: var(--bs-primary);
-}
-
-.api-endpoint-path {
-  font-size: 0.84rem;
-  font-weight: 600;
-  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-  color: var(--bs-body-color);
-}
-
-.api-endpoint-desc {
-  font-size: 0.82rem;
-  color: var(--bs-secondary-color);
-  margin: 0 0 8px;
-}
-
-.api-code-block {
-  position: relative;
-  background: var(--bs-tertiary-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.api-code-block pre {
-  margin: 0;
-  padding: 12px 14px;
-  padding-right: 40px;
-  overflow-x: auto;
-  font-size: 0.8rem;
-  line-height: 1.55;
-}
-
-.api-code-block pre code {
-  color: var(--bs-body-color);
-  white-space: pre;
-}
-
-.api-code-copy-btn {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 1;
-  color: var(--bs-secondary-color);
-  background: var(--bs-secondary-bg);
-  border: 1px solid var(--bs-border-color);
-  padding: 3px 6px;
-  line-height: 1;
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.api-code-block:hover .api-code-copy-btn {
-  opacity: 1;
-}
-
-.api-code-copy-btn:hover {
-  color: var(--bs-body-color);
-}
-
-.api-code-copy-btn.copied {
-  color: var(--bs-success);
-  opacity: 1;
-}
-
-.api-url-placeholder {
-  color: var(--bs-secondary-color);
-  font-style: italic;
-}
-
-.api-header-highlight {
-  font-weight: 600;
-  color: var(--bs-primary);
-  background: rgba(13, 110, 253, 0.08);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.84rem;
-}
-
-/* Smooth scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bs-secondary-bg);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--bs-secondary-color);
-}
+/* Settings: the sidebar of panes, grouped rows, import preview, and the phone's list of panes.
+   Builds on .w-set, .w-setnav, .w-group, .w-gi, .w-glabel and friends from wally.css. */
+
+/* ---------- sidebar of panes (links, styled like the prototype's buttons) ---------- */
+.w-setnav{position:sticky;top:16px;gap:12px}
+.w-setnav .grp{gap:2px}
+.w-setnav .grp > span{padding:0 10px 4px;font-weight:400;font-size:12px}
+.w-setnav a svg.i{width:16px;height:16px}
+.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;font-size:14px;line-height:1.3;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
+.w-setnav a:hover{color:var(--w-ink)}
+.w-setnav a[aria-current="page"]{background:var(--w-panel);color:var(--w-ink);box-shadow:0 0 0 1px var(--w-line)}
+.w-setnav a[aria-current="page"] svg{color:var(--w-accent)}
+/* A long name (Inicio de sesión y privacidad) takes a second line rather than running into the pane;
+   the value stays on one line, cut short if it must */
+.w-setnav a .l{flex:1 1 auto;min-width:0}
+.w-setnav a .v{flex:none;margin-inline-start:auto;max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-foot);color:var(--w-ink3);font-weight:400}
+.w-setnav a .v:empty{display:none}
+.w-setnav button span{margin-left:0;margin-inline-start:auto}
+.w-setver{font-size:var(--fs-cap);color:var(--w-ink3);padding:4px 12px 0}
+.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:56px}
+/* Rows of settings read best at a measured width: the whole page sits centred instead of stretching */
+@media (min-width:1024px){.w-app > #main[data-page="settings"]{max-width:1232px}}
+.w-pane{outline:0;min-width:0}
+.w-pwrap{min-width:0;max-width:640px;display:grid;align-content:start}
+/* The pane's head: ‹ back, the title, its button (Edit) */
+.w-phead{display:grid;justify-items:start;gap:2px}
+.w-phead:empty{display:none}
+.w-pth{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 12px;width:100%}
+.w-pth h4{font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.w-phead .w-sback{margin:0 0 8px 10px;min-height:32px}
+#set-act{display:inline-flex;gap:16px}
+#set-act button,#set-act a{color:var(--w-accent-ink);font-size:var(--fs-sub);font-weight:500;text-decoration:none}
+#set-act button.on{font-weight:600}
+/* Rows inside panes */
+.w-pane{display:grid;align-content:start;gap:0}
+.w-pane > .w-glh{padding-top:0}
+a.w-gr{text-decoration:none;color:var(--w-ink)}
+.w-pane .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-pane .w-gr{font-size:16px;min-height:48px;padding-block:11px}
+.w-pane .w-gr > .k small{color:var(--w-ink2)}
+.w-pane .w-gr > .w-ico{width:30px;height:30px;border-radius:8px}
+.w-pane .w-gr > .w-ico svg.i{width:15px;height:15px}
+.w-pane .w-gr .w-av.lg{width:36px;height:36px;font-size:15px}
+.w-pane .w-gr .w-badge{margin-inline-start:6px;vertical-align:2px}
+.w-glead{width:30px;display:grid;place-items:center;flex:none}
+.w-gr.add .w-glead svg.i{width:18px;height:18px}
+.w-gr.add.w36 .w-glead{width:36px}
+.w-sico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink);flex:none}
+.w-sico svg.i{width:16px;height:16px}
+.w-gck{width:18px;height:18px;color:var(--w-accent-ink);flex:none;stroke-width:2.4}
+span.w-gck{display:inline-block}
+.w-av.w-av48{width:48px;height:48px;font-size:20px}
+.w-dot{width:16px;height:16px;border-radius:50%;display:inline-block}
+.w-tagico{background:var(--w-fill);color:var(--w-ink2)}
+.w-shero .w-tagico,.w-tagico.w-tag48{width:48px;height:48px;border-radius:12px}
+.w-shero .w-tagico{width:64px;height:64px;border-radius:16px}
+.w-tagico.w-tag48 svg.i{width:22px;height:22px}
+.w-av.w-av26{width:26px;height:26px;font-size:12px}
+.w-hash{color:var(--w-ink3);margin-inline-end:-8px}
+.w-shlead2{text-align:start;font-size:14px;color:var(--w-ink2);padding:0 6px 6px}
+.w-gr.w-gempty{display:block;padding:0}
+.w-gr svg.w-gdown{width:14px;height:14px;color:var(--w-ink3)}
+.w-gr input.w-end{text-align:end;color:var(--w-ink2)}
+.w-gr .w-seg{flex:none}
+.w-popmenu{position:fixed;z-index:70;min-width:220px;max-height:calc(100vh - 16px);overflow:auto;background:var(--w-raised);border-radius:12px;box-shadow:var(--w-shadow),0 0 0 1px var(--w-line);padding:6px;display:grid}
+.w-popmenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 10px;border-radius:7px;font-size:14px;text-align:start;color:var(--w-ink)}
+.w-popmenu button[aria-checked="true"]{color:var(--w-accent-ink);font-weight:500}
+.w-popmenu button:hover,.w-popmenu button:focus-visible{background:var(--w-fill);outline:0}
+.w-popmenu svg.i{width:15px;height:15px}
+.w-sico.w-sico48{width:48px;height:48px;border-radius:12px}
+.w-sico.w-sico48 svg.i{width:22px;height:22px}
+code.w-kpre{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0;color:inherit}
+.w-glf.w-glf2{padding-top:8px}
+.w-pane > .w-glh + .w-code{margin-top:0}
+.w-gl .w-gr input:focus-visible{outline:none}
+.w-gminus{width:22px;height:22px;border-radius:50%;background:var(--w-bad);display:grid;place-items:center;flex:none}
+.w-gminus::after{content:"";width:11px;height:2px;border-radius:1px;background:#fff}
+.w-ggrip{color:var(--w-ink3);cursor:grab;touch-action:none;width:30px;height:30px;display:grid;place-items:center;border-radius:6px;flex:none}
+.w-ggrip svg.i{width:18px;height:18px}
+.w-gr.dragging{background:var(--w-panel2);box-shadow:0 6px 18px rgba(0,0,0,.14);z-index:2}
+/* An item's own page: picture, name, one line */
+.w-shero{display:grid;justify-items:center;gap:6px;text-align:center;margin:4px 0 20px}
+.w-shero h4{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:4px}
+.w-shero p{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-shero .w-av{width:72px;height:72px;font-size:30px}
+.w-shero .w-ico{width:64px;height:64px;border-radius:16px}
+.w-shero .w-ico svg.i{width:30px;height:30px}
+.w-shero .w-sico{width:64px;height:64px;border-radius:16px}
+.w-shero .w-sico svg.i{width:30px;height:30px}
+/* Searching a long list */
+.w-gsearch{display:flex;align-items:center;gap:8px;height:38px;border-radius:10px;background:var(--w-fill);padding:0 12px;color:var(--w-ink3);margin:0 0 16px}
+.w-gsearch input{border:0;background:none;outline:0;font:inherit;font-size:var(--fs-sub);flex:1;min-width:0;color:var(--w-ink)}
+.w-gsearch svg.i{width:17px;height:17px}
+.w-sym{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);font-size:12px;font-weight:600;color:var(--w-ink2);flex:none;overflow:hidden}
+/* Code and steps */
+.w-pane .w-code,.w-dialog .w-code{font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--w-panel);border-radius:var(--r-card);padding:14px 16px;white-space:pre;overflow:auto;color:var(--w-ink);border:0;margin:0}
+.w-dialog .w-code{background:var(--w-panel2);white-space:pre-wrap;overflow-wrap:anywhere}
+.w-glh.w-glh2{display:flex;justify-content:space-between;align-items:baseline}
+.w-glh a{color:var(--w-accent-ink);text-decoration:none}
+.w-stepn{width:24px;height:24px;border-radius:50%;background:var(--w-accent-soft);color:var(--w-accent-ink);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none;align-self:flex-start;margin-top:1px}
+.w-steps3 .w-gr{align-items:flex-start;font-size:14.5px;line-height:1.4}
+.w-keybox2{background:var(--w-panel2);border-radius:var(--r-card);padding:16px;display:grid;justify-items:center}
+.w-keybox2 code{font:500 13.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-align:center;overflow-wrap:anywhere;color:var(--w-ink);background:none}
+.w-big-ico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-big-ico svg.i{width:30px;height:30px}
+/* An alert with its buttons one above the other (Delete, then Cancel) */
+@media (max-width:767px){.w-alert.w-stack{grid-template-columns:1fr}.w-alert.w-stack > .w-dlgx{order:4;margin-top:0}}
+/* Deleting a category on a phone: a short sheet, where its transactions go as a row, a red Delete, Cancel */
+@media (max-width:767px){
+  .w-alert.w-hsheet{background:var(--w-raised);border-radius:14px 14px 0 0;padding:10px 16px calc(30px + env(safe-area-inset-bottom,0px));gap:0}
+  .w-alert.w-hsheet::before{content:"";justify-self:center;width:36px;height:5px;border-radius:3px;background:var(--w-fill2);margin-bottom:14px;order:0}
+  .w-hsheet .w-alg{display:contents}
+  .w-hsheet .w-alg > *{padding:0 10px}
+  .w-hsheet .w-alg h5{font-size:17px;font-weight:600;color:var(--w-ink);text-align:center}
+  .w-hsheet .w-alg > p{font-size:14px;color:var(--w-ink2);text-align:center;margin:4px 0 0;padding-bottom:14px}
+  .w-hsheet .w-alg > label.w-pop2{margin:0;padding:0 12px 0 16px;min-height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px}
+  .w-hsheet .w-pop2 span{color:var(--w-ink)}
+  .w-hsheet .w-pop2 select{max-width:65%;color:var(--w-ink2);padding-inline-end:22px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m9.5 6 6 6-6 6'/%3E%3C/svg%3E")}
+  [dir="rtl"] .w-hsheet .w-pop2 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m14.5 6-6 6 6 6'/%3E%3C/svg%3E");background-position:left center}
+  .w-hsheet .w-alg > .w-dlgok,.w-hsheet .w-alg > .w-dlgok.danger{margin:10px 0 0;height:46px;border:0;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:400;padding:0 16px}
+  .w-alert.w-hsheet > .w-dlgx{margin:10px 0 0;height:46px;border-radius:14px;background:var(--w-panel2);font-size:17px;font-weight:600}
+}
+.w-pop2{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px 0 10px;margin-top:8px;border-radius:8px;background:var(--w-fill);font-size:14px;text-align:start}
+.w-pop2 span{color:var(--w-ink2)}
+.w-pop2 select{-webkit-appearance:none;appearance:none;border:0;font:inherit;color:var(--w-ink);text-align:end;text-align-last:end;outline:0;max-width:60%;padding:4px 18px 4px 4px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E") no-repeat right center/14px}
+.w-pop2 select:focus-visible{outline:2px solid var(--w-accent);border-radius:6px}
+/* Colours to pick from */
+.w-swatches{display:grid;grid-template-columns:repeat(5,44px);gap:16px;justify-content:center;padding:18px 10px;background:var(--w-panel2);border-radius:var(--r-card)}
+.w-swatches button{width:44px;height:44px;border-radius:50%;display:block}
+.w-swatches button[aria-checked="true"]{box-shadow:0 0 0 3px var(--w-raised),0 0 0 5px var(--w-ink)}
+/* A person's colors: four to a row, each the avatar itself */
+.w-swatches.w-avsw{grid-template-columns:repeat(4,44px);gap:18px}
+.w-swatches.w-avsw button.w-av{width:44px;height:44px;font-size:var(--fs-body);font-weight:600}
+.w-pane > *{min-width:0}
+
+/* ---------- rows ---------- */
+.w-glabel{gap:12px}
+.w-glabel > span:last-child:not(:first-child){text-align:end}
+.w-gi{text-align:start}
+.w-gi > div{min-width:0}
+.w-gi h6{display:block;font-weight:600}
+.w-gi h6 > .w-badge{margin-inline-start:4px;vertical-align:1px}
+.w-gi h6 code,.w-gi p code{font:var(--fs-foot) ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--w-fill);border-radius:var(--r-ctl);padding:1px 5px;color:var(--w-ink)}
+.w-gi h6 .w-badge{font-weight:500}
+.w-gi .w-link{white-space:nowrap}
+.w-gbtn{width:100%;color:inherit;cursor:pointer}
+.w-gbtn:hover{background:var(--w-panel2)}
+.w-gbtn:focus-visible{outline:2px solid var(--w-accent);outline-offset:-2px}
+.w-gchev{color:var(--w-ink3);width:16px;height:16px}
+[dir="rtl"] .w-gchev{transform:scaleX(-1)}
+.w-ico.w-round{width:34px;height:34px;border-radius:50%}
+.w-ico.w-ico-bad{color:var(--w-bad);background:var(--w-bad-soft)}
+.w-bad,.w-link.w-bad{color:var(--w-bad)}
+.w-sstrong{color:var(--w-ink);font-weight:600}
+.w-sstrong2{color:var(--w-ink2);font-weight:600}
+.w-ico.w-sym{font-weight:600;font-size:var(--fs-foot);color:var(--w-ink)}
+.w-ico.w-langcode{font-size:var(--fs-cap);font-weight:600}
+.w-mark.w-about-mark{width:30px;height:30px}
+.w-acts .w-x[disabled]{opacity:.35;cursor:default;background:none}
+.w-gmore{padding:8px 16px;border-top:1px solid var(--w-line2);text-align:center}
+.w-gctl{display:flex;justify-content:flex-end;min-width:0}
+.w-sselect{height:36px;max-width:100%}
+.w-gctl .w-sselect{max-width:320px}
+.w-group > .w-empty{border-top:0}
+.w-group > .w-skel{margin:0;border:0;border-radius:0}
+.w-link{display:inline-flex;align-items:center;gap:4px}
+.w a.w-link{color:var(--w-accent-ink);text-decoration:none}
+.w a.w-link:hover{text-decoration:underline}
+.w-link svg.i{width:13px;height:13px}
+
+/* Add rows: an input that grows, and its button */
+.w-gadd .w-inline{flex-wrap:wrap}
+.w-addin{width:240px;max-width:100%}
+
+/* The on/off switch: disabled, and mirrored right to left */
+.w-switch{cursor:pointer}
+.w-switch[disabled]{opacity:.4;cursor:not-allowed}
+.w-switch:focus-visible{outline:2px solid var(--w-accent);outline-offset:2px}
+[dir="rtl"] .w-switch::after{left:auto;right:2px}
+[dir="rtl"] .w-switch[aria-checked="true"]::after{transform:translateX(-14px)}
+
+/* ---------- dialog fields ---------- */
+.w-sfield{display:grid;gap:6px;font-size:var(--fs-foot);color:var(--w-ink2);font-weight:500}
+.w-sfield .w-hint{font-weight:400}
+.w-sfields2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.w-scheck{display:flex;gap:8px;align-items:center;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-scheck input{accent-color:var(--w-accent);width:16px;height:16px;margin:0}
+.w-spreview{min-height:1.4em}
+.w-dialog .w-inline .w-btn,.w-keybox .w-btn{gap:6px}
+.w-dialog .w-btn svg.i,.w-keybox .w-btn svg.i{width:14px;height:14px}
+.w-keybox code{overflow-wrap:anywhere}
+.w-scopy{justify-self:start}
+.w-steps2{margin:0;padding-inline-start:20px;display:grid;gap:6px;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-dialog .w-qr{width:168px;height:168px}
+
+/* Savings: presets and a typed share */
+.w-svctl{justify-content:flex-end}
+.w-svother{display:inline-flex;align-items:center;gap:5px}
+.w-svother input{width:64px}
+
+/* Visually hidden, still focusable (file inputs inside a styled label) */
+.w-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+label:has(> .w-vh:focus-visible){outline:2px solid var(--w-accent);outline-offset:2px}
+label.w-btn{cursor:pointer;position:relative}
+
+/* ---------- import ---------- */
+.w-drop{cursor:pointer;position:relative;transition:border-color .15s,background .15s}
+.w-drop:hover,.w-drop.over{border-color:var(--w-accent);background:var(--w-accent-soft)}
+.w-drop > span:not(.w-btn){font-size:var(--fs-foot);max-width:440px}
+.w-drop .w-btn{margin-top:6px}
+.w-drop-i{width:26px;height:26px;color:var(--w-accent)}
+.w-imp-opts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--w-line2)}
+.w-imp-opts .w-hint{flex:1;min-width:220px}
+.w-scroll{overflow-x:auto}
+.w-table th,.w-table td{text-align:start;vertical-align:top}
+.w-table td{color:var(--w-ink)}
+.w-imp-map th{min-width:130px}
+.w-imp-map td{white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;color:var(--w-ink2)}
+.w-imp-h{display:block;font-weight:600;color:var(--w-ink);margin-bottom:5px;white-space:nowrap}
+.w-imp-map select{width:100%;color:var(--w-ink)}
+.w-imp-prev td{vertical-align:middle}
+.w-imp-prev td:first-child{min-width:110px}
+.w-imp-sel{max-width:180px;color:var(--w-ink);background:var(--w-panel);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:3px 6px;font-size:var(--fs-foot)}
+.w-imp-prev td:first-child .w-imp-sel{display:block;margin-top:5px}
+.w-imp-m{display:block;font-size:var(--fs-cap);color:var(--w-ink3);margin-top:3px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-table .w-imp-amt{text-align:end;white-space:nowrap;font-variant-numeric:tabular-nums}
+.w-imp-skip td{color:var(--w-ink3)}
+.w-imp-open{background:color-mix(in srgb,var(--c3) 9%,transparent)}
+.w-pill.warn{background:color-mix(in srgb,var(--c3) 22%,transparent);color:color-mix(in srgb,var(--c3) 45%,var(--w-ink))}
+.w-imp-counts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.w-imp-foot{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px}
+.w-imp-foot .w-btn.primary{min-width:180px}
+/* Import: the table's text lines up with the options above it, the buttons are one height and stand clear of the card */
+.w-imp-foot .w-btn{height:36px;font-size:var(--fs-sub)}
+@media (min-width:1024px){.w-pane .w-table :is(th,td):first-child{padding-inline-start:16px}}
+.w-pane .w-imp-map :is(th,td):first-child{padding-inline-start:16px}
+.w-imp-prev td:nth-child(2){white-space:nowrap}
+.w-imp-bad{margin-top:10px;padding-inline:16px;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-imp-bad summary{cursor:pointer;color:var(--w-bad)}
+.w-imp-bad ul{margin:6px 0 0;padding-inline-start:20px;display:grid;gap:2px}
+.w-imp-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.w-imp-acts a.w-btn{text-decoration:none}
+
+/* ---------- phone: a list of panes; each pane opens full screen ---------- */
+.w-shead{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:16px}
+.w-sback{display:inline-flex;align-items:center;gap:2px;color:var(--w-accent-ink);font-weight:500;font-size:var(--fs-sub);text-decoration:none;min-height:44px;margin-inline-start:-6px;padding-inline-end:8px}
+.w-sback svg.i{width:20px;height:20px}
+.w-shead h3{font-size:var(--fs-large);font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.w-scell{text-decoration:none;color:var(--w-ink);min-height:48px}
+.w-scell > span{display:flex;gap:12px;align-items:center}
+.w-scell > span svg.i{color:var(--w-accent)}
+.w-scell b{display:inline-flex;align-items:center;gap:4px;color:var(--w-ink3);font-weight:400}
+.w-scell b svg.i{width:16px;height:16px}
+[dir="rtl"] .w-scell b svg.i{transform:scaleX(-1)}
+.w-scell:active{background:var(--w-panel2)}
+.w-main > .w-plabel{margin:18px 4px 6px}
+.w-main > .w-head + .w-plabel{margin-top:14px}
+.w-main > .w-setver{text-align:center;margin-top:20px;font-size:var(--fs-foot)}
+.w-setroot{display:grid}
+.w-setroot > .w-glh{padding-top:0}
+.w-setroot > .w-gl + .w-glh{margin-top:22px}
+.w-setroot > .w-glh:first-child{padding-top:0}
+.w-setroot > .w-setver{text-align:center;margin-top:20px;font-size:var(--fs-foot)}
+.w-setlist .w-gr{font-size:var(--fs-body);min-height:52px;text-decoration:none;color:var(--w-ink)}
+.w-setlist .w-gr .v{color:var(--w-ink3)}
+/* A pushed page on the phone: ‹ back and the action in a row, the large title below */
+.w-pnav{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px}
+.w-pnav #set-act button,.w-pnav #set-act a{font-size:var(--fs-body)}
+.w-shead h3#set-title{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.035em;line-height:1.1;margin-top:2px}
+
+@media (max-width:1023px){
+  .w-set{grid-template-columns:200px minmax(0,1fr);gap:36px}
+  /* A narrow list of panes, as on iPad: names only */
+  .w-setnav a .v{display:none}
+}
+@media (max-width:767px){
+  .w-pwrap{max-width:none}
+  .w-pane .w-gr{font-size:var(--fs-body);min-height:46px}
+  /* The large title sits right on its first group, as in iOS Settings */
+  .w-shead{margin-bottom:-6px;gap:0}
+  .w-pane > .w-glh:first-child{padding-top:0}
+  .w-setroot > .w-glh:first-child{padding-top:14px}
+  .w-setroot > .w-gl + .w-glh{margin-top:18px}
+  #main.w-subpage .w-shead{margin-bottom:0}
+  #main.w-subpage .w-shero{margin-top:-4px}
+  .w-shero > .w-av{width:84px;height:84px;font-size:36px}
+  .w-shero > .w-ico{width:72px;height:72px;border-radius:18px}
+  .w-shero > .w-ico svg.i{width:34px;height:34px}
+  .w-alg > label.w-pop2{margin:12px 16px 0;padding:0 8px 0 12px;min-height:44px;width:auto;font-size:15px;border-radius:10px}
+  .w-pane .w-code{white-space:pre-wrap;overflow-wrap:anywhere}
+  /* An action sheet has no picture on a phone */
+  .w-alert:not(.w-falert) .w-altop{display:none}
+  .w-gi{padding:12px 14px;gap:12px;grid-template-columns:auto minmax(0,1fr) auto}
+  /* Wide controls go under the text */
+  .w-gi > .w-gctl{grid-column:2 / -1;justify-content:flex-start}
+  .w-gi > .w-gctl .w-seg{max-width:100%;overflow-x:auto}
+  .w-gi > .w-gctl .w-sselect{max-width:100%;width:100%}
+  .w-gi > .w-acts{grid-column:2 / -1;flex-wrap:wrap}
+  .w-gi > .w-btn,.w-gi > label.w-btn{grid-column:2 / -1;justify-self:start}
+  .w-gadd{grid-template-columns:auto minmax(0,1fr)}
+  .w-gadd > .w-btn{grid-column:2 / -1}
+  .w-addin,.w-gadd select{width:100%}
+  .w-gadd .w-inline{flex-direction:column;align-items:stretch}
+  .w-switch{width:44px;height:26px;border-radius:var(--r-card)}
+  .w-switch::after{width:22px;height:22px}
+  .w-switch[aria-checked="true"]::after{transform:translateX(18px)}
+  [dir="rtl"] .w-switch[aria-checked="true"]::after{transform:translateX(-18px)}
+  .w-x{width:40px;height:40px}
+  .w-gi .w-link{min-height:40px}
+  .w-glabel{flex-direction:column;gap:2px}
+  .w-glabel > span:last-child:not(:first-child){text-align:start}
+  .w-imp-counts{justify-content:flex-start}
+  /* A row whose button sits under its text: the icon stays with the title */
+  .w-pane .w-gi > .w-ico{align-self:start}
+  .w-imp-foot .w-btn{flex:1 1 auto;min-height:44px}
+  .w-sfields2{grid-template-columns:1fr}
+  .w-svctl{justify-content:flex-start}
+  .w-drop{padding:20px 14px}
+  .w-imp-opts .w-seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
+  .w-imp-opts > label.w-inline{flex-wrap:wrap}
+}
+
+/* Phones and tablets: the import preview is too wide for a table, so each row becomes a card */
+@media (max-width:1023px){
+  /* One card per row: name and amount, date, what happens, then category and person */
+  .w-imp-prev thead{display:none}
+  .w-imp-prev,.w-imp-prev tbody{display:block}
+  .w-imp-prev tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:12px 16px;border-bottom:1px solid var(--w-line2)}
+  .w-imp-prev td{padding:0;border:0;min-width:0}
+  .w-imp-prev td:nth-child(3){order:0;font-weight:500;overflow-wrap:anywhere}
+  .w-imp-prev td:nth-child(4){order:1}
+  .w-imp-prev td:nth-child(2){order:2;grid-column:1 / -1;color:var(--w-ink3);font-size:var(--fs-foot)}
+  .w-imp-prev td:nth-child(1){order:3;grid-column:1 / -1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .w-imp-prev td:nth-child(1) .w-imp-sel{margin-top:0}
+  .w-imp-prev td:nth-child(1) .w-imp-m{margin:0;max-width:100%}
+  .w-imp-prev td:nth-child(5){order:4}
+  .w-imp-prev td:nth-child(6){order:5;justify-self:end}
+  .w-imp-prev td:empty{display:none}
+  .w-imp-sel{min-height:36px;max-width:100%}
+}
+
+/* Category colors: a swatch per row, eight to choose from */
+.w-swb{width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+.w-swb:hover{background:var(--w-fill)}
+.w-swb i{width:18px;height:18px;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.w-swpick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;justify-items:center;padding:4px 0}
+.w-swpick button{width:48px;height:48px;border-radius:50%;display:grid;place-items:center}
+.w-swpick button i{width:34px;height:34px;border-radius:50%;display:block}
+.w-swpick button:hover{background:var(--w-fill)}
+.w-swpick button[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--w-ink)}
+
+/* Sign-in & Privacy (security.js): one page in short groups, its sub-pages, and its alerts and sheets */
+.w-sec{display:grid;align-content:start;max-width:640px}
+.w-sec > .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.w-sec a.w-gr{text-decoration:none;color:inherit}
+.w-sec .w-gr[disabled]{opacity:.45;cursor:default}
+.w-sec .w-gr .k small{line-height:1.35}
+.w-sec .w-gr .w-switch{margin-inline-start:8px}
+.w-sec .w-gr.w-gtext{color:var(--w-ink2);font-size:var(--fs-sub);line-height:1.45;padding-block:12px}
+.w-sec .w-gr .w-badge{margin-inline-start:4px;vertical-align:1px}
+.w-secdev{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2);flex:none}
+.w-secdev svg.i{width:16px;height:16px}
+.w-secico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-secico svg.i{width:30px;height:30px}
+/* Alerts that ask for the password: a picture on top, then one field */
+.w-alead{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.w-alead.red{background:var(--w-bad-soft);color:var(--w-bad)}
+.w-alead svg.i{width:24px;height:24px}
+.w-afld{width:100%;height:32px;border:1px solid var(--w-line);border-radius:7px;background:var(--w-panel2);padding:0 10px;font:inherit;font-size:13px;color:var(--w-ink);margin-top:8px;outline:0}
+/* The alert's field shows its caret, not a ring, like an iOS alert's field */
+.w-afld:focus,.w-afld:focus-visible{border-color:var(--w-line);box-shadow:none;outline:0}
+.w-falert .w-hint{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-falert .w-alg > .w-dlgok[disabled]{color:var(--w-on-accent);opacity:.45}
+.w-falert .w-alg > .w-dlgok.danger[disabled]{color:#fff}
+/* Sheets: a lead sentence, a picture and title on top, the key or codes in a card, two buttons */
+/* A sheet's opening sentence: the same size as what follows it, a quieter color */
+.w-shlead,.w-dialog p.w-shlead{text-align:center;font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);padding:0 8px 4px!important;text-wrap:pretty}
+.w-shtop .w-shtitle{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:6px}
+.w-shtop p,.w-dialog .w-shtop p{font-size:var(--fs-sub);line-height:1.45;color:var(--w-ink2);max-width:400px;text-wrap:pretty}
+.w-seckey{background:var(--w-panel2);border-radius:14px;padding:16px;display:grid;justify-items:center;gap:12px}
+.w-seckey .w-qr{width:105px;height:105px;margin:0;color:#111;background:#fff;border:0;border-radius:10px;padding:8px;box-sizing:content-box}
+.w-seckey .w-kitkey{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 10px;font:600 15px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;background:none;border:0;padding:0;color:var(--w-ink)}
+.w-seckey .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
+.w-seckey .w-codes{background:none;border:0;padding:0;width:100%;justify-items:center;font-size:var(--fs-sub)}
+/* Two-step: the QR code on its own, the key only when asked for */
+.w-tsqr{display:grid;justify-items:center;gap:10px;padding:6px 0 18px}
+.w-dialog .w-tsqr .w-qr{width:184px;height:184px;margin:0;border-radius:12px;box-shadow:0 0 0 1px var(--w-line)}
+.w-tsqr .w-link{font-size:var(--fs-sub);font-weight:500}
+.w-tskey{display:grid;justify-items:center;gap:4px}
+.w-tskey code{display:grid;grid-template-columns:repeat(4,auto);gap:0 14px;font:500 15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:var(--w-ink);background:none;padding:0;direction:ltr;user-select:all}
+.w-gr input.w-otp:not(:placeholder-shown){font-variant-numeric:tabular-nums;letter-spacing:.18em}
+.w-secbtns{display:flex;gap:10px;justify-content:center;margin:4px 0}
+.w-secbtns .w-btn{height:34px;border-radius:999px;font-size:14px;font-weight:600;padding:0 14px;gap:6px}
+.w-secbtns .w-btn svg.i{width:15px;height:15px}
+.w-kitsheet .w-shh{margin-bottom:6px}
+.w-dialog.w-kitsheet{max-width:480px}
+.w-dialog.w-sh520{max-width:520px}
+@media (min-width:768px){.w-dialog.w-sh400{max-width:400px}.w-dialog.w-sh420{max-width:420px}.w-dialog.w-sh440{max-width:440px}}
+.w-shfull .w-shb > .w-gl + .w-gl{margin-top:6px}
+.w-shtop p.w-mw360{max-width:360px}
+.w-shtop p.w-mw340{max-width:340px}
+.w-shtop .w-shtitle.w-sht20{font-size:20px}
+/* Language & Region, Appearance, API keys */
+.w-gr .w-seg.w-segm{margin-block:-4px}
+.w-gr .w-seg.w-segm button{padding:4px 12px;font-size:14px}
+.w-mbr{display:none}
+.w-pane .w-code,.w-dialog .w-code{direction:ltr;text-align:left}
+@media (max-width:767px){
+  .w-pane .w-code .w-mbr{display:inline}
+}
+.w-dialog .w-gl > label.w-gr{min-height:46px;font-size:16px}
+/* A field in a group shows its caret, not a ring, as in iOS and macOS Settings: the group stays one piece */
+.w-dialog .w-glh{padding-inline:16px}
+.w-dialog .w-glh ~ .w-glh{margin-top:10px}
+@media (max-width:767px){
+  /* An alert with a field stays an alert in the middle, as on iOS */
+  .w-dlgwrap:has(.w-falert){place-items:center;padding:20px}
+  .w-dialog.w-alert.w-falert{width:290px;max-width:290px;background:var(--w-raised);border-radius:14px;box-shadow:var(--w-shadow);padding:20px 18px 16px;grid-template-columns:1fr 1fr;gap:8px;animation:w-fade 200ms var(--ease)}
+  .w-falert .w-alg{display:contents}
+  .w-falert .w-alg > *{padding:0}
+  .w-falert .w-alg > .w-afld{padding:0 10px}
+  .w-falert > .w-dlgx{order:2}
+  .w-falert .w-alg > .w-dlgok{order:3}
+  .w-falert .w-alg h5{font-size:var(--fs-sub);color:var(--w-ink)}
+  .w-falert .w-alg > p{font-size:var(--fs-foot);color:var(--w-ink2);margin:-2px 0 0}
+  .w-falert .w-alg > .w-dlgok,.w-falert .w-alg > .w-dlgok.danger,.w-falert > .w-dlgx{height:34px;margin:10px 0 0;border:0;border-radius:999px;font-size:14px;font-weight:600}
+  .w-falert .w-alg > .w-dlgok{background:var(--w-accent);color:var(--w-on-accent)}
+  .w-falert .w-alg > .w-dlgok.danger{background:var(--w-bad);color:#fff}
+  .w-falert > .w-dlgx{background:var(--w-fill);color:var(--w-ink)}
+  .w-falert .w-alg > .w-dlgok[disabled]{opacity:.45}
+  .w-shtop .w-shtitle{font-size:22px}
+  /* The kit and two-step sheets are tall: they rise to just under the top, like a full iOS sheet */
+  .w-dialog.w-shfull{max-width:none;min-height:calc(100dvh - 48px)}
+}
+
+/* One vertical rhythm for every pane, whatever its blocks are (groups, drop zones, code, sections):
+   room between blocks, more above a section label, a label close to its group, a footnote close to
+   the group it explains, and room again after it. */
+.w-pane{gap:0}
+:is(.w-pane,.w-sec) > * + *{margin-top:20px}
+:is(.w-pane,.w-sec) > * + :is(.w-glh,.w-sec){margin-top:30px}
+:is(.w-pane,.w-sec) > .w-glh + *{margin-top:0}
+:is(.w-pane,.w-sec) > * + .w-glf{margin-top:0}
+:is(.w-pane,.w-sec) > .w-glf + .w-glf{margin-top:2px}
+:is(.w-pane,.w-sec) > .w-glh{padding:0 16px 8px}
+:is(.w-pane,.w-sec) > .w-glf{padding:8px 16px 0}
+/* wally.css spaces two groups 14px apart (.w-gl + .w-gl): in a pane they keep the pane's rhythm */
+:is(.w-pane,.w-sec) > .w-gl + .w-gl{margin-top:20px}
+/* A labelled group (Export) is a section too, its label inset like every other group label */
+:is(.w-pane,.w-sec) > * + .w-sgroup{margin-top:30px}
+.w-pane > .w-sgroup > .w-glabel{padding:0 16px 8px}
+/* An item's picture and name, then its rows: the same room as above a section */
+.w-pane > .w-shero{margin-bottom:0}
+.w-pane > .w-shero + *{margin-top:30px}
+.w-shead{margin-bottom:20px}
+/* Sheets: a key, a code block or a card of codes never touches the button row under it */
+.w-shb > :is(.w-keybox2,.w-code,.w-seckey) + .w-gl{margin-top:6px}
+@media (max-width:767px){
+  :is(.w-pane,.w-sec) > * + *{margin-top:18px}
+  :is(.w-pane,.w-sec) > * + :is(.w-glh,.w-sec,.w-sgroup){margin-top:26px}
+  :is(.w-pane,.w-sec) > .w-glh + *,:is(.w-pane,.w-sec) > * + .w-glf{margin-top:0}
+  :is(.w-pane,.w-sec) > .w-glf + .w-glf{margin-top:2px}
+  :is(.w-pane,.w-sec) > .w-gl + .w-gl{margin-top:18px}
+  .w-pane > .w-shero + *{margin-top:26px}
+  /* The large title sits close over the pane (its list adds 16px): 12px to the first group or label */
+  .w-shead{margin-bottom:-4px}
+}
+/* Steps in a sheet (two-step sign-in): an accent circle with the number, the step in the sheet's own text size */
+.w-shstep{display:flex;align-items:center;gap:10px;padding:0 4px;margin-top:10px}
+.w-shstep:first-child{margin-top:0}
+.w-shstep b{font-size:var(--fs-sub);font-weight:600;color:var(--w-ink);line-height:1.3;text-wrap:balance}
+.w-shstepn{width:22px;height:22px;border-radius:50%;background:var(--w-accent);color:var(--w-on-accent,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.w-shb > .w-glf + .w-shstep{margin-top:16px}
+.w-shb > .w-shlead{margin-bottom:8px}
+/* Room under a step's title before what it asks for */
+.w-shb > .w-shstep + *{margin-top:4px}
+/* In dark mode the code's card sits on the same surface as the rows under it */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-dialog .w-seckey{background:#292B33}}
+:root[data-theme="dark"] .w-dialog .w-seckey{background:#292B33}
+@media (max-width:767px){.w-shstep b{font-size:var(--fs-body)}.w-shstepn{width:24px;height:24px;font-size:13px}}
+/* Change Password: the rules for the new one, ticked as they're met */
+
+/* API keys: a Shortcut sheet's steps are sentences, so the number sits by the first line and the text is regular weight */
+.w-shstep.w-shstep2{align-items:flex-start}
+.w-shstep.w-shstep2 b{font-weight:500;text-wrap:pretty}
+.w-shstep2 .w-shstepn{margin-top:-1px}
+.w-shb > .w-shstep2 + .w-code{margin-top:4px}
+.w-shb > .w-code + .w-secbtns{margin:4px 0 2px}
+/* The key shown once sits in the same card as the Emergency Kit's */
+.w-seckey.w-keybox2 code{font-size:14px}
+/* People, Categories, Tags sheets: the item's own picture heads Merge and Make-a-Person; a footnote names a taken name in red */
+.w-shtop > .w-ico{width:64px;height:64px;border-radius:16px}
+.w-shtop > .w-ico svg.i{width:30px;height:30px}
+.w-glf.w-glfbad{color:var(--w-bad)}
+/* Currency sheets: the code reads in capitals as it's typed; a code already listed turns the footnote red */
+#cu-name:not(:placeholder-shown){text-transform:uppercase}
+.w-glf.w-cunote.bad{color:var(--w-bad)}
+/* In dark mode a request in a sheet sits on the same surface as the groups around it */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .w-dialog .w-code{background:#292B33}}
+:root[data-theme="dark"] .w-dialog .w-code{background:#292B33}
+/* New Key at the limit: why Create waits, in red under the group */
+.w-shb > .w-glf.w-keyfull{color:var(--w-bad);margin-top:-4px}
+/* A category's icon: the pick, big, in its color, and a search stay put; the icons scroll under them,
+   eight to a row, the pick in its color. A fixed height, so the sheet doesn't jump while searching. */
+.w-dialog.w-icdlg{display:flex;flex-direction:column;overflow:hidden;height:min(760px,calc(100vh - 40px))}
+.w-icdlg > .w-shb{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:start;padding-bottom:18px}
+.w-icdlg > .w-shtop{padding-bottom:4px}
+.w-icdlg .w-gsearch{margin:0;justify-self:stretch}
+.w-gsearch input:focus,.w-gsearch input:focus-visible{outline:none;box-shadow:none}
+.w-icprev{display:grid;place-items:center;margin:0 0 16px}
+.w-icprev .w-ico{width:64px;height:64px;border-radius:16px;background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
+.w-icprev svg.i{width:32px;height:32px;stroke-width:1.6}
+#ic-list{display:grid;align-content:start}
+#ic-list > .w-glh:first-child{margin-top:4px}
+#ic-list > .w-icgrp + .w-glh{margin-top:20px}
+.w-icgrp{display:grid;padding:9px 5px;background:var(--w-panel2);border-radius:var(--r-card)}
+/* Each block draws only on screen, and clips at its edges: 5px inside it keep the pick's ring whole */
+.w-icons{display:grid;grid-template-columns:repeat(8,1fr);gap:10px 6px;justify-items:center;padding:5px;content-visibility:auto;contain-intrinsic-block-size:auto 390px}
+.w-icons button{width:100%;max-width:40px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--w-fill);color:var(--w-ink2)}
+.w-icons button svg.i{width:19px;height:19px}
+.w-icons button:hover{background:var(--w-fill2)}
+.w-icons button[aria-checked="true"]{background:color-mix(in srgb,var(--ic) 15%,transparent);color:color-mix(in srgb,var(--ic) 82%,var(--w-ink));box-shadow:0 0 0 2px var(--w-raised),0 0 0 4px color-mix(in srgb,var(--ic) 82%,var(--w-ink))}
+.w-icnone{padding:28px 12px;text-align:center;color:var(--w-ink3);font-size:var(--fs-sub)}
+#pw-hint.w-bad{color:var(--w-bad)}
+
+/* Emergency Kit: the key alone, in three lines */
+.w-kitplain{display:grid;justify-items:center;padding:6px 0 18px}
+.w-kitplain .w-kitkey{font:600 17px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;background:none;border:0;padding:0;color:var(--w-ink);user-select:all}
+.w-kitplain .w-seclines{display:grid;grid-template-columns:none;justify-items:center;gap:0;white-space:pre;direction:ltr}
+/* A new API key, shown once: the key alone */
+.w-keyplain{display:grid;justify-items:center;padding:6px 0 18px}
+.w-keyplain code{font:500 15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center;color:var(--w-ink);background:none;padding:0;direction:ltr;user-select:all}

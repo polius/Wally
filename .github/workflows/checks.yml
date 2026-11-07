@@ -24,5 +24,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
-      - run: pip install -r api/requirements.txt
+      # argon2-cffi and cryptography: the encryption tests' own copy of the browser's crypto
+      - run: pip install -r api/requirements.txt pytest httpx argon2-cffi cryptography
       - run: python -c "import api.main; print('import OK')"
+      # Money maths, the recurring engine, sign-in, import matching, encryption and the upgrade from 1.x.
+      # -rs lists anything skipped, so a missing package shows in the log
+      - run: python -m pytest tests -q -rs
+      # Every language has every string the app shows
+      - run: python utils/i18n.py --check

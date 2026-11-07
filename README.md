@@ -7,32 +7,27 @@
 <a href="https://github.com/polius/Wally/actions/workflows/release.yml"><img src="https://github.com/polius/Wally/actions/workflows/release.yml/badge.svg" alt="Release"></a>&nbsp;<a href="https://github.com/polius/Wally/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/polius/Wally"></a>&nbsp;<a href="https://hub.docker.com/r/poliuscorp/wally"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/poliuscorp/wally"></a>
 </p>
 
-<br>
-
 <p align="center">
-<b>Wally</b> is a lightweight, self-hosted expense tracker that makes it easy to manage your finances.
+<b>Wally</b> is a lightweight, self-hosted money log for a household: what came in, where it went, and what's coming.
 </p>
 
-<br>
+<p align="center">
+  <img src="assets/dashboards-light.png?version=2.0" alt="Wally's Summary on a computer" width="73%" />
+  &nbsp;
+  <img src="assets/dashboards-light-mobile.png?version=2.0" alt="Wally's Summary on a phone" width="21%" />
+</p>
 
-| | Desktop View | Mobile View |
-| --- | --- | --- |
-| Light | <img src="assets/dashboards-light.png?version=1.14" alt="Dashboards Light" /> | <img src="assets/dashboards-light-mobile.png?version=1.14" alt="Dashboards Light Mobile" /> |
-| Dark | <img src="assets/dashboards-dark.png?version=1.14" alt="Dashboards Dark" /> | <img src="assets/dashboards-dark-mobile.png?version=1.14" alt="Dashboards Dark Mobile" /> |
+## Features
 
-<details>
-<summary>Expand this to see screenshots of other pages</summary>
+- **Summary**: this month against last month, where the money went, what you kept each month and what's coming. Every number opens the transactions behind it.
+- **Transactions**: search every month, filter and sort, a calendar, and bulk changes with Undo.
+- **Recurring**: rent, subscriptions and salaries, added on their day. Price rises stand out.
+- **A household**: each person's own spending, and shared costs split evenly, by income or by hand.
+- **Month in review**: a recap of last month, ready on the 1st.
+- **End-to-end encryption**, on by default with a password: whoever runs the server can't read your data.
+- **On your phone**: installs on the home screen and opens full screen. Light and dark, 13 languages.
 
-| | Desktop View | Mobile View |
-| --- | --- | --- |
-| Transactions Light | <img src="assets/transactions-light.png?version=1.14" alt="Transactions Light" /> | <img src="assets/transactions-light-mobile.png?version=1.14" alt="Transactions Light Mobile " /> |
-| Transactions Dark | <img src="assets/transactions-dark.png?version=1.14" alt="Transactions Dark" /> | <img src="assets/transactions-dark-mobile.png?version=1.14" alt="Transactions Dark Mobile" /> |
-| Settings Light | <img src="assets/settings-light.png?version=1.14" alt="Settings Light" /> | <img src="assets/settings-light-mobile.png?version=1.14" alt="Settings Light Mobile" /> |
-| Settings Dark | <img src="assets/settings-dark.png?version=1.14" alt="Settings Dark" /> | <img src="assets/settings-dark-mobile.png?version=1.14" alt="Settings Dark Mobile" /> |
-| Login Light | <img src="assets/login-light.png?version=1.14" alt="Login Light" /> | <img src="assets/login-light-mobile.png?version=1.14" alt="Login Light Mobile" /> |
-| Login Dark | <img src="assets/login-dark.png?version=1.14" alt="Login Dark" /> | <img src="assets/login-dark-mobile.png?version=1.14" alt="Login Dark Mobile" /> |
-
-</details>
+Wally never connects to a bank: you add what you spend.
 
 ## Quick Demo
 
@@ -48,20 +43,18 @@ Then open [http://localhost](http://localhost) in your browser.
 
 ## Installation
 
+Wally keeps its database in the folder you mount at `/wally/data`, so your data stays when the container restarts or is updated. Both examples use a `data` folder next to where you run them.
+
 ### Run with Docker CLI
 
 ```bash
 docker run -d \
   --name wally \
+  --restart unless-stopped \
   -p 80:80 \
-  -v $(pwd):/wally/data \
+  -v ./data:/wally/data \
   poliuscorp/wally
 ```
-
-- The `-v` flag ensures your data persists when the container restarts or is updated.
-- Replace `$(pwd)` with the folder on your host where you want Wally to store its database.
-
-Access Wally at: [http://localhost](http://localhost)
 
 ### Run with Docker Compose
 
@@ -74,62 +67,16 @@ services:
     ports:
       - "80:80"
     volumes:
-      - $(pwd):/wally/data
+      - ./data:/wally/data
 ```
 
-- Replace `$(pwd)` with the folder on your host where you want Wally to store its database.
+Then open [http://localhost](http://localhost).
 
-Access Wally at: [http://localhost](http://localhost)
+## Video
 
-## Environment variables
-
-Wally supports the following environment variables:
-
-| Variable | Sample Value | Details |
-| --- | --- | --- |
-| DEMO | true | Pre-loads the app with random demo data |
-
-## Data Import / Export
-
-Wally supports CSV import/export. The file must contain the following columns:
-
-```
-name,category,type,amount,date,tags
-```
-
-**Example**
-
-```
-name,category,type,amount,date,tags
-An expense,Rent,expense,1000.0,2025-08-01,
-An income,Salary,income,2000.0,2025-08-01,"Tag1,Tag2"
-```
-
-- `type` can be `income` or `expense`.
-- `tags` are optional and can be multiple, separated by commas.
-
-This can be done directly from the **Settings** page.
-
-## Acknowledgement
-
-Wally has been built using [ExpenseOwl](https://github.com/Tanq16/ExpenseOwl) as an inspiration, and many ideas were derived from that project.
-
-### Key Differences
-
-- **Login page**: An optional login page was added. This enhancement provides an additional layer of security for those who prefer to protect Wally with authentication.
-
-- **Dashboards page**: A "Change" button was introduced to switch between different graphs. Users can now view expense trends not only on a monthly basis but also across an entire year. This replaces the doughnut chart with a line graph, allowing tracking of a specific category (like Restaurants) over time.
-
-- **Transactions page**: The table was replaced with one built using AG Grid, adding search, column sorting, and per-column filtering. A footer was also added to display the total number of rows, total income, and total expenses for the current view.
-
-- **Recurring transactions**: Editing and deletion were enhanced, allowing users to specify whether changes apply to all existing transactions or only future ones.
-
-- **Backend rewrite**: The backend was rewritten from Go to Python using FastAPI. This change provides a built-in API with interactive documentation at http://localhost/api/docs, making it easier to integrate external tools or automate tasks.
-
-- **Dark theme improvements**: The dark mode color palette was refined for improved visual consistency and better contrast, resulting in a more balanced and neutral appearance.
-
-- **Storage changes**: Wally uses SQLite as its data storage solution, while ExpenseOwl offers either JSON files or PostgreSQL. For the type and scale of data this application handles, SQLite was selected as a more suitable and efficient choice.
-
-- **API Keys management**: When login is enabled, users can create and manage API keys directly from the Settings page. This allows secure, token-based access to Wally's API for external integrations and automation.
-
-- **Internationalization**: Wally supports translation into over 10 languages, making it accessible to users worldwide. 
+<p align="center">
+  <a href="https://pol.alzina.dev/videos/wally.mp4">
+    <img src="assets/video-poster.png"
+      alt="Watch the Wally video — a one-minute tour: adding on a phone, the Summary, search, recurring, a shared household, encryption and self-hosting">
+  </a>
+</p>

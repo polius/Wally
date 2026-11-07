@@ -1,0 +1,19 @@
+{
+  "name": "Wally",
+  "short_name": "Wally",
+  "description": "Household money, self-hosted.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F5F8",
+  "theme_color": "#4F5BD5",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Add an expense", "url": "/?add=1", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Transactions", "url": "/transactions" }
+  ]
+}

@@ -1,0 +1,242 @@
+/* Summary (the page at /). Two independent columns on wide screens; one column on tablets and phones,
+   where the section titles sit above grouped lists and Everyday spending sits on the page itself. */
+
+/* ---------- header: the period as the title, ‹ › beside it ---------- */
+.s-head{position:relative;flex-wrap:nowrap;min-height:44px;gap:12px;margin-bottom:4px}
+.s-titlew{position:relative;min-width:0;flex:none}
+.s-title{display:inline-flex;align-items:center;gap:6px;font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.1;color:var(--w-ink);border-radius:var(--r-ctl);padding:2px 4px;margin:-2px -4px;white-space:nowrap;min-width:0}
+.s-title > span:first-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+button.s-title:hover{background:var(--w-fill)}
+.s-title span span{color:var(--w-ink3);font-weight:500}
+.s-title svg.i{width:20px;height:20px;color:var(--w-ink2);stroke-width:2.2;flex:none}
+.s-pmenu{inset-inline-start:0;inset-inline-end:auto;min-width:240px}
+.s-steps{display:flex;gap:6px;flex:none;margin-inline-end:auto}
+.s-steps[hidden]{display:none}
+.s-stepb{width:30px;height:30px;border-radius:50%;background:var(--w-fill);display:grid;place-items:center;color:var(--w-ink2)}
+.s-stepb svg.i{width:16px;height:16px;stroke-width:2.2}
+.s-stepb:hover:not([disabled]){background:var(--w-fill2);color:var(--w-ink)}
+.s-stepb[disabled]{opacity:.35;cursor:default}
+
+/* ---------- the grid: two columns that fill independently ---------- */
+.s-grid{--s-card:var(--w-panel);--s-kept:#7FBF9E;display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:20px;align-items:start}
+.s-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.s-sec{background:var(--w-panel);border-radius:var(--r-card);padding:20px 22px;min-width:0;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.s-sec[hidden]{display:none}
+.s-sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
+.s-sh h4{font-size:var(--fs-title);font-weight:600;letter-spacing:-.02em}
+.s-all{font-size:var(--fs-sub);font-weight:500;white-space:nowrap;text-decoration:none}
+#main[data-page=dashboard] a.s-all,#main[data-page=dashboard] .w-link{color:var(--w-accent-ink)}
+.s-note{font-size:var(--fs-foot);color:var(--w-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.s-ph{display:none}
+.s-none{font-size:var(--fs-sub);color:var(--w-ink2);padding:6px 0}
+
+/* ---------- Everyday spending ---------- */
+.s-heroh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.s-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
+.s-big{font-size:var(--fs-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;margin:4px 0 6px}
+.s-lines{display:grid;gap:1px;font-size:16px}
+.s-proj{color:var(--w-ink)}
+.s-proj b{color:var(--w-accent-ink);font-weight:400}
+.s-ch{color:var(--w-ink)}
+.s-ch b{font-weight:400}
+.s-chart{margin-top:14px;margin-bottom:5px}
+.s-chart .lb2{fill:var(--w-ink3);font-size:12px}
+.s-chart svg{touch-action:pan-y}
+.s-view{flex:none}
+
+/* ---------- rows: an icon, a name with a line under it, an amount ---------- */
+.s-row,.s-notice,.s-person{display:flex;align-items:center;gap:14px;width:100%;padding:11px 0;text-align:start;color:inherit;border-top:1px solid var(--w-line2)}
+.s-body > :first-child{border-top:0}
+@media (hover:hover){:is(.s-row,.s-person):hover .s-nm > span{color:var(--w-accent-ink)}}
+.s-row .w-ico{width:40px;height:40px;border-radius:10px}
+.s-row .w-ico svg.i{width:18px;height:18px}
+.s-nm{flex:1;min-width:0;display:grid;gap:0}
+.s-nm > span{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-nm small{font-size:var(--fs-foot);color:var(--w-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-am{font-size:var(--fs-sub);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:end}
+.s-am.pos{color:var(--w-good)}
+/* Cards: the last row's own padding plus the card's would leave more room under it than above the title */
+@media (min-width:768px){.s-body > :is(.s-row,.s-notice,.s-person):last-child{padding-bottom:2px}}
+.s-more{display:block;width:100%;text-align:center;padding:10px 0 2px;font-size:var(--fs-sub);border-top:1px solid var(--w-line2)}
+
+/* ---------- Worth noticing ---------- */
+.s-notice{align-items:center;gap:12px;padding:10px 0}
+.s-sh + .s-body > .s-notice:first-child{padding-top:2px}
+.s-notice .w-ico{width:32px;height:32px;border-radius:8px;flex:none}
+.s-notice .w-ico svg.i{width:16px;height:16px}
+.s-nico{background:var(--w-fill);color:var(--w-ink2)}
+.s-nico.bad{background:color-mix(in srgb,var(--c5,#E64980) 14%,transparent);color:color-mix(in srgb,var(--c5,#E64980) 85%,var(--w-ink))}
+.s-nico.good{background:color-mix(in srgb,var(--w-good) 14%,transparent);color:var(--w-good)}
+.s-notice .s-nm > span{font-size:var(--fs-sub);white-space:normal}
+.s-notice .s-nm small{white-space:normal}
+
+/* ---------- The household ---------- */
+.s-person{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;align-items:center}
+.s-sh + .s-body > .s-person:first-child{padding-top:4px}
+.s-person .w-av.lg{width:36px;height:36px;font-size:15px}
+.s-person .s-nm{display:contents}
+.s-person .s-nm > span{grid-column:2;grid-row:1;align-self:center}
+.s-person .s-nm small{grid-column:2 / -1;grid-row:2}
+.s-person .w-av.lg{grid-row:1 / span 2;align-self:center}
+/* The amount sits on the name's line, so a long detail line ("5,470 € own · 8,033 € share…") runs under it, never into it */
+.s-person .s-am{grid-column:3;grid-row:1;align-self:center}
+.s-foot{font-size:var(--fs-foot);color:var(--w-ink2);margin-top:6px}
+
+/* ---------- Kept each month, This year ---------- */
+.s-keptn{display:flex;align-items:baseline;gap:8px}
+.s-keptn b{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.1}
+.s-keptn span{font-size:var(--fs-sub);color:var(--w-ink2);font-weight:650}
+.s-keptc{margin-top:12px}
+.s-yearsub{font-size:var(--fs-sub);color:var(--w-ink2)}
+.s-yearsub b{font-weight:400}
+.s-yearc{margin-top:10px}
+#main[data-page=dashboard] .chart .lb{fill:var(--w-ink);font-weight:600}
+#main[data-page=dashboard] :is(.s-keptc,.s-yearc) .chart .lb{font-size:var(--fs-cap)}
+
+/* ---------- the month's recap, once it is ready ---------- */
+.s-recapw:empty{display:none}
+.s-recap{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-card);background:var(--w-panel);text-decoration:none;color:inherit;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+.s-recap:hover b{color:var(--w-accent-ink)}
+.s-recapi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--w-accent);color:var(--w-on-accent);flex:none}
+.s-recapi svg.i{width:18px;height:18px}
+.s-recap > span:nth-child(2){flex:1;min-width:0;display:grid;gap:1px}
+.s-recap b{font-size:var(--fs-sub);font-weight:600}
+.s-recap small{font-size:var(--fs-foot);color:var(--w-ink2)}
+.s-chev{color:var(--w-ink3);width:14px!important;height:14px!important}
+
+/* ---------- empty Summary ---------- */
+.d-emptyb{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:6px}
+.d-emptyb .w-btn{margin:0;text-decoration:none}
+/* One button size in an empty state: the same pills as the Everyday spending card's */
+.d-welcome .d-emptyb{margin-top:12px}
+.d-welcome .d-emptyb .w-btn{height:40px;border-radius:999px;padding:0 16px;font-size:var(--fs-sub);font-weight:600}
+.d-welcome{padding:40px 20px}
+#s-heroempty .w-empty{padding:22px 0 8px}
+#s-heroempty .w-empty b{font-size:16px}
+#s-heroempty .w-empty p{font-size:14px;max-width:none}
+#s-heroempty .d-emptyb{margin-top:8px}
+#s-heroempty .d-emptyb .w-btn{height:40px;border-radius:999px;padding:0 16px;font-size:var(--fs-sub);font-weight:600}
+#s-heroempty .w-empty-i{width:44px;height:44px;border-radius:12px;margin-bottom:0}
+#s-heroempty .w-empty-i svg.i{width:18px;height:18px}
+.s-hero:has(#s-heroempty:not([hidden])) .s-big{margin-bottom:2px}
+
+/* ---------- Custom Range: a sheet with Starts and Ends, and one calendar ---------- */
+.w-dialog.d-rngdlg{max-width:400px}
+.d-rngdlg .w-shh{min-height:23px;margin-bottom:14px}
+.d-rngdlg .w-shb{gap:0}
+@media (min-width:768px){.w-dialog.d-rngdlg{padding-bottom:18px}}
+.d-rngdlg .w-shh .w-dlgx{font-weight:500;padding:0 2px}
+.d-rngdlg .w-shh .w-dlgok{padding:0 2px}
+@media (min-width:768px){.d-rngdlg .w-shh .w-dlgok{font-size:16px}.d-rngdlg .w-gr{min-height:48px;font-size:16px}}
+.d-tok{color:var(--w-ink2)}
+.d-tok.on{display:inline-block;border-radius:6px;padding:1px 7px;font-size:14px;line-height:20px;background:var(--w-accent-soft);color:var(--w-accent-ink);font-weight:500}
+.d-cal{padding:4px 14px 12px;border-top:1px solid var(--w-line2)}
+.d-calh{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 10px}
+.d-calt{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sub);font-weight:700;color:var(--w-ink);padding:2px 4px;margin:-2px -4px;border-radius:6px}
+.d-calt:hover{background:var(--w-fill)}
+.d-calt svg.i{width:14px;height:14px;stroke-width:2.4;color:var(--w-accent-ink);transition:transform .2s var(--ease)}
+.d-calt.on{color:var(--w-accent-ink)}
+.d-calt.on svg.i{transform:rotate(90deg)}
+[dir=rtl] .d-calt.on svg.i{transform:rotate(-90deg)}
+.d-calm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:4px 0}
+.d-calm button{height:44px;border-radius:10px;font-size:var(--fs-sub);color:var(--w-ink)}
+.d-calm button:hover:not([disabled]):not(.on){background:var(--w-fill)}
+.d-calm button.on{background:var(--w-accent);color:var(--w-on-accent);font-weight:600}
+.d-calm button[disabled]{color:var(--w-ink3);cursor:default}
+.d-calh span{display:flex;gap:6px}
+.d-calnav{width:28px;height:28px;margin-block:-3px;border-radius:50%;display:grid;place-items:center;color:var(--w-accent-ink)}
+.d-calnav svg.i{width:18px;height:18px;stroke-width:2.2}
+.d-calnav:hover:not([disabled]){background:var(--w-fill)}
+.d-calnav[disabled]{color:var(--w-ink3);opacity:.5;cursor:default}
+.d-calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 0;text-align:center}
+.d-calg .dw{font-size:11px;color:var(--w-ink3);font-weight:600}
+.d-calg button{width:34px;height:34px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:14px;color:var(--w-ink);font-variant-numeric:tabular-nums}
+.d-calg button:hover:not([disabled]):not(.on){background:var(--w-fill)}
+.d-calg button.td{color:var(--w-accent-ink);font-weight:600}
+.d-calg button.in{background:var(--w-accent-soft);color:var(--w-accent-ink)}
+.d-calg button.on{background:var(--w-accent);color:var(--w-on-accent);font-weight:600}
+.d-calg button[disabled]{color:var(--w-ink3);cursor:default}
+.d-rngsum:empty{display:none}
+.d-rngdlg .d-rngsum{padding:8px 16px 0;margin:0;font-size:var(--fs-foot);color:var(--w-ink2)}
+
+/* ---------- tablets: one column in reading order ---------- */
+@media (max-width:1023px){
+  .s-grid{display:flex;flex-direction:column}
+  .s-col{display:contents}
+  .s-sec,.s-recapw{width:100%}
+  .s-sec[data-w="hero"]{order:1}
+  .s-recapw{order:2}
+  .s-sec[data-w="notice"]{order:3}
+  .s-sec[data-w="cats"]{order:4}
+  .s-sec[data-w="recent"]{order:5}
+  .s-sec[data-w="upcoming"]{order:6}
+  .s-sec[data-w="people"]{order:7}
+  .s-sec[data-w="kept"]{order:8}
+  .s-sec[data-w="year"]{order:9}
+}
+
+/* ---------- phones: titles above grouped lists, Everyday spending on the page ---------- */
+@media (max-width:767px){
+  .w-head.s-head{gap:6px;margin-top:12px;margin-bottom:-2px;min-height:49px}
+  .s-titlew{flex:0 1 auto}
+  .s-title{max-width:100%;padding:0;margin:0}
+  .s-title{font-size:var(--fs-xl);letter-spacing:-.035em}
+  .s-title svg.i{width:22px;height:22px}
+  .s-pmenu{min-width:250px;top:calc(100% - 3px)}
+  .s-title{min-height:49px}
+  .s-steps{margin-inline-end:0;margin-inline-start:auto}
+  .s-head .w-hact{margin-inline-start:4px}
+  .s-grid{--s-card:var(--w-canvas);gap:0}
+  .s-sec{background:none;padding:0;box-shadow:none;border-radius:0}
+  .s-sh{margin:26px 4px 8px}
+  .s-sh h4{font-size:var(--fs-title);font-weight:650}
+  .s-body{background:var(--w-panel);border-radius:var(--r-card);padding:4px 14px}
+  .s-hero .s-body{background:none;padding:0}
+  /* Year and longer: the chart switch is too wide to sit beside the number, so it leads, full width */
+  .s-heroh{flex-direction:column-reverse;align-items:stretch;gap:14px}
+  .s-view{display:flex;margin-top:4px}
+  .s-view[hidden]{display:none}
+  .s-view button{flex:1 1 auto;padding:6px 8px;font-size:var(--fs-foot)}
+  .s-big{font-size:56px;margin:2px 0 4px}
+  .s-dk{display:none}
+  .s-ph{display:inline}
+  .s-sec[data-w="kept"] .s-body,.s-sec[data-w="year"] .s-body{padding:12px 14px}
+  .s-row{padding:11px 0}
+  .s-more{padding:12px 0 8px}
+  .s-notice,.s-person{padding:12px 0}
+  .s-body > .s-foot{margin:2px 0 0;padding:10px 0 12px;border-top:1px solid var(--w-line2)}
+  .s-sh + .s-body > .s-row:first-child{padding-top:11px}
+  .s-sh + .s-body > :is(.s-notice,.s-person):first-child{padding-top:12px}
+  .s-nm > span{font-weight:500}
+  .s-none{padding:14px 0}
+  .s-recapw:not(:empty){margin-top:26px}
+  .s-recap{padding:14px}
+  .d-welcome{padding:24px 12px}
+  /* Three pills do not fit on one line: the main action leads, full width, the other two share the line under it */
+  .d-welcome .d-emptyb{width:100%;max-width:300px;justify-self:center}
+  .d-welcome .d-emptyb .w-btn{flex:1 1 0}
+  .d-welcome .d-emptyb .w-btn.primary{order:-1;flex-basis:100%}
+  .d-calg button{width:40px;height:40px;font-size:17px}
+}
+
+/* Right to left: amounts stay left to right ("2,831.28 €", never "€ 2,831.28") */
+[dir=rtl] #main[data-page=dashboard] :is(.s-big,.s-am,.s-keptn b,.s-ch b,.s-proj b,.s-yearsub b){direction:ltr;unicode-bidi:isolate}
+/* …but the big number still lines up under its label, on the right */
+[dir=rtl] #main[data-page=dashboard] .s-big{text-align:right}
+
+/* On phones a long title (a month of another year) is set smaller, as in Transactions, and never pushes the page wider */
+@media (max-width:767px){
+  .s-head:not(.tx-head) .s-title{max-width:100%}
+  .s-head:not(.tx-head) .s-title.s-long{font-size:28px}
+  .s-head:not(.tx-head) .s-title.s-long span span{font-size:.82em}
+  .w-head.s-head:not(.tx-head){min-width:0;max-width:100%}
+}
+/* Categories: how much each moved against the period before, under its amount (as a price change in Recurring) */
+.s-am .s-chg{display:block;font-size:var(--fs-foot);margin-top:1px}
+.s-am .s-chg.up-bad{color:var(--w-bad)}
+.s-am .s-chg.dn-good{color:var(--w-good)}
+/* Categories: every category's share of the spending in one bar, under the title */
+.s-stack{display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;margin:4px 0 8px;background:var(--w-fill)}
+.s-stack i{display:block;height:100%;min-width:2px}
+.s-stack + .s-row{border-top:0}
+@media (max-width:767px){.s-stack{margin:14px 0 4px}}

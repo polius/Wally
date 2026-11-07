@@ -1,0 +1,190 @@
+/* Month in review (2.1), and the command bar (2.1). The prototype's pieces (.w-mr*, .w-cmd*) are in
+   wally.css; this file fits them to a page: headings, any width, right to left, and the phone story. */
+
+/* ---------- Month in review ----------
+   A sheet read top to bottom: the verdict, where it went, what changed, each of you, day by day and
+   bills, worth knowing. On a phone, the same in pages. */
+.w-mrpage{display:grid;justify-items:center}
+.w-mrpage .w-mrev{width:100%;max-width:1040px;border:0;border-radius:20px}
+.w-mrh{flex-wrap:wrap;padding:16px 26px;gap:10px}
+.w-mrh .t{min-width:0;flex:1}
+.w-mrh .t h1{font-size:var(--fs-body);font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.w-mrh .t p{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-mrh .w-mrsc{margin:0}
+.w-mrtools{display:flex;align-items:center;gap:8px}
+.w-mrc{width:34px;height:34px;border-radius:50%;background:var(--w-fill);color:var(--w-ink2);display:grid;place-items:center;flex:none}
+.w-mrc svg.i{width:17px;height:17px}
+.w-mrc:hover:not([disabled]){background:var(--w-fill2);color:var(--w-ink)}
+.w-mrc[disabled]{opacity:.4;cursor:not-allowed}
+.w-mrmore{position:relative}
+.w-mrmore .w-menu{min-width:190px}
+.w-mrempty .w-mrh .w-mrtools{margin-inline-start:auto}
+/* Sections */
+.w-mrs{padding:22px 26px;gap:14px}
+.w-mrev > .w-mrs:nth-child(2){border-top:0}
+.w-mrsh2{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
+.w-mrs h2,.w-mrcol > h2{font-size:var(--fs-title);font-weight:600;letter-spacing:-.02em}
+.w-mrnote{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-mrnote b{color:var(--w-ink);font-weight:600}
+/* The verdict: kept, and the last 12 months */
+.w-mrhero{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;align-items:end}
+.w-mrhero .k{font-size:var(--fs-sub);color:var(--w-ink2);font-weight:400}
+.w-mrhero .big{font-weight:650;letter-spacing:-.04em;unicode-bidi:isolate}
+.w-mrhero p{font-size:16px;margin-top:6px;max-width:44ch}
+.w-mrbars{direction:ltr}
+.w-mrbars .b{display:flex;align-items:flex-end;gap:7px;height:96px}
+.w-mrbars .b button{flex:1;min-width:0;background:var(--w-fill2);border-radius:4px 4px 2px 2px;cursor:pointer;transition:background .15s}
+.w-mrbars .b button:hover{background:var(--w-p2)}
+.w-mrbars .b button.on{background:var(--w-good)}
+.w-mrbars .b button.neg{background:var(--w-bad-soft)}
+.w-mrbars .b button.neg.on{background:var(--w-bad)}
+.w-mrbars .b button:focus-visible{outline:2px solid var(--w-accent);outline-offset:1px}
+.w-mrbars .ax{display:flex;gap:7px;margin-top:6px}
+.w-mrbars .ax span{flex:1;min-width:0;text-align:center;font-size:var(--fs-cap);color:var(--w-ink3)}
+.w-mrbars .ax span.on{color:var(--w-ink);font-weight:600}
+.w-mrtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.w-mrtile{background:var(--w-panel2);border-radius:12px;padding:14px 16px;display:grid;gap:2px;align-content:start;min-width:0}
+.w-mrtile > span:first-child{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-mrtile > b{font-size:var(--fs-title);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.w-mrtile .w-mrd{font-size:var(--fs-foot)}
+.w-mrtile.k > b{font-size:var(--fs-sub);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-mrtile.k .s{font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-mrtop > .w-mrhero + .w-mrtiles{margin-top:6px}
+/* Where it went: one row per category, who spent it inside the bar */
+.w-mrkey{display:inline-flex;gap:14px;font-size:var(--fs-foot);color:var(--w-ink2);align-items:center;flex-wrap:wrap}
+.w-mrkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.w-mrkey i.p0,.w-mrsplit i.p0{background:var(--w-p1)}
+.w-mrkey i.p1,.w-mrsplit i.p1{background:var(--w-p2)}
+.w-mrkey i.p2,.w-mrsplit i.p2{background:var(--av2,#2B8A3E)}
+.w-mrkey i.p3,.w-mrsplit i.p3{background:var(--av3,#AE3EC9)}
+.w-mrkey i.p4,.w-mrsplit i.p4,.w-mrkey i.p5,.w-mrsplit i.p5{background:var(--av4,#E67700)}
+.w-mrkey i.sh,.w-mrsplit i.sh{background:repeating-linear-gradient(135deg,var(--w-hatch) 0 2px,transparent 2px 5px)}
+.w-mrwhere{display:grid}
+.w-mrwrow{display:grid;grid-template-columns:200px minmax(0,1fr) 90px 110px;gap:12px;align-items:center;padding:9px 6px;margin:0 -6px;border-top:1px solid var(--w-line2);color:inherit;text-decoration:none;border-radius:8px;font-size:var(--fs-sub)}
+.w-mrwrow:first-child{border-top-color:transparent}
+.w-mrwrow:hover{background:var(--w-fill)}
+.w-mrwrow .n{display:flex;align-items:center;gap:10px;min-width:0}
+.w-mrwrow .n b{font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-mrwrow .n .w-ico,.w-mrpw .w-ico{width:30px!important;height:30px!important;border-radius:8px;flex:none}
+.w-mrwrow .n .w-ico svg.i,.w-mrpw .w-ico svg.i{width:15px;height:15px}
+.w-mrwrow > .amt{text-align:end;font-weight:400;font-variant-numeric:tabular-nums}
+.w-mrwrow > .w-mrd{text-align:end;font-size:14px}
+.w-mrsplit{display:flex;height:10px;gap:2px;border-radius:5px;overflow:hidden;min-width:6px;max-width:100%}
+.w-mrsplit i{display:block;height:100%;min-width:2px}
+/* What changed */
+.w-mrchgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
+.w-mrchgs > div{display:grid;gap:4px;align-content:start}
+.w-mrchg{display:flex;gap:14px;align-items:center;padding:6px 0}
+.w-mrchg .w-ico{width:40px!important;height:40px!important;border-radius:10px;flex:none}
+.w-mrchg b{display:block;font-size:16px;font-weight:500}
+.w-mrchg p{font-size:var(--fs-foot);color:var(--w-ink2)}
+/* Each of you */
+.w-mrpcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.w-mrpc{background:var(--w-panel2);border-radius:12px;padding:14px 16px 7px;display:grid;gap:0;align-content:start;transition:opacity .2s}
+.w-mrpc.dim{opacity:.45}
+.w-mrpc .h{display:flex;align-items:center;gap:10px;padding-bottom:10px}
+.w-mrpc .h b{flex:1;font-weight:600}
+.w-mrpc .h > span{font-weight:600;font-variant-numeric:tabular-nums}
+.w-mrpc .h > span.good{color:var(--w-good)}.w-mrpc .h > span.bad{color:var(--w-bad)}
+.w-mrkv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--w-line2);font-size:var(--fs-sub)}
+.w-mrkv > span{color:var(--w-ink2)}
+.w-mrkv > b{font-weight:400;text-align:end;font-variant-numeric:tabular-nums}
+.w-mrkv .w-mrd{font-size:var(--fs-sub)}
+.w-mr2{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:22px 26px}
+.w-mr2 > .w-mrcol{padding:0;gap:0}
+.w-mr2 > .w-mrcol > h2{margin-bottom:8px}
+.w-mr2 > .w-mrcol + .w-mrcol{border:0}
+.w-mrcol .w-mrkv:first-of-type{border-top-color:var(--w-line2)}
+/* The foot */
+.w-mrf{justify-content:flex-end;gap:10px;background:none;padding:16px 26px}
+.w-mrf .w-btn{text-decoration:none;height:40px;border-radius:999px;padding:0 18px;font-size:var(--fs-sub);font-weight:600}
+
+@media (max-width:1180px){
+  .w-mrtiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1023px){
+  .w-mrhero{grid-template-columns:minmax(0,1fr)}
+  .w-mrwrow{grid-template-columns:150px minmax(0,1fr) 76px 92px}
+  .w-mr2{grid-template-columns:minmax(0,1fr)}
+}
+
+/* The phone: pages, one at a time, full screen */
+.w-mrstory{display:none}
+@media (max-width:767px){
+  .w-mrpage .w-mrev{display:none}
+  body:has(#main[data-page="review"]) .w-tabbar{display:none}
+  .w-app > .w-main[data-page="review"]{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  /* justify-items now centres block children too: the story must fill the width on every page, not shrink to its content */
+  .w-mrpage{display:block;justify-items:stretch}
+  .w-mrstory{display:grid;gap:12px;min-height:calc(100dvh - 90px);grid-template-rows:auto auto auto 1fr auto;align-content:start}
+  .w-story{margin:2px 0 0}
+  .w-mrstop{display:flex;align-items:center;gap:8px}
+  .w-mrsm{flex:1;font-size:var(--fs-sub);color:var(--w-ink2);min-width:0}
+  .w-mrstop .w-mrc{width:32px;height:32px}
+  .w-mrstory .w-mrsc{display:flex}
+  .w-mrstory .w-mrsc button{flex:1;font-size:var(--fs-sub);min-height:34px}
+  .w-mrspages{display:grid;align-content:start;min-height:0;cursor:pointer;user-select:none;-webkit-user-select:none;padding-top:6px}
+  .w-mrsp{display:grid;gap:10px;align-content:start;animation:w-fade 220ms var(--ease)}
+  .w-mrsp[hidden]{display:none}
+  .w-pmr{gap:0}
+  .w-pmr .k{font-size:var(--fs-body);color:var(--w-ink2)}
+  .w-pmr .big{font-size:56px;font-weight:650;letter-spacing:-.04em}
+  .w-pmr .big.neg{color:var(--w-bad)}
+  .w-pmr p{font-size:16px;margin-top:6px;text-wrap:pretty}
+  .w-mrbars.ph{margin-top:8px}
+  .w-mrbars.ph .b{height:84px;gap:6px}
+  .w-mrbars.ph .ax{gap:6px}
+  .w-mrsp .w-mrtiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+  .w-mrsp .w-mrtile{background:var(--w-panel)}
+  .w-mrsh{font-size:24px;font-weight:650;letter-spacing:-.02em;margin:0}
+  .w-mrsh.sm{font-size:var(--fs-title);margin-top:12px}
+  .w-mrcard{background:var(--w-panel);border-radius:var(--r-card);padding:4px 14px}
+  .w-mrcard .w-mrkv:first-child{border-top:0}
+  .w-mrpw{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--w-line2);color:inherit;text-decoration:none}
+  .w-mrpw:first-child{border-top:0}
+  .w-mrpw .top{display:flex;align-items:center;gap:10px}
+  .w-mrpw .top b{flex:1;font-weight:500;font-size:var(--fs-body)}
+  .w-mrpw .top .amt{font-size:var(--fs-body);font-variant-numeric:tabular-nums}
+  .w-mrpw .w-mrd{font-size:12.5px}
+  .w-mrsp .w-mrchgs{grid-template-columns:minmax(0,1fr)}
+  .w-mrsp .w-mrpcs{grid-template-columns:minmax(0,1fr)}
+  .w-mrsp .w-mrpc{background:var(--w-panel)}
+  .w-mrsp .w-mrtile.k{background:var(--w-panel)}
+  .w-mrsfoot{display:grid;gap:8px;margin-top:14px}
+  .w-mrsfoot .w-btn{height:44px;text-decoration:none;justify-content:center;border-radius:999px;font-size:var(--fs-body);font-weight:600}
+  .w-mrsctl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 calc(6px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;background:var(--w-canvas);margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px))}
+  .w-mrsn{font-size:var(--fs-sub);color:var(--w-ink2);margin-inline-end:auto}
+  .w-mrsctl .w-btn{min-height:44px;padding:0 18px;justify-content:center;border-radius:999px;font-size:var(--fs-body)}
+  .w-mrsctl .w-btn[hidden]{display:inline-flex;visibility:hidden}
+  /* Back: tapping the start side of the page goes back; this is for the keyboard and screen readers */
+  .w-mrsback{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .w-mrsback:focus-visible{position:static;width:auto;height:44px;clip:auto;padding:0 12px;color:var(--w-accent-ink)}
+  .w-mrsback[hidden]{display:none}
+  .w-mrempty{display:block!important;margin-top:12px}
+}
+
+/* ---------- Command bar ---------- */
+.w-cmdin svg.i{flex:none}
+.w-cmdin input{min-width:0}
+.w-cmdi{color:var(--w-ink);text-align:start;cursor:pointer}
+.w-cmdi .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cmdi small{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cmdi kbd{margin-left:0;margin-inline-start:auto;font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 5px;color:var(--w-ink3)}
+.w-cmdi .w-av{flex:none}
+.w-cmdi > svg.i{flex:none;color:var(--w-ink3);width:16px;height:16px}
+.w-cmdi .w-ico{width:22px;height:22px;border-radius:var(--r-ctl);flex:none}
+.w-cmdi .w-ico svg.i{width:13px;height:13px}
+.w-cmdx{flex:none;border-radius:var(--r-ctl);padding:2px;display:grid;place-items:center}
+.w-cmdx:hover kbd{color:var(--w-ink);border-color:var(--w-ink3)}
+.w-cmdres .w-empty{padding:22px 12px}
+.w-cmdhint{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--w-line2);font-size:var(--fs-cap);color:var(--w-ink3)}
+.w-cmdhint kbd{font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 4px;margin-inline-end:4px}
+@media (max-width:767px){
+  .w-cmdwrap{place-items:start stretch;padding:calc(10px + env(safe-area-inset-top,0px)) 10px 10px}
+  .w-cmd{max-width:none;animation:w-fade 180ms var(--ease)}
+  .w-cmdin input{font-size:var(--fs-body)}
+  .w-cmdres{max-height:calc(100dvh - 150px)}
+  .w-cmdi{min-height:44px}
+  .w-cmdx{min-width:44px;min-height:44px}
+  .w-cmdhint{display:none}
+}
