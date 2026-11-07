@@ -133,6 +133,8 @@ export function openDialog(o) {
   if (o.onOpen) o.onOpen(root);
   // An alert takes focus itself, like a macOS alert: Return answers it (unless it destroys), Escape cancels
   if (kind === "alert") root.tabIndex = -1;
+  // Unless onOpen put the focus somewhere already
+  if (root.contains(document.activeElement)) return root;
   const first = root.querySelector("[autofocus]") || root.querySelector("input:not([type=checkbox]):not([type=radio]),select,textarea") ||
     (kind === "alert" ? root : root.querySelector("[data-dlg-ok]") || root.querySelector("[data-dlg-x]"));
   if (first) first.focus();

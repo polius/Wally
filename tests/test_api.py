@@ -526,6 +526,83 @@ def test_category_icon_is_picked_kept_and_given_back(couple):
     assert client.delete("/categories/Vet").status_code == 200
     assert client.get("/categories/icons").json() == {}
 
+# ---------- the starting categories, in the household's language ----------
+def test_setup_language_names_the_starting_categories(client):
+    from api.models.categories import DEFAULT_NAMES
+    cats = lambda: client.get("/categories").json()
+    assert set(cats()) == set(DEFAULT_NAMES["en"])
+    # Picked on setup's first step: the categories follow, back and forth
+    assert client.put("/language/es").status_code == 200
+    assert set(cats()) == set(DEFAULT_NAMES["es"]) and "Supermercado" in cats()
+    client.put("/language/ja")
+    assert set(cats()) == set(DEFAULT_NAMES["ja"])
+    # A language the app doesn't have: English
+    client.put("/language/xx")
+    assert set(cats()) == set(DEFAULT_NAMES["en"])
+    client.put("/language/ca")
+    assert set(cats()) == set(DEFAULT_NAMES["ca"])
+
+def test_starting_categories_stay_once_set_up_or_used(make_client):
+    from api.models.categories import DEFAULT_NAMES
+    client = make_client()
+    cats = lambda: set(client.get("/categories").json())
+    # Set up: they're the household's own
+    client.put("/language/fr")
+    client.put("/config", json={"onboarded": True})
+    client.put("/language/de")
+    assert cats() == set(DEFAULT_NAMES["fr"])
+
+def test_starting_categories_stay_once_changed(client):
+    from api.models.categories import DEFAULT_NAMES
+    cats = lambda: set(client.get("/categories").json())
+    # Someone used one, renamed one or picked an icon: nothing is renamed under them
+    client.put("/categories/Food", json={"icon": "pizza"})
+    client.put("/language/es")
+    assert cats() == set(DEFAULT_NAMES["en"])
+    client.put("/categories/Food", json={"icon": ""})
+    client.put("/categories/Travel", json={"name": "Trips"})
+    client.put("/language/es")
+    assert "Trips" in cats() and "Viajes" not in cats()
+    client.put("/categories/Trips", json={"name": "Travel"})
+    alex = client.post("/people", json={"name": "Alex"}).json()
+    client.headers["x-wally-person"] = str(alex["id"])
+    expense(client, category="Food")
+    client.put("/language/es")
+    assert cats() == set(DEFAULT_NAMES["en"])
+
+def test_a_new_server_in_another_language_starts_with_its_names(make_client, tmp_path):
+    from api.models.categories import DEFAULT_NAMES
+    client = make_client()
+    client.put("/language/it")
+    client.put("/config", json={"onboarded": True})
+    client.__exit__(None, None, None)
+    # The categories are all gone (a new database in an Italian server): they come back in Italian
+    con = sqlite3.connect(tmp_path / "wally.db")
+    con.execute("DELETE FROM category")
+    con.commit()
+    con.close()
+    again = make_client()
+    assert set(again.get("/categories").json()) == set(DEFAULT_NAMES["it"])
+
+def test_every_starting_category_reads_as_its_icon():
+    """The app picks a category's icon, and whether it's income, from its name (catIcon in web/js/core.js)."""
+    import json
+    import re
+    from api.models.categories import DEFAULT_NAMES, DEFAULT_ICONS
+    src = (Path(__file__).parent.parent / "web/js/core.js").read_text()
+    block = src[src.index("const ICONS = ["):]
+    block = block[:block.index("\n];")]
+    icons = [(m.group(1), re.compile(m.group(2), re.I)) for m in re.finditer(r'\["([a-z]+)", /(.+)/i\]', block)]
+    assert len(icons) > 10
+
+    def cat_icon(name):
+        return next((i for i, rx in icons if rx.search(name)), "misc")
+    wrong = {(lang, n, cat_icon(n), want) for lang, names in DEFAULT_NAMES.items() for n, want in zip(names, DEFAULT_ICONS) if cat_icon(n) != want}
+    assert not wrong, json.dumps(sorted(wrong), ensure_ascii=False)
+    # Every language the app has
+    langs = re.findall(r'\["([a-z]{2})", "', src[src.index("export const LANGUAGES"):src.index("export async function loadLanguage")])
+    assert set(langs) == set(DEFAULT_NAMES)
+
 def test_rename_tag_into_existing_merges(couple):
     client, *_ = couple
     expense(client, tags=["cafe", "coffee"])

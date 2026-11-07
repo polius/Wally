@@ -696,7 +696,8 @@ section("Phone: one page, the keypad while the amount is typed, Repeat");
   await p.waitForSelector("#add-form.w-addp");
   await p.waitForTimeout(350);
   const sheet = await p.$eval("#add-form", (n) => n.getBoundingClientRect());
-  check(sheet.height > 780 && sheet.bottom >= 843, "phone: full height from the bottom, the page peeking above", sheet);
+  check(sheet.top <= 0.5 && sheet.height >= 843 && sheet.width === 390, "phone: the whole screen", sheet);
+  check(await p.$$eval(".w-grab", (l) => l.length) === 0, "no grabber: the sheet can’t be dragged");
   check(await visible(p, "#add-keypad") && await visible(p, "#add-name") && await visible(p, "#add-catrow") && !(await visible(p, "#add-go")),
     "one page: the keypad in the main button’s place, with the name and categories above it");
   const pad = await p.$eval("#add-keypad", (n) => n.getBoundingClientRect());

@@ -2,13 +2,16 @@
 import * as core from "./core.js";
 import { $, t, state, GET, loadAll, loadLanguage, on, person, refreshToday, esc, TODAY, F, T } from "./core.js";
 import { initToast, initDialogs } from "./ui.js";
-import { initShell, show, setHandlers, signOut, refresh } from "./shell.js";
+import { initShell, show, setHandlers, signOut, refresh, navigate, currentPage, route } from "./shell.js";
 
 let vaultMod = null;   // js/vault/session.js, loaded only for an encrypted household
 async function vaultSession() {
   if (!vaultMod) { vaultMod = await import("./vault/session.js"); vaultMod.bind(core); }
   return vaultMod;
 }
+const AWAY = 10 * 60 * 1000; // in the background this long, coming back is opening Wally again
+// Running as an app from the home screen, not in a browser tab
+const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 function hadVault() { try { return localStorage.getItem("wally.vault") === "1"; } catch (e) { return false; } }
 
 async function boot() {
@@ -110,11 +113,28 @@ async function startApp() {
   $("boot").hidden = true;
   $("app").hidden = false;
   const params = new URLSearchParams(location.search);
+  // Opened from the home screen, Summary is on the current month, not one in the address kept from the
+  // last time. (A browser tab keeps its address: reloading it is meant to show the same.)
+  if (installed() && route().name === "dashboard" && (params.has("month") || params.has("year"))) {
+    params.delete("month"); params.delete("year");
+    history.replaceState(null, "", location.pathname + (params.size ? "?" + params : ""));
+  }
   await show();
   // Upgraded from 1.x: the welcome to 2.0, once for each person
   if (state.status && state.status.upgrade && state.status.me) (await import("./welcome.js")).welcomeOnce(state.status.upgrade);
   if (params.has("add")) { history.replaceState(null, "", location.pathname); add.openAdd(); }
 
+  // Back after a while is opening Wally again: Summary goes back to the current month. A quick look at
+  // another app keeps what was on screen
+  let hiddenAt = 0;
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    const away = hiddenAt && Date.now() - hiddenAt >= AWAY;
+    hiddenAt = 0;
+    if (!away) return;
+    (await import("./pages/dashboard/range.js")).startFresh();
+    if (currentPage() === "dashboard") navigate("/", { replace: true });
+  });
   // A new day while Wally stays open: today moves, and the figures with it
   setInterval(() => { const before = TODAY; refreshToday(); if (TODAY !== before) { refresh({ day: true }); if (core.vaultOn()) catchUp(); } }, 60000);
 

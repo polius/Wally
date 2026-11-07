@@ -23,9 +23,22 @@ function keyHtml(k) {
 
 export const KEYPAD = () => '<div class="w-keys k4 w-pkeys" id="add-keypad" role="group" aria-label="' + esc(t("Keypad")) + '">' + KEYS().map(keyHtml).join("") + "</div>";
 export const chev = (down) => icon(down ? "down" : "right", "chev");
+/* A row that opens a menu, as in iOS Settings: the label, the value and a chevron, with the menu itself
+   (a list on a computer, a wheel on a phone) over the whole row, unseen, so a tap anywhere on the row
+   opens it. render() shows the option picked as the value (syncPicks) */
+export function pickRow(rowId, selId, labelId, label, down, options) {
+  return '<div class="w-gr w-grpick"' + (rowId ? ' id="' + rowId + '"' : "") + '><span class="k" id="' + labelId + '">' + label + '</span><span class="v" aria-hidden="true"></span>' + chev(down) +
+    '<select id="' + selId + '" aria-labelledby="' + labelId + '">' + (options || "") + "</select></div>";
+}
+export function syncPicks(root) {
+  root.querySelectorAll(".w-grpick > select").forEach((s) => {
+    const v = s.parentElement.querySelector(".v"), o = s.selectedOptions[0], txt = o ? o.textContent : "";
+    if (v && v.textContent !== txt) v.textContent = txt;
+  });
+}
 /* A page pushed inside the sheet (Repeat, Category, Split): ‹ Back · title */
 export function pageHead(title) {
-  return '<div class="w-grab" aria-hidden="true"></div><div class="w-ah w-ahp"><button type="button" class="w-alink w-aback" data-step="main">' + icon("left") + t("Back") + '</button><b class="w-atitle">' + title + "</b><span></span></div>";
+  return '<div class="w-ah w-ahp"><button type="button" class="w-alink w-aback" data-step="main">' + icon("left") + t("Back") + '</button><b class="w-atitle">' + title + "</b><span></span></div>";
 }
 /* The amount on a phone: typed on the keypad */
 export function phoneAmount() {
@@ -37,8 +50,8 @@ export function repeatPage() {
     '<div class="w-gl" id="add-pfreq" role="radiogroup" aria-label="' + esc(t("How often")) + '"></div>' +
     '<div class="w-gl" id="add-custom" hidden><div class="w-gr"><span class="k" id="lbl-every">' + t("Every") + '</span><span class="v w-aevery"><input id="add-every" type="number" min="1" max="99" inputmode="numeric" class="w-anum" aria-labelledby="lbl-every">' +
       '<span class="w-apop"><select id="add-unit" aria-label="' + esc(t("Unit")) + '">' + UNITS().map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" + chev(true) + "</span></span></div></div>" +
-    '<div class="w-gl" id="add-pends"><div class="w-gr"><span class="k" id="lbl-ends">' + t("End repeat") + '</span><span class="v w-apop"><select id="add-endsel" aria-labelledby="lbl-ends">' +
-      '<option value="never">' + t("Never") + '</option><option value="until">' + t("On a date") + '</option><option value="count">' + t("After a number of times") + "</option></select>" + chev() + "</span></div>" +
+    '<div class="w-gl" id="add-pends">' + pickRow("", "add-endsel", "lbl-ends", t("End repeat"), false,
+      '<option value="never">' + t("Never") + '</option><option value="until">' + t("On a date") + '</option><option value="count">' + t("After a number of times") + "</option>") +
       '<div class="w-gr" id="add-untilrow" hidden><span class="k" id="lbl-until">' + t("End date") + '</span><input type="date" id="add-until" class="w-adate" aria-labelledby="lbl-until"></div>' +
       '<div class="w-gr" id="add-countw" hidden><span class="k" id="lbl-count">' + t("Times") + '</span><input id="add-count" type="number" min="2" max="999" inputmode="numeric" class="w-anum" aria-labelledby="lbl-count"></div></div>' +
     '<p class="w-err w-glf" id="add-rerr" hidden role="alert"></p>' +
@@ -59,7 +72,7 @@ export function splitPage() {
     '<div class="w-gl" id="add-custrows" hidden></div>' +
     '<p class="w-glf" id="add-each"></p>' +
     '<p class="w-err w-glf" id="add-cerr" hidden role="alert"></p>' +
-    '<div class="w-gl" id="add-bygrp"><div class="w-gr"><span class="k" id="lbl-by">' + t("Paid by") + '</span><span class="v w-apop"><select id="add-bysel" aria-labelledby="lbl-by"></select>' + chev(false) + "</span></div></div>" +
+    '<div class="w-gl" id="add-bygrp">' + pickRow("", "add-bysel", "lbl-by", t("Paid by"), false) + "</div>" +
     '<p class="w-glf" id="add-owes"></p>' +
     "</section>";
 }

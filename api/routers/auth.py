@@ -19,6 +19,7 @@ from ..models.app import AppConfig
 from ..models.api_keys import ApiKeys
 from ..models.people import Person, SessionToken, person_public
 from ..services import totp
+from ..services.defaults import follow_language
 from ..util import utcnow
 
 SESSION_COOKIE = "wally_session"
@@ -439,5 +440,7 @@ def update_language(
     _ = Depends(check_login),
 ):
     set_config(db, "LANGUAGE", language)
+    # Picked during setup: the starting categories take the language too
+    follow_language(db, language)
     db.commit()
     return {"message": "Language updated"}

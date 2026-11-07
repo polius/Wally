@@ -121,7 +121,8 @@ button.s-title:hover{background:var(--w-fill)}
 .s-hero:has(#s-heroempty:not([hidden])) .s-big{margin-bottom:2px}
 
 /* ---------- Custom Range: a sheet with Starts and Ends, and one calendar ---------- */
-.w-dialog.d-rngdlg{max-width:400px}
+/* Off a phone, a narrow sheet; on a phone it spans the screen like every sheet */
+@media (min-width:768px){.w-dialog.d-rngdlg{max-width:400px}}
 .d-rngdlg .w-shh{min-height:23px;margin-bottom:14px}
 .d-rngdlg .w-shb{gap:0}
 @media (min-width:768px){.w-dialog.d-rngdlg{padding-bottom:18px}}

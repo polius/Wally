@@ -207,7 +207,9 @@ ok(/Rent/.test(await page.textContent("#set-pane .w-shero")) && /a month/.test(a
 ok(await page.locator('#set-pane [data-act="color"]').count() === 0, "no color to pick: it follows spending");
 await page.click('#set-pane [data-act="icon"]');
 ok(await page.locator("#ic-list > .w-icgrp").first().locator("[role=radio]").count() === 64 && (await page.getAttribute('#ic-list [data-i="rent"]', "aria-checked")) === "true", "64 suggested icons, the one in use ringed");
-await page.waitForFunction(() => document.querySelectorAll("#ic-list [data-i^='l-']").length > 1500, null, { timeout: 8000 });
+// All of Lucide's are listed, in blocks drawn only as they come near the screen
+await page.waitForFunction(() => !document.getElementById("ic-wait") && [...document.querySelectorAll("#ic-list .w-icons")].reduce((n, b) => n + +b.dataset.n, 0) > 1500, null, { timeout: 8000 });
+ok(await page.locator("#ic-list [data-i]").count() < 400, "only the icons near the screen are drawn");
 ok(/Search [\d,]+ icons/.test(await page.getAttribute("#ic-q", "placeholder")), "then all of Lucide's, and the search says how many");
 await page.fill("#ic-q", "piggy");
 ok((await page.locator("#ic-list [data-i]").first().getAttribute("data-i")) === "savings", "searching by Lucide's words finds Wally's own icon first");

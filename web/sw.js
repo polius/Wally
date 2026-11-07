@@ -2,7 +2,7 @@
    Pages, scripts and styles come from the server, checked against what the browser has (a quick
    304 when nothing changed), so every file is from the same version after an upgrade. The cache
    is only for when the server can't be reached. Money (/api) always goes to the server. */
-const CACHE = "wally-2.0.70";
+const CACHE = "wally-2.0.76";
 const SHELL = ["/", "/index.html", "/css/wally.css", "/css/app.css", "/js/app.js", "/js/core.js", "/js/ui.js", "/js/shell.js", "/fonts/Geist-Variable.woff2", "/icons/wally.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (ev) => {

@@ -27,11 +27,11 @@
 .tx-head.searching .tx-search{width:260px}
 .tx-field{position:relative;flex:1;min-width:0;display:grid;align-items:center}
 .tx-field > *{grid-area:1 / 1}
-.tx-search input{font-size:var(--fs-sub);color:var(--w-ink);padding:0;height:100%}
+.tx-search input{font-size:max(var(--field-min),var(--fs-sub));color:var(--w-ink);padding:0;height:100%}
 .tx-search input.mirrored{color:transparent;caret-color:var(--w-ink)}
 .tx-search input::-webkit-search-cancel-button,.tx-search input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
 .tx-search input:focus,.tx-search input:focus-visible{outline:none;box-shadow:none}
-.tx-mirror{white-space:pre;overflow:hidden;font-size:var(--fs-sub);color:var(--w-ink);pointer-events:none;line-height:1.2}
+.tx-mirror{white-space:pre;overflow:hidden;font-size:max(var(--field-min),var(--fs-sub));color:var(--w-ink);pointer-events:none;line-height:1.2}
 .tx-mirror:empty{display:none}
 .tok{background:var(--w-accent-soft);color:var(--w-accent-ink);border-radius:5px;box-shadow:0 0 0 2px var(--w-accent-soft);font-weight:500}
 .tx-qx{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--w-ink3);flex:none}
@@ -332,7 +332,8 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
 }
 
 /* Custom Range: Starts and Ends over one month */
-.w-dialog.tx-rngdlg{max-width:400px}
+/* Off a phone, a narrow sheet; on a phone it spans the screen like every sheet */
+@media (min-width:768px){.w-dialog.tx-rngdlg{max-width:400px}}
 .tx-rngdlg .w-shh{min-height:23px;margin-bottom:14px}
 @media (min-width:768px){.w-dialog.tx-rngdlg{padding-bottom:18px}}
 .tx-rngdlg .w-shh .w-dlgx{font-weight:500;padding:0 2px}
