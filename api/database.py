@@ -165,7 +165,7 @@ def _version() -> str:
         from .main import VERSION
         return VERSION
     except Exception:
-        return "2.0"
+        return "2.0.0"
 
 def _record_upgrade(report: dict):
     """Keep the report: in the data folder, and in the database for the app to show once."""
