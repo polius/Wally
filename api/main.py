@@ -19,7 +19,7 @@ from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 from .services.engine import run_all, scheduler
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 def init_defaults():
     with Session(database.engine) as db:
