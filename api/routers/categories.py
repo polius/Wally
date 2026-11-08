@@ -21,8 +21,9 @@ def read_categories(
     categories = db.exec(statement).all()
     return sorted([c.name for c in categories], key=str.lower)
 
-def set_icon(db: Session, name: str, icon: str):
-    row = db.get(CategoryIcon, name)
+def set_icon(db: Session, name: str, icon: str, model=CategoryIcon):
+    """The icon picked for a category, or a tag with model=TagIcon. "" clears it."""
+    row = db.get(model, name)
     if not icon:
         if row:
             db.delete(row)
@@ -30,7 +31,7 @@ def set_icon(db: Session, name: str, icon: str):
     if row:
         row.icon = icon
     else:
-        row = CategoryIcon(name=name, icon=icon)
+        row = model(name=name, icon=icon)
     db.add(row)
 
 def public(db: Session, name: str) -> CategoryPublic:

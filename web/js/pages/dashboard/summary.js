@@ -6,12 +6,12 @@
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
-  totals, amt, tile, pname, couple, icon, relDay, av, T, cc,
+  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED,
 } from "../../core.js";
 import { chart, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
-import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eByCat } from "./hero.js";
+import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eByCat, BY_CAT, BY_TAG, anyTags } from "./hero.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,8 +46,11 @@ function againstWhat(r, p) {
 /* A card: a title, something on its right, and its body */
 const sec = (id, title, right) => '<section class="s-sec" data-w="' + id + '"><div class="s-sh"><h4>' + title + "</h4>" + (right || "") + '</div><div class="s-body" id="s-' + id + '"></div></section>';
 const seeAll = (href) => '<a class="w-link s-all" href="' + href + '" data-link>' + t("See all") + "</a>";
-const rowHtml = (attrs, lead, name, sub, amount, cls, under) => '<button type="button" class="s-row" ' + attrs + ">" + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
-  (sub ? "<small>" + esc(sub) + "</small>" : "") + '</span><span class="s-am amt' + (cls ? " " + cls : "") + '">' + esc(amount) + (under || "") + "</span></button>";
+/* attrs null: a row with nowhere to go */
+const rowHtml = (attrs, lead, name, sub, amount, cls, under) => (attrs === null ? '<div class="s-row">' : '<button type="button" class="s-row" ' + attrs + ">") + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
+  (sub ? "<small>" + esc(sub) + "</small>" : "") + '</span><span class="s-am amt' + (cls ? " " + cls : "") + '">' + esc(amount) + (under || "") + "</span>" + (attrs === null ? "</div>" : "</button>");
+/* Biggest first, with what has no tags after every tag */
+const largest = (o) => (a, b) => (a === UNTAGGED) - (b === UNTAGGED) || o[b] - o[a];
 /* The period in a card's corner: "this month", "October", "2026" */
 function periodWord(r) { return r.month ? (r.current ? t("this month") : monthName(+r.start.slice(5, 7))) : r.title; }
 
@@ -62,6 +65,7 @@ export function summaryHtml() {
         '<div class="cv s-chart" id="c-hero"></div><div id="s-heroempty" hidden></div>' +
       "</div></section>" +
       sec("cats", t("Categories")) +
+      sec("tags", t("Tags")) +
       sec("recent", t("Recent"), seeAll("/transactions")) +
       sec("upcoming", t("Coming up"), seeAll("/recurring")) +
     "</div>" +
@@ -76,7 +80,8 @@ export function summaryHtml() {
 
 export function renderSummary(r) {
   renderHero(r);
-  renderCats(r);
+  renderSplit(r, "cats", BY_CAT);
+  renderSplit(r, "tags", BY_TAG);
   renderUpcoming();
   renderRecent(r);
   renderRecap(r);
@@ -89,7 +94,8 @@ const show = (id, on) => { const n = document.querySelector('.s-sec[data-w="' + 
 
 /* ---------- Spending: the number, where it usually ends up, against last month ---------- */
 function renderHero(r) {
-  const tt = totals(r.start, r.end), p = prevOf(r), d = paceData(r), ci = d.cur.length - 1;
+  const tt = totals(r.start, r.end), p = prevOf(r), d = paceData(r), ci = d.cur.length - 1, tagged = anyTags();
+  if (view.hv === "tags" && !tagged) view.hv = "pace";
   if (d.proj && d.proj.length < 2) d.proj = null;
   $("s-eye").textContent = t("Spending");
   countTo($("s-big"), d.cur[ci] || 0);
@@ -100,7 +106,9 @@ function renderHero(r) {
   viewSeg.hidden = r.daily || none;
   if (!r.daily) {
     const pill = (v, l) => '<button type="button" data-hv="' + v + '" aria-pressed="' + (view.hv === v) + '">' + l + "</button>";
-    viewSeg.innerHTML = pill("pace", t("Spending")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category"));
+    const scrolled = viewSeg.scrollLeft; // picking a pill that was scrolled to keeps it in view
+    viewSeg.innerHTML = pill("pace", t("Spending")) + pill("ivs", t("Income vs spending")) + pill("cats", t("By category")) + (tagged ? pill("tags", t("By tag")) : "");
+    viewSeg.scrollLeft = scrolled;
   }
   if (none) {
     $("s-lines").innerHTML = "";
@@ -117,11 +125,11 @@ function renderHero(r) {
 
   if (!r.daily && view.hv !== "pace") {
     const months = monthsOf(r);
-    if (view.hv === "cats") {
-      const tot = eByCatAll(r), keys = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
-      months.forEach((x) => { x.cats = byCatOf(x.a, x.b); });
-      chart("c-hero", (w) => (w < 560 ? 200 : 260), (svg, w, h) => heroCats(svg, w, h, months, keys),
-        () => t("Spending by category and month in {range}", { range: r.noun }) + ": " + keys.slice(0, 5).map((k) => k + " " + f0(tot[k])).join(", "));
+    if (view.hv === "cats" || view.hv === "tags") {
+      const by = view.hv === "tags" ? BY_TAG : BY_CAT, tot = by.sum(r.start, r.end), keys = Object.keys(tot).sort(largest(tot));
+      months.forEach((x) => { x.cats = by.sum(x.a, x.b); });
+      chart("c-hero", (w) => (w < 560 ? 200 : 260), (svg, w, h) => heroCats(svg, w, h, months, keys, by),
+        () => by.chartLabel(r.noun) + ": " + keys.slice(0, 5).map((k) => by.name(k) + " " + f0(tot[k])).join(", "));
     } else {
       chart("c-hero", (w) => (w < 560 ? 200 : 260), (svg, w, h) => heroMonthly(svg, w, h, months),
         () => t("Income and spending by month in {range}", { range: r.noun }) + ": " + months.map((x) => monthYear(x.y, x.m) + " " + f0(x.inc) + " / " + f0(x.exp)).join(", "));
@@ -133,8 +141,6 @@ function renderHero(r) {
     (d.proj ? ". " + t("Usually: {amount}", { amount: f(d.proj[d.proj.length - 1]) }) : "");
   chart("c-hero", (w) => (w < 480 ? 120 : Math.min(200, Math.round((w * 150) / 560))), (svg, w, h) => pace(svg, w, h, { r, d, xlab }), label);
 }
-function eByCatAll(r) { return byCatOf(r.start, r.end); }
-function byCatOf(a, b) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || x.type !== "expense") continue; const v = amt(x); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
 
 /* This period as a line from the first day to today, the one before it dashed across the whole
    period with its total at the end, and no axes but the first and last days */
@@ -197,18 +203,20 @@ function pace(svg, w, h, o) {
   hit.addEventListener("pointerleave", (ev) => { clearTimeout(later); if (ev.pointerType === "mouse") clear(); else later = setTimeout(clear, 3000); });
 }
 
-/* ---------- Categories: all spending, bills included, each against the period before by the same date ---------- */
-let catsOpen = false;
-export function toggleCats() { catsOpen = !catsOpen; }
-function renderCats(r) {
-  const p = prevOf(r), cur = eByCat(r.start, r.end), prev = p.ok ? eByCat(p.start, p.end) : null;
-  const spent = Object.keys(cur).filter((k) => cur[k] > 0).sort((a, b) => cur[b] - cur[a]);
+/* ---------- Categories and Tags: all spending, bills included, each against the period before by the same date ---------- */
+const listOpen = { cats: false, tags: false };
+export function toggleList(id) { listOpen[id] = !listOpen[id]; }
+function renderSplit(r, id, by) {
+  const p = prevOf(r), cur = by.sum(r.start, r.end), prev = p.ok ? by.sum(p.start, p.end) : null;
+  const spent = Object.keys(cur).filter((k) => cur[k] > 0).sort(largest(cur));
   // Early in a month a short list: what was spent, then what had been spent by now last time
-  const quiet = prev ? Object.keys(prev).filter((k) => prev[k] > 0 && !(cur[k] > 0)).sort((a, b) => prev[b] - prev[a]) : [];
-  const keys = spent.length ? spent.concat(spent.length < 3 ? quiet.slice(0, 3 - spent.length) : []) : [];
-  show("cats", keys.length > 0);
-  if (!keys.length) return;
-  const top = 6, shown = catsOpen ? keys : keys.slice(0, top);
+  const quiet = prev ? Object.keys(prev).filter((k) => prev[k] > 0 && !(cur[k] > 0)).sort(largest(prev)) : [];
+  const keys = spent.length ? spent.concat(spent.length < 3 ? quiet.slice(0, 3 - spent.length) : []).sort((a, b) => (a === UNTAGGED) - (b === UNTAGGED)) : [];
+  // Nothing to show, or only what has no tags
+  const any = keys.some((k) => k !== UNTAGGED);
+  show(id, any);
+  if (!any) return;
+  const top = 6, shown = listOpen[id] ? keys : keys.slice(0, top);
   const pm = p.ok && r.month ? monthName(+p.start.slice(5, 7)) : p.ok && r.mode === "year" ? p.start.slice(0, 4) : "";
   const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f0(prev[k] || 0) })
     : pm ? t("{period}: {amount}", { period: pm, amount: f0(prev[k] || 0) }) : t("Before: {amount}", { amount: f0(prev[k] || 0) });
@@ -222,13 +230,13 @@ function renderCats(r) {
     const up = x > 0, label = (up ? t("went up") : t("went down")) + " " + pct(Math.abs(x));
     return '<small class="s-chg ' + (up ? "up-bad" : "dn-good") + '" aria-label="' + esc(label) + '">' + (up ? "↑ " : "↓ ") + esc(pct(Math.abs(x))) + "</small>";
   };
-  // One bar with every category's share of the spending, in the categories' own colors, biggest first
+  // One bar with every group's share of the spending, in its own color, biggest first
   const tot = spent.reduce((s, k) => s + cur[k], 0);
-  const bar = tot > 0 ? '<div class="s-stack" role="img" aria-label="' + esc(spent.slice(0, 5).map((k) => k + " " + pct(cur[k] / tot)).join(", ")) + '">' +
-    spent.map((k) => '<i style="flex:' + cur[k].toFixed(2) + ";background:" + cc(k) + '" data-k="' + esc(k) + '"></i>').join("") + "</div>" : "";
-  $("s-cats").innerHTML = bar + shown.map((k) => rowHtml('data-go-cat="' + esc(k) + '"', tile(k), k, note(k), f0(cur[k] || 0), "", change(k))).join("") +
-    (keys.length > top ? '<button type="button" class="s-more w-link" data-act="cats-all" aria-expanded="' + catsOpen + '">' + (catsOpen ? t("Show less") : t("Show all")) + "</button>" : "");
-  $("s-cats").querySelectorAll(".s-stack i").forEach((n) => hover(n, () => row(esc(n.dataset.k), f0(cur[n.dataset.k]) + " · " + pct(cur[n.dataset.k] / tot), cc(n.dataset.k))));
+  const bar = tot > 0 ? '<div class="s-stack" role="img" aria-label="' + esc(spent.slice(0, 5).map((k) => by.name(k) + " " + pct(cur[k] / tot)).join(", ")) + '">' +
+    spent.map((k) => '<i style="flex:' + cur[k].toFixed(2) + ";background:" + by.color(k) + '" data-k="' + esc(k) + '"></i>').join("") + "</div>" : "";
+  $("s-" + id).innerHTML = bar + shown.map((k) => rowHtml(by.go(k), by.tile(k), by.name(k), note(k), f0(cur[k] || 0), "", change(k))).join("") +
+    (keys.length > top ? '<button type="button" class="s-more w-link" data-act="' + id + '-all" aria-expanded="' + listOpen[id] + '">' + (listOpen[id] ? t("Show less") : t("Show all")) + "</button>" : "");
+  $("s-" + id).querySelectorAll(".s-stack i").forEach((n) => hover(n, () => row(esc(by.name(n.dataset.k)), f0(cur[n.dataset.k]) + " · " + pct(cur[n.dataset.k] / tot), by.color(n.dataset.k))));
 }
 
 /* ---------- Coming up: the next three, however far away ---------- */

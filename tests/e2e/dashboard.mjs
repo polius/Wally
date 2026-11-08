@@ -74,7 +74,7 @@ try {
   ok((await text(page, "#s-eye")) === "Spending", "the headline is all spending, bills included");
   const left = await page.locator(".s-left > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   const right = await page.locator(".s-right > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
-  ok(left === "hero,cats,recent,upcoming", "the month on the left: " + left);
+  ok(left === "hero,cats,tags,recent,upcoming", "the month on the left: " + left);
   ok(right === "notice,people,kept,year", "the context on the right: " + right);
   ok(await page.locator('[data-w="recent"]').isVisible() && await page.locator("#s-recent .s-row").count() <= 4, "Recent on desktop too, four at most");
   ok(await page.locator('[data-w="savings"]').count() === 0, "This year replaces Savings");
@@ -159,7 +159,7 @@ try {
   ok(await page.locator("#c-kept [data-go-month]").count() > 12, "All time: Kept each month shows every month (" + await page.locator("#c-kept [data-go-month]").count() + ")");
 
   console.log("Chart views");
-  ok((await page.locator("#s-view button").allInnerTexts()).join("|") === "Spending|Income vs spending|By category", "three chart views");
+  ok((await page.locator("#s-view button").allInnerTexts()).join("|") === "Spending|Income vs spending|By category|By tag", "four chart views");
   await page.click('[data-hv="ivs"]');
   ok(await page.locator("#c-hero svg path").count() > 4, "Income vs spending bars");
   await page.click('[data-hv="cats"]');
@@ -212,6 +212,42 @@ try {
   ok(kept, "each category keeps its color from month to month (" + same.join(", ") + ")");
   ok(new Set(cols).size === cols.length, "different categories, different colors");
   await pickPeriod(page, "this");
+
+  console.log("Tags");
+  const todayStr = ymStr(CY, CM) + "-" + pad(now.getDate());
+  const twoTags = await api("POST", "/transactions", { name: "Two tags", category: "Food", amount: "100", date: todayStr, tags: ["road trip", "split"] });
+  await page.reload({ waitUntil: "networkidle" }); await page.waitForSelector("#s-title");
+  ok((await text(page, '[data-w="tags"] h4')) === "Tags" && await page.locator("#s-cats .s-row").count() > 0 && await page.locator("#s-tags .s-row").count() > 0, "Tags is its own card, beside Categories");
+  const split = await page.evaluate(async (d) => {
+    const h = await import("/js/pages/dashboard/hero.js");
+    const sum = (o) => Object.values(o).reduce((s, v) => s + v, 0), a = d.slice(0, 8) + "01", tags = h.eByTag(a, d, "all");
+    return { road: tags["#road trip"], split: tags["#split"], gap: Math.abs(sum(tags) - sum(h.eByCat(a, d, "all"))) };
+  }, todayStr);
+  ok(Math.abs(split.road - 50) < 0.01 && Math.abs(split.split - 50) < 0.01, "two tags share an expense evenly: " + JSON.stringify(split));
+  ok(split.gap < 0.01, "the tags add up to what was spent");
+  if (await page.locator('[data-act="tags-all"]').isVisible()) await page.click('[data-act="tags-all"]');
+  const tagRows = await page.locator("#s-tags .s-row .s-nm > span").allInnerTexts();
+  ok(tagRows.includes("#road trip") && tagRows.every((n) => n[0] === "#" || n === "Untagged"), "the rows are the tags: " + tagRows.join(", "));
+  if (tagRows.includes("Untagged")) ok(tagRows[tagRows.length - 1] === "Untagged" && await page.locator("#s-tags div.s-row").count() === 1, "Untagged comes last and has no link");
+  const tagCol = (n) => page.locator('[data-go-tag="' + n + '"] .w-ico').evaluate((e) => getComputedStyle(e).color);
+  ok((await tagCol("#road trip")) !== (await tagCol("#split")), "different tags, different colors");
+  await page.click('[data-go-tag="#road trip"]');
+  await page.waitForURL(/\/transactions\?/);
+  await page.waitForTimeout(300);
+  const tagUrl = new URL(page.url()).searchParams;
+  ok(tagUrl.get("q") === "#road trip" && tagUrl.get("type") === "expense", "a tag opens its expenses: " + page.url());
+  ok((await text(page, "#main")).includes("Two tags"), "a tag with a space finds its expense");
+  await backToDash(page);
+  await pickPeriod(page, "all");
+  await page.click('[data-hv="tags"]');
+  ok(await page.locator("#c-hero svg path").count() > 4 && (await pressed(page, '[data-hv="tags"]')) === "true", "By tag bars");
+  await page.click('[data-hv="pace"]');
+  const phoneTags = await open({ w: 390, h: 844 });
+  await pickPeriod(phoneTags, "all");
+  ok(await phoneTags.locator("#s-view").isVisible() && await noOverflow(phoneTags), "four chart views fit a phone");
+  await phoneTags.context().close();
+  await api("DELETE", "/transactions/" + twoTags.id);
+  await page.reload({ waitUntil: "networkidle" }); await page.waitForSelector("#s-title");
 
   console.log("Person switch");
   const allPeople = await text(page, "#s-people");
@@ -271,7 +307,7 @@ try {
       ok(await p.locator(".s-title").isVisible() && await p.locator(".s-steps").isVisible() && await p.locator(".s-head .w-pswitch").isVisible() && await p.locator(".w-hadd").isHidden(), "phone: the period title with ‹ ›, the person menu top right, Add in the tab bar");
       ok(await p.evaluate(() => { const e = document.getElementById("s-title"); return e.scrollWidth <= e.clientWidth; }), "phone: the month's name fits");
       const order = await p.evaluate(() => [...document.querySelectorAll(".s-grid [data-w]")].filter((n) => !n.hidden).sort((x, y) => x.getBoundingClientRect().top - y.getBoundingClientRect().top).map((n) => n.dataset.w).join(","));
-      ok(/^hero,(notice,)?cats,recent,upcoming,people,kept,year$/.test(order), "phone: one column in reading order: " + order);
+      ok(/^hero,(notice,)?cats,tags,recent,upcoming,people,kept,year$/.test(order), "phone: one column in reading order: " + order);
       ok(await p.locator("#tabbar .w-tabpill a").count() === 4 && await p.locator("#tabbar .w-tabadd").isVisible(), "phone: four tabs and a separate ＋");
       ok(await p.locator('[data-w="recent"]').isVisible() && await p.locator("#s-recent .s-row").count() > 0 && await p.locator("#s-recent .s-row").count() <= 4, "phone: Recent, four rows");
       ok(/Today|Yesterday|day/.test(await text(p, "#s-recent .s-row small")), "phone: Recent says when in words: " + await text(p, "#s-recent .s-row small"));

@@ -87,8 +87,8 @@ try {
 
   const get = (side, path) => (side === "P" ? p("GET", path) : local("GET", path));
   async function state(side) {
-    const [led, rules, cats, icons, tags, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/icons", "/tags", "/rules"].map((x) => get(side, x)));
-    return { led: led.data, rules: rules.data, cats: cats.data, icons: icons.data, tags: tags.data, irules: irules.data };
+    const [led, rules, cats, icons, tags, tagIcons, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/icons", "/tags", "/tags/icons", "/rules"].map((x) => get(side, x)));
+    return { led: led.data, rules: rules.data, cats: cats.data, icons: icons.data, tags: tags.data, tagIcons: tagIcons.data, irules: irules.data };
   }
   /* New transactions and rules since the last step get labels from what they are, the same on both sides */
   function labelNew(side, st, op) {
@@ -116,7 +116,7 @@ try {
     const rules = st.rules.map((r) => ({ ...r, id: name(side, r.id), amount: Math.round(Number(r.amount) * 100), created_date: undefined })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const irules = st.irules.map((r) => ({ match: r.match, category: r.category, person_id: r.person_id, set_person: r.set_person, uses: r.uses, learned: r.learned, position: r.position }));
     const icons = Object.fromEntries(Object.entries(st.icons).sort());
-    return JSON.stringify({ rows, rules, cats: st.cats, icons, tags: st.tags, irules });
+    return JSON.stringify({ rows, rules, cats: st.cats, icons, tags: st.tags, tagIcons: Object.fromEntries(Object.entries(st.tagIcons).sort()), irules });
   }
   const sortKeys = (v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : Array.isArray(v) ? v.map(sortKeys) : v);
   function normBody(side, body) {
@@ -231,6 +231,16 @@ try {
   await both("", "POST", "/tags", { name: "holiday" });
   await both("", "PUT", "/tags/weekly", { name: "#week" });
   await both("", "PUT", "/tags/x", { name: "week" });
+  await both("", "PUT", "/tags/week", { icon: "Not an icon" }, { anyMessage: true });
+  await both("", "PUT", "/tags/week", { icon: "palm" });
+  await both("", "PUT", "/tags/week", { name: "weekly" });
+  await both("", "GET", "/tags/icons");
+  await both("", "PUT", "/tags/weekly", { icon: "" });
+  await both("", "PUT", "/tags/weekly", { icon: "car", name: "week" });
+  await both("", "PUT", "/tags/holiday", { icon: "palm" });
+  await both("", "PUT", "/tags/holiday", { name: "week" });
+  await both("", "POST", "/tags", { name: "holiday" });
+  await both("", "PUT", "/tags/week", { icon: "" });
   await both("", "DELETE", "/tags/fresh");
   await both("", "DELETE", "/tags/nothing");
 

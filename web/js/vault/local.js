@@ -682,6 +682,7 @@ const categories = {
 function renameIn(list, from, to) { const out = []; list.forEach((g) => { const v = g === from ? to : g; if (!out.includes(v)) out.push(v); }); return out; }
 const tags = {
   list: () => serial(() => new Draft().all("tag").map((g) => g.name).sort(byLower)),
+  icons: () => serial(() => Object.fromEntries(new Draft().all("tag").filter((g) => g.icon).map((g) => [g.name, g.icon]))),
   stats: () => serial(() => {
     const d = new Draft(), counts = {};
     d.all("tx").forEach((t) => (t.tags || []).forEach((g) => { counts[g] = (counts[g] || 0) + 1; }));
@@ -692,17 +693,25 @@ const tags = {
     if (!name) throw fail(422, "A tag needs a name.");
     if (d.get("tag", name)) throw fail(400, "This tag already exists.");
     d.put("tag", { name });
-    return { name };
+    return { name, icon: null };
   }),
   update: (name, body) => run((d) => {
-    if (!d.get("tag", name)) throw fail(404, "This tag does not exist.");
-    const to = String((body && body.name) || "").trim().replace(/^#+/, "");
+    const given = body && body.icon !== undefined && body.icon !== null ? iconArg(body.icon) : null;
+    const tag = d.get("tag", name);
+    if (!tag) throw fail(404, "This tag does not exist.");
+    const to = body && body.name !== undefined && body.name !== null ? String(body.name).trim().replace(/^#+/, "") : name;
     if (!to) throw fail(400, "A tag needs a name.");
-    for (const kind of ["tx", "rule"]) {
-      for (const x of d.all(kind)) if ((x.tags || []).includes(name)) d.put(kind, Object.assign(clone(x), { tags: renameIn(x.tags, name, to) }));
+    // The icon moves with the name; a tag merged into keeps its own; "" goes back to the plain one
+    let icon = ((to !== name && d.get("tag", to)) || tag).icon || "";
+    if (given !== null) icon = given;
+    if (to !== name) {
+      for (const kind of ["tx", "rule"]) {
+        for (const x of d.all(kind)) if ((x.tags || []).includes(name)) d.put(kind, Object.assign(clone(x), { tags: renameIn(x.tags, name, to) }));
+      }
+      d.del("tag", name);
     }
-    if (to !== name) { d.del("tag", name); d.put("tag", { name: to }); }
-    return { name: to };
+    if (to !== name || given !== null) d.put("tag", icon ? { name: to, icon } : { name: to });
+    return { name: to, icon: icon || null };
   }),
   remove: (name) => run((d) => {
     if (!d.get("tag", name)) throw fail(404, "This tag does not exist.");
@@ -1003,6 +1012,7 @@ const ROUTES = [
   ["PUT", /^\/categories\/([^/?]+)$/, (m, b) => categories.update(dec(m[1]), b || {})],
   ["DELETE", /^\/categories\/([^/?]+)$/, (m, b, q) => categories.remove(dec(m[1]), q.get("move_to"))],
   ["GET", /^\/tags$/, () => tags.list()],
+  ["GET", /^\/tags\/icons$/, () => tags.icons()],
   ["GET", /^\/tags\/stats$/, () => tags.stats()],
   ["POST", /^\/tags$/, (m, b) => tags.create(b || {})],
   ["PUT", /^\/tags\/([^/]+)$/, (m, b) => tags.update(dec(m[1]), b || {})],

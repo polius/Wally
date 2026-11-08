@@ -31,7 +31,7 @@ button.s-title:hover{background:var(--w-fill)}
 .s-none{font-size:var(--fs-sub);color:var(--w-ink2);padding:6px 0}
 
 /* ---------- Everyday spending ---------- */
-.s-heroh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.s-heroh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px}
 .s-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
 .s-big{font-size:var(--fs-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;margin:4px 0 6px}
 .s-lines{display:grid;gap:1px;font-size:16px}
@@ -42,12 +42,14 @@ button.s-title:hover{background:var(--w-fill)}
 .s-chart{margin-top:14px;margin-bottom:5px}
 .s-chart .lb2{fill:var(--w-ink3);font-size:12px}
 .s-chart svg{touch-action:pan-y}
-.s-view{flex:none}
+/* Too wide for the card, on small phones or in a longer language: the pills scroll sideways */
+.s-view{flex:none;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.s-view::-webkit-scrollbar{display:none}
 
 /* ---------- rows: an icon, a name with a line under it, an amount ---------- */
 .s-row,.s-notice,.s-person{display:flex;align-items:center;gap:14px;width:100%;padding:11px 0;text-align:start;color:inherit;border-top:1px solid var(--w-line2)}
 .s-body > :first-child{border-top:0}
-@media (hover:hover){:is(.s-row,.s-person):hover .s-nm > span{color:var(--w-accent-ink)}}
+@media (hover:hover){:is(button.s-row,.s-person):hover .s-nm > span{color:var(--w-accent-ink)}}
 .s-row .w-ico{width:40px;height:40px;border-radius:10px}
 .s-row .w-ico svg.i{width:18px;height:18px}
 .s-nm{flex:1;min-width:0;display:grid;gap:0}
@@ -169,6 +171,7 @@ button.s-title:hover{background:var(--w-fill)}
   .s-recapw{order:2}
   .s-sec[data-w="notice"]{order:3}
   .s-sec[data-w="cats"]{order:4}
+  .s-sec[data-w="tags"]{order:4}
   .s-sec[data-w="recent"]{order:5}
   .s-sec[data-w="upcoming"]{order:6}
   .s-sec[data-w="people"]{order:7}
@@ -195,9 +198,10 @@ button.s-title:hover{background:var(--w-fill)}
   .s-hero .s-body{background:none;padding:0}
   /* Year and longer: the chart switch is too wide to sit beside the number, so it leads, full width */
   .s-heroh{flex-direction:column-reverse;align-items:stretch;gap:14px}
-  .s-view{display:flex;margin-top:4px}
+  /* width:0 with min-width:100%: the card's width doesn't depend on how long the labels are */
+  .s-view{display:flex;margin-top:4px;width:0;min-width:100%}
   .s-view[hidden]{display:none}
-  .s-view button{flex:1 1 auto;padding:6px 8px;font-size:var(--fs-foot)}
+  .s-view button{flex:1 1 auto;padding:6px;font-size:var(--fs-foot)}
   .s-big{font-size:56px;margin:2px 0 4px}
   .s-dk{display:none}
   .s-ph{display:inline}

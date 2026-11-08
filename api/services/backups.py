@@ -49,7 +49,7 @@ def backup_path(name: str) -> Path:
         raise HTTPException(status_code=404, detail="This backup does not exist.")
     return path
 
-PLAIN_TABLES = ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "importrule")
+PLAIN_TABLES = ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "tagicon", "importrule")
 
 def plain_rows(path: Path) -> int:
     """How many rows of the household's data a database file holds in the clear."""

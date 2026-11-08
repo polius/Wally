@@ -2,7 +2,7 @@
    year or a long range, Income vs spending and By category. */
 import {
   t, esc, TODAY, START, ds, dim, ym, ymAdd, addD, span, num, f, fk, monthName, monthIn, monthYear, F,
-  dlab, dlabL, dlabY, totals, daily, cum, extend, monthsIn, monthBounds, cc, state, amt, T,
+  dlab, dlabL, dlabY, totals, daily, cum, extend, monthsIn, monthBounds, cc, state, amt, T, tile, tagTile, tagColor, UNTAGGED,
 } from "../../core.js";
 import { el, txt, niceMax, hover, row } from "../../ui.js";
 import { prevOf } from "./range.js";
@@ -25,6 +25,24 @@ export function eDaily(a, len, sc) {
 }
 export function eTotal(a, b, sc) { let v = 0; for (const x of state.tx) if (x.d >= a && x.d <= b && spent(x, true)) v += amt(x, sc); return v; }
 export function eByCat(a, b, sc, bills = true) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || !spent(x, bills)) continue; const v = amt(x, sc); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
+/* An expense with several tags counts evenly under each, so the tags add up to what was spent */
+export function eByTag(a, b, sc) {
+  const o = {};
+  for (const x of state.tx) {
+    if (x.d < a || x.d > b || !spent(x, true)) continue;
+    const v = amt(x, sc);
+    if (!v) continue;
+    const tags = x.tags.length ? x.tags : [UNTAGGED];
+    for (const g of tags) o[g] = (o[g] || 0) + v / tags.length;
+  }
+  return o;
+}
+/* The two ways Summary splits spending, for the cards and the chart. go is a row's link, null when it has none. */
+export const BY_CAT = { sum: eByCat, color: cc, tile, name: (k) => k, go: (k) => 'data-go-cat="' + esc(k) + '"',
+  chartLabel: (range) => t("Spending by category and month in {range}", { range }) };
+export const BY_TAG = { sum: eByTag, color: tagColor, tile: tagTile, name: (k) => (k === UNTAGGED ? t("Untagged") : k), go: (k) => (k === UNTAGGED ? null : 'data-go-tag="' + esc(k) + '"'),
+  chartLabel: (range) => t("Spending by tag and month in {range}", { range }) };
+export const anyTags = () => state.tx.some((x) => x.type === "expense" && x.tags.length);
 function monthCum(y, m) { return cum(eDaily(ds(y, m, 1), dim(y, m))); }
 function haveMonth(y, m, back) { const q = ymAdd(y, m, -back); return ds(q[0], q[1], 1) >= START; }
 /* "Oct 26" on an axis: the year only on January and on the first label */
@@ -97,7 +115,7 @@ export function heroMonthly(svg, w, h, months) {
       row(x.inc >= x.exp ? t("Kept") : t("Overspent"), f(Math.abs(x.inc - x.exp))));
   });
 }
-export function heroCats(svg, w, h, months, keys) {
+export function heroCats(svg, w, h, months, keys, by) {
   const m = { l: 50, r: 16, t: 16, b: 26 };
   if (!keys.length) { txt(svg, w / 2, h / 2, t("All categories are hidden. Click one in the legend to show it."), "lb2", "middle"); return; }
   const sum = (x) => keys.reduce((s, k) => s + (x.cats[k] || 0), 0);
@@ -114,7 +132,7 @@ export function heroCats(svg, w, h, months, keys) {
     vis.forEach((k) => {
       const hh = (x.cats[k] / ymax) * (h - m.t - m.b), top = y0 - hh, r = k === last ? Math.min(4, hh / 2) : 0;
       el("path", { d: "M" + x0 + " " + y0 + "V" + (top + r) + (r ? "q0 " + -r + " " + r + " " + -r : "") + "H" + (x0 + bar - r) + (r ? "q" + r + " 0 " + r + " " + r : "") + "V" + y0 + "Z",
-        fill: cc(k), stroke: "var(--w-panel)", "stroke-width": 1.5, "fill-opacity": x.partial ? 0.75 : 1 }, svg);
+        fill: by.color(k), stroke: "var(--w-panel)", "stroke-width": 1.5, "fill-opacity": x.partial ? 0.75 : 1 }, svg);
       y0 = top;
     });
   });
@@ -124,7 +142,7 @@ export function heroCats(svg, w, h, months, keys) {
     hit.addEventListener("pointerleave", () => band.setAttribute("opacity", 0));
     hover(hit, () => {
       const ks = keys.filter((k) => x.cats[k]).sort((a, b) => x.cats[b] - x.cats[a]);
-      return "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + t("so far") : "") + "</b>" + ks.map((k) => row(esc(k), f(x.cats[k]), cc(k))).join("") +
+      return "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + t("so far") : "") + "</b>" + ks.map((k) => row(esc(by.name(k)), f(x.cats[k]), by.color(k))).join("") +
         DASH + t("Total shown") + "</span><b>" + f(sum(x)) + "</b></div>";
     });
   });

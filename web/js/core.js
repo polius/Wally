@@ -246,6 +246,7 @@ export const state = {
   currency: { symbol: "€", position: "right", selected: "EUR", currencies: [] },
   categories: [],        // names, in order
   icons: {},             // {category: icon id} for the categories whose icon someone picked
+  tagIcons: {},          // {tag without #: icon id} for the tags whose icon someone picked
   tags: [],
   irules: [],
   prefs: {},
@@ -324,8 +325,8 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags, icons] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"),
+  const [status, people, ledger, rules, config, currency, categories, tags, icons, tagIcons] = await Promise.all([
+    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"), GET("/tags/icons"),
   ]);
   state.status = status;
   state.people = people;
@@ -339,6 +340,7 @@ export async function loadAll() {
   state.icons = icons || {};
   paintColors();
   state.tags = tags;
+  state.tagIcons = tagIcons || {};
   const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
   state.me = person(meKey) ? String(meKey) : null;
   try { state.prefs = state.me ? await GET("/me/prefs") : {}; } catch (e) { state.prefs = {}; }
@@ -359,10 +361,16 @@ export async function reloadCategories() {
   state.icons = icons || {};
   paintColors();
 }
+/* Tags and their icons, after a change in Settings */
+export async function reloadTags() {
+  const [tags, icons] = await Promise.all([GET("/tags"), GET("/tags/icons")]);
+  state.tags = tags;
+  state.tagIcons = icons || {};
+}
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
 /* Another device saved something: read it all again from this device's copy */
 export async function reloadAll() {
-  const [ledger, rules, categories, icons, tags, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/icons"), GET("/tags"), GET("/rules")]);
+  const [ledger, rules, categories, icons, tags, tagIcons, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/icons"), GET("/tags"), GET("/tags/icons"), GET("/rules")]);
   state.tx = ledger.rows.map(fromRow);
   setStart();
   state.rules = rules.map(fromRule);
@@ -370,6 +378,7 @@ export async function reloadAll() {
   state.icons = icons || {};
   paintColors();
   state.tags = tags;
+  state.tagIcons = tagIcons || {};
   state.irules = irules;
   emit("remote", {});
 }
@@ -466,7 +475,10 @@ export function cat(name) {
   return CAT[name];
 }
 /* The icon someone picked in Settings, or the one the name suggests */
-function iconOf(name) { const i = (state.icons || {})[name]; return i && (CAT_ICONS.includes(i) || /^l-[a-z0-9-]+$/.test(i)) ? i : catIcon(name); }
+function iconOf(name) { const i = (state.icons || {})[name]; return okIcon(i) ? i : catIcon(name); }
+const okIcon = (i) => i && (CAT_ICONS.includes(i) || /^l-[a-z0-9-]+$/.test(i));
+/* A tag's icon (the tag with its #): the one someone picked, or the plain tag */
+export function tagIcon(g) { const i = (state.tagIcons || {})[g.slice(1)]; return okIcon(i) ? i : "tag"; }
 /* Every icon a category can have, eight to a row: home, food, getting around, shopping, health and
    family, free time, money and work, the rest */
 export const CAT_ICONS = [
@@ -479,20 +491,25 @@ export const CAT_ICONS = [
   "income", "wallet", "savings", "card", "banknote", "tax", "briefcase", "receipt",
   "education", "handheart", "flower", "leaf", "umbrella", "sparkles", "star", "misc",
 ];
+/* What the picker suggests for a tag: the plain tag first, in the place of the catch-all icon */
+export const TAG_ICONS = ["tag"].concat(CAT_ICONS.filter((i) => i !== "misc"));
 /* A category's color is its place among the household's expense categories by everything spent up to
    today: the biggest red, then on through the rainbow (CAT_HUES colors), grey after that. Ties and
    categories with nothing spent go by name. Income categories are green. */
 export const CAT_HUES = 12, GREY = CAT_HUES + 1;
-let ranked = [];
+let ranked = [], tagsRanked = [];
 export function catRank() { return ranked; }
 function rankAll() {
-  const spent = {}, paid = new Set(), earned = new Set();
+  const spent = {}, paid = new Set(), earned = new Set(), onTag = {};
   for (const x of state.tx) {
     if (x.type === "income") earned.add(x.c);
     if (x.type !== "expense") continue;
     paid.add(x.c);
-    if (x.d <= TODAY) spent[x.c] = (spent[x.c] || 0) + x.a;
+    if (x.d > TODAY) continue;
+    spent[x.c] = (spent[x.c] || 0) + x.a;
+    for (const g of x.tags) onTag[g] = (onTag[g] || 0) + x.a / x.tags.length;
   }
+  tagsRanked = Object.keys(onTag).sort((x, y) => onTag[y] - onTag[x] || x.localeCompare(y));
   // The same test as isIncomeCat, for every category at once
   const income = (n) => !paid.has(n) && (earned.has(n) || catIcon(n) === "income");
   const names = new Set((state.categories || []).concat(Object.keys(spent)));
@@ -518,14 +535,19 @@ export function isIncomeCat(name) {
 }
 export function expCats() { return state.categories.filter((c) => !isIncomeCat(c)); }
 export function cc(c) { const n = cat(c).c; return n === 0 ? "var(--c0)" : n === GREY ? "var(--c9)" : "var(--k" + n + ")"; }
+/* What has no tags, where spending is split by tag. Real tags always start with #. */
+export const UNTAGGED = "";
+/* A tag's color works as a category's does: its place by everything spent up to today, grey after that */
+export function tagColor(g) { const i = tagsRanked.indexOf(g); return i >= 0 && i < CAT_HUES ? "var(--k" + (i + 1) + ")" : "var(--c9)"; }
 export function icon(id, cls) { return '<svg class="i ' + (cls || "") + '" aria-hidden="true"><use href="' + iconHref(id) + '"/></svg>'; }
 /* Wally's own icons are in the page; "l-" + a name is one of Lucide's, from a file read the first time one is shown */
 export const LIB = "/icons/lucide.svg";
 export function iconHref(id) { return id.startsWith("l-") ? LIB + "#" + id.slice(2) : "#i-" + id; }
-export function tile(c, size, col) {
-  col = col || cc(c);
-  return '<span class="w-ico" style="background:color-mix(in srgb,' + col + " 15%,transparent);color:color-mix(in srgb," + col + " 82%,var(--w-ink))" + (size ? ";width:" + size + "px;height:" + size + "px" : "") + '"><svg class="i" aria-hidden="true"><use href="' + iconHref(cat(c).i) + '"/></svg></span>';
+function tileOf(iconId, col, size) {
+  return '<span class="w-ico" style="background:color-mix(in srgb,' + col + " 15%,transparent);color:color-mix(in srgb," + col + " 82%,var(--w-ink))" + (size ? ";width:" + size + "px;height:" + size + "px" : "") + '"><svg class="i" aria-hidden="true"><use href="' + iconHref(iconId) + '"/></svg></span>';
 }
+export function tile(c, size, col) { return tileOf(cat(c).i, col || cc(c), size); }
+export function tagTile(g, size) { return tileOf(tagIcon(g), tagColor(g), size); }
 
 /* Settings that matter to a figure */
 export function debounce(fn, ms) { let h; return function () { const args = arguments; clearTimeout(h); h = setTimeout(() => fn.apply(this, args), ms); }; }

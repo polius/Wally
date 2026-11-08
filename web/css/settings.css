@@ -51,10 +51,6 @@ a.w-gr{text-decoration:none;color:var(--w-ink)}
 span.w-gck{display:inline-block}
 .w-av.w-av48{width:48px;height:48px;font-size:20px}
 .w-dot{width:16px;height:16px;border-radius:50%;display:inline-block}
-.w-tagico{background:var(--w-fill);color:var(--w-ink2)}
-.w-shero .w-tagico,.w-tagico.w-tag48{width:48px;height:48px;border-radius:12px}
-.w-shero .w-tagico{width:64px;height:64px;border-radius:16px}
-.w-tagico.w-tag48 svg.i{width:22px;height:22px}
 .w-av.w-av26{width:26px;height:26px;font-size:12px}
 .w-hash{color:var(--w-ink3);margin-inline-end:-8px}
 .w-shlead2{text-align:start;font-size:14px;color:var(--w-ink2);padding:0 6px 6px}

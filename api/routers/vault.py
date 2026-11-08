@@ -23,7 +23,7 @@ from ..models.categories import Category, CategoryIcon
 from ..models.money import ImportRule
 from ..models.people import Person
 from ..models.recurring_transactions import RecurringTransaction
-from ..models.tags import Tag
+from ..models.tags import Tag, TagIcon
 from ..models.transactions import Transaction
 from ..models.vault import HouseholdKey, Record
 from ..services import conversion, vault as records
@@ -254,8 +254,12 @@ def export_items(db: Session) -> list[dict]:
         if icons.get(c.name):
             item["icon"] = icons[c.name]
         out.append(item)
+    tag_icons = {g.name: g.icon for g in db.exec(select(TagIcon)).all()}
     for g in db.exec(select(Tag)).all():
-        out.append({"k": "tag", "name": g.name})
+        item = {"k": "tag", "name": g.name}
+        if tag_icons.get(g.name):
+            item["icon"] = tag_icons[g.name]
+        out.append(item)
     for i in db.exec(select(ImportRule)).all():
         out.append({
             "k": "irule", "id": str(i.id), "match": i.match, "category": i.category, "person_id": i.person_id, "set_person": bool(i.set_person),
@@ -339,6 +343,8 @@ def import_item(nx: Session, item: dict):
                 nx.add(CategoryIcon(name=item["name"], icon=str(item["icon"])))
         elif kind == "tag":
             row = Tag(name=item["name"])
+            if item.get("icon"):
+                nx.add(TagIcon(name=item["name"], icon=str(item["icon"])))
         elif kind == "irule":
             row = ImportRule(
                 match=item["match"], category=item["category"], person_id=item.get("person_id"), set_person=bool(item.get("set_person", True)),
