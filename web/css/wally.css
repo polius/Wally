@@ -990,7 +990,7 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-phone .w-dayh{padding:8px 4px 4px;position:static}
 .w-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .w-keys span{height:42px;border-radius:var(--r-ctl);background:var(--w-panel);display:grid;place-items:center;font-size:var(--fs-body);font-weight:500;box-shadow:0 1px 0 var(--w-line)}
-.w-tip{position:fixed;z-index:60;pointer-events:none;font-family:var(--w-font);background:var(--w-raised);color:var(--w-ink);border:1px solid var(--w-line);box-shadow:var(--w-shadow);border-radius:var(--r-ctl);padding:8px 10px;font-size:var(--fs-foot);line-height:1.45;min-width:150px;max-width:260px;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s}
+.w-tip{position:fixed;z-index:70;pointer-events:none;font-family:var(--w-font);background:var(--w-raised);color:var(--w-ink);border:1px solid var(--w-line);box-shadow:var(--w-shadow);border-radius:var(--r-ctl);padding:8px 10px;font-size:var(--fs-foot);line-height:1.45;min-width:150px;max-width:260px;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s}
 .w-tip.on{opacity:1}
 .w-tip b{font-weight:600}
 .w-tip .r{display:flex;justify-content:space-between;gap:14px;color:var(--w-ink2);align-items:center}

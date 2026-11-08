@@ -95,6 +95,81 @@ button.s-title:hover{background:var(--w-fill)}
 #main[data-page=dashboard] .chart .lb{fill:var(--w-ink);font-weight:600}
 #main[data-page=dashboard] :is(.s-keptc,.s-yearc) .chart .lb{font-size:var(--fs-cap)}
 
+/* ---------- Cashflow: the card and its bigger view ---------- */
+.s-sh:has(.s-expand){align-items:center}
+.s-expand{width:30px;height:30px;margin:-4px -6px -4px 0;display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--w-ink3);flex:none}
+[dir=rtl] .s-expand{margin:-4px 0 -4px -6px}
+.s-expand:hover{background:var(--w-fill);color:var(--w-ink)}
+.s-expand svg.i{width:16px;height:16px}
+.s-shr{display:flex;align-items:center;gap:10px;min-width:0}
+.s-dash{display:inline-block;width:18px;border-top:1px dashed color-mix(in srgb,var(--w-ink3) 55%,transparent);vertical-align:middle;margin-inline-end:7px}
+.s-cfdlg .chart .halo{stroke:var(--w-raised)}
+.s-per{font-weight:400;color:var(--w-ink2);letter-spacing:-.01em}
+/* Every flow the soft grey of Kept each month's other months; Kept in its green; a flow takes its own colour while pointed at */
+.chart .fl{fill:var(--w-fill2);transition:fill .15s}
+.chart .cf.kept .fl{fill:var(--s-kept)}
+.chart .cf.over .fl{fill:color-mix(in srgb,var(--w-bad) 22%,var(--cf-bg))}
+.chart .cf.thin .fl{fill:color-mix(in srgb,var(--w-ink3) 38%,var(--cf-bg))}
+.s-cfdlg .chart .cf.kept .fl{fill:color-mix(in srgb,var(--s-kept) 85%,var(--cf-bg))}
+.chart .cf.on .fl{fill:color-mix(in srgb,var(--c) 55%,var(--cf-bg))}
+.chart .cf.kept.on .fl,.s-cfdlg .chart .cf.kept.on .fl{fill:var(--s-kept)}
+.chart .lbam{fill:var(--w-ink2);font:400 var(--fs-foot) var(--w-font);font-variant-numeric:tabular-nums}
+#main[data-page=dashboard] .s-cfc .chart .lb{font-weight:500;font-size:var(--fs-sub)}
+.s-cfc{--cf-bg:var(--w-panel);margin-top:8px}
+.s-cfdlg{--s-kept:#7FBF9E;--cf-bg:var(--w-raised)}
+.s-cfb .chart .lb{font-size:var(--fs-sub);font-weight:500}
+/* The bigger view: the diagram with its list beside it, the list scrolling on its own */
+.s-cfx .w-shb{display:grid;grid-template-columns:minmax(0,1fr) 320px;column-gap:40px;align-items:stretch}
+.s-cfx .s-bighead,.s-cfx .w-dlgerr{grid-column:1 / -1}
+.s-cfx .s-bighead{padding-bottom:24px}
+/* The summary band: the same tint and corners as the groups in the list, three equal columns */
+.w-gl.s-cfstats{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.s-cfstats > div{display:grid;gap:3px;min-width:0;padding:16px 22px}
+.s-cfstats > div + div{border-inline-start:1px solid var(--w-line2)}
+.s-cfstats span{font-size:var(--fs-foot);color:var(--w-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-cfstats b{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.s-cfstats .kept b{color:var(--w-good)}
+.s-cfstats .over b{color:var(--w-bad)}
+.s-cflist{height:0;min-height:100%;overflow:auto;overscroll-behavior:contain}
+.s-cfh{font-size:var(--fs-foot);font-weight:400;color:var(--w-ink2);padding:0 14px 8px}
+.s-cfout{margin-top:22px}
+.s-cfg{overflow:hidden}
+.s-cflist .s-row{padding:10px 14px;gap:14px;transition:background .15s}
+.s-cflist .s-row:first-child{border-top:0}
+.s-cflist .s-row.on{background:var(--w-fill)}
+.s-cflist .s-row .w-ico{width:36px;height:36px}
+.s-cflist .s-row .w-av.lg{width:36px;height:36px;font-size:15px;flex:none}
+.s-bighead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 0 24px}
+.s-bighead-y{display:block}
+@media (min-width:768px){.w-dialog.s-cfdlg{max-width:1120px;padding:24px 40px 40px}.s-cfdlg .w-shh{margin-bottom:24px}.s-cfdlg .w-shh h5{font-size:21px;font-weight:650;letter-spacing:-.02em}}
+/* Wide screens: Came in, the flows, Went out, with the band's columns on the same lines */
+@media (min-width:1024px){
+  .s-cfx .w-shb,.w-gl.s-cfstats{grid-template-columns:270px minmax(0,1fr) 310px}
+  .s-cfx .w-shb{column-gap:0}
+  .s-cfx .s-cflist{display:contents}
+  .s-cfx .s-cfin{grid-column:1;grid-row:2;align-self:center}
+  .s-cfx .s-cfb{grid-column:2;grid-row:2}
+  .s-cfx .s-cfout{grid-column:3;grid-row:2;align-self:center;margin-top:0}
+  .s-cfstats > div{padding:16px 14px}
+  /* Right to left the columns swap sides, and the flows (no text in them) follow */
+  [dir=rtl] .s-cfx .s-cfb svg{transform:scaleX(-1)}
+}
+/* A phone gives the chart the whole screen */
+@media (max-width:767px){
+  .w-dialog.s-cfdlg{display:flex;flex-direction:column;padding-bottom:0}
+  .s-cfdlg .w-shh{flex:none;margin-bottom:14px}
+  .s-cfx .s-bighead,.s-bighead{padding-bottom:22px}
+  .s-cfdlg .w-shh .w-dlgx{padding:0 2px}
+  .s-cfdlg .w-shb{flex:1;min-height:0;gap:0;align-content:start;margin-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .s-cfx .w-shb{display:flex;flex-direction:column;margin-bottom:0}
+  .s-cfx .s-cfb{flex:none}
+  .s-cfstats > div{padding:12px}
+  .s-cfstats b{font-size:20px}
+  @media (max-width:360px){.s-cfstats > div{padding:10px}.s-cfstats b{font-size:16px}}
+  .s-cfx .s-cflist{flex:1;height:auto;min-height:0;margin-top:28px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){.chart .cf{transition:none}}
+
 /* ---------- the month's recap, once it is ready ---------- */
 .s-recapw:empty{display:none}
 .s-recap{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-card);background:var(--w-panel);text-decoration:none;color:inherit;box-shadow:0 1px 2px rgba(20,22,27,.04)}
@@ -175,6 +250,7 @@ button.s-title:hover{background:var(--w-fill)}
   .s-sec[data-w="recent"]{order:5}
   .s-sec[data-w="upcoming"]{order:6}
   .s-sec[data-w="people"]{order:7}
+  .s-sec[data-w="cashflow"]{order:7}
   .s-sec[data-w="kept"]{order:8}
   .s-sec[data-w="year"]{order:9}
 }
@@ -205,7 +281,7 @@ button.s-title:hover{background:var(--w-fill)}
   .s-big{font-size:56px;margin:2px 0 4px}
   .s-dk{display:none}
   .s-ph{display:inline}
-  .s-sec[data-w="kept"] .s-body,.s-sec[data-w="year"] .s-body{padding:12px 14px}
+  .s-sec:is([data-w="kept"],[data-w="year"],[data-w="cashflow"]) .s-body{padding:12px 14px}
   .s-row{padding:11px 0}
   .s-more{padding:12px 0 8px}
   .s-notice,.s-person{padding:12px 0}

@@ -274,6 +274,8 @@ const audit = () => {
   // On a phone a sheet spans the screen
   const sheet = document.querySelector("#dlg:not([hidden]) .w-sheetd");
   if (sheet && innerWidth < 768 && Math.abs(sheet.getBoundingClientRect().width - innerWidth) > 1) bad.push("sheet " + sheet.className + " " + Math.round(sheet.getBoundingClientRect().width) + "px wide on a " + innerWidth + "px screen");
+  // ...and takes the whole of it, as the new-transaction sheet does
+  if (sheet && innerWidth < 768 && Math.abs(sheet.getBoundingClientRect().height - innerHeight) > 1) bad.push("sheet " + sheet.className + " " + Math.round(sheet.getBoundingClientRect().height) + "px tall");
   // Wider than the screen: iOS lets the page be dragged sideways, or zooms out to fit
   if (document.documentElement.scrollWidth > innerWidth + 1) bad.push("page wider than the screen: " + document.documentElement.scrollWidth + " > " + innerWidth);
   return bad;

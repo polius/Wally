@@ -18,7 +18,7 @@
 /* One total, and what it means */
 .rec-sum{display:grid;gap:2px}
 .rec-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
-.rec-big{font-size:var(--fs-hero);font-weight:700;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums}
+.rec-big{font-size:var(--fs-hero);font-weight:700;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums;margin-bottom:8px}
 .rec-big.pos{color:var(--w-ink)}
 .rec-line{font-size:var(--fs-sub);color:var(--w-ink2)}
 
@@ -101,7 +101,7 @@
 .rec-edit{margin-inline-start:auto;font-size:var(--fs-sub)}
 .rec-close{display:none}
 .rec-iamt{display:grid;margin:6px 0 8px}
-.rec-amt{font-size:34px;font-weight:650;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums}
+.rec-amt{font-size:34px;font-weight:650;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums;margin-bottom:12px}
 .rec-amt.pos{color:var(--w-good)}
 .rec-about{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
 .rec-iname{font-size:var(--fs-body);font-weight:600}
@@ -158,7 +158,7 @@
 .rec-mh .w-plink svg.i{width:22px;height:22px;margin-inline-start:-6px}
 .rec-mhero{display:grid;justify-items:center;gap:2px;text-align:center;padding:2px 0 8px}
 .rec-mhero b{font-size:22px;font-weight:650;letter-spacing:-.02em}
-.rec-mamt{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.2}
+.rec-mamt{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.2;margin-bottom:8px}
 .rec-mamt.pos{color:var(--w-good)}
 .rec-mamt small{font-size:var(--fs-body);color:var(--w-ink3);font-weight:500;letter-spacing:0}
 .rec-msub{font-size:14px;color:var(--w-ink2)}

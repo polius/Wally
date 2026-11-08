@@ -23,7 +23,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 /* ---------- app frame ---------- */
 .w-app{display:grid;grid-template-columns:212px minmax(0,1fr);min-height:calc(100dvh - var(--banner-h,0px));background:var(--w-canvas)}
 .w-app > .w-side{position:sticky;z-index:20;top:var(--banner-h,0px);height:calc(100vh - var(--banner-h,0px));height:calc(100dvh - var(--banner-h,0px));overflow-y:auto;overscroll-behavior:contain;gap:18px}
-.w-app > .w-main{width:100%;max-width:1320px;margin-inline:auto;padding:28px 30px 40px;outline:0}
+.w-app > .w-main{width:100%;max-width:1600px;margin-inline:auto;padding:28px 30px 40px;outline:0}
 .w-brand{text-decoration:none}
 .w-tabbar{display:none}
 .w-pchips{display:none}
@@ -101,6 +101,17 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
   .w-rail .w-menu.w-memenu{position:fixed;inset-inline:72px auto;bottom:16px;min-width:200px}
 }
 
+/* With a mouse the top of the rail is just Wally: hovering it turns the mark into the expand button, named beside it.
+   Without one (a touch screen) the button stays in view, or nobody would find it. */
+@media (min-width:1024px) and (hover:hover){
+  .w-rail .w-sidehead{position:relative;width:44px;height:44px;justify-content:center}
+  .w-rail .w-side .w-mark{transition:opacity .12s}
+  .w-rail .w-sidetog{position:absolute;inset:0;opacity:0;transition:opacity .12s}
+  .w-rail .w-sidetog:hover{background:none}
+  .w-rail .w-sidehead:hover .w-sidetog,.w-rail .w-sidetog:focus-visible{opacity:1}
+  .w-rail .w-sidehead:hover .w-mark,.w-rail .w-sidehead:has(.w-sidetog:focus-visible) .w-mark{opacity:0}
+}
+
 /* ---------- 768 to 1023 px: an icon rail ---------- */
 @media (max-width:1023px){
   .w-sidetog{display:none}
@@ -157,9 +168,9 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
   /* Dialogs and sheets come up from the bottom */
   .w-dlgwrap{place-items:end stretch;padding:0}
   .w-dialog,.w-dialog.wide{max-width:none;animation:w-up 260ms var(--ease)}
-  /* A sheet rises from the bottom, Cancel · title · action on top. No grabber: it can't be dragged */
-  .w-sheetd{border-radius:14px 14px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px));max-height:calc(100vh - 48px)}
-  .w-shh{font-size:var(--fs-body)}
+  /* A sheet takes the whole screen, as the new-transaction one does: Cancel · title · action on top */
+  .w-sheetd{height:100vh;height:100dvh;max-height:none;border-radius:0;padding:max(8px,env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+  .w-shh{font-size:var(--fs-body);min-height:44px;margin-bottom:10px}
   .w-shh h5,.w-shh .w-dlgx,.w-shh .w-dlgok{font-size:var(--fs-body)}
   .w-sheetd .w-gr{font-size:var(--fs-body);min-height:46px}
   /* An alert becomes an action sheet: the question and the action in one card, Cancel apart */

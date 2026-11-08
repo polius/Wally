@@ -41,9 +41,9 @@ const ro = new ResizeObserver((es) => es.forEach((e) => { const c = CH[e.target.
 export function chart(id, h, fn, label) {
   const box = $(id);
   if (!box) return;
-  const first = !CH[id] || CH[id].box !== box;
+  const old = CH[id], first = !old || old.box !== box;
   CH[id] = { h, fn, w: 0, box, label };
-  if (first) ro.observe(box);
+  if (first) { if (old) ro.unobserve(old.box); ro.observe(box); }
   draw(id);
 }
 export function draw(id) {
@@ -58,6 +58,27 @@ export function draw(id) {
   const svg = el("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, class: "chart", role: "img" }, box);
   if (c.label) svg.setAttribute("aria-label", typeof c.label === "function" ? c.label() : c.label);
   c.fn(svg, w, h);
+}
+
+/* A chart on its own sheet, with room to read it; on a phone it takes the whole screen.
+   head goes above it, foot under it, click hears clicks inside; on a phone it is at least min tall and at most max. */
+const PHONE = matchMedia("(max-width:767px)");
+export function enlarge(o) {
+  hideTip();
+  openDialog({
+    // On a phone it leaves as the new-transaction sheet does: a link at the top left
+    kind: "sheet", title: o.title, ...(PHONE.matches ? { cancel: t("Close") } : { noCancel: true, ok: t("Done") }),
+    body: (o.head || "") + '<div class="cv s-cfb" id="c-big"></div>' + (o.foot || ""),
+    onOpen(root) {
+      root.classList.add("s-cfdlg");
+      if (o.cls) root.classList.add(o.cls);
+      if (o.click) root.addEventListener("click", o.click);
+      if (o.open) o.open(root);
+      const body = root.querySelector(".w-shb"), box = $("c-big");
+      const room = () => body.clientHeight - (box.previousElementSibling ? box.previousElementSibling.offsetHeight : 0) - 6;
+      chart("c-big", (w) => (PHONE.matches ? Math.max(Math.min(room(), o.max || 520), o.min ? o.min(w) : 240) : o.h(w)), o.draw, o.label);
+    },
+  });
 }
 
 /* ---------- toasts, with Undo for changes that are easy to reverse ---------- */
@@ -144,6 +165,7 @@ export function closeDialog() {
   if (!current) return;
   const { back } = current;
   current = null;
+  hideTip();
   $("dlg").hidden = true;
   $("dlg").innerHTML = "";
   if (back && document.contains(back)) back.focus();
