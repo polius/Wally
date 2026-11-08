@@ -47,6 +47,7 @@ export function parseQ(q) {
   if (!words.length) return o;
   const catsBy = new Map();
   state.categories.forEach((c) => catsBy.set(lower(c), c));
+  const tagNames = new Set(state.tags.map((g) => "#" + lower(g)));
   const months = F.months.map(lower);
   const people = state.people.map((p) => [lower(p.name).replace(/\s+/g, ""), String(p.id)]);
   const shared = new Set(["shared", lower(t("Shared")).replace(/\s+/g, "")]);
@@ -66,7 +67,11 @@ export function parseQ(q) {
       if (p) { o.who = p[1]; o.chips.push({ label: p[1] === "shared" ? lower(t("Shared")) : pname(p[1]), idx: [i] }); }
       else { o.text.push(lw); o.textIdx.push(i); }
     } else if (lw[0] === "#" && lw.length > 1) {
-      o.tags.push(lw); o.chips.push({ label: w, idx: [i] });
+      // A tag can have several words too ("#road trip", from an import or from 1.x): the longest match wins
+      let n = words.length - i;
+      while (n > 1 && !tagNames.has(lower(words.slice(i, i + n).join(" ")))) n--;
+      const name = words.slice(i, i + n).join(" ");
+      o.tags.push(lower(name)); o.chips.push({ label: name, idx: Array.from({ length: n }, (_, j) => i + j) }); i += n - 1;
     } else if (hit) {
       o.cats.push(hit); o.chips.push({ label: hit, idx: Array.from({ length: k }, (_, j) => i + j) }); i += k - 1;
     } else if (/^(19|20)\d\d$/.test(lw) && !o.year) {

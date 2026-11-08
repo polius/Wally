@@ -6,7 +6,7 @@ import { state, t, esc, icon, rerank, TODAY, ym, monthName } from "../core.js";
 import { navigate, headActions } from "../shell.js";
 import { hideTip, empty, stepLabels } from "../ui.js";
 import { view, loadRange, setMode, setMonth, setYear, pageQuery, stepMonth, canStep, steps, rangeOf, goTx, openRange, MODES } from "./dashboard/range.js";
-import { summaryHtml, renderSummary, periodMenu, toggleCats } from "./dashboard/summary.js";
+import { summaryHtml, renderSummary, periodMenu, toggleList } from "./dashboard/summary.js";
 
 const $ = (id) => document.getElementById(id);
 let root = null, layoutKey = "";
@@ -77,8 +77,9 @@ function onClick(ev) {
   }
   if ((x = b("[data-step]"))) { if (stepMonth(+x.dataset.step)) { hideTip(); render(); } return; }
   if ((x = b("[data-hv]"))) { view.hv = x.dataset.hv; render(); return; }
-  if (b('[data-act="cats-all"]')) { toggleCats(); render(); return; }
+  if ((x = b('[data-act="cats-all"],[data-act="tags-all"]'))) { toggleList(x.dataset.act.split("-")[0]); render(); return; }
   if ((x = b("[data-go-cat]"))) { hideTip(); goTx({ cat: x.dataset.goCat }); return; }
+  if ((x = b("[data-go-tag]"))) { hideTip(); goTx({ tag: x.dataset.goTag }); return; }
   if ((x = b("[data-go-person]"))) { hideTip(); goTx({ person: x.dataset.goPerson }); return; }
   if ((x = b("[data-go-id]"))) { hideTip(); goTx({ id: x.dataset.goId }); return; }
   // A month in Kept each month opens that month here

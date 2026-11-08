@@ -289,6 +289,15 @@ await page.fill("#tr-name", "job");
 await dlgOk(); await dlgClosed();
 await page.waitForFunction(() => location.pathname === "/settings/tags/job");
 ok((await api("GET", "/tags")).data.includes("job"), "a tag is renamed");
+await page.click('#set-pane [data-act="icon"]');
+ok((await page.getAttribute('#ic-list [data-i="tag"]', "aria-checked")) === "true" && await page.locator("#ic-list > .w-icgrp").first().locator("[role=radio]").count() === 64, "a tag's picker starts on the plain tag");
+await page.click('#dlg .w-icons [data-i="palm"]');
+await dlgOk(); await dlgClosed();
+ok((await api("GET", "/tags/icons")).data.job === "palm" && (await page.getAttribute("#set-pane .w-shero use", "href")) === "#i-palm", "Done keeps a tag's icon, and its page shows it");
+await page.click('#set-pane [data-act="icon"]');
+await page.click('#dlg .w-icons [data-i="tag"]');
+await dlgOk(); await dlgClosed();
+ok(!("job" in (await api("GET", "/tags/icons")).data) && (await page.getAttribute("#set-pane .w-shero use", "href")) === "#i-tag", "picking the plain tag goes back to it");
 // Typing an existing name in Rename is refused, as for categories: Merge is the way
 await page.click('#set-pane [data-act="rename"]');
 await page.fill("#tr-name", "coffee");

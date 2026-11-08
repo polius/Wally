@@ -13,7 +13,7 @@ export const view = {
   ym: ym(TODAY),        // the month shown in Month mode
   y: +TODAY.slice(0, 4), // the year shown in Year mode
   custom: null,         // [from, to] in Custom mode
-  hv: "pace",           // main chart for a year or a long range: pace | ivs | cats
+  hv: "pace",           // main chart for a year or a long range: pace | ivs | cats | tags
   hoff: {},             // categories hidden from the legend
 };
 
@@ -117,7 +117,7 @@ export function rangeParams() {
   if (view.mode === "custom" || view.mode === "all" || (view.mode === "year" && view.y !== +TODAY.slice(0, 4))) { q.set("mode", "custom"); q.set("from", r.start); q.set("to", r.end); }
   return q;
 }
-/* goTx({cat}) · goTx({cat, ym:[y,m]}) · goTx({q}) · goTx({id}) · goTx({day}) · goTx({person}) */
+/* goTx({cat}) · goTx({cat, ym:[y,m]}) · goTx({q}) · goTx({id}) · goTx({day}) · goTx({person}) · goTx({tag}) */
 export function goTx(o) {
   let q;
   if (o.id) q = new URLSearchParams({ id: o.id });
@@ -126,6 +126,8 @@ export function goTx(o) {
     q = new URLSearchParams();
     if (o.cat) q.set("cat", o.cat);
     if (o.q) q.set("q", o.q);
+    // A tag: the expenses counted under it, without any income that has the same tag
+    if (o.tag) { q.set("type", "expense"); q.set("q", o.tag); }
     // A person: what they spent, their own and their share of shared costs, as The household counts it
     if (o.person) { q.set("type", "expense"); q.set("person", o.person); }
     if (o.ym) { q.set("mode", "month"); q.set("month", ds(o.ym[0], o.ym[1], 1).slice(0, 7)); }

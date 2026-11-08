@@ -1,10 +1,11 @@
-/* Settings › Tags: a list that opens each tag's page (name, its transactions, merge, make it a person, delete).
+/* Settings › Tags: a list that opens each tag's page (name, icon, its transactions, merge, make it a person, delete).
    Edit puts a delete button on each row. */
-import { t, tn, esc, state, f, GET, POST, PUT, DEL, icon, person, reloadLedger, av } from "../../core.js";
+import { t, tn, esc, state, f, GET, POST, PUT, DEL, icon, person, reloadLedger, reloadTags, paintColors, tagTile, tagColor, tagIcon, TAG_ICONS, av } from "../../core.js";
 import { openDialog, toast, errorToast, empty } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { gl, gr, addRow, hero, check, minus, fieldRow, nameGate, phone, toggle, val, paint } from "./common.js";
 import { setAction, openPane, replaceSub } from "../settings.js";
+import { openIconPicker } from "./iconpicker.js";
 
 let box = null;
 let sub = "";          // "" for the list, or a tag (without #) for its page
@@ -31,11 +32,12 @@ function stats() {
   return out;
 }
 const clean = (s2) => s2.trim().replace(/^#+/, "").replace(/\s+/g, "-");
-const tagIco = () => '<span class="w-ico w-tagico">' + icon("tag") + "</span>";
+const tagIco = (g, size) => tagTile("#" + g, size);
 const line = (st) => st.n ? tn(st.n, "{n} transaction · {total} in total", "{n} transactions · {total} in total", { total: '<span class="amt">' + f(st.v) + "</span>" }) : t("Not used yet");
 
 function render() {
   if (!box) return;
+  paintColors();
   if (sub) return renderTag();
   const s2 = stats();
   const names = Object.keys(s2).sort((a, b) => s2[b].n - s2[a].n || a.localeCompare(b));
@@ -43,8 +45,8 @@ function render() {
   if (!names.length) editing = false;
   const rows = names.map((g) => {
     const e = esc(g);
-    if (editing) return gr({ lead: minus(t("Delete #{name}", { name: g }), ' data-act="delete" data-name="' + e + '" data-k="del:' + e + '"') + tagIco(), k: "#" + e, sub: line(s2[g]) });
-    return gr({ tag: "a", href: "/settings/tags/" + encodeURIComponent(g), attrs: ' data-pane="tags/' + encodeURIComponent(g) + '" data-k="tag:' + e + '"', lead: tagIco(), k: "#" + e, sub: line(s2[g]), chev: true });
+    if (editing) return gr({ lead: minus(t("Delete #{name}", { name: g }), ' data-act="delete" data-name="' + e + '" data-k="del:' + e + '"') + tagIco(g), k: "#" + e, sub: line(s2[g]) });
+    return gr({ tag: "a", href: "/settings/tags/" + encodeURIComponent(g), attrs: ' data-pane="tags/' + encodeURIComponent(g) + '" data-k="tag:' + e + '"', lead: tagIco(g), k: "#" + e, sub: line(s2[g]), chev: true });
   });
   if (!names.length) rows.push('<div class="w-gr w-gempty">' + empty("tag", t("No tags yet"), t("Add #tags to transactions to follow things that cut across categories, like a holiday.")) + "</div>");
   rows.push(addRow(t("Add a tag"), "add", ' data-k="add"'));
@@ -61,7 +63,8 @@ function renderTag() {
   if (state.tags.length > 1) second.push(gr({ k: t("Merge into another tag…"), chev: true, act: "merge", attrs: ' data-k="merge"' }));
   if (state.people.length) second.push(gr({ k: t("Make this a person…"), chev: true, act: "fromtag", attrs: ' data-k="fromtag"' }));
   setAction("");
-  paint(box, hero(tagIco(), "#" + e, line(st)) + gl([gr({ k: t("Name"), v: "#" + e, chev: true, act: "rename", attrs: ' data-k="rename"' })]) + gl(second) +
+  paint(box, hero(tagIco(g), "#" + e, line(st)) + gl([gr({ k: t("Name"), v: "#" + e, chev: true, act: "rename", attrs: ' data-k="rename"' }),
+    gr({ k: t("Icon"), v: icon(tagIcon("#" + g)), chev: true, act: "icon", attrs: ' data-k="icon"' })]) + gl(second) +
     gl([gr({ k: t("Delete tag"), cls: "red", act: "delete", attrs: ' data-name="' + e + '" data-k="delete"' })]));
 }
 
@@ -71,12 +74,23 @@ async function onClick(ev) {
   const name = b.dataset.name || sub;
   if (b.dataset.act === "add") return addTag();
   if (b.dataset.act === "rename") return rename(name);
+  if (b.dataset.act === "icon") return pickIcon(name);
   if (b.dataset.act === "merge") return merge(name);
   if (b.dataset.act === "delete") return remove(name);
   if (b.dataset.act === "fromtag") return fromTag(name);
 }
 
-async function reloadTags() { state.tags = await GET("/tags"); }
+function pickIcon(name) {
+  openIconPicker({
+    title: t("Icon for {name}", { name: "#" + esc(name) }), now: tagIcon("#" + name), color: tagColor("#" + name), suggested: TAG_ICONS,
+    save: async (pick) => {
+      // The plain tag is no choice at all: nothing to remember
+      await PUT("/tags/" + encodeURIComponent(name), { icon: pick === "tag" ? "" : pick });
+      await reloadTags();
+      refresh({ tags: true });
+    },
+  });
+}
 function moveLocally(name, to) {
   state.tx.forEach((tx) => { if (tx.tags.includes("#" + name)) tx.tags = [...new Set(tx.tags.map((x) => (x === "#" + name ? "#" + to : x)))]; });
   state.rules.forEach((r) => { if (r.tags.includes("#" + name)) r.tags = [...new Set(r.tags.map((x) => (x === "#" + name ? "#" + to : x)))]; });
@@ -142,7 +156,7 @@ function merge(name) {
   openDialog({
     kind: "sheet",
     title: t("Merge #{name}", { name: esc(name) }),
-    top: tagIco() + '<b class="w-shtitle w-sht20">#' + esc(name) + '</b><p id="tm-what" aria-live="polite">' + what() + "</p>",
+    top: tagIco(name) + '<b class="w-shtitle w-sht20">#' + esc(name) + '</b><p id="tm-what" aria-live="polite">' + what() + "</p>",
     body: '<div class="w-glh">' + t("Merge into") + '</div><div class="w-gl" role="radiogroup" aria-label="' + esc(t("Merge into")) + '">' +
       others.map((x) => '<button type="button" class="w-gr" role="radio" data-to="' + esc(x) + '" aria-checked="' + (x === pick) + '"><span class="k">#' + esc(x) + "</span>" + check(x === pick) + "</button>").join("") + "</div>" +
       '<p class="w-glf">' + t("Then #{name} goes away. A merge can’t be undone.", { name: esc(name) }) + "</p>",
@@ -172,7 +186,7 @@ function remove(name) {
   const n = state.tx.filter((tx) => tx.tags.includes("#" + name)).length;
   openDialog({
     kind: "alert",
-    top: tagIco().replace("w-tagico", "w-tagico w-tag48"),
+    top: tagIco(name, 48),
     title: t("Delete #{name}?", { name: esc(name) }),
     body: "<p>" + (n ? tn(n, "It is removed from {n} transaction. The transaction stays.", "It is removed from {n} transactions. The transactions stay.") : t("No transactions use it.")) + "</p>",
     ok: phone() ? t("Delete #{name}", { name: esc(name) }) : t("Delete"),
@@ -199,7 +213,7 @@ function fromTag(tag) {
   openDialog({
     kind: "sheet",
     title: t("Make #{tag} a Person", { tag: esc(tag) }),
-    top: tagIco() + '<b class="w-shtitle w-sht20">#' + esc(tag) + '</b><p id="ft-what" aria-live="polite">' + what() + "</p>",
+    top: tagIco(tag) + '<b class="w-shtitle w-sht20">#' + esc(tag) + '</b><p id="ft-what" aria-live="polite">' + what() + "</p>",
     body: '<div class="w-glh">' + t("Person") + '</div><div class="w-gl" role="radiogroup" aria-label="' + esc(t("Person")) + '">' + people + "</div>" +
       '<div class="w-gl"><div class="w-gr"><span class="k">' + t("Remove the tag afterwards") + "</span>" + toggle("ft-remove", true, t("Remove the tag afterwards")) + "</div></div>",
     ok: t("Make"),

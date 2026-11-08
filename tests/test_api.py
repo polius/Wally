@@ -610,6 +610,30 @@ def test_rename_tag_into_existing_merges(couple):
     assert client.get("/transactions").json()[0]["tags"] == ["coffee"]
     assert "cafe" not in client.get("/tags").json()
 
+def test_tag_icons(couple):
+    client, *_ = couple
+    client.post("/tags", json={"name": "trip"})
+    client.post("/tags", json={"name": "away"})
+    assert client.get("/tags/icons").json() == {}
+    assert client.put("/tags/trip", json={"icon": "palm"}).json() == {"name": "trip", "icon": "palm"}
+    assert client.get("/tags/icons").json() == {"trip": "palm"}
+    # Only an icon's id
+    assert client.put("/tags/trip", json={"icon": "<svg>"}).status_code == 422
+    # The icon moves with the name
+    assert client.put("/tags/trip", json={"name": "holiday"}).json() == {"name": "holiday", "icon": "palm"}
+    assert client.get("/tags/icons").json() == {"holiday": "palm"}
+    # "" goes back to the plain tag
+    assert client.put("/tags/holiday", json={"icon": ""}).json()["icon"] is None
+    assert client.get("/tags/icons").json() == {}
+    # Merged into another tag, that tag keeps its own
+    client.put("/tags/holiday", json={"icon": "palm"})
+    client.put("/tags/away", json={"icon": "car"})
+    assert client.put("/tags/holiday", json={"name": "away"}).json() == {"name": "away", "icon": "car"}
+    assert client.get("/tags/icons").json() == {"away": "car"}
+    # Deleting a tag takes its icon too
+    client.delete("/tags/away")
+    assert client.get("/tags/icons").json() == {}
+
 def test_remove_person_moves_their_part(couple):
     client, alex, ana = couple
     carol = client.post("/people", json={"name": "Carol"}).json()["id"]

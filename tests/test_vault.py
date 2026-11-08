@@ -38,6 +38,7 @@ def plain_household(client):
     client.post("/import/commit", json={"rows": [{"date": "2026-10-20", "name": "AMAZON MKTPLACE 99", "amount": "-15.20", "import_ref": "ref-1", "action": "add", "category": "Shopping"}]})
     client.post("/categories", json={"name": "Kids", "color": 3, "icon": "dog"})
     client.post("/tags", json={"name": "holiday"})
+    client.put("/tags/holiday", json={"icon": "palm"})
     r = client.put("/signin", json={"enabled": True, "password": PASS})
     assert r.status_code == 200, r.text
     client.headers.pop("x-wally-person", None)
@@ -134,7 +135,7 @@ def test_turning_on_leaves_nothing_in_the_clear(encrypted):
     assert status["vault"]["on"] and status["vault"]["kdf"]
     # Every plain table is empty, and no plain backup or old file is left
     conn = sqlite3.connect(database.DB_PATH)
-    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "importrule"):
+    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "tagicon", "importrule"):
         assert conn.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] == 0, table
     assert conn.execute("SELECT COUNT(*) FROM record").fetchone()[0] == result["count"] == len(before)
     conn.close()
@@ -192,7 +193,7 @@ def test_the_browsers_records_open_with_the_password_from_outside(encrypted):
 
 def test_plain_routes_and_api_keys_are_refused(encrypted):
     client, alex, *_ = encrypted
-    for path in ("/transactions", "/ledger", "/recurring", "/categories", "/tags", "/rules", "/summary/monthly", f"/people/{alex}/usage"):
+    for path in ("/transactions", "/ledger", "/recurring", "/categories", "/tags", "/tags/icons", "/rules", "/summary/monthly", f"/people/{alex}/usage"):
         assert client.get(path).status_code == 409, path
     assert client.post("/transactions", json={"name": "x", "category": "Food", "amount": "1", "date": TODAY}).status_code == 409
     # A key the server would make can't open anything: the browser makes it, with the lock
