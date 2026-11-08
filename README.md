@@ -1,5 +1,5 @@
 <div align="center">
-<img src="web/assets/wally.png" alt="Wally Logo" width="100" height="100" />
+<img src="web/assets/wally.png" alt="Wally Logo" width="80" height="80" />
 <h1 align="center">Wally</h1>
 </div>
 

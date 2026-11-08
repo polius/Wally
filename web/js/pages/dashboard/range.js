@@ -129,7 +129,7 @@ export function goTx(o) {
     // A tag: the expenses counted under it, without any income that has the same tag
     if (o.tag) { q.set("type", "expense"); q.set("q", o.tag); }
     // A person: what they spent, their own and their share of shared costs, as The household counts it
-    if (o.person) { q.set("type", "expense"); q.set("person", o.person); }
+    if (o.person) { q.set("type", o.income ? "income" : "expense"); q.set("person", o.person); }
     if (o.ym) { q.set("mode", "month"); q.set("month", ds(o.ym[0], o.ym[1], 1).slice(0, 7)); }
     else rangeParams().forEach((v, k) => q.set(k, v));
   }

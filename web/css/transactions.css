@@ -138,6 +138,8 @@
 .tx-close svg.i{width:15px;height:15px}
 .tx-close:hover{background:var(--w-fill2)}
 .tx-iamt{display:grid;gap:2px}
+.tx-iamt .w-big{margin-bottom:12px}
+.tx-dhero .w-big{margin-bottom:8px}
 .tx-idate{font-size:var(--fs-foot);color:var(--w-ink2);font-weight:400}
 .tx-insp .w-big{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;line-height:1.1}
 .tx-insp .w-big .c{font-size:22px;letter-spacing:-.02em;color:inherit}
@@ -267,8 +269,8 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-page .w-bulk{position:sticky;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px));padding:10px 12px}
   .tx-page .w-bulk .w-mini,.tx-page .w-bulk .w-btn{height:36px}
   /* The detail, full screen above the tab bar */
-  .tx-body:not(.cal) .tx-insp{inset:0 0 calc(var(--tabbar) + env(safe-area-inset-bottom,0px)) 0;width:auto;transform:translateY(24px);opacity:0;background:var(--w-canvas);border:0;box-shadow:none;
-    padding:calc(12px + env(safe-area-inset-top,0px)) 16px 24px;gap:18px;transition:transform 260ms var(--ease),opacity 260ms var(--ease),visibility 0s 260ms;z-index:35}
+  .tx-body:not(.cal) .tx-insp{inset:0;width:auto;transform:translateY(24px);opacity:0;background:var(--w-canvas);border:0;box-shadow:none;
+    padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));gap:18px;transition:transform 260ms var(--ease),opacity 260ms var(--ease),visibility 0s 260ms;z-index:45}
   [dir="rtl"] .tx-body:not(.cal) .tx-insp{transform:translateY(24px)}
   .tx-body.open:not(.cal) .tx-insp{transform:none;opacity:1;transition:transform 260ms var(--ease),opacity 260ms var(--ease)}
   .tx-body:not(.cal) .tx-close{display:none}

@@ -144,6 +144,7 @@
  "Can": "권한",
  "Cancel": "취소",
  "Can’t scan? Show the key": "스캔할 수 없나요? 키 보기",
+ "Cashflow": "현금 흐름",
  "Categories": "카테고리",
  "Category": "카테고리",
  "Category of part {n}": "항목 {n} 카테고리",
@@ -310,6 +311,7 @@
  "Ends {n} other sign-in now. Each sign-in lasts a year.": {
   "other": "다른 로그인 {n}개를 지금 종료해요. 로그인은 1년 동안 유지돼요."
  },
+ "Enlarge": "크게 보기",
  "Enter an amount": "금액 입력",
  "Enter one of your recovery codes": "복구 코드 중 하나를 입력하세요",
  "Enter the 6-digit code from your authenticator app": "인증 앱의 6자리 코드를 입력하세요",
@@ -462,6 +464,8 @@
  },
  "Kept": "남긴 돈",
  "Kept each month": "매달 남긴 돈",
+ "Kept in {year}": "{year}년에 남긴 돈",
+ "Kept this year": "올해 남긴 돈",
  "Kept {amount}": "{amount} 남김",
  "Kept {amount} · {pct}": "{amount} 남김 · {pct}",
  "Key copied": "키를 복사했어요",
@@ -662,6 +666,7 @@
  "Over by {amount}": "{amount} 초과",
  "Over {amount}": "{amount} 초과",
  "Overspent": "초과 지출",
+ "Overspent so far": "지금까지 초과 지출",
  "Page {n} of {total}": "{total}쪽 중 {n}쪽",
  "Page {n} of {total}: {title}": "{total}쪽 중 {n}쪽: {title}",
  "Pages": "페이지",

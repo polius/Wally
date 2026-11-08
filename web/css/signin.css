@@ -309,6 +309,10 @@
   .w-welh{font-size:27px}
   .w-gate .w-wel{width:100%;height:100%;max-height:none;border:0;border-radius:0}
 }
+@media (max-width:767px){
+  .w-welwrap{padding:0;place-items:stretch}
+  .w-welwrap .w-wel{width:100%;height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}
+}
 @media (prefers-reduced-motion:reduce){
   .w-welwrap,.w-welwrap .w-wel{transition:none}
   .w-welmark,.w-welfeat li{animation:none}

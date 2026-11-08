@@ -75,7 +75,7 @@ try {
   const left = await page.locator(".s-left > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   const right = await page.locator(".s-right > [data-w]").evaluateAll((n) => n.map((x) => x.dataset.w).join(","));
   ok(left === "hero,cats,tags,recent,upcoming", "the month on the left: " + left);
-  ok(right === "notice,people,kept,year", "the context on the right: " + right);
+  ok(/^notice,people,(cashflow,)?kept,year$/.test(right), "the context on the right: " + right);
   ok(await page.locator('[data-w="recent"]').isVisible() && await page.locator("#s-recent .s-row").count() <= 4, "Recent on desktop too, four at most");
   ok(await page.locator('[data-w="savings"]').count() === 0, "This year replaces Savings");
   ok((await text(page, "#s-big")).includes("€") && !(await text(page, "#s-big")).includes("."), "the headline is a rounded total: " + await text(page, "#s-big"));
@@ -90,7 +90,7 @@ try {
     return !ch || (/^[↑↓] \d+\s?%$/.test(ch.textContent) && ch.classList.contains(ch.textContent[0] === "↑" ? "up-bad" : "dn-good"));
   })), "Categories: no “vs” label; a change shows as ↑ in red or ↓ in green, in percent");
   ok((await text(page, '[data-w="people"]')).includes("share of shared costs"), "The household: own and shared, per person");
-  ok((await text(page, '[data-w="year"] h4')) === "This year" && (await text(page, "#s-year")).includes("kept since January"), "This year: kept since January");
+  ok((await text(page, '[data-w="year"] h4')) === "Kept this year" && (await text(page, "#s-year")).includes("kept since January"), "This year: kept since January");
   ok(await page.locator('[data-w="notice"]').isHidden() || await page.locator("#s-notice .s-notice").count() <= 3, "Worth noticing: hidden or at most three lines");
   await shot(page, "01-month");
 
@@ -273,6 +273,58 @@ try {
   ok(await page.locator("#c-year svg path").count() >= 2, "This year: a line since January");
   if (CM < 12) ok((await text(page, "#s-year")).includes("on track for") && (await text(page, "#s-year")).includes("Dec 31"), "and where it heads by December 31");
 
+  console.log("Cashflow and the bigger views");
+  await page.locator("#c-kept [data-go-month]").nth(9).hover();
+  ok(/Kept · \d+%|Overspent/.test(await text(page, "#tip")), "a bar says what share of the month was kept: " + (await text(page, "#tip")).replace(/\s+/g, " "));
+  await page.mouse.move(700, 5);
+  ok(await page.locator("#c-kept line[stroke-dasharray]").count() === 1, "Kept each month: a dashed line at the average");
+  if (await page.locator('[data-w="cashflow"]').isVisible()) {
+    ok(/^Cashflow \(.+\)$/.test(await text(page, '[data-w="cashflow"] h4')), "Cashflow names its period: " + await text(page, '[data-w="cashflow"] h4'));
+    ok(await page.locator("#c-cashflow svg .fl").count() >= 1 && await page.locator("#s-cashflow .s-keptn").count() === 0, "Cashflow: flows and no headline repeating Kept each month");
+    const right = await page.evaluate(() => [...document.querySelectorAll(".s-right [data-w]")].filter((n) => !n.hidden).map((n) => n.dataset.w).join());
+    ok(right.includes("people,cashflow,kept,year"), "Cashflow sits between The household and Kept each month: " + right);
+    await page.click('[data-act="cashflow-big"]');
+    await page.waitForTimeout(350);
+    ok(/Came in[\s\S]*Went out[\s\S]*(Kept|Overspent)/.test(await text(page, ".s-cfstats")), "the bigger view opens with what came in, went out and was kept");
+    const rows = await page.locator(".s-cfout [data-k]").count(), flows = await page.locator("#c-big g[data-k]").count();
+    ok(rows > 0 && flows >= rows, "every row that went out has its flow: " + rows + " rows, " + flows + " flows");
+    const lines = await page.evaluate(() => { const l = (s) => Math.round(document.querySelector(s).getBoundingClientRect().left); return [l(".s-cfstats > div:nth-child(1)"), l(".s-cfin .s-cfg"), l(".s-cfstats > div:nth-child(3)"), l(".s-cfout .s-cfg")]; });
+    ok(lines[0] === lines[1] && lines[2] === lines[3], "the band's columns line up with the rows below: " + lines.join());
+    await page.locator('.s-cfout [data-k="r0"]').hover();
+    await page.waitForTimeout(120);
+    ok(await page.locator('#c-big g[data-k="r0"].on').count() === 1, "pointing at a row lights its flow");
+    ok(await page.locator(".s-cfout button[data-k] svg.s-chev").count() >= 1, "rows that open transactions have a chevron");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(150);
+    ok(await page.locator("#dlg").isHidden() && await page.locator("#tip.on").count() === 0, "Escape closes it and leaves no tooltip behind");
+  }
+  await page.click('[data-act="kept-big"]');
+  await page.waitForTimeout(300);
+  ok(/Kept each month/.test(await text(page, "#dlg-t")) && await page.locator("#c-big line[stroke-dasharray]").count() === 1, "Kept each month opens bigger, with its average");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(150);
+  await page.click('[data-act="year-big"]');
+  await page.waitForTimeout(300);
+  ok((await text(page, "#dlg-t")) === "Kept this year" && await page.locator("#c-big svg circle").count() >= 1, "Kept this year opens bigger");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(150);
+
+  console.log("The folded sidebar");
+  await page.click("[data-side-toggle]");
+  await page.mouse.move(700, 500);
+  await page.waitForTimeout(250);
+  const look = () => page.evaluate(() => ({ rail: document.documentElement.classList.contains("w-rail"), mark: getComputedStyle(document.querySelector("#side .w-mark")).opacity, tog: getComputedStyle(document.querySelector("[data-side-toggle]")).opacity, bg: getComputedStyle(document.querySelector("[data-side-toggle]")).backgroundColor }));
+  let side = await look();
+  ok(side.rail && side.mark === "1" && side.tog === "0", "folded: only Wally's mark shows", side);
+  await page.locator(".w-sidehead").hover();
+  await page.waitForTimeout(300);
+  side = await look();
+  ok(side.mark === "0" && side.tog === "1" && side.bg === "rgba(0, 0, 0, 0)" && (await text(page, "#side-hint.on")) === "Expand sidebar", "hovering the mark shows the expand icon, named beside it");
+  await page.click("[data-side-toggle]");
+  await page.waitForTimeout(200);
+  ok(!(await look()).rail, "clicking it unfolds the sidebar");
+  await page.mouse.move(700, 500);
+
   console.log("Click-throughs");
   const go = async (sel, re, name) => {
     await page.locator(sel).first().click();
@@ -307,11 +359,20 @@ try {
       ok(await p.locator(".s-title").isVisible() && await p.locator(".s-steps").isVisible() && await p.locator(".s-head .w-pswitch").isVisible() && await p.locator(".w-hadd").isHidden(), "phone: the period title with ‹ ›, the person menu top right, Add in the tab bar");
       ok(await p.evaluate(() => { const e = document.getElementById("s-title"); return e.scrollWidth <= e.clientWidth; }), "phone: the month's name fits");
       const order = await p.evaluate(() => [...document.querySelectorAll(".s-grid [data-w]")].filter((n) => !n.hidden).sort((x, y) => x.getBoundingClientRect().top - y.getBoundingClientRect().top).map((n) => n.dataset.w).join(","));
-      ok(/^hero,(notice,)?cats,tags,recent,upcoming,people,kept,year$/.test(order), "phone: one column in reading order: " + order);
+      ok(/^hero,(notice,)?cats,tags,recent,upcoming,people,(cashflow,)?kept,year$/.test(order), "phone: one column in reading order: " + order);
       ok(await p.locator("#tabbar .w-tabpill a").count() === 4 && await p.locator("#tabbar .w-tabadd").isVisible(), "phone: four tabs and a separate ＋");
       ok(await p.locator('[data-w="recent"]').isVisible() && await p.locator("#s-recent .s-row").count() > 0 && await p.locator("#s-recent .s-row").count() <= 4, "phone: Recent, four rows");
       ok(/Today|Yesterday|day/.test(await text(p, "#s-recent .s-row small")), "phone: Recent says when in words: " + await text(p, "#s-recent .s-row small"));
       ok(await p.locator("#c-kept svg").count() === 1, "phone: Kept each month drawn");
+      for (const act of ["kept", "year"]) {
+        await p.evaluate((a) => document.querySelector('[data-act="' + a + '-big"]').click(), act);
+        await p.waitForTimeout(450);
+        const b = await p.locator("#dlg .w-sheetd").boundingBox();
+        ok(b.x === 0 && b.y === 0 && b.width === 390 && Math.abs(b.height - (await p.evaluate(() => innerHeight))) <= 1, "phone: the bigger " + act + " view takes the whole screen");
+        ok((await text(p, "#dlg [data-dlg-x]")) === "Close", "phone: it leaves with a link at the top left");
+        await p.evaluate(() => document.querySelector("#dlg [data-dlg-x]").click());
+        await p.waitForTimeout(150);
+      }
       // No hover on a phone: a tap shows the day and stays on the page
       const hb = await p.locator("#c-hero svg").boundingBox();
       await p.touchscreen.tap(hb.x + hb.width * 0.2, hb.y + hb.height * 0.5);

@@ -144,6 +144,7 @@
  "Can": "权限",
  "Cancel": "取消",
  "Can’t scan? Show the key": "无法扫描？显示密钥",
+ "Cashflow": "现金流",
  "Categories": "分类",
  "Category": "分类",
  "Category of part {n}": "第{n}项分类",
@@ -310,6 +311,7 @@
  "Ends {n} other sign-in now. Each sign-in lasts a year.": {
   "other": "立即结束其他{n}个登录。每次登录有效期为一年。"
  },
+ "Enlarge": "放大",
  "Enter an amount": "输入金额",
  "Enter one of your recovery codes": "输入你的一个恢复码",
  "Enter the 6-digit code from your authenticator app": "输入身份验证器应用中的6位验证码",
@@ -462,6 +464,8 @@
  },
  "Kept": "结余",
  "Kept each month": "每月结余",
+ "Kept in {year}": "{year}年结余",
+ "Kept this year": "今年结余",
  "Kept {amount}": "结余 {amount}",
  "Kept {amount} · {pct}": "结余 {amount} · {pct}",
  "Key copied": "密钥已复制",
@@ -662,6 +666,7 @@
  "Over by {amount}": "超出 {amount}",
  "Over {amount}": "超过 {amount}",
  "Overspent": "超支",
+ "Overspent so far": "目前超支",
  "Page {n} of {total}": "第 {n} 页，共 {total} 页",
  "Page {n} of {total}: {title}": "第{n}/{total}页：{title}",
  "Pages": "页面",

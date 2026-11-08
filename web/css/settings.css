@@ -2,11 +2,11 @@
    Builds on .w-set, .w-setnav, .w-group, .w-gi, .w-glabel and friends from wally.css. */
 
 /* ---------- sidebar of panes (links, styled like the prototype's buttons) ---------- */
-.w-setnav{position:sticky;top:16px;gap:12px}
-.w-setnav .grp{gap:2px}
-.w-setnav .grp > span{padding:0 10px 4px;font-weight:400;font-size:12px}
+.w-setnav{position:sticky;top:16px;gap:24px}
+.w-setnav .grp{gap:4px}
+.w-setnav .grp > span{padding:0 10px 6px;font-weight:400;font-size:12px}
 .w-setnav a svg.i{width:16px;height:16px}
-.w-setnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;font-size:14px;line-height:1.3;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
+.w-setnav a{display:flex;align-items:center;gap:10px;padding:9px 10px;font-size:14px;line-height:1.3;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start;width:100%;text-decoration:none}
 .w-setnav a:hover{color:var(--w-ink)}
 .w-setnav a[aria-current="page"]{background:var(--w-panel);color:var(--w-ink);box-shadow:0 0 0 1px var(--w-line)}
 .w-setnav a[aria-current="page"] svg{color:var(--w-accent)}
@@ -17,11 +17,9 @@
 .w-setnav a .v:empty{display:none}
 .w-setnav button span{margin-left:0;margin-inline-start:auto}
 .w-setver{font-size:var(--fs-cap);color:var(--w-ink3);padding:4px 12px 0}
-.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:56px}
-/* Rows of settings read best at a measured width: the whole page sits centred instead of stretching */
-@media (min-width:1024px){.w-app > #main[data-page="settings"]{max-width:1232px}}
+.w-set{margin-top:18px;grid-template-columns:236px minmax(0,1fr);gap:96px}
 .w-pane{outline:0;min-width:0}
-.w-pwrap{min-width:0;max-width:640px;display:grid;align-content:start}
+.w-pwrap{min-width:0;max-width:880px;display:grid;align-content:start}
 /* The pane's head: ‹ back, the title, its button (Edit) */
 .w-phead{display:grid;justify-items:start;gap:2px}
 .w-phead:empty{display:none}
@@ -265,7 +263,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-shead h3#set-title{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.035em;line-height:1.1;margin-top:2px}
 
 @media (max-width:1023px){
-  .w-set{grid-template-columns:200px minmax(0,1fr);gap:36px}
+  .w-set{grid-template-columns:200px minmax(0,1fr);gap:48px}
   /* A narrow list of panes, as on iPad: names only */
   .w-setnav a .v{display:none}
 }
@@ -346,7 +344,7 @@ label.w-btn{cursor:pointer;position:relative}
 .w-swpick button[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--w-ink)}
 
 /* Sign-in & Privacy (security.js): one page in short groups, its sub-pages, and its alerts and sheets */
-.w-sec{display:grid;align-content:start;max-width:640px}
+.w-sec{display:grid;align-content:start;max-width:880px}
 .w-sec > .w-gl{box-shadow:0 1px 2px rgba(20,22,27,.04)}
 .w-sec a.w-gr{text-decoration:none;color:inherit}
 .w-sec .w-gr[disabled]{opacity:.45;cursor:default}
@@ -425,8 +423,6 @@ label.w-btn{cursor:pointer;position:relative}
   .w-falert > .w-dlgx{background:var(--w-fill);color:var(--w-ink)}
   .w-falert .w-alg > .w-dlgok[disabled]{opacity:.45}
   .w-shtop .w-shtitle{font-size:22px}
-  /* The kit and two-step sheets are tall: they rise to just under the top, like a full iOS sheet */
-  .w-dialog.w-shfull{max-width:none;min-height:calc(100dvh - 48px)}
 }
 
 /* One vertical rhythm for every pane, whatever its blocks are (groups, drop zones, code, sections):
@@ -499,6 +495,7 @@ label.w-btn{cursor:pointer;position:relative}
 /* A category's icon: the pick, big, in its color, and a search stay put; the icons scroll under them,
    eight to a row, the pick in its color. A fixed height, so the sheet doesn't jump while searching. */
 .w-dialog.w-icdlg{display:flex;flex-direction:column;overflow:hidden;height:min(760px,calc(100vh - 40px))}
+@media (max-width:767px){.w-dialog.w-icdlg{height:100vh;height:100dvh}}
 .w-icdlg > .w-shb{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:start;padding-bottom:18px}
 .w-icdlg > .w-shtop{padding-bottom:4px}
 .w-icdlg .w-gsearch{margin:0;justify-self:stretch}

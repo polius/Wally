@@ -144,6 +144,7 @@
  "Can": "権限",
  "Cancel": "キャンセル",
  "Can’t scan? Show the key": "スキャンできない場合はキーを表示",
+ "Cashflow": "キャッシュフロー",
  "Categories": "カテゴリ",
  "Category": "カテゴリ",
  "Category of part {n}": "内訳{n}のカテゴリ",
@@ -310,6 +311,7 @@
  "Ends {n} other sign-in now. Each sign-in lasts a year.": {
   "other": "ほかの{n}件のログインを今すぐ終了します。ログインは1年間有効です。"
  },
+ "Enlarge": "拡大",
  "Enter an amount": "金額を入力",
  "Enter one of your recovery codes": "リカバリーコードを1つ入力してください",
  "Enter the 6-digit code from your authenticator app": "認証アプリの6桁のコードを入力してください",
@@ -462,6 +464,8 @@
  },
  "Kept": "黒字",
  "Kept each month": "毎月の貯蓄額",
+ "Kept in {year}": "{year}年の貯蓄額",
+ "Kept this year": "今年の貯蓄額",
  "Kept {amount}": "{amount}の黒字",
  "Kept {amount} · {pct}": "{amount}の黒字 · {pct}",
  "Key copied": "キーをコピーしました",
@@ -662,6 +666,7 @@
  "Over by {amount}": "{amount}超過",
  "Over {amount}": "{amount}超",
  "Overspent": "赤字",
+ "Overspent so far": "これまでの使いすぎ",
  "Page {n} of {total}": "{n} / {total} ページ",
  "Page {n} of {total}: {title}": "{total}ページ中{n}ページ目：{title}",
  "Pages": "ページ",

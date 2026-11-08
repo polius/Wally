@@ -1,16 +1,17 @@
 /* Summary: how this month is going, where it's heading, then the details.
    Two columns on wide screens that fill independently: the month on the left (Spending,
    Categories, Recent, Coming up), the context on the right (the recap when one is ready, Worth noticing,
-   The household, Kept each month, This year). On a phone the same cards stack in reading order (see
+   The household, Cashflow, Kept each month, Kept this year). On a phone the same cards stack in reading order (see
    dashboard.css). Spending is every expense, bills (what a recurring rule made) included.
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
   totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED,
 } from "../../core.js";
-import { chart, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
+import { chart, enlarge, closeDialog, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
+import { cashflow, cashflowTitle, drawCashflow } from "./cashflow.js";
 import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eByCat, BY_CAT, BY_TAG, anyTags } from "./hero.js";
 
 const $ = (id) => document.getElementById(id);
@@ -45,6 +46,7 @@ function againstWhat(r, p) {
 }
 /* A card: a title, something on its right, and its body */
 const sec = (id, title, right) => '<section class="s-sec" data-w="' + id + '"><div class="s-sh"><h4>' + title + "</h4>" + (right || "") + '</div><div class="s-body" id="s-' + id + '"></div></section>';
+const expand = (act) => '<button type="button" class="s-expand" data-act="' + act + '" aria-label="' + esc(t("Enlarge")) + '" title="' + esc(t("Enlarge")) + '">' + icon("l-maximize-2") + "</button>";
 const seeAll = (href) => '<a class="w-link s-all" href="' + href + '" data-link>' + t("See all") + "</a>";
 /* attrs null: a row with nowhere to go */
 const rowHtml = (attrs, lead, name, sub, amount, cls, under) => (attrs === null ? '<div class="s-row">' : '<button type="button" class="s-row" ' + attrs + ">") + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
@@ -73,8 +75,9 @@ export function summaryHtml() {
       '<div class="s-recapw" id="s-recapw"></div>' +
       sec("notice", t("Worth noticing")) +
       sec("people", t("The household"), '<span class="s-note" id="s-peoplenote"></span>') +
-      sec("kept", t("Kept each month"), '<span class="s-note" id="s-avg"></span>') +
-      sec("year", t("This year")) +
+      sec("cashflow", t("Cashflow"), expand("cashflow-big")) +
+      sec("kept", t("Kept each month"), '<span class="s-shr"><span class="s-note" id="s-avg"></span>' + expand("kept-big") + "</span>") +
+      sec("year", t("Kept this year"), expand("year-big")) +
     "</div></div>";
 }
 
@@ -86,6 +89,7 @@ export function renderSummary(r) {
   renderRecent(r);
   renderRecap(r);
   renderNotice(r);
+  renderCashflow(r);
   renderPeople(r);
   renderKept(r);
   renderYear(r);
@@ -330,6 +334,16 @@ function renderNotice(r) {
     '<span class="s-nm"><span>' + esc(x.title) + "</span><small>" + esc(x.sub) + "</small></span></div>").join("");
 }
 
+/* ---------- Cashflow: where the money came from and where it went (see cashflow.js) ---------- */
+function renderCashflow(r) {
+  const d = cashflow(r);
+  show("cashflow", d.total > 0);
+  if (!d.total) return;
+  document.querySelector('.s-sec[data-w="cashflow"] h4').innerHTML = cashflowTitle(r);
+  $("s-cashflow").innerHTML = '<div class="cv s-cfc" id="c-cashflow"></div>';
+  drawCashflow("c-cashflow", d, r);
+}
+
 /* ---------- The household: what each person spent, their own plus their share of shared costs ---------- */
 function renderPeople(r) {
   show("people", couple());
@@ -364,10 +378,10 @@ function renderPeople(r) {
 }
 
 /* ---------- Kept each month: the number and twelve bars ---------- */
-function renderKept(r) {
+function keptData(r) {
   const tt = totals(r.start, r.end);
   const [ey, em] = ym(r.end), [sy, sm] = ym(r.start), months = [];
-  const n = Math.max(12, (ey - sy) * 12 + em - sm + 1), long = n > 12;
+  const n = Math.max(12, (ey - sy) * 12 + em - sm + 1);
   for (let i = n - 1; i >= 0; i--) {
     const [y, mo] = ymAdd(ey, em, -i), a = ds(y, mo, 1);
     if (a < START.slice(0, 8) + "01") continue;
@@ -375,44 +389,68 @@ function renderKept(r) {
     months.push({ y, m: mo, a, net: x.net, inc: x.inc, exp: x.exp, partial: end > TODAY, on: end >= r.start && a <= r.end });
   }
   const done = months.filter((x) => !x.partial), avg = done.length ? done.reduce((s0, x) => s0 + x.net, 0) / done.length : null;
-  $("s-avg").innerHTML = avg === null ? "" : '<span class="s-dk">' + esc(t("Average {amount}", { amount: f0(avg) })) + '</span><span class="s-ph">' + esc(t("Avg {amount}", { amount: f0(avg) })) + "</span>";
-  const over = tt.net < 0, soFar = r.current;
-  $("s-kept").innerHTML = '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc(f0(Math.abs(tt.net))) + "</b>" +
-    (over ? '<span class="up-bad">' + esc(soFar ? t("overspent so far") : t("overspent")) + "</span>" : soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>" +
-    '<div class="cv s-keptc" id="c-kept"></div>';
-  chart("c-kept", (w) => (w < 360 ? 104 : 112), (svg, w, h) => {
-    const mg = { l: 0, r: 0, t: 4, b: 20 };
-    const P = Math.max(...months.map((x) => Math.max(x.net, 0)), 1), N = Math.max(...months.map((x) => Math.max(-x.net, 0)), 0);
-    const k = (h - mg.t - mg.b) / (P + N), z = mg.t + P * k, bw = (w - mg.l - mg.r) / Math.max(months.length, 1), gap = Math.min(8, bw * 0.28), bar = Math.max(3, bw - gap);
-    months.forEach((x, i) => {
-      const v = x.net, hh = Math.max(1, Math.abs(v) * k), x0 = mg.l + bw * i + gap / 2, rr = Math.min(4, hh / 2, bar / 2);
-      const d = v >= 0 ? "M" + x0 + " " + z + "V" + (z - hh + rr) + "q0 " + -rr + " " + rr + " " + -rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + rr + "V" + z + "Z"
-        : "M" + x0 + " " + z + "V" + (z + hh - rr) + "q0 " + rr + " " + rr + " " + rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + -rr + "V" + z + "Z";
-      el("path", { d, fill: v < 0 ? "var(--w-bad)" : x.on ? "var(--s-kept)" : "var(--w-fill2)", "fill-opacity": v < 0 && !x.on ? 0.5 : 1 }, svg);
-      if (!long) txt(svg, x0 + bar / 2, h - 4, F.mon[x.m - 1].charAt(0).toLocaleUpperCase(), x.on ? "lb" : "ax", "middle");
-      else if (i === 0 || x.m === 1) txt(svg, x0 + bar / 2, h - 4, monLabel(x.y, x.m, true, true), "ax", i === 0 ? "start" : "middle");
-      const hit = el("rect", { x: mg.l + bw * i, y: 0, width: bw, height: h, fill: "transparent", tabindex: "0", role: "button", "aria-label": monthYear(x.y, x.m), "data-go-month": x.a.slice(0, 7) }, svg);
-      hit.style.cursor = "pointer";
-      hover(hit, "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Came in"), f(x.inc), "var(--w-good)") + row(t("Went out"), f(x.exp)) +
-        row(v >= 0 ? t("Kept") : t("Overspent"), f(Math.abs(v))));
-    });
-  }, () => t("Kept each month") + ": " + months.map((x) => monthYear(x.y, x.m) + " " + f0(x.net)).join(", "));
+  return { months, avg, long: n > 12, net: tt.net, soFar: r.current };
+}
+function keptHead(d) {
+  const over = d.net < 0;
+  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc(f0(Math.abs(d.net))) + "</b>" +
+    (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>";
+}
+const keptLabel = (d) => t("Kept each month") + ": " + d.months.map((x) => monthYear(x.y, x.m) + " " + f0(x.net)).join(", ");
+function drawKept(svg, w, h, d, big) {
+  const { months, long } = d, mg = { l: 0, r: 0, t: big ? 24 : 4, b: big ? 28 : 20 };
+  const P = Math.max(...months.map((x) => Math.max(x.net, 0)), 1), N = Math.max(...months.map((x) => Math.max(-x.net, 0)), 0);
+  const k = (h - mg.t - mg.b - (big && N ? 18 : 0)) / (P + N), z = mg.t + P * k, bw = (w - mg.l - mg.r) / Math.max(months.length, 1), gap = Math.min(big ? 18 : 8, bw * 0.28), bar = Math.max(3, bw - gap);
+  months.forEach((x, i) => {
+    const v = x.net, hh = Math.max(1, Math.abs(v) * k), x0 = mg.l + bw * i + gap / 2, rr = Math.min(big ? 6 : 4, hh / 2, bar / 2);
+    const path = v >= 0 ? "M" + x0 + " " + z + "V" + (z - hh + rr) + "q0 " + -rr + " " + rr + " " + -rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + rr + "V" + z + "Z"
+      : "M" + x0 + " " + z + "V" + (z + hh - rr) + "q0 " + rr + " " + rr + " " + rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + -rr + "V" + z + "Z";
+    el("path", { d: path, fill: v < 0 ? "var(--w-bad)" : x.on ? "var(--s-kept)" : "var(--w-fill2)", "fill-opacity": v < 0 && !x.on ? 0.5 : 1 }, svg);
+  });
+  // The average of the whole months, across every column, dashed like the comparison line in Spending
+  if (d.avg !== null) el("line", { x1: mg.l, x2: w - mg.r, y1: z - d.avg * k, y2: z - d.avg * k, stroke: "var(--w-ink3)", "stroke-opacity": 0.55, "stroke-width": 1, "stroke-dasharray": "3 4" }, svg);
+  months.forEach((x, i) => {
+    const v = x.net, hh = Math.max(1, Math.abs(v) * k), x0 = mg.l + bw * i + gap / 2;
+    if (big && bw >= 44) txt(svg, x0 + bar / 2, v >= 0 ? z - hh - 7 : z + hh + 15, f0(v), (x.on ? "lb" : "lbs") + " halo", "middle");
+    if (!long) txt(svg, x0 + bar / 2, h - 4, big && bw >= 30 ? F.mon[x.m - 1] : F.mon[x.m - 1].charAt(0).toLocaleUpperCase(), x.on ? "lb" : "ax", "middle");
+    else if (i === 0 || x.m === 1) txt(svg, x0 + bar / 2, h - 4, monLabel(x.y, x.m, true, true), "ax", i === 0 ? "start" : "middle");
+    const hit = el("rect", { x: mg.l + bw * i, y: 0, width: bw, height: h, fill: "transparent", tabindex: "0", role: "button", "aria-label": monthYear(x.y, x.m), "data-go-month": x.a.slice(0, 7) }, svg);
+    hit.style.cursor = "pointer";
+    hover(hit, "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Came in"), f(x.inc), "var(--w-good)") + row(t("Went out"), f(x.exp)) +
+      row((v >= 0 ? t("Kept") : t("Overspent")) + (v >= 0 && x.inc > 0 ? " · " + pct(v / x.inc) : ""), f(Math.abs(v))));
+  });
+}
+function renderKept(r) {
+  const d = keptData(r);
+  $("s-avg").innerHTML = d.avg === null ? "" : '<i class="s-dash"></i><span class="s-dk">' + esc(t("Average {amount}", { amount: f0(d.avg) })) + '</span><span class="s-ph">' + esc(t("Avg {amount}", { amount: f0(d.avg) })) + "</span>";
+  $("s-kept").innerHTML = keptHead(d) + '<div class="cv s-keptc" id="c-kept"></div>';
+  chart("c-kept", (w) => (w < 360 ? 104 : 112), (svg, w, h) => drawKept(svg, w, h, d, false), () => keptLabel(d));
+}
+/* A month in the bigger view opens that month, as it does in the card */
+export function openKept(r, goMonth) {
+  const d = keptData(r);
+  enlarge({
+    title: esc(t("Kept each month")),
+    head: '<div class="s-bighead">' + keptHead(d) + (d.avg === null ? "" : '<span class="s-note"><i class="s-dash"></i>' + esc(t("Average {amount}", { amount: f0(d.avg) })) + "</span>") + "</div>",
+    h: () => Math.max(300, Math.min(innerHeight - 240, 520)),
+    draw: (svg, w, h) => drawKept(svg, w, h, d, true),
+    label: () => keptLabel(d),
+    // A finger reads the month here; leaving the view is for a mouse
+    click: (ev) => { const x = ev.target.closest("[data-go-month]"); if (x && ev.pointerType !== "touch") { closeDialog(); goMonth(x.getAttribute("data-go-month")); } },
+  });
 }
 
-/* ---------- This year: kept since January, and where it is heading by December 31 ----------
+/* ---------- Kept this year: kept since January, and where it is heading by December 31 ----------
    The line is the running total at each month's end (this month so far). The dotted part assumes the
    rest of the year goes like the last three whole months. */
-function renderYear(r) {
+function yearData(r) {
   const y = +r.end.slice(0, 4), now = +TODAY.slice(0, 4), cur = y === now, last = cur ? +TODAY.slice(5, 7) : 12, months = [];
   for (let mo = 1; mo <= last; mo++) {
     const a = ds(y, mo, 1), end = ds(y, mo, dim(y, mo));
     if (end < START) { months.push({ m: mo, net: 0, none: true }); continue; }
     months.push({ m: mo, net: totals(a, end < TODAY ? end : TODAY).net });
   }
-  const sec0 = document.querySelector('.s-sec[data-w="year"]');
-  sec0.querySelector("h4").textContent = cur ? t("This year") : String(y);
-  if (months.every((x) => x.none)) { show("year", false); return; }
-  show("year", true);
+  if (months.every((x) => x.none)) return null;
   let acc = 0;
   months.forEach((x) => { acc += x.net; x.acc = acc; });
   const kept = acc;
@@ -426,39 +464,68 @@ function renderYear(r) {
     proj.push(base);
     for (let mo = last + 1; mo <= 12; mo++) proj.push(proj[proj.length - 1] + avg);
   }
-  const over = kept < 0, end = proj.length ? proj[proj.length - 1] : null;
-  $("s-year").innerHTML = '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc((over ? "−" : "") + f0(Math.abs(kept))) + "</b></div>" +
+  return { y, cur, months, proj, kept, end: proj.length ? proj[proj.length - 1] : null };
+}
+const yearTitle = (d) => (d.cur ? t("Kept this year") : t("Kept in {year}", { year: d.y }));
+function yearHead(d) {
+  const over = d.kept < 0;
+  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc((over ? "−" : "") + f0(Math.abs(d.kept))) + "</b></div>" +
     '<p class="s-yearsub">' + (over ? esc(t("overspent since January")) : esc(t("kept since January"))) +
-    (end !== null ? " · " + t("on track for {amount} by {date}", { amount: '<b class="' + (end < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f0(end)) + "</b>", date: esc(dlab(y + "-12-31")) }) : "") + "</p>" +
-    '<div class="cv s-yearc" id="c-year"></div>';
-  chart("c-year", () => 108, (svg, w, h) => {
-    const mg = { l: 0, r: 0, t: 8, b: 20 }, slots = 12, col = (w - mg.l - mg.r) / slots;
-    const vals = months.map((x) => x.acc).concat(proj, [0]), hi = Math.max(...vals), lo = Math.min(...vals), sp = hi - lo || 1;
-    const X = (i) => mg.l + (i + 0.5) * col, Y = (v) => mg.t + (h - mg.t - mg.b) * (1 - (v - lo) / sp);
-    const defs = el("defs", {}, svg), g = el("linearGradient", { id: "s-ygrad", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
-    el("stop", { offset: 0, "stop-color": "var(--w-good)", "stop-opacity": 0.2 }, g);
-    el("stop", { offset: 1, "stop-color": "var(--w-good)", "stop-opacity": 0.04 }, g);
-    if (lo < 0) el("line", { x1: mg.l, x2: w - mg.r, y1: Y(0), y2: Y(0), class: "grid" }, svg);
-    const ci = months.length - 1;
-    let line = "";
-    months.forEach((x, i) => { line += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(x.acc).toFixed(1); });
-    el("path", { d: line + "L" + X(ci) + " " + Y(Math.max(lo, 0)) + "L" + X(0) + " " + Y(Math.max(lo, 0)) + "Z", fill: "url(#s-ygrad)" }, svg);
-    el("path", { d: line, fill: "none", stroke: "var(--w-good)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
-    if (proj.length) {
-      let pd = "M" + X(ci).toFixed(1) + " " + Y(months[ci].acc).toFixed(1);
-      proj.forEach((v, j) => { pd += "L" + X(ci + j).toFixed(1) + " " + Y(v).toFixed(1); });
-      el("path", { d: pd, fill: "none", stroke: "var(--w-good)", "stroke-width": 2, "stroke-dasharray": "2 4", "stroke-linecap": "round" }, svg);
+    (d.end !== null ? " · " + t("on track for {amount} by {date}", { amount: '<b class="' + (d.end < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f0(d.end)) + "</b>", date: esc(dlab(d.y + "-12-31")) }) : "") + "</p>";
+}
+const yearLabel = (d) => yearTitle(d) + ": " + f0(d.kept) + (d.end !== null ? ". " + t("Projected: {amount}", { amount: f0(d.end) }) : "");
+function drawYear(svg, w, h, d, big) {
+  const { y, cur, months, proj } = d, mg = { l: big ? 62 : 0, r: big ? 14 : 0, t: big ? 14 : 8, b: big ? 28 : 20 }, slots = 12, col = (w - mg.l - mg.r) / slots;
+  const vals = months.map((x) => x.acc).concat(proj, [0]), hi = Math.max(...vals), lo = Math.min(...vals), sp = hi - lo || 1;
+  const X = (i) => mg.l + (i + 0.5) * col, Y = (v) => mg.t + (h - mg.t - mg.b) * (1 - (v - lo) / sp);
+  const defs = el("defs", {}, svg), g = el("linearGradient", { id: "s-ygrad", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+  el("stop", { offset: 0, "stop-color": "var(--w-good)", "stop-opacity": 0.2 }, g);
+  el("stop", { offset: 1, "stop-color": "var(--w-good)", "stop-opacity": 0.04 }, g);
+  if (big) {
+    const step = niceMax(Math.max(Math.abs(hi), Math.abs(lo), 1)) / 4;
+    for (let v = Math.ceil(lo / step) * step; v <= hi + step * 0.001; v += step) {
+      el("line", { x1: mg.l, x2: w - mg.r, y1: Y(v), y2: Y(v), class: "grid" }, svg);
+      txt(svg, mg.l - 10, Y(v) + 4, f0(v), "ax", "end");
     }
-    // Jan, Apr, Jul, Oct, this month in bold, Dec: never two labels side by side
-    // Jan, Apr, Jul, Oct, Dec and this month in bold, each centred under its month
-    const marks = new Set([0, 3, 6, 9, 11]);
-    if (cur) marks.add(ci);
-    for (let i = 0; i < slots; i++) if (marks.has(i)) txt(svg, X(i), h - 4, F.mon[i], cur && i === ci ? "lb s-axb" : "ax", "middle");
-    months.forEach((x, i) => {
-      const hit = el("rect", { x: X(i) - col / 2, y: 0, width: col, height: h, fill: "transparent" }, svg);
-      hover(hit, () => "<b>" + esc(monthYear(y, x.m)) + (cur && i === ci ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Kept"), f(x.net), "var(--w-good)") + row(t("Since January"), f(x.acc)));
-    });
-  }, () => t("This year") + ": " + f0(kept) + (end !== null ? ". " + t("Projected: {amount}", { amount: f0(end) }) : ""));
+  } else if (lo < 0) el("line", { x1: mg.l, x2: w - mg.r, y1: Y(0), y2: Y(0), class: "grid" }, svg);
+  const ci = months.length - 1;
+  let line = "";
+  months.forEach((x, i) => { line += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(x.acc).toFixed(1); });
+  el("path", { d: line + "L" + X(ci) + " " + Y(Math.max(lo, 0)) + "L" + X(0) + " " + Y(Math.max(lo, 0)) + "Z", fill: "url(#s-ygrad)" }, svg);
+  el("path", { d: line, fill: "none", stroke: "var(--w-good)", "stroke-width": big ? 2.5 : 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  if (proj.length) {
+    let pd = "M" + X(ci).toFixed(1) + " " + Y(months[ci].acc).toFixed(1);
+    proj.forEach((v, j) => { pd += "L" + X(ci + j).toFixed(1) + " " + Y(v).toFixed(1); });
+    el("path", { d: pd, fill: "none", stroke: "var(--w-good)", "stroke-width": 2, "stroke-dasharray": "2 4", "stroke-linecap": "round" }, svg);
+  }
+  if (big) months.forEach((x, i) => el("circle", { cx: X(i), cy: Y(x.acc), r: 4, fill: "var(--w-good)", stroke: "var(--w-raised)", "stroke-width": 2 }, svg));
+  // Jan, Apr, Jul, Oct, Dec and this month in bold, each centred under its month; every month when there is room
+  const marks = new Set(big ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : [0, 3, 6, 9, 11]);
+  if (cur) marks.add(ci);
+  for (let i = 0; i < slots; i++) if (marks.has(i) && (!big || col >= 30 || i === ci || (i % 3 === 0 && Math.abs(i - ci) > 1))) txt(svg, X(i), h - 4, F.mon[i], cur && i === ci ? "lb s-axb" : "ax", "middle");
+  months.forEach((x, i) => {
+    const hit = el("rect", { x: X(i) - col / 2, y: 0, width: col, height: h, fill: "transparent" }, svg);
+    hover(hit, () => "<b>" + esc(monthYear(y, x.m)) + (cur && i === ci ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Kept"), f(x.net), "var(--w-good)") + row(t("Since January"), f(x.acc)));
+  });
+}
+function renderYear(r) {
+  const d = yearData(r);
+  show("year", !!d);
+  if (!d) return;
+  document.querySelector('.s-sec[data-w="year"] h4').textContent = yearTitle(d);
+  $("s-year").innerHTML = yearHead(d) + '<div class="cv s-yearc" id="c-year"></div>';
+  chart("c-year", () => 108, (svg, w, h) => drawYear(svg, w, h, d, false), () => yearLabel(d));
+}
+export function openYear(r) {
+  const d = yearData(r);
+  if (!d) return;
+  enlarge({
+    title: esc(yearTitle(d)),
+    head: '<div class="s-bighead s-bighead-y">' + yearHead(d) + "</div>",
+    h: () => Math.max(300, Math.min(innerHeight - 260, 520)),
+    draw: (svg, w, h) => drawYear(svg, w, h, d, true),
+    label: () => yearLabel(d),
+  });
 }
 
 /* ---------- the period menu under the title: five shortcuts ---------- */

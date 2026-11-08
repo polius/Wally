@@ -121,6 +121,7 @@ export function renderSide() {
 export function railed() { return document.documentElement.classList.contains("w-rail"); }
 export function setRail(on) {
   closeMenus();
+  hideSideHint();
   document.documentElement.classList.toggle("w-rail", on);
   try { localStorage.setItem("wally.side", on ? "rail" : ""); } catch (e) { /* fine */ }
   renderSide();
