@@ -3,9 +3,8 @@
    On the right what it went on by category, then what was kept. Wally can't tell whose income paid for what,
    so people meet in the middle. When more went out than came in, the difference joins the income, so both
    sides always add up. With only one source it flows straight out.
-   Every flow is the same soft grey, as the other months are in Kept each month; only Kept has a colour, and a
-   flow takes its own while you point at it. With no income at all, every flow is the soft red of Overspent: none
-   of that money was covered, and in the current month it says "No income yet", as payday may still be to come.
+   Every flow is a soft tint of its own colour, and solid while you point at it. With no income at all, the shortfall is the
+   only source, and in the current month it says "No income yet", as payday may still be to come.
    The card folds the smallest into "And 3 more". The bigger view
    shows every one, with a list: pointing at a row lights its flow, and the other way round. */
 import { state, t, tn, esc, amt, f, f0, pct, cc, couple, pname, pcolor, icon, tile, av, ym, TODAY, monthName, monthYear } from "../../core.js";
@@ -106,7 +105,7 @@ const ribbon = (x0, y0, x1, y1, h, r0, r1) => {
     "Q" + x1 + " " + (y1 + h) + " " + (x1 - r1) + " " + (y1 + h) + "C" + m + " " + (y1 + h) + " " + m + " " + (y0 + h) + " " + (x0 + r0) + " " + (y0 + h) + "Q" + x0 + " " + (y0 + h) + " " + x0 + " " + (y0 + h - r0) + "V" + (y0 + r0) + "Q" + x0 + " " + y0 + " " + (x0 + r0) + " " + y0 + "Z";
 };
 
-const flowClass = (x, ht, d) => "cf" + (x.kept ? " kept" : x.over || d.inn <= 0 ? " over" : ht < 6 ? " thin" : "");
+const flowClass = (x, ht) => "cf" + (x.kept ? " kept" : x.over ? " over" : ht < 6 ? " thin" : "");
 
 /* Wide screens: the rows are the labels. Came in on the left, Went out on the right, each as tall as its money
    needs, and every flow lands on its own row. The rows are laid out first; the flows are then drawn to meet them. */
@@ -135,7 +134,7 @@ function docked(svg, w, h, d, k) {
   const flows = (list, right) => {
     let at = hubY;
     list.forEach((x) => {
-      const g = el("g", { class: flowClass(x, x.ht, d), style: "--c:" + x.color, "data-k": x.key }, svg), y = x.cy - x.ht / 2;
+      const g = el("g", { class: flowClass(x, x.ht), style: "--c:" + x.color, "data-k": x.key }, svg), y = x.cy - x.ht / 2;
       if (x.cat || x.person) g.style.cursor = "pointer";
       const path = el("path", { class: "fl", d: right ? ribbon(mid ? hubX + seam : 0, at, w, y, x.ht, 0, 0) : ribbon(0, y, hubX - seam, at, x.ht, 0, 0) }, g);
       if (x.ht < 8) { path.setAttribute("stroke", "transparent"); path.setAttribute("stroke-width", 8); }
@@ -201,7 +200,7 @@ function diagram(svg, w, h, d, big, r) {
 
   const item = (x, right, key) => {
     const ht = th(x.v), cy = x.y + ht / 2, clickable = x.cat || x.person || x.gone;
-    const g = el("g", { class: flowClass(x, ht, d), style: "--c:" + x.color }, svg);
+    const g = el("g", { class: flowClass(x, ht), style: "--c:" + x.color }, svg);
     const x0 = right ? (mid ? hubX + seam : leftX) : leftX, x1 = right ? rightX : hubX - seam, round = Math.min(4, ht / 2);
     const path = el("path", { class: "fl", d: right ? ribbon(x0, x.at, x1, x.y, ht, mid ? 0 : round, round) : ribbon(x0, x.y, x1, x.at, ht, round, 0) }, g);
     if (ht < 8) { path.setAttribute("stroke", "transparent"); path.setAttribute("stroke-width", 8); }

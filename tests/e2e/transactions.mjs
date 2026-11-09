@@ -70,6 +70,19 @@ async function demo() {
   const T = (m, y) => months[m - 1] + (y === ty ? "" : " " + y);
   section("Month view and arrows");
   ok((await title(p)) === T(tm, ty), "opens on this month", await title(p));
+  const dayTotals = await p.evaluate(() => {
+    const cents = (s) => Math.round(parseFloat((s || "0").replace(/[^\d.]/g, "")) * 100);
+    return [...document.querySelectorAll("#tx-list .w-dayh")].map((head) => {
+      let inn = 0, out = 0, nIn = 0, nOut = 0;
+      for (let n = head.nextElementSibling; n && n.classList.contains("w-row"); n = n.nextElementSibling) {
+        const a = n.querySelector(".amt").firstChild.textContent;
+        if (a.startsWith("+")) { inn += cents(a); nIn++; } else { out += cents(a); nOut++; }
+      }
+      const shown = head.querySelector(".amt"), parts = shown ? shown.textContent.split(" · ") : [], hin = parts.find((x) => x.startsWith("+")), hout = parts.find((x) => !x.startsWith("+"));
+      return { day: head.firstChild.textContent, ok: (nIn > 1 ? cents(hin) === inn : hin === undefined) && (nOut > 1 ? cents(hout) === out : hout === undefined) };
+    });
+  });
+  ok(dayTotals.length > 0 && dayTotals.every((x) => x.ok), "a day's header adds up its rows, only where there are two or more to add", dayTotals.filter((x) => !x.ok));
   const inMonth = await core(p, (c) => c.state.tx.filter((x) => x.d.slice(0, 7) === c.TODAY.slice(0, 7)).length);
   ok((await countN(p)) === inMonth, "count is this month's transactions", [await countN(p), inMonth]);
   ok(/In .+Out /.test(await p.$eval("#tx-count", (e) => e.textContent)), "one line says what came in and went out, no chart", await p.$eval("#tx-count", (e) => e.textContent));

@@ -87,6 +87,11 @@ button.s-title:hover{background:var(--w-fill)}
 .s-keptn b{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.1}
 .s-keptn span{font-size:var(--fs-sub);color:var(--w-ink2);font-weight:650}
 .s-keptc{margin-top:12px}
+/* The month pointed at */
+.chart .s-kb{transition:fill .12s,fill-opacity .12s}
+.chart .s-kb.hov{fill:color-mix(in srgb,var(--w-ink3) 70%,var(--w-fill2))}
+.chart .s-kb.on.hov{fill:var(--w-good)}
+.chart .s-kb.bad.hov{fill:var(--w-bad);fill-opacity:1}
 .s-yearsub{font-size:var(--fs-sub);color:var(--w-ink2)}
 .s-yearsub b{font-weight:400}
 .s-yearc{margin-top:10px}
@@ -103,14 +108,14 @@ button.s-title:hover{background:var(--w-fill)}
 .s-dash{display:inline-block;width:18px;border-top:1px dashed color-mix(in srgb,var(--w-ink3) 55%,transparent);vertical-align:middle;margin-inline-end:7px}
 .s-cfdlg .chart .halo{stroke:var(--w-raised)}
 .s-per{font-weight:400;color:var(--w-ink2);letter-spacing:-.01em}
-/* Every flow the soft grey of Kept each month's other months; Kept in its green; what income didn't cover in soft red; a flow takes its own colour while pointed at */
-.chart .fl{fill:var(--w-fill2);transition:fill .15s}
+/* Every flow a soft tint of its own colour, a thin one stronger so it can be seen; Kept in its green; what income didn't cover in soft red; solid while pointed at */
+.chart .fl{fill:color-mix(in srgb,var(--c) 38%,var(--cf-bg));transition:fill .15s}
 .chart .cf.kept .fl{fill:var(--s-kept)}
 .chart .cf.over .fl{fill:color-mix(in srgb,var(--w-bad) 22%,var(--cf-bg))}
-.chart .cf.thin .fl{fill:color-mix(in srgb,var(--w-ink3) 38%,var(--cf-bg))}
+.chart .cf.thin .fl{fill:color-mix(in srgb,var(--c) 65%,var(--cf-bg))}
 .s-cfdlg .chart .cf.kept .fl{fill:color-mix(in srgb,var(--s-kept) 85%,var(--cf-bg))}
-.chart .cf.on .fl{fill:color-mix(in srgb,var(--c) 55%,var(--cf-bg))}
-.chart .cf.kept.on .fl,.s-cfdlg .chart .cf.kept.on .fl{fill:var(--s-kept)}
+.chart .cf.on .fl{fill:var(--c)}
+.chart .cf.kept.on .fl,.s-cfdlg .chart .cf.kept.on .fl{fill:var(--w-good)}
 .chart .lbam{fill:var(--w-ink2);font:400 var(--fs-foot) var(--w-font);font-variant-numeric:tabular-nums}
 #main[data-page=dashboard] .s-cfc .chart .lb{font-weight:500;font-size:var(--fs-sub)}
 .s-cfc{--cf-bg:var(--w-panel);margin-top:8px}
