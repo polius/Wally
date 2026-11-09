@@ -28,7 +28,7 @@ export function txRow(x, opts) {
       (x.rec ? '<svg class="i tx-rec" role="img" aria-label="' + esc(t("Recurring")) + '"><use href="#i-repeat"/></svg>' : "") +
       (x.pending ? '<span class="w-ht tx-wait">' + esc(t("Waiting to send")) + "</span>" : "") + "</h6><p>" +
       (opts.date ? '<span class="tx-cd">' + esc(rowDate(x.d)) + "</span>" : "") +
-      '<span class="tx-who">' + av(owner(x), "sm") + "<span>" + esc(pname(owner(x))) + '</span></span><span class="tx-cat">' + esc(x.c) + "</span>" +
+      '<span class="tx-who">' + av(owner(x), "sm") + "<span>" + esc(pname(owner(x))) + '</span></span><span class="tx-cat' + (x.n ? "" : " same") + '">' + esc(x.c) + "</span>" +
       '<span class="tx-rtags">' + x.tags.map((g) => esc(g)).join(" ") + "</span></p></div>" +
     '<span class="amt' + (inc ? " pos" : "") + '">' + (inc ? "+" : "") + f(v) + (part ? '<small class="of">' + esc(t("of {amount}", { amount: f(x.a) })) + "</small>" : "") + "</span></button>";
 }

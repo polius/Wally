@@ -62,6 +62,7 @@ const canRepeat = () => !ad.split && !ad.group && !pending() && !fromRuleTx();
 
 /* The amount, in euros, when it is a usable one (0 otherwise) */
 function amount() { const r = C.readAmount(ad.amt); return r.ok && r.v > 0 ? r.v : 0; }
+/* What the duplicate check compares: a transaction without a name reads as its category */
 function addName() { return ad.name.trim() || (ad.split ? "" : ad.cat || ""); }
 function allTagsChosen() {
   const out = ad.tags.slice(), draft = cleanTag(ad.tagDraft);
@@ -155,8 +156,11 @@ function problem() {
   return null;
 }
 const named = () => !!ad.name.trim();
+/* The name is optional, except for what repeats: rules are shown and told apart by it */
+const nameNeeded = () => ad.mode === "rule" || fromRuleTx() || (ad.rep && canRepeat());
+const nameMissing = () => nameNeeded() && !named();
 const needName = () => (ad.type === "income" ? t("Enter where it is from") : t("Enter what it was for"));
-function ready() { return amount() > 0 && named() && (ad.split || ad.cat) && ad.who && !problem(); }
+function ready() { return amount() > 0 && !nameMissing() && (ad.split || ad.cat) && ad.who && !problem(); }
 
 /* ---------- markup: one sheet of grouped rows, like Calendar's event sheet ----------
    Adding: the type and Close (desktop) or Cancel and the type (phone) on top, the amount, then two groups:
@@ -195,7 +199,7 @@ function sheetHtml() {
     '<p class="w-err w-acenter" id="add-aerr" hidden role="alert"></p>' +
     '<div class="w-gl w-ag" id="add-g1">' +
       '<div class="w-gr w-aname" id="add-namerow"><label for="add-name" id="lbl-name" class="vh"></label>' +
-        '<input id="add-name" autocomplete="off" aria-required="true" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done">' +
+        '<input id="add-name" autocomplete="off" aria-describedby="add-nerr" role="combobox" aria-autocomplete="list" aria-controls="add-sugg" aria-expanded="false" enterkeyhint="done">' +
         '<div class="w-sugg" id="add-sugg" hidden role="listbox" aria-label="' + esc(t("Known payees")) + '"></div></div>' +
       catRow +
       '<div class="w-aparts" id="add-parts" hidden></div>' +
@@ -265,7 +269,10 @@ function render() {
   // name
   setVal("add-name", ad.name);
   const nm = $("add-name");
-  if (nm) nm.placeholder = inc ? t("Where is it from?") : t("What was it for?");
+  if (nm) {
+    nm.placeholder = inc ? t("Where is it from?") : t("What was it for?");
+    nm.setAttribute("aria-required", String(nameNeeded()));
+  }
   setText("lbl-name", inc ? t("Source") : t("Merchant"));
 
   // category, or the parts of a split receipt
@@ -310,7 +317,7 @@ function render() {
   if (amtRow) amtRow.classList.toggle("err", !!amtMsg);
   const ai = $("add-amt");
   if (ai) ai.setAttribute("aria-invalid", String(!!amtMsg));
-  const nameMsg = ad.nameTried && !named() ? needName() : "";
+  const nameMsg = ad.nameTried && nameMissing() ? needName() : "";
   setText("add-nerr", nameMsg); show("add-nerr", !!nameMsg);
   if (nm) nm.setAttribute("aria-invalid", String(!!nameMsg));
   for (const [id, fld] of [["add-derr", "date"], ["add-rerr", "rep"], ["add-cerr", "cust"]]) {
@@ -327,7 +334,7 @@ function render() {
   if (go) {
     go.setAttribute("aria-disabled", String(!ok || ad.busy));
     if (!edit) setText("add-go", ok ? (inc ? t("Add Income") : t("Add Expense"))
-      : !a ? t("Enter an amount") : !named() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field"));
+      : !a ? t("Enter an amount") : nameMissing() ? needName() : !ad.split && !ad.cat ? t("Pick a category") : (er && er.btn) || t("Fix the highlighted field"));
   }
   const canDelete = !!(ad.edit || ad.group);
   show("add-delgrp", canDelete);
@@ -568,14 +575,14 @@ function renderDup(a) {
   const box = $("add-dup");
   if (!box) return;
   const nm = addName().toLowerCase(), d = dateOf(), skip = new Set((ad.group || (ad.edit ? [ad.edit] : [])).map((x) => x.id));
-  const dup = a > 0 && nm && !ad.rule ? state.tx.find((x) => x.d === d && !skip.has(x.id) && Math.abs(x.a - a) < 0.005 && x.n.toLowerCase() === nm) : null;
+  const dup = a > 0 && nm && !ad.rule ? state.tx.find((x) => x.d === d && !skip.has(x.id) && Math.abs(x.a - a) < 0.005 && (x.n || x.c).toLowerCase() === nm) : null;
   box.hidden = !dup;
-  if (dup) box.innerHTML = "<b>" + esc(t("Already added?")) + "</b> " + esc(t("{name}, {amount} is already on {date}. Add it only if it really happened twice.", { name: dup.n, amount: f(dup.a), date: dlabL(dup.d) }));
+  if (dup) box.innerHTML = "<b>" + esc(t("Already added?")) + "</b> " + esc(t("{name}, {amount} is already on {date}. Add it only if it really happened twice.", { name: dup.n || dup.c, amount: f(dup.a), date: dlabL(dup.d) }));
 }
 
 /* ---------- phone ---------- */
 function renderPhone() {
-  setText("add-knext", named() ? t("Done") : t("Next"));
+  setText("add-knext", nameMissing() || (!ad.split && !ad.cat) ? t("Next") : t("Done"));
   setHtml("add-catv", ad.cat ? tile(ad.cat) + esc(ad.cat) : t("Pick"));
 }
 // A page opens over the sheet and comes back to the row that opened it
@@ -601,11 +608,12 @@ function keypad(open) {
   if (document.activeElement === i) i.blur();
   normalizeAmount();
 }
-// Its last key: on to what it was for, or done
+// Its last key: on to what is still needed, or done. The category before an optional name, which would bring up the keyboard
 function keypadDone() {
   if (!amount()) { ad.amtTried = true; render(); return; }
   keypad(false);
-  if (!named()) $("add-name").focus();
+  if (nameMissing()) $("add-name").focus();
+  else if (!ad.split && !ad.cat) goStep("cat", "add-catrow");
 }
 
 /* ---------- payee suggestions: a combobox and its listbox ---------- */
@@ -861,14 +869,14 @@ function switchTo(o) {
 function body(euros, category) {
   const c = C.cents(euros), sh = shared();
   return {
-    name: ad.name.trim() || category, category, tags: allTagsChosen().map((g) => g.replace(/^#/, "")), amount: (c / 100).toFixed(2),
+    name: ad.name.trim(), category, tags: allTagsChosen().map((g) => g.replace(/^#/, "")), amount: (c / 100).toFixed(2),
     type: ad.type, date: dateOf(), person_id: sh ? null : Number(ad.who), shares: sh ? sharesFor(c) : null,
     paid_by: sh && ad.type === "expense" ? Number(payer()) : null, note: ad.note.trim(),
   };
 }
 function partBodies() {
   const pc = partCents();
-  return ad.parts.map((p, i) => Object.assign(body(pc[i] / 100, p.c), { name: ad.name.trim() || p.c }));
+  return ad.parts.map((p, i) => body(pc[i] / 100, p.c));
 }
 function ruleBody() {
   const r = formRule(ad, dateOf()), b = body(amount(), ad.cat);
@@ -1082,7 +1090,7 @@ function focusMissing() {
   let target = null;
   if (ad.step !== "main" && !(er && er.f === "rep" && ad.step === "repeat")) goStep("main");
   if (!amount() || (er && er.f === "amt")) target = $("add-amt");
-  if (!target && !named()) { ad.nameTried = true; render(); target = $("add-name"); }
+  if (!target && nameMissing()) { ad.nameTried = true; render(); target = $("add-name"); }
   if (!target && !ad.split && !ad.cat) target = $("add-cat") || $("add-catrow");
   if (!target && er) {
     if (er.f === "parts") target = box.querySelector('#add-parts select[data-pc]:invalid, #add-parts [aria-invalid="true"]') || [...box.querySelectorAll("#add-parts [data-pc]")].find((s) => !s.value) || box.querySelector("#add-parts [data-pa]");
@@ -1339,7 +1347,7 @@ function onKey(ev) {
       ev.preventDefault();
       if (suggOpen() && ad.hl >= 0) pickSugg(ad.hl);
       else if (layout !== "phone") commit(false);
-      else if (named()) n.blur();
+      else if (!nameMissing()) n.blur();
       else { ad.nameTried = true; render(); }
       return;
     }

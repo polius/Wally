@@ -409,6 +409,8 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
 .tx-page .w-row p > span{flex:none}
 .tx-page .w-row p > span + span::before{content:"·";margin-inline-end:4px;color:var(--w-ink3)}
 .tx-page .w-row p .tx-rtags:empty{display:none}
+/* No name: the category is already the row's title */
+.tx-page .w-row p .tx-cat.same{display:none}
 .tx-page .w-row p .tx-rtags{color:var(--w-ink3);flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
 /* Phones: no avatar */
 @media (max-width:767px){
@@ -428,6 +430,7 @@ a.tx-kvl:hover .val{color:var(--w-accent-ink)}
   .tx-listp .tx-rm p > span{font-size:14px;color:var(--w-ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .tx-listp .tx-rm p > span + span::before{content:none}
   .tx-listp .tx-rm p .tx-rtags:empty{display:block}
+  .tx-listp .tx-rm p .tx-cat.same{display:block}
   .tx-listp .tx-rm p .tx-rtags{color:var(--w-ink3)}
   .tx-listp .tx-rm .tx-who{display:flex;align-items:center;gap:6px}
   .tx-listp .w-row .amt{font-size:15px}
