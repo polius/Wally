@@ -176,7 +176,13 @@ try {
     await page.mouse.move(box.x + box.width * fr, box.y + box.height * 0.5);
     if ((await text(page, "#tip")).includes("Click to see its transactions")) dayX = box.x + box.width * fr;
   }
-  ok(dayX !== null && (await text(page, "#tip")).includes("That day"), "a past day's tooltip shows what was spent that day");
+  ok(dayX !== null && /^[A-Z][a-z]{2} \d{1,2}$/.test(await text(page, "#tip .w-tipday .r span")), "a past day's tooltip names the day it adds up: " + await text(page, "#tip .w-tipday .r span"));
+  const dayTip = await page.evaluate(() => {
+    const num = (s) => parseFloat(s.replace(/[^\d.-]/g, ""));
+    const [day, ...list] = [...document.querySelectorAll("#tip .w-tipday .r b")].map((b) => num(b.textContent));
+    return { day, sum: list.reduce((s, v) => s + v, 0), n: list.length };
+  });
+  ok(dayTip.n >= 1 && dayTip.n <= 5 && Math.abs(dayTip.day - dayTip.sum) < 0.03, "and what it was, adding up to that day: " + JSON.stringify(dayTip));
   await page.mouse.click(dayX, box.y + box.height * 0.5);
   await page.waitForURL(/\/transactions\?view=cal&day=\d{4}-\d\d-\d\d/);
   ok(true, "clicking it opens that day in Transactions: " + new URL(page.url()).search);
