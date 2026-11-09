@@ -297,6 +297,26 @@ try {
   await inPage(alex1, async ({ core }, id) => core.PUT("/transactions/" + id, { note: "first" }), t1);
   const later = await inPage(ana1, async ({ core }, id) => core.PUT("/transactions/" + id, { note: "second" }), t1);
   ok(later.note === "second" && later.name === "Fruiteria Rosa Mercat" && later.amount === "14.00", "the same field on two devices: the later save wins, the rest stays");
+  // No name: blank from the add sheet, sealed blank, and blank on the other device
+  await alex1.keyboard.press("n");
+  await alex1.waitForSelector("#add-modal:not([hidden])");
+  await alex1.fill("#add-amt", "4.20");
+  await alex1.click("#add-cat");
+  await alex1.fill("#add-cat", "Groceries");
+  await alex1.keyboard.press("Enter");
+  await alex1.click("#add-go");
+  const noName = async ({ core }) => core.state.tx.some((t) => t.ac === 420 && t.n === "" && t.c === "Groceries");
+  ok(await until(alex1, noName), "with no name it is saved blank, not with the category as its name");
+  await syncPage(alex1);
+  const sealedBlank = () => check("open", DB, HP1).items.map((x) => JSON.parse(x)).some((x) => x.k === "tx" && x.cents === 420 && x.name === "" && x.category === "Groceries");
+  let blankSealed = false;
+  for (let i = 0; i < 40 && !(blankSealed = sealedBlank()); i++) await alex1.waitForTimeout(250);
+  ok(blankSealed && check("open", DB, HP1).counts.transaction === 0, "opened from outside the browser, its name is empty, and nothing is in the clear");
+  await ana1.evaluate(() => window.dispatchEvent(new Event("focus")));
+  ok(await until(ana1, noName), "Ana’s browser has it, blank");
+  const cleared = await inPage(alex1, async ({ core }, id) => core.PUT("/transactions/" + id, { name: "" }), t1);
+  ok(cleared.name === "" && cleared.amount === "14.00", "a name can be cleared, and the rest stays");
+  await inPage(alex1, async ({ core }) => core.DEL("/transactions/" + core.state.tx.find((t) => t.ac === 420).id));
   // Edit against delete
   await syncPage(ana1);
   await inPage(alex1, async ({ core }, id) => core.DEL("/transactions/" + id), t1);
