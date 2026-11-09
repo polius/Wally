@@ -89,7 +89,8 @@ for (const [bn, bt, dev] of [["webkit iPhone", webkit, devices["iPhone 14"]], ["
   await p.tap('[data-k="4"]'); await p.tap('[data-k="2"]');
   check(await p.$eval("#add-amt", (i) => i.value) === "42", "the keypad types");
   await p.tap("#add-knext"); await p.waitForTimeout(250);
-  check((await st(p)).focus === "add-name" && !(await st(p)).kp, "Next goes on to the name");
+  check(await p.$eval('[data-pstep="cat"]', (n) => !n.hidden) && !(await st(p)).kp, "Next goes on to the category");
+  await p.tap('[data-pstep="cat"] [data-step="main"]'); await p.waitForTimeout(250);
   await closeAdd(p);
   // A tag: a tap on it keeps it; a tap on its × removes it
   await openAdd(p);
