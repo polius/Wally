@@ -297,6 +297,31 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(150);
     ok(await page.locator("#dlg").isHidden() && await page.locator("#tip.on").count() === 0, "Escape closes it and leaves no tooltip behind");
+    ok(await page.locator("#c-cashflow svg g.cf.over .fl").count() <= 1, "with income, the flows that went out stay grey");
+
+    // No income: everything that went out is uncovered, and the current month doesn't call that overspending yet
+    const noIncome = await open();
+    await noIncome.route("**/api/ledger", async (route) => {
+      const res = await route.fetch(), j = await res.json(), type = j.columns.indexOf("type");
+      j.rows = j.rows.filter((row) => row[type] !== "i");
+      await route.fulfill({ response: res, json: j });
+    });
+    const card = async () => {
+      await noIncome.waitForSelector("#c-cashflow svg .fl");
+      return noIncome.evaluate(() => ({
+        flows: document.querySelectorAll("#c-cashflow svg g.cf .fl").length,
+        red: document.querySelectorAll("#c-cashflow svg g.cf.over .fl").length,
+        text: document.querySelector("#c-cashflow svg").textContent,
+      }));
+    };
+    await noIncome.reload({ waitUntil: "networkidle" });
+    const thisMonth = await card();
+    ok(thisMonth.flows > 0 && thisMonth.red === thisMonth.flows, "no income: every flow is red: " + thisMonth.red + " of " + thisMonth.flows);
+    ok(thisMonth.text.includes("No income yet") && !thisMonth.text.includes("Overspent"), "no income this month: it says so, not Overspent");
+    await noIncome.goto(BASE + "/?month=" + ymStr(...ymAdd(CY, CM, -1)), { waitUntil: "networkidle" });
+    const lastMonth = await card();
+    ok(lastMonth.flows > 0 && lastMonth.red === lastMonth.flows && lastMonth.text.includes("Overspent") && !lastMonth.text.includes("No income yet"), "no income in a finished month: Overspent, all red");
+    await noIncome.context().close();
   }
   await page.click('[data-act="kept-big"]');
   await page.waitForTimeout(300);

@@ -105,7 +105,7 @@ button.s-title:hover{background:var(--w-fill)}
 .s-dash{display:inline-block;width:18px;border-top:1px dashed color-mix(in srgb,var(--w-ink3) 55%,transparent);vertical-align:middle;margin-inline-end:7px}
 .s-cfdlg .chart .halo{stroke:var(--w-raised)}
 .s-per{font-weight:400;color:var(--w-ink2);letter-spacing:-.01em}
-/* Every flow the soft grey of Kept each month's other months; Kept in its green; a flow takes its own colour while pointed at */
+/* Every flow the soft grey of Kept each month's other months; Kept in its green; what income didn't cover in soft red; a flow takes its own colour while pointed at */
 .chart .fl{fill:var(--w-fill2);transition:fill .15s}
 .chart .cf.kept .fl{fill:var(--s-kept)}
 .chart .cf.over .fl{fill:color-mix(in srgb,var(--w-bad) 22%,var(--cf-bg))}
@@ -134,6 +134,7 @@ button.s-title:hover{background:var(--w-fill)}
 .s-cfh{font-size:var(--fs-foot);font-weight:400;color:var(--w-ink2);padding:0 14px 8px}
 .s-cfout{margin-top:22px}
 .s-cfg{overflow:hidden}
+.s-cfg div.s-row .s-nm > span{white-space:normal}
 .s-cflist .s-row{padding:10px 14px;gap:14px;transition:background .15s}
 .s-cflist .s-row:first-child{border-top:0}
 .s-cflist .s-row.on{background:var(--w-fill)}

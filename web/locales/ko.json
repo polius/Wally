@@ -667,6 +667,7 @@
  "Over {amount}": "{amount} 초과",
  "Overspent": "초과 지출",
  "Overspent so far": "지금까지 초과 지출",
+  "No income yet": "아직 수입 없음",
  "Page {n} of {total}": "{total}쪽 중 {n}쪽",
  "Page {n} of {total}: {title}": "{total}쪽 중 {n}쪽: {title}",
  "Pages": "페이지",
