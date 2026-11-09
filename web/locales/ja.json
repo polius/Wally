@@ -667,6 +667,7 @@
  "Over {amount}": "{amount}超",
  "Overspent": "赤字",
  "Overspent so far": "これまでの使いすぎ",
+  "No income yet": "まだ収入なし",
  "Page {n} of {total}": "{n} / {total} ページ",
  "Page {n} of {total}: {title}": "{total}ページ中{n}ページ目：{title}",
  "Pages": "ページ",

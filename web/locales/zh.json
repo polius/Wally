@@ -667,6 +667,7 @@
  "Over {amount}": "超过 {amount}",
  "Overspent": "超支",
  "Overspent so far": "目前超支",
+  "No income yet": "暂无收入",
  "Page {n} of {total}": "第 {n} 页，共 {total} 页",
  "Page {n} of {total}: {title}": "第{n}/{total}页：{title}",
  "Pages": "页面",

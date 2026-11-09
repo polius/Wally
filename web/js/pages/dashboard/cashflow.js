@@ -4,7 +4,9 @@
    so people meet in the middle. When more went out than came in, the difference joins the income, so both
    sides always add up. With only one source it flows straight out.
    Every flow is the same soft grey, as the other months are in Kept each month; only Kept has a colour, and a
-   flow takes its own while you point at it. The card folds the smallest into "And 3 more". The bigger view
+   flow takes its own while you point at it. With no income at all, every flow is the soft red of Overspent: none
+   of that money was covered, and in the current month it says "No income yet", as payday may still be to come.
+   The card folds the smallest into "And 3 more". The bigger view
    shows every one, with a list: pointing at a row lights its flow, and the other way round. */
 import { state, t, tn, esc, amt, f, f0, pct, cc, couple, pname, pcolor, icon, tile, av, ym, TODAY, monthName, monthYear } from "../../core.js";
 import { chart, enlarge, el, hover, row, hideTip, closeDialog } from "../../ui.js";
@@ -50,9 +52,10 @@ export function cashflow(r) {
   const sources = state.scope === "all" && couple() ? byPerson(list) : byCategory(list);
   const uses = toParts(eByCat(r.start, r.end));
   const inn = sum(sources), out = sum(uses), left = inn - out;
+  const overName = !r.current ? t("Overspent") : inn > 0 ? t("Overspent so far") : t("No income yet");
   if (left >= 0.5) uses.push({ name: t("Kept"), v: left, color: "var(--s-kept)", kept: true });
-  else if (left <= -0.5) sources.push({ name: r.current ? t("Overspent so far") : t("Overspent"), short: t("Overspent"), v: -left, color: "var(--w-bad)", over: true });
-  return { sources, uses, inn, out, left, total: Math.max(inn, out) };
+  else if (left <= -0.5) sources.push({ name: overName, short: inn > 0 ? t("Overspent") : overName, v: -left, color: "var(--w-bad)", over: true });
+  return { sources, uses, inn, out, left, total: Math.max(inn, out), overName };
 }
 /* The smallest as one row. What is nobody's and no category (Kept, Overspent) always stays. */
 function fold(list, max) {
@@ -76,7 +79,7 @@ export const cashflowTitle = (r) => esc(t("Cashflow")) + ' <span class="s-per">(
 function stats(d, r) {
   const over = d.left <= -0.5;
   const stat = (name, v, cls) => '<div' + (cls ? ' class="' + cls + '"' : "") + "><span>" + esc(name) + '</span><b class="amt">' + esc(f0(v)) + "</b></div>";
-  const last = over ? (r.current ? t("Overspent so far") : t("Overspent")) : d.inn > 0 ? t("Kept") + " · " + share(Math.max(d.left, 0), d.inn) : t("Kept");
+  const last = over ? d.overName : d.inn > 0 ? t("Kept") + " · " + share(Math.max(d.left, 0), d.inn) : t("Kept");
   return '<div class="w-gl s-cfstats">' + stat(t("Came in"), d.inn) + stat(t("Went out"), d.out) + stat(last, Math.abs(d.left), over ? "over" : "kept") + "</div>";
 }
 
@@ -86,6 +89,16 @@ function fit(node, s, max) {
   node.textContent = s;
   for (let c = s; node.getComputedTextLength() > max && c.length > 1;) { c = c.slice(0, -1); node.textContent = c.trimEnd() + "…"; }
 }
+/* Up to three lines, for a name with its side to itself and the room to wrap */
+function wrap(svg, s, max) {
+  const lines = [];
+  for (const word of s.split(" ")) {
+    const longer = lines.length ? lines[lines.length - 1] + " " + word : "";
+    if (longer && textWidth(svg, longer, "lb") <= max) lines[lines.length - 1] = longer;
+    else lines.push(word);
+  }
+  return lines.length > 3 ? [lines[0], lines[1], lines.slice(2).join(" ")] : lines;
+}
 /* A band from one side to the other; its outer end (r0 on the left, r1 on the right) is softly rounded */
 const ribbon = (x0, y0, x1, y1, h, r0, r1) => {
   const m = (x0 + x1) / 2;
@@ -93,7 +106,7 @@ const ribbon = (x0, y0, x1, y1, h, r0, r1) => {
     "Q" + x1 + " " + (y1 + h) + " " + (x1 - r1) + " " + (y1 + h) + "C" + m + " " + (y1 + h) + " " + m + " " + (y0 + h) + " " + (x0 + r0) + " " + (y0 + h) + "Q" + x0 + " " + (y0 + h) + " " + x0 + " " + (y0 + h - r0) + "V" + (y0 + r0) + "Q" + x0 + " " + y0 + " " + (x0 + r0) + " " + y0 + "Z";
 };
 
-const flowClass = (x, ht) => "cf" + (x.kept ? " kept" : x.over ? " over" : ht < 6 ? " thin" : "");
+const flowClass = (x, ht, d) => "cf" + (x.kept ? " kept" : x.over || d.inn <= 0 ? " over" : ht < 6 ? " thin" : "");
 
 /* Wide screens: the rows are the labels. Came in on the left, Went out on the right, each as tall as its money
    needs, and every flow lands on its own row. The rows are laid out first; the flows are then drawn to meet them. */
@@ -122,7 +135,7 @@ function docked(svg, w, h, d, k) {
   const flows = (list, right) => {
     let at = hubY;
     list.forEach((x) => {
-      const g = el("g", { class: flowClass(x, x.ht), style: "--c:" + x.color, "data-k": x.key }, svg), y = x.cy - x.ht / 2;
+      const g = el("g", { class: flowClass(x, x.ht, d), style: "--c:" + x.color, "data-k": x.key }, svg), y = x.cy - x.ht / 2;
       if (x.cat || x.person) g.style.cursor = "pointer";
       const path = el("path", { class: "fl", d: right ? ribbon(mid ? hubX + seam : 0, at, w, y, x.ht, 0, 0) : ribbon(0, y, hubX - seam, at, x.ht, 0, 0) }, g);
       if (x.ht < 8) { path.setAttribute("stroke", "transparent"); path.setAttribute("stroke-width", 8); }
@@ -172,7 +185,7 @@ function diagram(svg, w, h, d, big, r) {
   R.concat(mid ? L : []).forEach((x) => { x.at += hubY; });
 
   const summary = () => "<b>" + esc(L[0].name) + "</b>" + row(esc(t("Came in")), esc(f(d.inn)), "var(--w-good)") + row(esc(t("Went out")), esc(f(d.out))) +
-    row(esc(d.left >= 0 ? t("Kept") : t("Overspent")), esc(f(Math.abs(d.left))));
+    row(esc(d.left >= 0 ? t("Kept") : d.inn > 0 ? t("Overspent") : d.overName), esc(f(Math.abs(d.left))));
 
   const text = (g, x, cy, item, right) => {
     if (right || namesOnly) {
@@ -188,7 +201,7 @@ function diagram(svg, w, h, d, big, r) {
 
   const item = (x, right, key) => {
     const ht = th(x.v), cy = x.y + ht / 2, clickable = x.cat || x.person || x.gone;
-    const g = el("g", { class: flowClass(x, ht), style: "--c:" + x.color }, svg);
+    const g = el("g", { class: flowClass(x, ht, d), style: "--c:" + x.color }, svg);
     const x0 = right ? (mid ? hubX + seam : leftX) : leftX, x1 = right ? rightX : hubX - seam, round = Math.min(4, ht / 2);
     const path = el("path", { class: "fl", d: right ? ribbon(x0, x.at, x1, x.y, ht, mid ? 0 : round, round) : ribbon(x0, x.y, x1, x.at, ht, round, 0) }, g);
     if (ht < 8) { path.setAttribute("stroke", "transparent"); path.setAttribute("stroke-width", 8); }
@@ -226,8 +239,10 @@ function diagram(svg, w, h, d, big, r) {
   else {
     // One source: its name beside where everything starts
     const g = el("g", { class: "cf" }, svg), cy = hubY + hubH / 2;
-    text(g, 0, cy, L[0], false);
-    el("rect", { x: 0, y: cy - 20, width: leftX, height: 40, fill: "transparent" }, g);
+    const names = wrap(svg, L[0].name, leftW), step = 18, first = cy + 6 - (names.length - (namesOnly ? 1 : 0)) * step / 2;
+    names.forEach((s, i) => fit(el("text", { x: 0, y: first + i * step, class: "lb" }, g), s, leftW));
+    if (!namesOnly) el("text", { x: 0, y: first + names.length * step, class: "lbam" }, g).textContent = f0(L[0].v);
+    el("rect", { x: 0, y: cy - 36, width: leftX, height: 72, fill: "transparent" }, g);
     if (big) g.setAttribute("data-k", "l0"); else hover(g, summary);
   }
 }
