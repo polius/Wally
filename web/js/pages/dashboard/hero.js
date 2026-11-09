@@ -23,6 +23,16 @@ export function eDaily(a, len, sc) {
   }
   return arr;
 }
+/* What makes up each day of eDaily, for whoever is shown, biggest first */
+export function eDayItems(a, len) {
+  const out = Array.from({ length: len }, () => []), t0 = T(a);
+  for (const x of state.tx) {
+    if (!spent(x, true)) continue;
+    const i = Math.round((T(x.d) - t0) / 86400000), v = amt(x);
+    if (i >= 0 && i < len && v) out[i].push({ n: x.n || x.c, c: x.c, v });
+  }
+  return out.map((list) => list.sort((p, q) => q.v - p.v));
+}
 export function eTotal(a, b, sc) { let v = 0; for (const x of state.tx) if (x.d >= a && x.d <= b && spent(x, true)) v += amt(x, sc); return v; }
 export function eByCat(a, b, sc, bills = true) { const o = {}; for (const x of state.tx) { if (x.d < a || x.d > b || !spent(x, bills)) continue; const v = amt(x, sc); if (v) o[x.c] = (o[x.c] || 0) + v; } return o; }
 /* An expense with several tags counts evenly under each, so the tags add up to what was spent */

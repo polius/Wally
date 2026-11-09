@@ -6,13 +6,13 @@
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
-  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED,
+  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED, cc,
 } from "../../core.js";
 import { chart, enlarge, closeDialog, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
 import { cashflow, cashflowTitle, drawCashflow } from "./cashflow.js";
-import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eByCat, BY_CAT, BY_TAG, anyTags } from "./hero.js";
+import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eDayItems, eByCat, BY_CAT, BY_TAG, anyTags } from "./hero.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -140,6 +140,14 @@ function renderHero(r) {
   chart("c-hero", (w) => (w < 480 ? 120 : Math.min(200, Math.round((w * 150) / 560))), (svg, w, h) => pace(svg, w, h, { r, d, xlab }), label);
 }
 
+/* A day under the running totals: its date and what was spent, then the biggest few and the rest as one line, so they add up */
+const DAY_ROWS = 4;
+function dayList(day, total, items) {
+  const rest = items.slice(DAY_ROWS);
+  return '<div class="w-tipday">' + row(esc(day), f(total)) + items.slice(0, DAY_ROWS).map((x) => row(esc(x.n), f(x.v), cc(x.c))).join("") +
+    (rest.length ? row(esc(tn(rest.length, "And {n} more", "And {n} more")), f(rest.reduce((s, x) => s + x.v, 0))) : "") + "</div>";
+}
+
 /* This period as a line from the first day to today, the one before it dashed across the whole
    period with its total at the end, and no axes but the first and last days */
 function pace(svg, w, h, o) {
@@ -174,6 +182,7 @@ function pace(svg, w, h, o) {
   const d2 = el("circle", { r: 4, fill: "var(--s-card)", stroke: "var(--w-ink3)", "stroke-width": 2, opacity: 0 }, svg);
   const hit = el("rect", { x: m.l, y: 0, width: w - m.l - m.r, height: h, fill: "transparent" }, svg);
   const at = (ev) => { const b = svg.getBoundingClientRect(); return Math.max(0, Math.min(len - 1, Math.round(((ev.clientX - b.left - m.l) / (w - m.l - m.r)) * (len - 1)))); };
+  const dayItems = eDayItems(r.start, d.cur.length);
   let mouse = true;
   const move = (ev) => {
     const i = at(ev);
@@ -186,7 +195,7 @@ function pace(svg, w, h, o) {
     if (cv != null) html += row(esc(d.curName), f(cv), "var(--w-accent)");
     if (cmpv != null) html += row(esc(d.cmpName), f(cmpv), "var(--w-ink3)");
     const spent = i <= ci ? d.cur[i] - (i ? d.cur[i - 1] : 0) : 0;
-    if (i <= ci) html += row(t("That day"), f(spent)) + (mouse && spent > 0 ? '<small class="w-tiphint">' + t("Click to see its transactions") + "</small>" : "");
+    if (i <= ci) html += dayList(dlab(addD(r.start, i)), spent, dayItems[i]) + (mouse && spent > 0 ? '<small class="w-tiphint">' + t("Click to see its transactions") + "</small>" : "");
     hit.style.cursor = mouse && spent > 0 ? "pointer" : "";
     showTip(html, ev);
   };
