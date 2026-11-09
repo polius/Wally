@@ -30,8 +30,9 @@ RUN find /install/lib/python*/site-packages -name "tests" -type d -exec rm -rf {
 # ==============================
 FROM python:3.15-alpine
 
-# Install Nginx runtime
-RUN apk add --no-cache nginx
+# Install Nginx runtime. apk upgrade picks up Alpine security fixes that the
+# base image doesn't have yet, and Dependabot can't see.
+RUN apk upgrade --no-cache && apk add --no-cache nginx
 
 WORKDIR /wally
 
