@@ -61,7 +61,7 @@ export function draw(id) {
 }
 
 /* A chart on its own sheet, with room to read it; on a phone it takes the whole screen.
-   head goes above it, foot under it, click hears clicks inside; on a phone it is at least min tall and at most max. */
+   head goes above it, foot under it; on a phone it is at least min tall and at most max. */
 const PHONE = matchMedia("(max-width:767px)");
 export function enlarge(o) {
   hideTip();
@@ -72,7 +72,6 @@ export function enlarge(o) {
     onOpen(root) {
       root.classList.add("s-cfdlg");
       if (o.cls) root.classList.add(o.cls);
-      if (o.click) root.addEventListener("click", o.click);
       if (o.open) o.open(root);
       const body = root.querySelector(".w-shb"), box = $("c-big");
       const room = () => body.clientHeight - (box.previousElementSibling ? box.previousElementSibling.offsetHeight : 0) - 6;

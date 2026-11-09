@@ -62,7 +62,6 @@ function syncUrl() {
   if (location.pathname + location.search !== u) history.replaceState(history.state, "", u);
 }
 function pickCustom() { openRange(rangeOf(), render); }
-function goMonth(q) { hideTip(); setMonth(+q.slice(0, 4), +q.slice(5)); render(); }
 
 /* ---------- events ---------- */
 function onClick(ev) {
@@ -81,14 +80,13 @@ function onClick(ev) {
   if ((x = b("[data-hv]"))) { view.hv = x.dataset.hv; render(); return; }
   if ((x = b('[data-act="cats-all"],[data-act="tags-all"]'))) { toggleList(x.dataset.act.split("-")[0]); render(); return; }
   if (b('[data-act="cashflow-big"]')) { openCashflow(rangeOf()); return; }
-  if (b('[data-act="kept-big"]')) { openKept(rangeOf(), goMonth); return; }
+  if (b('[data-act="kept-big"]')) { openKept(rangeOf()); return; }
   if (b('[data-act="year-big"]')) { openYear(rangeOf()); return; }
   if ((x = b("[data-go-cat]"))) { hideTip(); goTx({ cat: x.dataset.goCat }); return; }
   if ((x = b("[data-go-tag]"))) { hideTip(); goTx({ tag: x.dataset.goTag }); return; }
   if ((x = b("[data-go-person]"))) { hideTip(); goTx({ person: x.dataset.goPerson }); return; }
   if ((x = b("[data-go-id]"))) { hideTip(); goTx({ id: x.dataset.goId }); return; }
   // A month in Kept each month opens that month here
-  if ((x = b("[data-go-month]"))) { goMonth(x.getAttribute("data-go-month")); return; }
   if ((x = b("[data-go-rule]"))) { hideTip(); navigate("/recurring?id=" + encodeURIComponent(x.dataset.goRule)); return; }
   if (b("[data-new-rule]")) { import("../add.js").then((m) => m.openAdd({ repeat: true })); return; }
   if (b("[data-add-income]")) { import("../add.js").then((m) => m.openAdd({ type: "income" })); return; }

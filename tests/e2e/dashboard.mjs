@@ -151,7 +151,7 @@ try {
   ok(!(await text(page, "#s-title")).includes("–") && (await text(page, "#s-title")).includes(await page.evaluate(async () => { const c = await import("/js/core.js"); return c.monthName(+c.TODAY.slice(5, 7)); })), "opened again, Summary is on the current month", await text(page, "#s-title"));
   await pickPeriod(page, "all");
   ok(!(await page.locator("#s-view").isHidden()), "All time shows the chart views");
-  ok(await page.locator("#c-kept [data-go-month]").count() > 12, "All time: Kept each month shows every month (" + await page.locator("#c-kept [data-go-month]").count() + ")");
+  ok(await page.locator("#c-kept .s-khit").count() > 12, "All time: Kept each month shows every month (" + await page.locator("#c-kept .s-khit").count() + ")");
 
   console.log("Chart views");
   ok((await page.locator("#s-view button").allInnerTexts()).join("|") === "Spending|Income vs spending|By category|By tag", "four chart views");
@@ -263,25 +263,38 @@ try {
   await page.waitForTimeout(500);
 
   console.log("Kept each month, This year");
-  ok(await page.locator("#c-kept [data-go-month]").count() === 12, "twelve months up to this one");
+  ok(await page.locator("#c-kept .s-khit").count() === 12, "twelve months up to this one");
   ok((await text(page, "#s-avg")).startsWith("Average"), "the average is named: " + await text(page, "#s-avg"));
-  await page.locator("#c-kept [data-go-month]").nth(9).hover();
+  await page.locator("#c-kept .s-khit").nth(9).hover();
   ok((await text(page, "#tip")).includes("Came in") && (await text(page, "#tip")).includes("Went out"), "a bar explains its month");
-  await page.locator("#c-kept [data-go-month]").nth(9).click();
+  ok(await page.locator("#c-kept .s-kb.hov").count() === 1, "and only that bar stands out");
+  const keptTitle = await text(page, "#s-title");
+  await page.locator("#c-kept .s-khit").nth(9).click();
   await page.waitForTimeout(300);
-  ok((await text(page, "#s-title")).startsWith(MONTH(ymAdd(CY, CM, -2)[1])), "a bar opens its month: " + await text(page, "#s-title"));
+  ok((await text(page, "#s-title")) === keptTitle, "and a click doesn't leave the month shown");
   await page.locator("body").press("1");
   ok(await page.locator("#c-year svg path").count() >= 2, "This year: a line since January");
+  await page.locator("#c-year svg rect").first().hover();
+  ok(await page.locator("#c-year .s-cross").getAttribute("opacity") === "1", "This year: a vertical line through the month pointed at");
+  await page.mouse.move(5, 5);
+  ok(await page.locator("#c-year .s-cross").getAttribute("opacity") === "0", "and it goes with the pointer");
   if (CM < 12) ok((await text(page, "#s-year")).includes("on track for") && (await text(page, "#s-year")).includes("Dec 31"), "and where it heads by December 31");
 
   console.log("Cashflow and the bigger views");
-  await page.locator("#c-kept [data-go-month]").nth(9).hover();
+  await page.locator("#c-kept .s-khit").nth(9).hover();
   ok(/Kept · \d+%|Overspent/.test(await text(page, "#tip")), "a bar says what share of the month was kept: " + (await text(page, "#tip")).replace(/\s+/g, " "));
   await page.mouse.move(700, 5);
   ok(await page.locator("#c-kept line[stroke-dasharray]").count() === 1, "Kept each month: a dashed line at the average");
   if (await page.locator('[data-w="cashflow"]').isVisible()) {
     ok(/^Cashflow \(.+\)$/.test(await text(page, '[data-w="cashflow"] h4')), "Cashflow names its period: " + await text(page, '[data-w="cashflow"] h4'));
     ok(await page.locator("#c-cashflow svg .fl").count() >= 1 && await page.locator("#s-cashflow .s-keptn").count() === 0, "Cashflow: flows and no headline repeating Kept each month");
+    const fills = await page.locator("#c-cashflow svg g.cf .fl").evaluateAll((l) => l.map((n) => getComputedStyle(n).fill));
+    ok(new Set(fills).size > 1, "Cashflow: each flow in its own colour");
+    const flow = page.locator("#c-cashflow svg g.cf:not(.kept):not(.over) .fl").first(), fill = () => flow.evaluate((n) => getComputedStyle(n).fill), atRest = await fill();
+    await flow.hover();
+    await page.waitForTimeout(250);
+    ok(await fill() !== atRest, "and more solid while pointed at");
+    await page.mouse.move(5, 5);
     const right = await page.evaluate(() => [...document.querySelectorAll(".s-right [data-w]")].filter((n) => !n.hidden).map((n) => n.dataset.w).join());
     ok(right.includes("people,cashflow,kept,year"), "Cashflow sits between The household and Kept each month: " + right);
     await page.click('[data-act="cashflow-big"]');
@@ -298,7 +311,7 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(150);
     ok(await page.locator("#dlg").isHidden() && await page.locator("#tip.on").count() === 0, "Escape closes it and leaves no tooltip behind");
-    ok(await page.locator("#c-cashflow svg g.cf.over .fl").count() <= 1, "with income, the flows that went out stay grey");
+    ok(await page.locator("#c-cashflow svg g.cf.over .fl").count() <= 1, "with income, at most one flow is red: what it didn't cover");
 
     // No income: everything that went out is uncovered, and the current month doesn't call that overspending yet
     const noIncome = await open();
@@ -317,11 +330,11 @@ try {
     };
     await noIncome.reload({ waitUntil: "networkidle" });
     const thisMonth = await card();
-    ok(thisMonth.flows > 0 && thisMonth.red === thisMonth.flows, "no income: every flow is red: " + thisMonth.red + " of " + thisMonth.flows);
+    ok(thisMonth.flows > 0 && thisMonth.red === 0, "no income: the flows keep their category colours: " + thisMonth.red + " of " + thisMonth.flows + " red");
     ok(thisMonth.text.includes("No income yet") && !thisMonth.text.includes("Overspent"), "no income this month: it says so, not Overspent");
     await noIncome.goto(BASE + "/?month=" + ymStr(...ymAdd(CY, CM, -1)), { waitUntil: "networkidle" });
     const lastMonth = await card();
-    ok(lastMonth.flows > 0 && lastMonth.red === lastMonth.flows && lastMonth.text.includes("Overspent") && !lastMonth.text.includes("No income yet"), "no income in a finished month: Overspent, all red");
+    ok(lastMonth.flows > 0 && lastMonth.red === 0 && lastMonth.text.includes("Overspent") && !lastMonth.text.includes("No income yet"), "no income in a finished month: it says Overspent");
     await noIncome.context().close();
   }
   await page.click('[data-act="kept-big"]');

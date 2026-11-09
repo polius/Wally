@@ -93,6 +93,10 @@
 .tx-page .w-row .amt{font-weight:400}
 .tx-page .w-dayh{font-size:14px;color:var(--w-ink2);padding:14px 0 8px;margin-top:0}
 .tx-page .w-dayh span{color:var(--w-ink2)}
+/* One line whatever the day holds: the amounts stay whole and a long date gives way */
+.tx-page .w-dayh{gap:10px}
+.tx-page .w-dayh .tx-dl{min-width:0;font-weight:inherit;font-variant-numeric:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-page .w-dayh .amt{flex:none;color:var(--w-ink3)}
 /* The day's rule sits a little above its edge, so a selected or hovered row under it doesn't touch it */
 .tx-page .w-dayh{border-bottom:0;padding-bottom:10px}
 .tx-page .w-dayh::after{content:"";position:absolute;inset-inline:0;bottom:2px;height:1px;background:var(--w-line2)}

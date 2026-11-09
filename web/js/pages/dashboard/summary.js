@@ -8,7 +8,7 @@ import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
   totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED, cc,
 } from "../../core.js";
-import { chart, enlarge, closeDialog, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
+import { chart, enlarge, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
 import { cashflow, cashflowTitle, drawCashflow } from "./cashflow.js";
@@ -380,6 +380,15 @@ function renderPeople(r) {
   $("s-people").innerHTML = rows.join("") + (foot ? '<p class="s-foot">' + esc(foot) + "</p>" : "");
 }
 
+/* Calls on(true) while a chart's month is pointed at, focused or tapped, as long as its tooltip shows */
+function whileOver(node, on) {
+  node.addEventListener("mouseenter", () => on(true));
+  node.addEventListener("mouseleave", () => on(false));
+  node.addEventListener("focus", () => on(true));
+  node.addEventListener("blur", () => on(false));
+  node.addEventListener("touchstart", () => { on(true); setTimeout(() => on(false), 2500); }, { passive: true });
+}
+
 /* ---------- Kept each month: the number and twelve bars ---------- */
 function keptData(r) {
   const tt = totals(r.start, r.end);
@@ -404,11 +413,12 @@ function drawKept(svg, w, h, d, big) {
   const { months, long } = d, mg = { l: 0, r: 0, t: big ? 24 : 4, b: big ? 28 : 20 };
   const P = Math.max(...months.map((x) => Math.max(x.net, 0)), 1), N = Math.max(...months.map((x) => Math.max(-x.net, 0)), 0);
   const k = (h - mg.t - mg.b - (big && N ? 18 : 0)) / (P + N), z = mg.t + P * k, bw = (w - mg.l - mg.r) / Math.max(months.length, 1), gap = Math.min(big ? 18 : 8, bw * 0.28), bar = Math.max(3, bw - gap);
+  const bars = [];
   months.forEach((x, i) => {
     const v = x.net, hh = Math.max(1, Math.abs(v) * k), x0 = mg.l + bw * i + gap / 2, rr = Math.min(big ? 6 : 4, hh / 2, bar / 2);
     const path = v >= 0 ? "M" + x0 + " " + z + "V" + (z - hh + rr) + "q0 " + -rr + " " + rr + " " + -rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + rr + "V" + z + "Z"
       : "M" + x0 + " " + z + "V" + (z + hh - rr) + "q0 " + rr + " " + rr + " " + rr + "h" + (bar - 2 * rr) + "q" + rr + " 0 " + rr + " " + -rr + "V" + z + "Z";
-    el("path", { d: path, fill: v < 0 ? "var(--w-bad)" : x.on ? "var(--s-kept)" : "var(--w-fill2)", "fill-opacity": v < 0 && !x.on ? 0.5 : 1 }, svg);
+    bars[i] = el("path", { d: path, class: "s-kb" + (v < 0 ? " bad" : x.on ? " on" : ""), fill: v < 0 ? "var(--w-bad)" : x.on ? "var(--s-kept)" : "var(--w-fill2)", "fill-opacity": v < 0 && !x.on ? 0.5 : 1 }, svg);
   });
   // The average of the whole months, across every column, dashed like the comparison line in Spending
   if (d.avg !== null) el("line", { x1: mg.l, x2: w - mg.r, y1: z - d.avg * k, y2: z - d.avg * k, stroke: "var(--w-ink3)", "stroke-opacity": 0.55, "stroke-width": 1, "stroke-dasharray": "3 4" }, svg);
@@ -417,8 +427,8 @@ function drawKept(svg, w, h, d, big) {
     if (big && bw >= 44) txt(svg, x0 + bar / 2, v >= 0 ? z - hh - 7 : z + hh + 15, f0(v), (x.on ? "lb" : "lbs") + " halo", "middle");
     if (!long) txt(svg, x0 + bar / 2, h - 4, big && bw >= 30 ? F.mon[x.m - 1] : F.mon[x.m - 1].charAt(0).toLocaleUpperCase(), x.on ? "lb" : "ax", "middle");
     else if (i === 0 || x.m === 1) txt(svg, x0 + bar / 2, h - 4, monLabel(x.y, x.m, true, true), "ax", i === 0 ? "start" : "middle");
-    const hit = el("rect", { x: mg.l + bw * i, y: 0, width: bw, height: h, fill: "transparent", tabindex: "0", role: "button", "aria-label": monthYear(x.y, x.m), "data-go-month": x.a.slice(0, 7) }, svg);
-    hit.style.cursor = "pointer";
+    const hit = el("rect", { x: mg.l + bw * i, y: 0, width: bw, height: h, fill: "transparent", tabindex: "0", role: "img", "aria-label": monthYear(x.y, x.m), class: "s-khit" }, svg);
+    whileOver(hit, (on) => bars[i].classList.toggle("hov", on));
     hover(hit, "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Came in"), f(x.inc), "var(--w-good)") + row(t("Went out"), f(x.exp)) +
       row((v >= 0 ? t("Kept") : t("Overspent")) + (v >= 0 && x.inc > 0 ? " · " + pct(v / x.inc) : ""), f(Math.abs(v))));
   });
@@ -429,8 +439,7 @@ function renderKept(r) {
   $("s-kept").innerHTML = keptHead(d) + '<div class="cv s-keptc" id="c-kept"></div>';
   chart("c-kept", (w) => (w < 360 ? 104 : 112), (svg, w, h) => drawKept(svg, w, h, d, false), () => keptLabel(d));
 }
-/* A month in the bigger view opens that month, as it does in the card */
-export function openKept(r, goMonth) {
+export function openKept(r) {
   const d = keptData(r);
   enlarge({
     title: esc(t("Kept each month")),
@@ -438,8 +447,6 @@ export function openKept(r, goMonth) {
     h: () => Math.max(300, Math.min(innerHeight - 240, 520)),
     draw: (svg, w, h) => drawKept(svg, w, h, d, true),
     label: () => keptLabel(d),
-    // A finger reads the month here; leaving the view is for a mouse
-    click: (ev) => { const x = ev.target.closest("[data-go-month]"); if (x && ev.pointerType !== "touch") { closeDialog(); goMonth(x.getAttribute("data-go-month")); } },
   });
 }
 
@@ -506,8 +513,15 @@ function drawYear(svg, w, h, d, big) {
   const marks = new Set(big ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : [0, 3, 6, 9, 11]);
   if (cur) marks.add(ci);
   for (let i = 0; i < slots; i++) if (marks.has(i) && (!big || col >= 30 || i === ci || (i % 3 === 0 && Math.abs(i - ci) > 1))) txt(svg, X(i), h - 4, F.mon[i], cur && i === ci ? "lb s-axb" : "ax", "middle");
+  // A line through the month pointed at
+  const cross = el("line", { class: "s-cross", y1: mg.t, y2: h - mg.b, stroke: "var(--w-ink3)", "stroke-width": 1, opacity: 0 }, svg);
+  let shown = -1;
   months.forEach((x, i) => {
     const hit = el("rect", { x: X(i) - col / 2, y: 0, width: col, height: h, fill: "transparent" }, svg);
+    whileOver(hit, (on) => {
+      if (on) { shown = i; cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", 1); }
+      else if (shown === i) cross.setAttribute("opacity", 0);
+    });
     hover(hit, () => "<b>" + esc(monthYear(y, x.m)) + (cur && i === ci ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Kept"), f(x.net), "var(--w-good)") + row(t("Since January"), f(x.acc)));
   });
 }

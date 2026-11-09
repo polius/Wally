@@ -37,12 +37,14 @@ export function txRow(x, opts) {
    flat: only rows (sorted by amount, where days would break the order) */
 export function buildItems(list, byMonth, flat) {
   if (flat) return list.map((x) => ({ k: "r", x }));
-  // Only months carry a total: the line under the title already has the range's, and Calendar each day's
-  const items = [], spentMonth = {};
-  if (byMonth) for (const x of list) {
-    if (x.type !== "expense") continue;
-    const k = x.d.slice(0, 7);
-    spentMonth[k] = (spentMonth[k] || 0) + amt(x);
+  // Totals of what is listed, for each person's share as the rows show it
+  const items = [], spentMonth = {}, days = {};
+  for (const x of list) {
+    const v = amt(x), day = days[x.d] || (days[x.d] = { inn: 0, out: 0, nIn: 0, nOut: 0 });
+    if (x.type !== "expense") { day.inn += v; if (v) day.nIn++; continue; }
+    day.out += v;
+    if (v) day.nOut++;
+    if (byMonth) { const k = x.d.slice(0, 7); spentMonth[k] = (spentMonth[k] || 0) + v; }
   }
   let curD = null, curM = null;
   for (const x of list) {
@@ -50,7 +52,7 @@ export function buildItems(list, byMonth, flat) {
       const k = x.d.slice(0, 7);
       if (byMonth && k !== curM) { curM = k; items.push({ k: "m", key: k, spent: spentMonth[k] || 0 }); }
       curD = x.d;
-      items.push({ k: "d", d: x.d });
+      items.push({ k: "d", d: x.d, ...days[x.d] });
     }
     items.push({ k: "r", x });
   }
@@ -58,7 +60,9 @@ export function buildItems(list, byMonth, flat) {
 }
 function headHtml(it) {
   if (it.k === "m") return '<div class="w-monh" role="heading" aria-level="3">' + esc(monthYear(+it.key.slice(0, 4), +it.key.slice(5, 7))) + "<span>" + (it.spent ? esc(t("{amount} spent", { amount: f(it.spent) })) : "") + "</span></div>";
-  return '<div class="w-dayh" role="heading" aria-level="4">' + esc(dlabL(it.d)) + "</div>";
+  // A total only where there is something to add up: one amount would just repeat the row under it
+  const total = [it.nIn > 1 ? "+" + f(it.inn) : "", it.nOut > 1 ? f(it.out) : ""].filter(Boolean).join(" · ");
+  return '<div class="w-dayh" role="heading" aria-level="4"><span class="tx-dl">' + esc(dlabL(it.d)) + "</span>" + (total ? '<span class="amt"><bdi>' + esc(total) + "</bdi></span>" : "") + "</div>";
 }
 
 /* Heights in the windowed list (fixed there by transactions.css): one-line rows on wide screens, two on phones */
