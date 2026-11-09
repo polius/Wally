@@ -15,6 +15,32 @@
   <link rel="icon" type="image/svg+xml" href="/icons/wally.svg?v=4">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=4">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <script>
+    /* Ask for what the first screen needs at once, side by side, before the styles below hold up the
+       page: the scripts of the page being opened, who is here, and the language. The files of each page are the ones it
+       imports (tests/e2e/flows.mjs checks that). */
+    (function () {
+      var PAGES = {
+        dashboard: ["sched", "pages/dashboard", "pages/dashboard/range", "pages/dashboard/summary", "pages/dashboard/cashflow", "pages/dashboard/hero"],
+        transactions: ["sched", "calendar", "pages/transactions", "pages/transactions/query", "pages/transactions/list", "pages/transactions/panel", "pages/transactions/actions", "pages/transactions/sheets"],
+        recurring: ["sched", "pages/recurring"],
+        settings: ["pages/settings", "pages/settings/common"],
+        review: ["sched", "pages/review"]
+      };
+      var page = PAGES[location.pathname.split("/")[1]] || PAGES.dashboard;
+      ["core", "ui", "shell"].concat(page).forEach(function (f) {
+        var l = document.createElement("link");
+        l.rel = "modulepreload"; l.href = "/js/" + f + ".js";
+        document.head.appendChild(l);
+      });
+      window.wallyStatus = fetch("/api/auth/status", { headers: { Accept: "application/json" }, credentials: "same-origin" }).catch(function () { return null; });
+      // The language from last time; if it has changed since, core.js asks for the right one
+      try {
+        var lang = JSON.parse(localStorage.getItem("wally.frame")).lang;
+        if (lang && lang !== "en") window.wallyLocale = { lang: lang, res: fetch("/locales/" + lang + ".json", { cache: "no-cache" }).catch(function () { return null; }) };
+      } catch (e) { /* asked for when it's known */ }
+    })();
+  </script>
   <link rel="stylesheet" href="/css/wally.css">
   <link rel="stylesheet" href="/css/app.css">
   <link rel="stylesheet" href="/css/dashboard.css">
@@ -172,6 +198,31 @@
   <main class="w-main" id="main" tabindex="-1"></main>
   <nav class="w-tabbar" id="tabbar" aria-label="Pages"></nav>
 </div>
+<script>
+  /* The frame as it was last time, on the very first paint: a refresh keeps the sidebar where it is
+     and only the page itself arrives. shell.js saves it. Names and labels only, never a figure. */
+  (function () {
+    try {
+      var f = JSON.parse(localStorage.getItem("wally.frame"));
+      if (!f) return;
+      var by = function (id) { return document.getElementById(id); }, root = document.documentElement;
+      root.lang = f.lang; root.dir = f.dir;
+      by("side").innerHTML = f.side;
+      by("tabbar").innerHTML = f.tabbar;
+      // Lit: the place being opened, which may not be the one it was left on
+      var at = "/" + (location.pathname.split("/")[1] || "");
+      if (at === "/review") at = "/";
+      document.querySelectorAll("#side .w-nav a, #tabbar a").forEach(function (a) {
+        var on = a.getAttribute("href") === at;
+        a.classList.toggle("on", on);
+        if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      });
+      if (f.banner) { var b = by("banner"); b.innerHTML = f.banner; b.hidden = false; root.style.setProperty("--banner-h", b.getBoundingClientRect().height + "px"); }
+      by("boot").hidden = true;
+      by("app").hidden = false;
+    } catch (e) { /* drawn when the app is ready instead */ }
+  })();
+</script>
 
 <div class="w-tip" id="tip" role="status" aria-live="polite"></div>
 <div class="w-dlgwrap" id="dlg" hidden></div>

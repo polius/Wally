@@ -40,7 +40,9 @@ export async function loadLanguage(lang) {
   DICT = {};
   if (LANG !== "en") {
     try {
-      const r = await fetch(`/locales/${LANG}.json`, { cache: "no-cache" });
+      const early = window.wallyLocale;   // already asked for by index.html
+      window.wallyLocale = null;
+      const r = (early && early.lang === LANG && await early.res) || await fetch(`/locales/${LANG}.json`, { cache: "no-cache" });
       if (r.ok) DICT = await r.json();
     } catch (e) { /* English it is */ }
   }
@@ -79,7 +81,8 @@ export async function api(method, path, body, opts) {
   else if (body !== undefined) { headers["Content-Type"] = "application/json"; payload = JSON.stringify(body); }
   let r;
   try {
-    r = await fetch("/api" + path, { method, headers, body: payload, credentials: "same-origin" });
+    // opts.early: this request was already sent, by index.html. If that one failed, it is sent again.
+    r = (opts && opts.early && await opts.early) || await fetch("/api" + path, { method, headers, body: payload, credentials: "same-origin" });
   } catch (e) {
     throw new ApiError(0, t("Wally can’t be reached. Check your connection."));
   }
@@ -325,10 +328,12 @@ export function fromRule(r) {
 }
 
 export async function loadAll() {
-  const [status, people, ledger, rules, config, currency, categories, tags, icons, tagIcons] = await Promise.all([
-    GET("/auth/status"), GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"), GET("/tags/icons"),
+  const status = state.status;
+  const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
+  const [people, ledger, rules, config, currency, categories, tags, icons, tagIcons, prefs] = await Promise.all([
+    GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"), GET("/tags/icons"),
+    meKey ? GET("/me/prefs").catch(() => ({})) : {},
   ]);
-  state.status = status;
   state.people = people;
   state.tx = ledger.rows.map(fromRow);
   setStart();
@@ -341,9 +346,8 @@ export async function loadAll() {
   paintColors();
   state.tags = tags;
   state.tagIcons = tagIcons || {};
-  const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
   state.me = person(meKey) ? String(meKey) : null;
-  try { state.prefs = state.me ? await GET("/me/prefs") : {}; } catch (e) { state.prefs = {}; }
+  state.prefs = state.me ? prefs : {};
   loadExtras();
   return state;
 }
