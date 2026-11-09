@@ -96,11 +96,10 @@ export function renderSummary(r) {
 }
 const show = (id, on) => { const n = document.querySelector('.s-sec[data-w="' + id + '"]'); if (n) n.hidden = !on; };
 
-/* ---------- Spending: the number, where it usually ends up, against last month ---------- */
+/* ---------- Spending: the number, against last month ---------- */
 function renderHero(r) {
   const tt = totals(r.start, r.end), p = prevOf(r), d = paceData(r), ci = d.cur.length - 1, tagged = anyTags();
   if (view.hv === "tags" && !tagged) view.hv = "pace";
-  if (d.proj && d.proj.length < 2) d.proj = null;
   $("s-eye").textContent = t("Spending");
   countTo($("s-big"), d.cur[ci] || 0);
   const none = !tt.n;
@@ -121,11 +120,7 @@ function renderHero(r) {
       '<div class="d-emptyb"><a class="w-btn ghost" href="/settings/import" data-link>' + t("Import") + '</a><button type="button" class="w-btn primary" data-open-add>' + t("Add expense") + "</button></div>");
     return;
   }
-  // Two short lines: where it usually ends up, and how that compares
-  let lines = "";
-  if (d.proj) lines += '<span class="s-proj">' + t("Usually {amount} by {date}", { amount: "<b>≈ " + esc(f0(d.proj[d.proj.length - 1])) + "</b>", date: esc(dlab(addD(r.start, d.len - 1))) }) + "</span>";
-  if (d.cmp) lines += changeLine(d.cur[ci] - d.cmp[ci], false, againstWhat(r, p));
-  $("s-lines").innerHTML = lines;
+  $("s-lines").innerHTML = d.cmp ? changeLine(d.cur[ci] - d.cmp[ci], false, againstWhat(r, p)) : "";
 
   if (!r.daily && view.hv !== "pace") {
     const months = monthsOf(r);
@@ -141,8 +136,7 @@ function renderHero(r) {
     return;
   }
   const xlab = paceLabel(r, d.len);
-  const label = () => t("Spending: {amount} by {date}", { amount: f(d.cur[ci]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[d.cmp.length - 1]) }) : "") +
-    (d.proj ? ". " + t("Usually: {amount}", { amount: f(d.proj[d.proj.length - 1]) }) : "");
+  const label = () => t("Spending: {amount} by {date}", { amount: f(d.cur[ci]), date: dlab(r.end) }) + (d.cmp ? ". " + t("{name}: {amount}", { name: d.cmpName, amount: f(d.cmp[d.cmp.length - 1]) }) : "");
   chart("c-hero", (w) => (w < 480 ? 120 : Math.min(200, Math.round((w * 150) / 560))), (svg, w, h) => pace(svg, w, h, { r, d, xlab }), label);
 }
 

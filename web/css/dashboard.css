@@ -35,8 +35,6 @@ button.s-title:hover{background:var(--w-fill)}
 .s-eye{font-size:var(--fs-sub);color:var(--w-ink2)}
 .s-big{font-size:var(--fs-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;margin:4px 0 6px}
 .s-lines{display:grid;gap:1px;font-size:16px}
-.s-proj{color:var(--w-ink)}
-.s-proj b{color:var(--w-accent-ink);font-weight:400}
 .s-ch{color:var(--w-ink)}
 .s-ch b{font-weight:400}
 .s-chart{margin-top:14px;margin-bottom:5px}
@@ -302,7 +300,7 @@ button.s-title:hover{background:var(--w-fill)}
 }
 
 /* Right to left: amounts stay left to right ("2,831.28 €", never "€ 2,831.28") */
-[dir=rtl] #main[data-page=dashboard] :is(.s-big,.s-am,.s-keptn b,.s-ch b,.s-proj b,.s-yearsub b){direction:ltr;unicode-bidi:isolate}
+[dir=rtl] #main[data-page=dashboard] :is(.s-big,.s-am,.s-keptn b,.s-ch b,.s-yearsub b){direction:ltr;unicode-bidi:isolate}
 /* …but the big number still lines up under its label, on the right */
 [dir=rtl] #main[data-page=dashboard] .s-big{text-align:right}
 
