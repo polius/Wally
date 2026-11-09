@@ -37,7 +37,7 @@ LANG = "en-us"
 FPS = int(os.environ.get("FPS", "60"))
 LEAD_IN = 2.9              # the cold open: the wallet puts itself together, the strap snaps
 GAP_SAME = 0.4             # pause between two lines in the same scene
-GAP_SCENE = 1.0            # pause when the scene changes: room for the receipt to go by
+GAP_SCENE = 1.0            # pause when the scene changes: room for the scenes to cross
 TAIL = 3.4                 # hold after the last line (the end card)
 # extra hold before a line (on top of the normal gap), to let a visual land
 GAP_EXTRA = {

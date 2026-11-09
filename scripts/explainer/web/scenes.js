@@ -116,7 +116,7 @@
       scroll(y) { page.style.transform = `scale(${k}) translate(0, ${(-y).toFixed(2)}px)`; },
       shot(url) { const img = image(page, url, "shot"); img.style.width = "1440px"; return img; },
       /* the app's sidebar is sticky: it stays put while the page scrolls under it */
-      pin(url, w = 212, h = 900) {
+      pin(url, w = 64, h = 900) {
         const s = el("div", "abs", view);
         Object.assign(s.style, { left: 0, top: 0, width: w * k + "px", height: h * k + "px", zIndex: 3,
                                  backgroundImage: `url(${url})`, backgroundSize: `${1440 * k}px auto`, backgroundPosition: "0 0" });
@@ -469,8 +469,6 @@
     const tStart = shopAt - 0.06 * typed - 0.1;
     typeCues(api, tStart, typed, 0.06, "type", 0.5);
     api.cue("tick", tagAt, 0.6); api.cue("tick", personAt, 0.6); api.cue("tick", amountAt, 0.6);
-    const qBox = api.data.shots.search.box.q;
-    const rq = ring(br.page, qBox, 6, 22);
 
     return (t) => {
       kin(h.w, t, s - 0.3, 0.05, 0.55);
@@ -487,7 +485,6 @@
         reveal(o.n, ramp(t, s + 0.1 + i * 0.08, s + 0.6 + i * 0.08), { dy: 16 });
         o.n.classList.toggle("on", i === active);
       });
-      rq.set(t, tStart - 0.1, api.dur);
       camera(cam, t, [[0, 1, 0, 0], [shopAt, 1.03, -20, -10, 1.6]], 0.5);
     };
   };

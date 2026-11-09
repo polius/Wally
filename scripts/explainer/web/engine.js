@@ -8,10 +8,9 @@
  *
  * Scenes register into window.SCENES (see scenes.js). Each gets its own layer
  * with an inner camera. The engine owns what is Wally's own:
- *   - the cut: a till receipt goes by in front of the scene, printed with the
- *     next chapter as a line item, while the scenes cross behind it;
+ *   - the cut: the scenes cross softly, out with a little sink, in with a little rise;
  *   - the ledger: a category bar along the bottom that gains a segment, in the
- *     app's category colours, every time a receipt goes by;
+ *     app's category colours, with every scene;
  *   - the background: the app's pale canvas, a ledger's dot grid that ink runs
  *     through at every cut, and two soft glows (wallet tan, Wally indigo);
  *   - rolling digits (an odometer) for every amount the film writes itself;
@@ -217,77 +216,6 @@
     }
   }
 
-  /* ---- the receipt ---------------------------------------------------------------
-     At every cut a strip of till paper rises through the frame, printed with the
-     next chapter as a line item ("October ........ 2,658.00"). It slows as it
-     passes the middle, so the line can be read, then tears off upwards. The
-     scenes cross behind it. */
-  const RW = 780, RH = 520, TOOTH = 26, DEPTH = 13;
-  const CUT_IN = 0.55, CUT_OUT = 0.55;
-  function zigzag(w, h) {
-    const pts = [];
-    const n = Math.round(w / TOOTH);
-    for (let i = 0; i <= n; i++) pts.push(`${(i * w / n).toFixed(1)}px ${i % 2 ? DEPTH : 0}px`);
-    for (let i = n; i >= 0; i--) pts.push(`${(i * w / n).toFixed(1)}px ${h - (i % 2 ? DEPTH : 0)}px`);
-    return `polygon(${pts.join(",")})`;
-  }
-  const RECEIPTS = [];
-  function buildReceipt(cut, idx) {
-    const root = document.getElementById("receipts");
-    const wrap = el("div", "abs", root);
-    Object.assign(wrap.style, { left: (960 - RW / 2) + "px", top: "0px", width: RW + "px", height: RH + "px" });
-    const p = el("div", "paper", wrap);
-    Object.assign(p.style, { left: 0, top: 0, width: RW + "px", height: RH + "px", clipPath: zigzag(RW, RH) });
-    // the thermal paper's faint tone, darker towards the tear
-    el("div", "abs", p).style.cssText = "inset:0;background:linear-gradient(180deg,rgba(20,22,40,.035),transparent 18%,transparent 82%,rgba(20,22,40,.035))";
-    const pad = 56;
-    const head = box(p, pad, 64, RW - 2 * pad, 40);
-    head.style.cssText += ";display:flex;justify-content:space-between;font:500 22px/1 var(--mono);color:#8a8f9b;letter-spacing:.14em";
-    head.innerHTML = `<span>WALLY</span><span>No. ${String(idx + 1).padStart(2, "0")}</span>`;
-    const rule = (y) => { const r = box(p, pad, y, RW - 2 * pad, 2); r.style.cssText += ";background-image:linear-gradient(90deg,#c9ccd4 50%,transparent 50%);background-size:12px 2px"; };
-    rule(122);
-    const title = box(p, pad, 160, RW - 2 * pad, 40);
-    title.style.cssText += ";font:600 26px/1 var(--mono);color:#5b606c;letter-spacing:.22em";
-    title.textContent = cut.title.toUpperCase();
-    const item = box(p, pad, 230, RW - 2 * pad, 60);
-    item.style.cssText += ";display:flex;align-items:baseline;gap:14px;font:600 46px/1 var(--mono);color:#14161b;letter-spacing:-.01em";
-    item.innerHTML = `<span>${cut.item}</span><span style="flex:1;border-bottom:3px dotted #b9bdc6;transform:translateY(-10px)"></span><span style="color:${cut.color || "#14161b"}">${cut.value}</span>`;
-    rule(330);
-    const foot = box(p, pad, 372, RW - 2 * pad, 30);
-    foot.style.cssText += ";display:flex;justify-content:space-between;font:500 22px/1 var(--mono);color:#8a8f9b;letter-spacing:.12em";
-    foot.innerHTML = `<span>${cut.note || ""}</span><span>${String(idx + 1).padStart(2, "0")}/${String(N_RECEIPTS()).padStart(2, "0")}</span>`;
-    // a barcode, for the till
-    const bars = box(p, pad, 422, RW - 2 * pad, 40);
-    let x = 0, html = "";
-    for (let k = 0; x < RW - 2 * pad - 6; k++) {
-      const w = 2 + Math.floor(rnd(k * 7.7 + idx) * 4);
-      if (rnd(k * 3.1 + idx * 5) > 0.35) html += `<i style="position:absolute;left:${x}px;top:0;width:${w}px;height:40px;background:#2b2e36"></i>`;
-      x += w + 2;
-    }
-    bars.innerHTML = html;
-    RECEIPTS.push({ wrap, start: cut.start, idx });
-  }
-  /* rise from below, slow through the middle (readable), off the top */
-  function receiptY(t, s0) {
-    const a = s0 - CUT_IN, b = s0 + CUT_OUT;
-    if (t < a || t > b) return null;
-    const u = (t - a) / (b - a);
-    // a position curve with a gentle plateau at the middle
-    const k = u < 0.5 ? 0.5 * outCubic(u / 0.5) : 0.5 + 0.5 * inCubic((u - 0.5) / 0.5);
-    const yMid = 540 - RH / 2;
-    const y = u < 0.5 ? lerp(1100, yMid, k / 0.5) : lerp(yMid, -RH - 60, (k - 0.5) / 0.5);
-    return { y, u };
-  }
-  function paintReceipts(t) {
-    for (const r of RECEIPTS) {
-      const q = receiptY(t, r.start);
-      if (!q) { r.wrap.style.visibility = "hidden"; continue; }
-      r.wrap.style.visibility = "visible";
-      const rot = lerp(-2.4, 1.6, q.u) * (r.idx % 2 ? -1 : 1);
-      r.wrap.style.transform = `translate3d(0, ${q.y.toFixed(1)}px, 0) rotate(${rot.toFixed(3)}deg)`;
-    }
-  }
-
   // ---- the ledger: the film's own category bar ------------------------------------
   const KCOL = ["#EB3745", "#FA872A", "#F0C800", "#8DB600", "#009238", "#00B09F", "#1CBDEB", "#0074C2", "#3443D6", "#9058E7", "#D957C4", "#FF85A8"];
   let LEDGER = [];
@@ -312,19 +240,6 @@
 
   // ---- build + render -----------------------------------------------------------
   let built = null;
-  const CUTS = {
-    add: { title: "Add", item: "Apple", value: "18.50", note: "1 ITEM" },
-    summary: { title: "Summary", item: "October", value: "2,658.00", note: "SPENT" },
-    search: { title: "Search", item: "#holiday", value: "9", note: "FOUND" },
-    recurring: { title: "Recurring", item: "Spotify", value: "+1.00", color: "#d13b40", note: "PRICE UP" },
-    household: { title: "Household", item: "Alex · Ana", value: "2", note: "PEOPLE" },
-    phone: { title: "On your phone", item: "Languages", value: "13", note: "INSTALLED" },
-    private: { title: "Private", item: "Amounts", value: "••••••", note: "ENCRYPTED" },
-    selfhost: { title: "Yours to host", item: "Price", value: "0.00", color: "#14804a", note: "MIT" },
-    outro: null,   // no receipt into the end card: the self-host scene crosses straight into it
-  };
-  const N_RECEIPTS = () => TL.scenes.slice(1).filter((s) => CUTS[s.name] !== null).length;
-
   function build() {
     const root = document.getElementById("scenes");
     built = [];
@@ -334,13 +249,7 @@
       const cam = el("div", "cam", layer);
       const render = SCENES[scene.name](cam, api(scene, layer, cam));
       built.push({ scene, layer, render });
-      if (idx > 0 && CUTS[scene.name] !== null) {
-        const cut = CUTS[scene.name] || { title: scene.name, item: scene.name, value: "" };
-        buildReceipt(Object.assign({ start: scene.start }, cut), idx - 1);
-        CUES.push({ t: +(scene.start - CUT_IN).toFixed(3), type: "print", gain: 1 });
-        CUES.push({ t: +(scene.start + 0.06).toFixed(3), type: "tear", gain: 1 });
-        PULSES.push([scene.start, 1, 960, 540]);
-      }
+      if (idx > 0 && scene.name !== "outro") PULSES.push([scene.start, 1, 960, 540]);
     });
     buildLedger();
     CUES.sort((a, b) => a.t - b.t);
@@ -352,7 +261,7 @@
     for (let i = 0; i < built.length; i++) {
       const { scene: s, layer, render: r } = built[i];
       const first = i === 0, last = i === built.length - 1;
-      // the scenes cross behind the receipt: out with a little sink, in with a little rise
+      // the scenes cross: out with a little sink, in with a little rise
       const from = first ? -1 : s.start - 0.22, to = last ? 1e9 : s.end + 0.22;
       if (t < from || t >= to) { layer.style.display = "none"; continue; }
       layer.style.display = "";
@@ -365,7 +274,6 @@
       layer.style.filter = (1 - inP) + outP > 0.02 ? `blur(${(((1 - inP) + outP) * 6).toFixed(2)}px)` : "none";
       r(t - s.start, t);
     }
-    paintReceipts(t);
     paintLedger(t);
     // fade in from the canvas, and back to it at the very end
     const end = TL.d.video_end;
@@ -396,6 +304,23 @@
   window.__render = render;
   window.__cues = () => CUES;
   window.__duration = () => (TL ? TL.d.video_end : 0);
+  /* The README poster's picture: the real app on a computer and a phone, under a shade */
+  window.__posterApp = async function (shade = "rgba(24, 26, 42, 0.1)") {
+    for (const id of ["scenes", "ledger", "fade"]) document.getElementById(id).style.display = "none";
+    const n = el("div", "", document.getElementById("stage"));
+    n.id = "poster-app";
+    n.innerHTML = `<div class="browser" style="left:130px;top:70px;width:1420px;height:1100px">
+        <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="tab"><img src="/icons/favicon-32.png" alt=""><span>Wally</span></div></div>
+        <div class="view"><img src="/app/summary.png" alt="" style="width:1420px"></div>
+      </div>
+      <div class="phone" style="left:1500px;top:170px;width:418px;height:872px;transform:scale(.85);transform-origin:0 0">
+        <div class="screen"><img src="/app/m_summary.png" alt=""></div><div class="island"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:${shade}"></div>
+      <div id="poster-glow"></div>
+      <div id="poster-title"><img src="/icons/wally.svg" alt=""><span>Wally</span></div>`;
+    await Promise.all([...n.querySelectorAll("img")].map((i) => i.decode()));
+  };
   window.__poster = function (x = 960, y = 540, d = 170) {
     const b = el("div", "", document.getElementById("stage"));
     b.id = "poster-play";

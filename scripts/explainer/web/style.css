@@ -191,10 +191,15 @@ html, body {
 #ledger { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; z-index: 700; display: flex; }
 #ledger i { display: block; height: 100%; }
 
-#receipts { position: absolute; inset: 0; z-index: 800; pointer-events: none; }
 #fade { position: absolute; inset: 0; z-index: 950; background: var(--canvas); pointer-events: none; }
 
 /* ---- poster affordance (README thumbnail only, never in the video) ------- */
+#poster-app { position: absolute; inset: 0; overflow: hidden; }
+#poster-app ~ #poster-play { background: none; }
+/* a soft light behind the title and the button, so the app stays clear around them */
+#poster-glow { position: absolute; inset: 0; background: radial-gradient(ellipse 430px 250px at 50% 37%, rgba(244, 245, 248, 0.82) 0%, rgba(244, 245, 248, 0.62) 60%, rgba(244, 245, 248, 0) 100%); }
+#poster-title { position: absolute; z-index: 1001; left: 0; right: 0; top: 300px; display: flex; justify-content: center; align-items: center; gap: 28px; font-weight: 700; font-size: 136px; line-height: 1; letter-spacing: -0.04em; color: var(--ink); }
+#poster-title img { width: 142px; height: 142px; }
 #poster-play {
   --d: 170px; --x: 960px; --y: 540px;
   position: absolute; inset: 0; z-index: 1000; background: rgba(244, 245, 248, 0.14);

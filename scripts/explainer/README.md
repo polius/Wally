@@ -11,13 +11,12 @@ light theme, filmed from the demo household.
 
 Design rules the film follows, so any future edit stays on-model:
 
-- **Money, written down.** Wally is a money log, so the film is paper and ink:
-  every cut (but the last, into the end card) is a till receipt going by, printed with the next chapter as a line
-  item ("October ........ 2,658.00"), that tears off as the scenes cross behind
-  it; the background is a ledger's dot grid that ink runs through at every cut;
-  amounts the film writes itself roll into place like a till's drum counter.
+- **Money, written down, and calm.** Wally is a money log, so the background is a
+  ledger's dot grid that ink runs through at every cut, and amounts the film writes
+  itself roll into place like a till's drum counter. The scenes cross softly, with
+  nothing in front of them.
 - **The film keeps its own books.** A category bar runs along the bottom, in the
-  app's twelve category colours: it gains a segment with every receipt, and the
+  app's twelve category colours: it gains a segment with every scene, and the
   end card takes it over, under the promise.
 - **Light, like the app.** The app's pale canvas and white panels, its indigo
   accent, money green and red; the logo's wallet (tan leather, green notes)
@@ -36,8 +35,7 @@ Design rules the film follows, so any future edit stays on-model:
   snapping shut. The snap is the score's downbeat.
 - **Only true claims.** Everything said or shown matches the app and the
   README's Features. Check there before changing a line.
-- **Every sound has a cause on screen.** Scenes register their own cues: the
-  printer and the tear at every cut, notes rustling, the strap snapping, keys,
+- **Every sound has a cause on screen.** Scenes register their own cues: notes rustling, the strap snapping, keys,
   coins, a drum counter ticking, a lock.
 
 This folder holds **only the source**. Footage, frames, audio, model weights and
@@ -85,8 +83,8 @@ Stills while iterating on the visuals:
 
 ```sh
 .venv/bin/python capture.py --preview 2.6,12.0,30.5    # -> preview/*.png
-.venv/bin/python capture.py --poster 66.5 --poster-at 960,575 \
-    --poster-out ../../assets/video-poster.png          # the README thumbnail
+.venv/bin/python capture.py --poster 66.5 --poster-at 960,625 --poster-shade "rgba(24, 26, 42, 0.1)" \
+    --poster-out ../../assets/video-poster.png          # the README thumbnail: the real app, shaded, with the play button
 ```
 
 ## Files
@@ -94,13 +92,13 @@ Stills while iterating on the visuals:
 | File | Role |
 |---|---|
 | `narration.py` | the script + pacing. **Start here** to change the wording. |
-| `web/engine.js` | the renderer: `render(t)`, scene layers + cameras, the receipt cuts, the ledger bar, the dot grid, rolling digits, awaited image swaps, the cue registry |
+| `web/engine.js` | the renderer: `render(t)`, scene layers + cameras, the ledger bar, the dot grid, rolling digits, awaited image swaps, the cue registry |
 | `web/scenes.js` | the ten scenes: open, add, summary, search, recurring, household, phone, private, selfhost, outro |
 | `web/style.css` | palette, type, browser / phone / terminal frames, the receipt paper |
 | `capture.py` | http server + Playwright frame loop (`--preview`, `--poster`, `--cues`) |
 | `capture_app.py` | films the real app from a demo |
 | `music.py` | the score: 100 BPM, F–C–Dm–B♭; marimba and kalimba (modal), a plucked bass (Karplus-Strong), a felt pad, shaker and snaps |
-| `sfx.py` | printer, tear, rustle, thump, snap, coin, tick, keys, taps, lock, scramble, bells |
+| `sfx.py` | rustle, thump, snap, coin, tick, keys, taps, lock, scramble, bells |
 | `build.py` | orchestrates the seven stages |
 
 ## Notes

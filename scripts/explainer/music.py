@@ -16,7 +16,7 @@ that grid, and the end card lands on the outro's hit.
   summary   + the kalimba melody
   private   breakdown: pad and kalimba only, the drums step out
   selfhost  back in, full
-  outro     the hit, a ringing F major chord, the marimba winds down
+  outro     the groove stops a breath before the hit, a ringing F major chord, the marimba winds down
 
   music.py --timeline timeline.json --cues cues.json --out music.wav
 """
@@ -254,6 +254,14 @@ def build(timeline, cues):
             for s in range(8, 16):
                 add(drums, b0 + s * BEAT / 4, shaker(1.0 if s % 2 else 0.55) * (s - 7) / 8, pan=-0.25)
 
+    # the end card's hit is tied to the logo's snap, not to a bar line: the groove stops a breath
+    # before it, so the chord lands alone instead of colliding with a bar that's still playing
+    stop = h1 - 0.35
+
+    def play(buf, at, x, pan=0.0):
+        if at < stop:
+            add(buf, at, x, pan=pan)
+
     for bi, b0 in enumerate(bars):
         if b0 >= h1 - 1e-6:
             break
@@ -265,12 +273,12 @@ def build(timeline, cues):
             continue
         # the pad: every bar, softer under the groove
         x = pad(tones, BAR + 0.6, attack=0.5) * (0.36 if broken else 0.2)
-        add(mus, b0, x)
-        add(send, b0, x * 0.4)
+        play(mus, b0, x)
+        play(send, b0, x * 0.4)
         # the bass: root on 1, fifth on the and of 2, root again on 3 (gone in the breakdown)
         if not broken:
             for beat, m, d in ((0, root, 1.4), (1.5, root + 7, 0.6), (2, root, 0.9), (3.5, root + 12, 0.5)):
-                add(mus, b0 + beat * BEAT, pluck(hz(m + 12), d * BEAT * 1.6) * 0.42)
+                play(mus, b0 + beat * BEAT, pluck(hz(m + 12), d * BEAT * 1.6) * 0.42)
         # the marimba: eighths up and down the chord
         pat = [tones[0], tones[1], tones[2], tones[0] + 12, tones[2], tones[1], tones[2] , tones[1] + 12]
         if not broken:
@@ -279,17 +287,17 @@ def build(timeline, cues):
                 vel = (0.2 if s % 2 == 0 else 0.13) * (1 if full else 0.8)
                 x = mallet(hz(m), 0.9, 0.55) * vel
                 pan = 0.32 if s % 2 else -0.32
-                add(mus, b0 + s * BEAT / 2, x, pan=pan)
-                add(send, b0 + s * BEAT / 2, x * 0.35, pan=-pan)
+                play(mus, b0 + s * BEAT / 2, x, pan=pan)
+                play(send, b0 + s * BEAT / 2, x * 0.35, pan=-pan)
         # drums: a soft kick on 1 and 3, snaps on 2 and 4, a shaker in sixteenths
         if full:
             for beat in (0, 2):
-                add(drums, b0 + beat * BEAT, kick() * 0.55)
+                play(drums, b0 + beat * BEAT, kick() * 0.55)
             for beat in (1, 3):
-                add(drums, b0 + beat * BEAT, fsnap(), pan=0.18)
-                add(send, b0 + beat * BEAT, fsnap() * 0.3)
+                play(drums, b0 + beat * BEAT, fsnap(), pan=0.18)
+                play(send, b0 + beat * BEAT, fsnap() * 0.3)
             for s in range(16):
-                add(drums, b0 + s * BEAT / 4, shaker(1.0 if s % 2 else 0.55), pan=-0.25)
+                play(drums, b0 + s * BEAT / 4, shaker(1.0 if s % 2 else 0.55), pan=-0.25)
         # the melody, on the kalimba
         if b0 >= melody:
             phrase = LEAD[(bi - int(round((melody - h0) / BAR))) % len(LEAD)]
@@ -297,8 +305,8 @@ def build(timeline, cues):
                 if m is None:
                     continue
                 x = kalimba(hz(m), 1.2) * (0.16 if broken else 0.13)
-                add(lead, b0 + s * BEAT / 2, x, pan=0.08)
-                add(send, b0 + s * BEAT / 2 + BEAT * 0.75, x * 0.4, pan=-0.35)   # a soft echo, an eighth later
+                play(lead, b0 + s * BEAT / 2, x, pan=0.08)
+                play(send, b0 + s * BEAT / 2 + BEAT * 0.75, x * 0.4, pan=-0.35)   # a soft echo, an eighth later
 
     # into the end card: a swell, then the hit and a ringing F major chord
     add(mus, h1 - 1.6, swell(1.6, 0.2))
