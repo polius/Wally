@@ -56,8 +56,6 @@ const text = (page, sel) => page.locator(sel).first().innerText();
 const pressed = (page, sel) => page.locator(sel).first().getAttribute("aria-pressed");
 const path = async (page) => { const n = await page.evaluate(() => window.__nav[window.__nav.length - 1] || location.pathname + location.search); return n; };
 async function backToDash(page) { await page.goBack(); await page.waitForSelector("#s-title"); await page.waitForTimeout(150); }
-const lastDay = now.getDate() === new Date(CY, CM, 0).getDate();
-const yearEnd = CM === 12 && lastDay;
 const pickPeriod = async (page, v) => { await page.click(".s-title"); await page.click('#s-pmenu [data-pm="' + v + '"]'); await page.waitForTimeout(200); };
 const noOverflow = (page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
 
@@ -80,7 +78,7 @@ try {
   ok(await page.locator('[data-w="savings"]').count() === 0, "This year replaces Savings");
   ok((await text(page, "#s-big")).includes("€") && !(await text(page, "#s-big")).includes("."), "the headline is a rounded total: " + await text(page, "#s-big"));
   const lines = await text(page, "#s-lines");
-  ok(lastDay ? !lines.includes("Usually") : lines.includes("Usually") && lines.includes("≈"), "where it usually ends up, in words (unless today is the last day): " + lines.replace(/\n/g, " / "));
+  ok(!lines.includes("Usually") && !lines.includes("≈"), "the headline doesn't guess where the month ends up: " + lines.replace(/\n/g, " / "));
   ok(lines.includes(MONTH(pm) + " at this point"), "compared with last month at this point");
   ok(!lines.includes("Bills"), "no Bills line in the headline card");
   ok((await text(page, "#c-hero")).includes(MONTH(pm)), "the dashed line names last month and its total");
@@ -104,7 +102,6 @@ try {
   ok(await page.locator("#s-pmenu").isHidden(), "Esc closes the menu");
   await pickPeriod(page, "last");
   ok((await text(page, "#s-title")).startsWith(MONTH(pm)), "Last month shows it");
-  ok(!(await text(page, "#s-lines")).includes("Usually"), "a closed month has no projection");
   ok((await text(page, "#s-recapw")).includes("Your " + MONTH(pm) + " recap") && await page.getAttribute("#s-recapw a.s-recap", "href") === "/review?m=" + ymStr(py, pm), "a finished month has its recap");
   await page.click('.s-steps [data-step="1"]');
   ok((await text(page, "#s-title")).startsWith(MONTH(CM)), "› steps forward");
@@ -121,8 +118,6 @@ try {
   await page.locator("body").press("2");
   ok((await text(page, "#s-title")) === String(CY), "key 2: the year");
   ok((await text(page, "#s-lines")).includes("same days of " + (CY - 1)), "Year compares with the same days last year");
-  if (yearEnd) ok(!(await text(page, "#s-lines")).includes("Usually"), "Year: nothing to project on its last day");
-  else ok((await text(page, "#s-lines")).includes("by Dec 31"), "Year projects to 31 December");
   await page.click('.s-steps [data-step="-1"]');
   ok((await text(page, "#s-title")) === String(CY - 1), "‹ in a year steps a year back");
   ok(new URL(page.url()).searchParams.get("year") === String(CY - 1), "the address names the year: ?year=" + (CY - 1), page.url());

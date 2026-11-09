@@ -1,4 +1,4 @@
-/* Summary's chart data and its longer charts: the running total with its projection, and for a
+/* Summary's chart data and its longer charts: the running total, and for a
    year or a long range, Income vs spending and By category. */
 import {
   t, esc, TODAY, START, ds, dim, ym, ymAdd, addD, span, num, f, fk, monthName, monthIn, monthYear, F,
@@ -48,31 +48,24 @@ function haveMonth(y, m, back) { const q = ymAdd(y, m, -back); return ds(q[0], q
 /* "Oct 26" on an axis: the year only on January and on the first label */
 export function monLabel(y, m, withYear, short) { return F.mon[m - 1] + (withYear ? (short ? " ’" + String(y).slice(2) : " " + y) : ""); }
 
-/* ---------- the running total: this range, the one before it (the dashed line), and a projection
-   shaped like the last three months ---------- */
+/* ---------- the running total: this range and the one before it (the dashed line) ---------- */
 export function paceData(r) {
   const p = prevOf(r), days = span(r.start, r.end), cur = cum(eDaily(r.start, days));
-  let len = r.len, cmp = null, cmpName = "", cmpShort = "", proj = null, label = "", avg3 = null;
+  let len = r.len, cmp = null, cmpName = "", cmpShort = "", label = "";
   if (r.month) {
     const [y, m] = ym(r.start);
-    if (haveMonth(y, m, 3)) {
-      avg3 = [1, 2, 3].map((k) => { const q = ymAdd(y, m, -k); return extend(monthCum(q[0], q[1]), len); })
-        .reduce((a, b) => a.map((v, i) => v + b[i])).map((v) => v / 3);
-    }
     if (haveMonth(y, m, 1)) { const q = ymAdd(y, m, -1); cmp = extend(monthCum(q[0], q[1]), len); cmpName = cmpShort = monthName(q[1]); label = monthIn(q[1]); }
-    if (r.current && avg3) { const ci = cur.length - 1; proj = []; for (let i = ci; i < len; i++) proj.push(cur[ci] + (avg3[i] - avg3[ci])); }
   } else if (r.mode === "year") {
     const py = +r.start.slice(0, 4) - 1, ly = py + "-01-01";
     len = span(r.start, r.start.slice(0, 4) + "-12-31");
     if (ly >= START) {
       cmp = extend(cum(eDaily(ly, span(ly, py + "-12-31"))), len); cmpName = cmpShort = String(py); label = p.label;
-      if (r.current) { const ci = cur.length - 1; proj = []; for (let i = ci; i < len; i++) proj.push(cur[ci] + (cmp[i] - cmp[ci])); }
     }
   } else if (p.ok) {
     cmp = extend(cum(eDaily(p.start, span(p.start, p.end))), len); cmpName = t("Previous period"); cmpShort = t("previous"); label = p.label;
   }
   const curName = r.month ? monthName(+r.start.slice(5, 7)) : r.mode === "year" ? r.start.slice(0, 4) : t("This range");
-  return { len, cur, cmp, cmpName, cmpShort, proj, label, curName };
+  return { len, cur, cmp, cmpName, cmpShort, label, curName };
 }
 /* The axis label for day i of the pace chart */
 export function paceLabel(r, len) {
