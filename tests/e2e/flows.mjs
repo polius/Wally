@@ -1,5 +1,6 @@
 // Journeys across pages: links between them, figures that follow a change, keys after every page.
 // BASE=http://localhost:8891 node flows.mjs   (a fresh DEMO server)
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE || "http://localhost:8891";
@@ -16,6 +17,46 @@ async function open(width, height) {
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   return { ctx, page, errors };
+}
+
+{
+  console.log("Opening Wally");
+  const { ctx, page, errors } = await open(1440, 900);
+  // index.html asks for each page's scripts up front: the list has to be what the page really imports
+  const web = new URL("../../web/js/", import.meta.url);
+  const closure = (file, seen = new Set()) => {
+    if (seen.has(file)) return seen;
+    seen.add(file);
+    for (const m of readFileSync(new URL(file, web), "utf8").matchAll(/from\s+"(\.[^"]+)"/g)) closure(new URL(m[1], new URL(file, web)).pathname.split("/web/js/")[1], seen);
+    return seen;
+  };
+  for (const [path, file] of [["/", "pages/dashboard.js"], ["/transactions", "pages/transactions.js"], ["/recurring", "pages/recurring.js"], ["/settings/people", "pages/settings.js"], ["/review", "pages/review.js"]]) {
+    await page.goto(BASE + path, { waitUntil: "networkidle" });
+    const listed = await page.$$eval('link[rel="modulepreload"]', (ls) => ls.map((l) => new URL(l.href).pathname.slice(4)).sort());
+    const real = [...closure(file), "ui.js", "shell.js", "core.js"].filter((f, i, a) => a.indexOf(f) === i).sort();
+    ok(JSON.stringify(listed) === JSON.stringify(real), path + " preloads exactly what it imports " + (JSON.stringify(listed) === JSON.stringify(real) ? "" : JSON.stringify({ listed, real })));
+  }
+
+  // A refresh: the frame is there before the data, without the logo, and holds no figures
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  const kept = await page.evaluate(() => localStorage.getItem("wally.frame"));
+  ok(kept && !/\d[\d.,]*\s*(€|\$)|(€|\$)\s*\d/.test(kept), "the frame is kept, with no money in it");
+  let release;
+  const held = new Promise((r) => { release = r; });
+  await page.route("**/api/ledger", async (route) => { await held; await route.continue(); });
+  await page.reload({ waitUntil: "commit" });
+  await page.waitForSelector('#side a[href="/transactions"]', { state: "visible" });
+  ok(await page.locator("#boot").isHidden(), "no logo over the frame");
+  ok(await page.$eval("#main", (m) => m.children.length === 0), "the frame is up before the data");
+  // A click on it while the data is on its way ends up on that page
+  await page.click('#side a[href="/transactions"]');
+  ok(page.url().endsWith("/transactions"), "a click during loading changes the address");
+  release();
+  await page.waitForSelector('#main[data-page="transactions"] > *');
+  await page.unroute("**/api/ledger");
+  ok(await page.$eval('#side a[href="/transactions"]', (a) => a.classList.contains("on")), "and opens that page");
+  ok(errors.length === 0, "no errors while opening " + errors.slice(0, 2).join(" | "));
+  await ctx.close();
 }
 
 {

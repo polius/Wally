@@ -20,6 +20,7 @@ const SETTINGS = ["settings", "/settings", "settings", () => t("Settings")];
 let page = null;       // the page module on screen
 let pageName = "";
 let pageToken = 0;
+let opened = false;    // false while the frame from last time is up and the data is on its way
 
 /* ---------- routing ---------- */
 export function route(path) {
@@ -34,7 +35,9 @@ export function navigate(path, opts) {
   else if (path !== location.pathname + location.search) history.pushState(opts.state || null, "", path);
   return show();
 }
-export async function show() {
+export async function show(first) {
+  if (first) opened = true;
+  if (!opened) return;  // A click on the frame before the data is here: the address changed, and the first show opens it
   const r = route();
   const token = ++pageToken;
   hideTip();
@@ -49,10 +52,12 @@ export async function show() {
   pageName = r.name;
   page = mod;
   main.dataset.page = r.name;
+  main.classList.toggle("w-still", first === true);
   document.title = (r.name === "dashboard" ? "" : navLabel(r.name) + " · ") + "Wally";
   mod.mount(main, r);
   renderSide();
   renderTabbar();
+  saveFrame();
   // Move focus to the new page, unless a dialog, the add sheet or the command bar opened meanwhile
   const overlay = dialogOpen() || !$("add-modal").hidden || !$("cmd").hidden;
   if (!same) { window.scrollTo(0, 0); if (!overlay) main.focus({ preventScroll: true }); }
@@ -65,6 +70,15 @@ export function refresh(reason) {
   emit("change", reason || {});
 }
 export function currentPage() { return pageName; }
+
+/* The sidebar and tab bar as they are now, for index.html to draw straight away next time. Names and
+   labels only: no figure is kept on this device. */
+const FRAME = "wally.frame";
+function saveFrame() {
+  const b = $("banner"), root = document.documentElement;
+  try { localStorage.setItem(FRAME, JSON.stringify({ side: $("side").innerHTML, tabbar: $("tabbar").innerHTML, banner: b.hidden ? "" : b.innerHTML, lang: root.lang, dir: root.dir })); } catch (e) { /* drawn when ready instead */ }
+}
+export function forgetFrame() { try { localStorage.removeItem(FRAME); } catch (e) { /* fine */ } }
 
 /* ---------- the person switch ---------- */
 export function setScope(sc) {
@@ -96,7 +110,7 @@ function meActions() {
 /* ---------- sidebar: places at the top, Settings and who is signed in at the foot ---------- */
 export function renderSide() {
   const side = $("side");
-  if (!side) return;
+  if (!side || !opened) return;
   const me = state.me, signin = state.status && state.status.signin;
   hideSideHint();
   const label = esc(railed() ? t("Expand sidebar") : t("Collapse sidebar"));
@@ -277,6 +291,7 @@ export function initShell() {
 }
 export { MOD };
 export async function signOut() {
+  forgetFrame();
   // An encrypted household's key and copy leave this browser with you
   try { if (localStorage.getItem("wally.vault") === "1") await (await import("./vault/session.js")).forget(); } catch (e) { /* signing out anyway */ }
   try { await POST("/logout"); } catch (e) { /* signed out anyway */ }

@@ -12,7 +12,8 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 /* A field that takes its size from where it sits is still never under the smallest a field can be */
 :where(.w) input,:where(.w) select,:where(.w) textarea{font-size:max(var(--field-min),1em)}
 .w-boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--w-canvas);z-index:5}
-.w-boot .w-mark{width:44px;height:44px;animation:w-pulse 1.4s var(--ease) infinite}
+/* Only when nothing can be shown for a good while (a first visit on a very slow connection) */
+.w-boot .w-mark{width:44px;height:44px;opacity:0;animation:w-pulse 1.4s var(--ease) 2s infinite forwards}
 @keyframes w-pulse{0%,100%{opacity:.35;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
 .w-mark.lg{width:44px;height:44px}
 .w-banner{position:sticky;top:0;z-index:30;background:var(--w-accent-soft);color:var(--w-accent-ink);font-size:var(--fs-foot);font-weight:500;text-align:center;padding:7px 16px;padding-top:calc(7px + env(safe-area-inset-top,0px))}
@@ -193,6 +194,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 @keyframes w-up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes w-fade{from{opacity:0}to{opacity:1}}
 .w-main > *{animation:w-fade 300ms var(--ease)}
+.w-main.w-still > *{animation:none}  /* Opening Wally: the page is there at once, the fade is for moving between pages */
 
 
 /* Empty states */
