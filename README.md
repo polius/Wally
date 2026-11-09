@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-  <img src="assets/dashboards-light.png?version=2.0" alt="Wally's Summary on a computer" width="73%" />
+  <img src="assets/dashboards-light.png?version=2.3" alt="Wally's Summary on a computer" width="73%" />
   &nbsp;
-  <img src="assets/dashboards-light-mobile.png?version=2.0" alt="Wally's Summary on a phone" width="21%" />
+  <img src="assets/dashboards-light-mobile.png?version=2.3" alt="Wally's Summary on a phone" width="21%" />
 </p>
 
 ## Features
@@ -76,7 +76,7 @@ Then open [http://localhost](http://localhost).
 
 <p align="center">
   <a href="https://pol.alzina.dev/videos/wally.mp4">
-    <img src="assets/video-poster.png"
+    <img src="assets/video-poster.png?version=2.3"
       alt="Watch the Wally video — a one-minute tour: adding on a phone, the Summary, search, recurring, a shared household, encryption and self-hosting">
   </a>
 </p>

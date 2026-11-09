@@ -71,7 +71,7 @@ def init_page(page, timeline):
     page.evaluate("window.__ready")
 
 
-def capture_poster(pw, port, timeline, t, scale, out, at=(960, 540), d=170):
+def capture_poster(pw, port, timeline, t, scale, out, at=(960, 540), d=170, app_shade=None):
     """One still, downscaled exactly like the video encode, with the README play
     affordance layered on top.
 
@@ -83,6 +83,8 @@ def capture_poster(pw, port, timeline, t, scale, out, at=(960, 540), d=170):
         init_page(page, timeline)
         page.evaluate("() => { window.__posterMode = true; }")
         page.evaluate("(t) => window.__render(t)", t)
+        if app_shade:
+            page.evaluate("(s) => window.__posterApp(s)", app_shade)
         page.evaluate("([x, y, d]) => window.__poster(x, y, d)", [*at, d])
         raw = os.path.join(HERE, "_poster_raw.png")
         page.screenshot(path=raw)
@@ -111,6 +113,8 @@ def main():
     ap.add_argument("--poster-at", default="960,540",
                     help="x,y of the poster's play button, in film px (default: centre)")
     ap.add_argument("--poster-d", type=float, default=170, help="the play button's diameter, in film px")
+    ap.add_argument("--poster-shade", default=None,
+                    help="a CSS colour: the poster shows the real app under this shade, instead of the film's frame")
     ap.add_argument("--poster-out",
                     default=os.path.join(HERE, "poster.png"),
                     help="where --poster writes (defaults to poster.png here)")
@@ -131,7 +135,7 @@ def main():
             if args.poster is not None:
                 capture_poster(pw, port, timeline, float(args.poster),
                                args.scale, args.poster_out,
-                               tuple(float(v) for v in args.poster_at.split(",")), args.poster_d)
+                               tuple(float(v) for v in args.poster_at.split(",")), args.poster_d, args.poster_shade)
                 return
 
             if args.cues is not None:

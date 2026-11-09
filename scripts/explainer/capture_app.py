@@ -43,10 +43,11 @@ _first = date.today().replace(day=1)
 LAST = (_first.replace(year=_first.year - 1, month=12) if _first.month == 1
         else _first.replace(month=_first.month - 1)).strftime("%Y-%m")
 
-# Signed in as the first person, light theme, everyone's money, no demo bar, no caret blink
+# Signed in as the first person, light theme, everyone's money, sidebar collapsed, no demo bar, no caret blink
 INIT = """
 localStorage.setItem('wally.person', '1');
 localStorage.setItem('wally.theme', 'light');
+localStorage.setItem('wally.side', 'rail');
 localStorage.setItem('wally.scope', %s);
 document.addEventListener('DOMContentLoaded', () => {
   const s = document.createElement('style');
@@ -222,7 +223,8 @@ def phone_add(b, base):
         p.click(f'#add-keypad [data-k="{key}"]')
         p.wait_for_timeout(160)
         snap("key " + key)
-    p.click("#add-knext")
+    # a tap on the name: the keypad's Next would go on to the category
+    p.click("#add-name")
     p.wait_for_timeout(400)
     snap("next")
     name = "Apple"

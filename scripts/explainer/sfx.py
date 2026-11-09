@@ -3,8 +3,7 @@
 
 The scenes register every cue themselves (api.cue in web/), so a sound always
 sits on the frame that causes it. Everything is synthesized, and it is tactile
-rather than electronic, like the film: a till's thermal printer and the paper
-tearing off at every cut, the wallet's notes rustling and its strap snapping
+rather than electronic, like the film: the wallet's notes rustling and its strap snapping
 shut, coins, a drum counter ticking, soft taps on glass, a lock.
 
   sfx.py --cues cues.json --duration 65.7 --out sfx.wav
@@ -48,32 +47,6 @@ def mix(*xs):
 def tone(f, sec, d, attack=0.002):
     t = T(sec)
     return np.sin(2 * np.pi * f * t) * np.minimum(1, t / attack) * decay(t, d)
-
-
-# ---- the receipt ----------------------------------------------------------------
-def print_():
-    """a thermal printer feeding paper: a soft motor buzz, a tick per dot line"""
-    sec = 0.6
-    t = T(sec)
-    motor = bp(noise(t.size), 1400, 3200) * (0.55 + 0.45 * np.sign(np.sin(2 * np.pi * 55 * t))) * 0.25
-    ticks = np.zeros(t.size)
-    for k in range(int(sec / 0.016)):
-        i = int(k * 0.016 * SR)
-        x = hp(noise(int(0.004 * SR)), 2500) * decay(T(0.004), 0.0012)
-        ticks[i:i + x.size] += x[: ticks.size - i] * (0.6 + 0.4 * ((k % 3) == 0))
-    env = np.sin(np.pi * np.clip(t / sec, 0, 1)) ** 0.7
-    return (motor + ticks * 0.35) * env * 0.16
-
-
-def tear():
-    """the paper tearing off: crackle that runs along the zigzag"""
-    sec = 0.32
-    t = T(sec)
-    x = bp(noise(t.size), 1200, 7500)
-    crackle = (rng.random(t.size) > 0.985) * rng.standard_normal(t.size) * 3
-    body = (x * (0.5 + 0.5 * np.abs(np.sin(2 * np.pi * 38 * t))) + hp(crackle, 2000))
-    env = np.minimum(1, t / 0.01) * decay(t, 0.11)
-    return body * env * 0.16
 
 
 # ---- the wallet ---------------------------------------------------------------
@@ -255,13 +228,13 @@ def draw():
     return x * (0.7 + 0.3 * np.sin(2 * np.pi * 26 * t))
 
 
-FX = {"print": print_, "tear": tear, "rustle": rustle, "thump": thump, "snap": snap, "hit": hit, "chime": chime,
+FX = {"rustle": rustle, "thump": thump, "snap": snap, "hit": hit, "chime": chime,
       "coin": coin, "tick": tick, "ding": ding, "key": key, "type": type_, "tap": tap, "enter": enter, "pop": pop,
       "blip": blip, "stamp": stamp, "lock": lock, "scramble": scramble, "swish": swish, "whoosh": whoosh, "draw": draw}
 # how much of each effect goes to the reverb
 SEND = {"hit": 0.45, "chime": 0.5, "coin": 0.3, "ding": 0.4, "blip": 0.3, "pop": 0.15, "snap": 0.2, "stamp": 0.2,
         "whoosh": 0.3, "swish": 0.25, "lock": 0.15}
-PAN = {"hit": 0.0, "chime": 0.0, "print": 0.0, "tear": 0.0, "whoosh": 0.0}
+PAN = {"hit": 0.0, "chime": 0.0, "whoosh": 0.0}
 
 
 def render(cues, duration):
