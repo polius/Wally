@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       # argon2-cffi and cryptography: the encryption tests' own copy of the browser's crypto
       - run: pip install -r api/requirements.txt pytest httpx argon2-cffi cryptography
       - run: python -c "import api.main; print('import OK')"
