@@ -76,7 +76,7 @@ try {
   ok(/^notice,people,(cashflow,)?kept,year$/.test(right), "the context on the right: " + right);
   ok(await page.locator('[data-w="recent"]').isVisible() && await page.locator("#s-recent .s-row").count() <= 4, "Recent on desktop too, four at most");
   ok(await page.locator('[data-w="savings"]').count() === 0, "This year replaces Savings");
-  ok((await text(page, "#s-big")).includes("€") && !(await text(page, "#s-big")).includes("."), "the headline is a rounded total: " + await text(page, "#s-big"));
+  ok(/^[\d,]+\.\d\d\s€$/.test(await text(page, "#s-big")) && await page.locator("#s-big .c").count() === 1, "the headline is the exact total, cents smaller: " + await text(page, "#s-big"));
   const lines = await text(page, "#s-lines");
   ok(!lines.includes("Usually") && !lines.includes("≈"), "the headline doesn't guess where the month ends up: " + lines.replace(/\n/g, " / "));
   ok(lines.includes(MONTH(pm) + " at this point"), "compared with last month at this point");
@@ -88,6 +88,25 @@ try {
     return !ch || (/^[↑↓] \d+\s?%$/.test(ch.textContent) && ch.classList.contains(ch.textContent[0] === "↑" ? "up-bad" : "dn-good"));
   })), "Categories: no “vs” label; a change shows as ↑ in red or ↓ in green, in percent");
   ok((await text(page, '[data-w="people"]')).includes("share of shared costs"), "The household: own and shared, per person");
+  // Issue #98: real amounts. Each person's parts add up to their total, to the cent
+  const sums = await page.$$eval("#s-people .s-person", (l) => l.map((r) => {
+    const n = (s) => Number(s.replace(/[^\d.]/g, "")), small = r.querySelector("small").textContent;
+    const parts = [...small.matchAll(/([\d,]+\.\d\d)\s€/g)].map((m) => n(m[1]));
+    return { total: n(r.querySelector(".s-am").textContent), parts };
+  }));
+  ok(sums.length >= 2 && sums.every((x) => x.parts.length && Math.abs(x.parts.reduce((a, b) => a + b, 0) - x.total) < 0.005), "The household: own + share add up to each total, to the cent " + JSON.stringify(sums));
+  // No money without its cents on Summary, except the ticks of a chart axis
+  const bare = await page.evaluate(() => {
+    const ax = [...document.querySelectorAll("#main svg text.ax")];
+    ax.forEach((n) => { n.style.display = "none"; });
+    const txt = document.querySelector("#main").innerText;
+    ax.forEach((n) => { n.style.display = ""; });
+    return [...txt.matchAll(/[\d.,]*\d\s?€/g)].map((m) => m[0]).filter((s) => !/[.,]\d\d\s?€$/.test(s));
+  });
+  ok(bare.length === 0, "Summary: every amount shows its cents" + (bare.length ? ": " + bare.join(" | ") : ""));
+  // The cents of a big amount are smaller, in the amount's own colour
+  const cents = await page.$$eval("#main .c", (l) => l.filter((c) => c.offsetParent).map((c) => [getComputedStyle(c).color === getComputedStyle(c.parentElement).color, parseFloat(getComputedStyle(c).fontSize) < parseFloat(getComputedStyle(c.parentElement).fontSize)]));
+  ok(cents.length >= 3 && cents.every(([same, smaller]) => same && smaller), "Summary: big amounts' cents are smaller and the same colour (" + cents.length + ")");
   ok((await text(page, '[data-w="year"] h4')) === "Kept this year" && (await text(page, "#s-year")).includes("kept since January"), "This year: kept since January");
   ok(await page.locator('[data-w="notice"]').isHidden() || await page.locator("#s-notice .s-notice").count() <= 3, "Worth noticing: hidden or at most three lines");
   await shot(page, "01-month");

@@ -34,6 +34,7 @@
 .pr-big{font-size:33pt;font-weight:700;letter-spacing:-.03em;line-height:1.1}
 .pr-big.good{color:var(--good)}
 .pr-big.bad{color:var(--bad)}
+.pr-big .c{font-size:.52em;letter-spacing:-.02em;color:inherit}
 .pr-heroL p{margin-top:1.75mm;font-size:10.3pt;color:#444;line-height:1.45;text-wrap:pretty}
 .pr-chart{display:block;width:100%;height:auto;direction:ltr;overflow:visible}
 .pr-chart text{font-size:6.6px;fill:var(--ink3);text-anchor:middle;font-family:inherit;stroke:var(--soft);stroke-width:2.4px;stroke-linejoin:round;paint-order:stroke}
@@ -47,6 +48,7 @@
 .pr-kpi > div:first-child{border-inline-start:0;padding-inline-start:0}
 .pr-kpi span{font-size:9.1pt;color:#666;font-weight:400}
 .pr-kpi b{font-size:15.7pt;font-weight:650;letter-spacing:-.02em;line-height:1.45}
+.pr-kpi b .c{font-size:.6em;letter-spacing:-.01em;color:inherit}
 .pr-kpi small{font-size:9.1pt;color:#666}
 .pr-d{font-size:9.9pt;color:#777;font-weight:400}
 .pr-d.good{color:var(--good)}

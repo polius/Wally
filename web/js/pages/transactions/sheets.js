@@ -2,7 +2,7 @@
    Custom Range is a sheet (Cancel · Custom Range · Done) with Starts and Ends rows; the month opens under the one being set.
    Filter is a popover under its button on wide screens and a sheet (Reset · Filter · Done) on phones;
    either way, changes apply as they are made. */
-import { state, t, tn, esc, f0, pname, ds, dim, ym, ymAdd, TODAY, START, LANG, cc, couple, isIncomeCat, monthYear, wkOff, dows, icon, F } from "../../core.js";
+import { state, t, tn, esc, pname, ds, dim, ym, ymAdd, TODAY, START, LANG, cc, couple, isIncomeCat, monthYear, wkOff, dows, icon, F, fWhole } from "../../core.js";
 import { openDialog, closeDialog, seg, sw } from "../../ui.js";
 import { S, parseQ, withoutWords, lastDay } from "./query.js";
 
@@ -88,7 +88,7 @@ export function filterCount(P) {
 let fctx = null;
 function amounts() {
   const P = parseQ(S.q);
-  return [["any", t("Any"), P.min === null && P.max === null], ["over", t("Over {amount}", { amount: f0(50) }), P.min === 50 && P.max === null], ["under", t("Under {amount}", { amount: f0(10) }), P.max === 10 && P.min === null]];
+  return [["any", t("Any"), P.min === null && P.max === null], ["over", t("Over {amount}", { amount: fWhole(50) }), P.min === 50 && P.max === null], ["under", t("Under {amount}", { amount: fWhole(10) }), P.max === 10 && P.min === null]];
 }
 function filterBody(phone) {
   const cats = state.categories.filter((c) => !isIncomeCat(c)).concat(state.categories.filter(isIncomeCat));

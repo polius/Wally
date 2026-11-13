@@ -3,7 +3,7 @@
    through it; a List | Calendar switch; search with a scope bar and recent searches; Filter (a popover
    on wide screens, a sheet on phones); a ••• menu (Select, export); Select mode for bulk changes, and a
    side panel with every field. */
-import { $, state, t, tn, esc, f, f0, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, person, couple } from "../core.js";
+import { $, state, t, tn, esc, f, ym, ymAdd, ds, addD, TODAY, on, amt, icon, rerank, isIncomeCat, monthYear, dlabW, pname, person, couple } from "../core.js";
 import { hideTip, empty, trapFocus, stepLabels } from "../ui.js";
 import { headActions, scopeSwitch } from "../shell.js";
 import { dayMap, schedMap, monthGrid, gridHover, noSpendText } from "../calendar.js";
@@ -272,7 +272,7 @@ function renderTools(R, P, shown) {
   for (const x of shown) { if (x.type === "income") inc += amt(x); else out += amt(x); }
   const n = shown.length;
   $("tx-count").innerHTML = '<span class="tx-n">' + esc(state.scope === "all" ? tn(n, "{n} transaction", "{n} transactions") : tn(n, "{n} transaction for {name}", "{n} transactions for {name}", { name: pname(state.scope) })) + "</span>" +
-    (inc ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f0(inc)) + "</b></span>" : "") + (out ? '<span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f0(out)) + "</b></span>" : "");
+    (inc ? '<span class="tx-sumi">' + esc(t("In")) + ' <b class="pos amt">' + esc(f(inc)) + "</b></span>" : "") + (out ? '<span class="tx-sumi">' + esc(t("Out")) + ' <b class="amt">' + esc(f(out)) + "</b></span>" : "");
 }
 
 /* On phones a row is only marked while its detail is open; elsewhere the selection always shows */

@@ -37,8 +37,10 @@ const lastClosed = now.getMonth() === 0 ? [now.getFullYear() - 1, 12] : [now.get
 const mk = (q) => q[0] + "-" + String(q[1]).padStart(2, "0");
 const prevOf = (q) => (q[1] === 1 ? [q[0] - 1, 12] : [q[0], q[1] - 1]);
 const LAST = mk(lastClosed), PREV = mk(prevOf(lastClosed));
-const euros = (s) => Number(String(s).replace(/[^\d-−]/g, "").replace("−", "-"));
+// "2,572.07 €" → 2572.07: every amount shows its cents (issue #98)
+const euros = (s) => Number(String(s).replace(/[^\d.−-]/g, "").replace("−", "-"));
 const near = (a, b, d = 1) => Math.abs(a - b) <= d;
+const cent = (a, b) => Math.abs(a - Math.round(b * 100) / 100) < 0.005; // shown to the cent
 
 const browser = await chromium.launch();
 async function open(base, path, { width = 1440, height = 900, theme = "light", person = "1", touch = false } = {}) {
@@ -75,11 +77,11 @@ try {
     const title = await page.textContent("#mr-title");
     ok(new RegExp(String(lastClosed[0])).test(title), "review: opens on the last closed month (" + title + ")");
     ok(page.url().endsWith("/review"), "review: /review with no month is the last closed one");
-    ok(euros(await kpi(page, 0)) === Math.round(M.income / 100), "review: Came in = /summary/monthly income (" + (await kpi(page, 0)) + ")");
-    ok(euros(await kpi(page, 1)) === Math.round(M.expense / 100), "review: Went out = /summary/monthly expense");
-    ok(euros(await kpi(page, 2)) === Math.round(M.recurring / 100), "review: Bills = /summary/monthly recurring");
-    ok(euros(await kpi(page, 3)) === Math.round((M.expense - M.recurring) / 100), "review: Everyday = expense − recurring");
-    ok(euros(await page.textContent(".w-mrhero .big")) === Math.round(Math.abs(M.income - M.expense) / 100), "review: Kept = income − expense");
+    ok(cent(euros(await kpi(page, 0)), M.income / 100), "review: Came in = /summary/monthly income (" + (await kpi(page, 0)) + ")");
+    ok(cent(euros(await kpi(page, 1)), M.expense / 100), "review: Went out = /summary/monthly expense");
+    ok(cent(euros(await kpi(page, 2)), M.recurring / 100), "review: Bills = /summary/monthly recurring");
+    ok(cent(euros(await kpi(page, 3)), (M.expense - M.recurring) / 100), "review: Everyday = expense − recurring");
+    ok(cent(euros(await page.textContent(".w-mrhero .big")), Math.abs(M.income - M.expense) / 100), "review: Kept = income − expense");
     // The story order, and the two blocks that went
     const order = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
     ok(order.join("|") === "Where it went|What changed|Each of you|Day by day|Bills|Worth knowing", "review: one reading order (" + order.join(", ") + ")");
@@ -87,7 +89,7 @@ try {
     ok(!(await page.textContent(".w-mrev")).includes("dashed line") && !(await page.textContent(".w-mrev")).includes("Click a month"), "review: no notes on how to read the charts");
     // Categories
     const rows = await page.$$eval(".w-mrev a.w-mrwrow", (l) => l.map((a) => [a.dataset.cat, a.querySelector(":scope > b").textContent]));
-    const catOk = rows.every(([c, v]) => M.categories[c] && euros(v) === Math.round(M.categories[c].total / 100));
+    const catOk = rows.every(([c, v]) => M.categories[c] && cent(euros(v), M.categories[c].total / 100));
     ok(rows.length > 3 && catOk, "review: every category total matches the API (" + rows.length + " categories)");
     ok(await page.locator(".w-mrev .w-mrkey").count() === 1 && await page.locator(".w-mrev a.w-mrwrow .w-mrsplit i").count() > rows.length, "review: who spent it, inside each bar");
     // People: always everyone, each by share
@@ -178,7 +180,7 @@ try {
     const six = before.months.filter((m) => m.month < LAST).slice(-6);
     const usualExp = six.reduce((s, m) => s + m.expense, 0) / six.length / 100;
     const usualText = await page.locator("#w-print .pr-kpi > div").nth(1).locator("small").textContent();
-    ok(near(euros(usualText), Math.round(usualExp)), "report: usual = average of the 6 months before (" + usualText + " vs " + Math.round(usualExp) + ")");
+    ok(cent(euros(usualText), usualExp), "report: usual = average of the 6 months before, to the cent (" + usualText + " vs " + usualExp.toFixed(2) + ")");
     ok(sheets === 2 && (await page.locator("#w-print .pr-sheet").nth(1).locator("h2").first().innerText()).startsWith("Each of you"), "page 2 starts with Each of you");
     const billsKv = await page.locator("#w-print .pr-sheet").nth(1).locator(".pr-kv").nth(1).innerText();
     ok((/[\d,.]+\s*€\s+in\s+\d+\s+bills?/.test(billsKv) && /First\s+\S/.test(billsKv)) || /No bills/.test(billsKv), "report: next month's bills, then the first one on its own line (" + billsKv.replace(/\s+/g, " ") + ")");

@@ -367,7 +367,8 @@ svg.chart{display:block;overflow:visible;width:100%;height:100%}
 .w-eyebrow{font-size:var(--fs-foot);color:var(--w-ink2);font-weight:500;display:flex;align-items:center;gap:6px}
 .w-hnum{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-top:4px}
 .w-big{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
-.w-big .c{font-size:.52em;color:var(--w-ink3);letter-spacing:-.02em;margin-left:1px}
+/* The cents of a big amount: smaller, in the amount's own colour (never grey: a green Kept stays green) */
+:is(.w-big,.s-big,.s-keptn b,.rec-big,.w-mrhero .big,.w-pmr .big,.s-cfstats b,.w-mrtile b) .c{font-size:.52em;letter-spacing:-.02em;margin-left:1px;color:inherit}
 .w-delta{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-foot);font-weight:500;font-variant-numeric:tabular-nums}
 .w-delta b{font-weight:600}
 .w-delta.bad b{color:var(--w-bad)}

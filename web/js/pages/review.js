@@ -4,9 +4,8 @@
    Every figure is worked out here from the ledger, for whoever is shown; "Each of you" always shows
    everyone. On a phone it is a few pages you tap or swipe through. Route: /review?m=YYYY-MM */
 import {
-  t, tn, esc, state, f, f0, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
-  tile, cat, cc, av, pname, couple, isIncomeCat, dlab, dlabW, monthYear, F, icon,
-} from "../core.js";
+  t, tn, esc, state, f, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
+  tile, cat, cc, av, pname, couple, isIncomeCat, dlab, dlabW, monthYear, F, icon, bigMoney } from "../core.js";
 import { hover, row, hideTip } from "../ui.js";
 import { navigate, setScope, closeMenus } from "../shell.js";
 import { occurrences, ruleAmt, ruleHist, shortDesc, isIncome } from "../sched.js";
@@ -81,7 +80,7 @@ function catUsual(q, sc) {
 function cmp(cur, prev, goodUp, month, short) {
   const d = cur - prev;
   if (Math.abs(d) < Math.max(5, Math.abs(prev) * 0.03)) return '<span class="w-mrd">' + (short ? t("Same") : t("About the same as {month}", { month })) + "</span>";
-  const amount = f0(Math.abs(d)), cls = (d > 0) === goodUp ? "good" : "bad";
+  const amount = f(Math.abs(d)), cls = (d > 0) === goodUp ? "good" : "bad";
   const text = short ? (d > 0 ? t("{amount} more", { amount }) : t("{amount} less", { amount }))
     : d > 0 ? t("{amount} more than {month}", { amount, month }) : t("{amount} less than {month}", { amount, month });
   return '<span class="w-mrd ' + cls + '">' + text + "</span>";
@@ -102,7 +101,7 @@ function compute(q, sc) {
 
   // Categories, biggest first, each in its own color
   const c = byCat(a, b, sc), cu = catUsual(q, sc), cp = hasPrev ? byCat(...bounds(pq), sc) : {};
-  const keys = Object.keys(c).filter((k) => c[k] >= 0.5).sort((x, y) => c[y] - c[x]);
+  const keys = Object.keys(c).filter((k) => c[k] >= 0.005).sort((x, y) => c[y] - c[x]);
   const colOf = (k) => cc(k);
   const moved = [...new Set(Object.keys(c).concat(Object.keys(cu)))].filter((k) => !isIncomeCat(k))
     .map((k) => ({ k, d: (c[k] || 0) - (cu[k] || 0) }))
@@ -122,13 +121,13 @@ function compute(q, sc) {
     head = t("{pct} of what came in.", { pct: pct(s.rate) });
     const off = u.n ? (s.net - u.net) / Math.max(Math.abs(u.net), 1) : 0;
     if (hist.length >= 6 && rank <= 3) head += " " + [t("The best month of the last {n}.", { n: hist.length }), t("The second best month of the last {n}.", { n: hist.length }), t("The third best month of the last {n}.", { n: hist.length })][rank - 1];
-    else if (u.n && s.net < u.net - 50) head += " " + (off > -0.15 ? t("A bit less than usual ({amount}).", { amount: f0(u.net) }) : t("Less than usual ({amount}).", { amount: f0(u.net) }));
-    else if (u.n && s.net > u.net + 50) head += " " + (off < 0.15 ? t("A bit more than usual ({amount}).", { amount: f0(u.net) }) : t("More than usual ({amount}).", { amount: f0(u.net) }));
+    else if (u.n && s.net < u.net - 50) head += " " + (off > -0.15 ? t("A bit less than usual ({amount}).", { amount: f(u.net) }) : t("Less than usual ({amount}).", { amount: f(u.net) }));
+    else if (u.n && s.net > u.net + 50) head += " " + (off < 0.15 ? t("A bit more than usual ({amount}).", { amount: f(u.net) }) : t("More than usual ({amount}).", { amount: f(u.net) }));
   } else if (s.net >= 0) {
     head = who ? t("Nothing went out for {name}.", { name: esc(who) }) : t("Nothing went out.");
   } else {
-    head = who ? t("{name} spent {amount} more than came in.", { name: esc(who), amount: f0(-s.net) }) : t("You spent {amount} more than came in.", { amount: f0(-s.net) });
-    if (ups[0]) head += " " + t("Mostly {category}, {amount} above usual.", { category: catName(ups[0].k), amount: f0(ups[0].d) });
+    head = who ? t("{name} spent {amount} more than came in.", { name: esc(who), amount: f(-s.net) }) : t("You spent {amount} more than came in.", { amount: f(-s.net) });
+    if (ups[0]) head += " " + t("Mostly {category}, {amount} above usual.", { category: catName(ups[0].k), amount: f(ups[0].d) });
   }
 
   // Day by day, without bills
@@ -151,7 +150,7 @@ function compute(q, sc) {
       const k = h.indexOf(x), before = k > 0 ? h[k - 1] : null;
       if (before && !r.varies && Math.abs(x.a - before.a) > 0.005) {
         changes.push({ c: r.c, h: x.a > before.a ? t("{name} went up", { name: esc(r.n) }) : t("{name} went down", { name: esc(r.n) }),
-          p: t("{from} to {to}. That is {year} a year.", { from: f(before.a), to: f(x.a), year: f0(Math.abs(x.a - before.a) * (r.freq === "monthly" ? 12 / (r.every || 1) : r.freq === "weekly" ? 52 / (r.every || 1) : 1)) }) });
+          p: t("{from} to {to}. That is {year} a year.", { from: f(before.a), to: f(x.a), year: f(Math.abs(x.a - before.a) * (r.freq === "monthly" ? 12 / (r.every || 1) : r.freq === "weekly" ? 52 / (r.every || 1) : 1)) }) });
       }
     });
     if (r.freq === "yearly" && inMonth.length) changes.push({ c: r.c, h: t("{name}, once a year", { name: esc(r.n) }), p: t("{amount} on {date}.", { amount: f(inMonth[0].a), date: dlab(inMonth[0].d) }) });
@@ -271,16 +270,16 @@ function wireHeader(m) {
 /* Money kept, the last 12 months: bars, the month shown in green; a click opens a month */
 function keptBars(m, cls) {
   const { hist, q } = m, mx = Math.max(...hist.map((x) => Math.abs(x.s.net)), 1);
-  const label = t("Money kept, last {n} months", { n: hist.length }) + ": " + hist.map((x) => monthYear(x.q[0], x.q[1]) + " " + f0(x.s.net)).join(", ");
+  const label = t("Money kept, last {n} months", { n: hist.length }) + ": " + hist.map((x) => monthYear(x.q[0], x.q[1]) + " " + f(x.s.net)).join(", ");
   return '<div class="w-mrbars ' + (cls || "") + '" role="group" aria-label="' + esc(label) + '"><div class="b">' + hist.map((x) => {
     const on = same(x.q, q), v = x.s.net;
-    return '<button type="button" class="' + (on ? "on" : "") + (v < 0 ? " neg" : "") + '" data-mrm="' + mkey(x.q) + '" style="height:' + Math.max(3, (Math.abs(v) / mx) * 100).toFixed(1) + '%" aria-label="' + esc(monthYear(x.q[0], x.q[1]) + ", " + (v >= 0 ? t("kept {amount}", { amount: f0(v) }) : t("overspent {amount}", { amount: f0(-v) }))) + '"' + (on ? ' aria-current="true"' : "") + "></button>";
+    return '<button type="button" class="' + (on ? "on" : "") + (v < 0 ? " neg" : "") + '" data-mrm="' + mkey(x.q) + '" style="height:' + Math.max(3, (Math.abs(v) / mx) * 100).toFixed(1) + '%" aria-label="' + esc(monthYear(x.q[0], x.q[1]) + ", " + (v >= 0 ? t("kept {amount}", { amount: f(v) }) : t("overspent {amount}", { amount: f(-v) }))) + '"' + (on ? ' aria-current="true"' : "") + "></button>";
   }).join("") + '</div><div class="ax" aria-hidden="true">' + hist.map((x) => "<span" + (same(x.q, q) ? ' class="on"' : "") + ">" + esc(narrow(x.q)) + "</span>").join("") + "</div></div>";
 }
 /* The four totals, each against the month before */
 function tiles(m) {
   const { s, prev } = m, PM = monthOnly(m.pq);
-  const tl = (label, cur, p, goodUp) => '<div class="w-mrtile"><span>' + label + '</span><b class="amt">' + f0(cur) + "</b>" + (prev ? cmpPrev(cur, p, goodUp, PM) : "") + "</div>";
+  const tl = (label, cur, p, goodUp) => '<div class="w-mrtile"><span>' + label + '</span><b class="amt">' + bigMoney(cur) + "</b>" + (prev ? cmpPrev(cur, p, goodUp, PM) : "") + "</div>";
   return '<div class="w-mrtiles">' + tl(t("Came in"), s.inc, prev && prev.inc, true) + tl(t("Went out"), s.exp, prev && prev.exp, false) +
     tl(t("Bills"), s.bills, prev && prev.bills, false) + tl(t("Everyday"), s.day, prev && prev.day, false) + "</div>";
 }
@@ -288,7 +287,7 @@ function tiles(m) {
 function cmpPrev(cur, prev, goodUp, month) {
   const d = cur - prev;
   if (Math.abs(d) < Math.max(5, Math.abs(prev) * 0.03)) return '<span class="w-mrd">' + t("Same as {month}", { month }) + "</span>";
-  const amount = f0(Math.abs(d));
+  const amount = f(Math.abs(d));
   return '<span class="w-mrd ' + ((d > 0) === goodUp ? "good" : "bad") + '">' + (d > 0 ? t("{amount} more", { amount }) : t("{amount} less", { amount })) + "</span>";
 }
 /* Who the bar belongs to, in the legend's order: the first person, shared, then the others */
@@ -316,14 +315,14 @@ function whereRows(m) {
   const top = c[keys[0]];
   return '<div class="w-mrwhere">' + keys.map((k) => '<a class="w-mrwrow" href="/transactions?month=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link data-cat="' + esc(k) + '">' +
     '<span class="n">' + tile(k, 30) + "<b>" + catName(k) + "</b></span>" + '<span class="bar">' + splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + "</span>" +
-    '<b class="amt">' + f0(c[k]) + "</b>" + vsUsual(m, k) + "</a>").join("") + "</div>";
+    '<b class="amt">' + f(c[k]) + "</b>" + vsUsual(m, k) + "</a>").join("") + "</div>";
 }
 /* What changed: up on one side, down on the other */
 function changedItem(m, x, up) {
-  const big = up ? m.biggestIn(x.k) : null, amount = f0(Math.abs(x.d));
+  const big = up ? m.biggestIn(x.k) : null, amount = f(Math.abs(x.d));
   return '<div class="w-mrchg">' + tile(x.k, 36) + "<div><b>" + (up ? t("{category}, {amount} more", { category: catName(x.k), amount }) : t("{category}, {amount} less", { category: catName(x.k), amount })) + "</b><p>" +
-    (big ? t("Biggest: {name}, {amount} on {date}", { name: esc(big.n || cat(big.c).n), amount: f0(amt(big, m.sc)), date: esc(dlab(big.d)) })
-      : (m.c[x.k] ? t("{amount} this month, usually about {usual}", { amount: f0(m.c[x.k] || 0), usual: f0(m.cu[x.k] || 0) }) : t("Nothing this month, usually about {usual}", { usual: f0(m.cu[x.k] || 0) }))) + "</p></div></div>";
+    (big ? t("Biggest: {name}, {amount} on {date}", { name: esc(big.n || cat(big.c).n), amount: f(amt(big, m.sc)), date: esc(dlab(big.d)) })
+      : (m.c[x.k] ? t("{amount} this month, usually about {usual}", { amount: f(m.c[x.k] || 0), usual: f(m.cu[x.k] || 0) }) : t("Nothing this month, usually about {usual}", { usual: f(m.cu[x.k] || 0) }))) + "</p></div></div>";
 }
 function changed(m) {
   if (!m.u.n) return '<p class="w-hint"><b>' + t("The first month") + "</b> " + t("Next month Wally compares against this one.") + "</p>";
@@ -337,23 +336,23 @@ function person(m, key) {
   const pe = m.hasPrev ? totals(...bounds(m.pq), key).exp : null;
   const kv = (k, v) => '<div class="w-mrkv"><span>' + k + "</span><b>" + v + "</b></div>";
   return '<div class="w-mrpc' + (sc !== "all" && sc !== key ? " dim" : "") + '"><div class="h">' + av(key, "lg") + "<b>" + esc(pname(key)) + '</b><span class="' + (kept ? "good" : "bad") + '">' +
-      (kept ? t("Kept {amount}", { amount: f0(tt.net) }) : t("Over by {amount}", { amount: f0(-tt.net) })) + "</span></div>" +
-    kv(t("Earned"), '<span class="amt">' + f0(tt.inc) + "</span>") + kv(t("Spent, with their share"), '<span class="amt">' + f0(tt.exp) + "</span>") +
+      (kept ? t("Kept {amount}", { amount: f(tt.net) }) : t("Over by {amount}", { amount: f(-tt.net) })) + "</span></div>" +
+    kv(t("Earned"), '<span class="amt">' + f(tt.inc) + "</span>") + kv(t("Spent, with their share"), '<span class="amt">' + f(tt.exp) + "</span>") +
     (pe !== null ? kv(t("Against {month}", { month: PM }), cmp(tt.exp, pe, false, PM, true)) : "") + "</div>";
 }
 /* Day by day, as four facts */
 export function dayRows(m) {
   const ratio = m.weekday > 0.005 ? t("{x}× a weekday", { x: (m.weekend / m.weekday).toLocaleString(document.documentElement.lang, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) }) : "–";
   return [[t("Days without spending"), m.best > 1 ? t("{n}, longest run {run}", { n: m.ns, run: m.best }) : String(m.ns)]]
-    .concat(m.vals[m.peak] > 0 ? [[t("Busiest day"), esc(dlabW(ds(m.q[0], m.q[1], m.peak + 1))) + " · " + f0(m.vals[m.peak])]] : [])
-    .concat([[t("Average day"), f0(m.s.day / m.D)], [t("A weekend day costs"), ratio]]);
+    .concat(m.vals[m.peak] > 0 ? [[t("Busiest day"), esc(dlabW(ds(m.q[0], m.q[1], m.peak + 1))) + " · " + f(m.vals[m.peak])]] : [])
+    .concat([[t("Average day"), f(m.s.day / m.D)], [t("A weekend day costs"), ratio]]);
 }
 /* Bills: this month, against the one before, and the next */
 export function billRows(m) {
   const PM = m.hasPrev ? monthOnly(m.pq) : null, nx = m.next;
-  const rows = [[t("In {month}", { month: monthOnly(m.q) }), tn(m.billsN, "{n} bill", "{n} bills") + " · " + f0(m.s.bills)]];
+  const rows = [[t("In {month}", { month: monthOnly(m.q) }), tn(m.billsN, "{n} bill", "{n} bills") + " · " + f(m.s.bills)]];
   if (PM) rows.push([t("Against {month}", { month: PM }), m.changes.length ? m.changes.slice(0, 2).map((x) => x.h).join(", ") + (m.changes.length > 2 ? " " + tn(m.changes.length - 2, "and {n} more", "and {n} more") : "") : t("Same bills, same prices")]);
-  rows.push([esc(monthOnly(m.nq)), nx.n ? (nx.first ? t("{amount}, first {name} on {date}", { amount: f0(nx.sum), name: esc(nx.first.n), date: esc(dlab(nx.first.d)) }) : f0(nx.sum)) : t("No bills")]);
+  rows.push([esc(monthOnly(m.nq)), nx.n ? (nx.first ? t("{amount}, first {name} on {date}", { amount: f(nx.sum), name: esc(nx.first.n), date: esc(dlab(nx.first.d)) }) : f(nx.sum)) : t("No bills")]);
   return rows;
 }
 const kvList = (rows) => rows.map(([k, v]) => '<div class="w-mrkv"><span>' + k + "</span><b>" + v + "</b></div>").join("");
@@ -361,10 +360,10 @@ const kvList = (rows) => rows.map(([k, v]) => '<div class="w-mrkv"><span>' + k +
 export function highlights(m) {
   const { big, pay, topPay, tg, topTag, extra, sc } = m;
   return [
-    [t("Biggest purchase"), big ? esc(big.n || cat(big.c).n) + ", " + f0(amt(big, sc)) : t("None"), big ? catName(big.c) + ", " + esc(dlab(big.d)) : ""],
-    [t("Most visits"), topPay ? esc(topPay) : t("None"), topPay ? tn(pay[topPay].k, "{n} time, {amount}", "{n} times, {amount}", { amount: f0(pay[topPay].s) }) : ""],
-    [t("Top tag"), topTag ? esc(topTag) : t("No tags"), topTag ? tn(tg[topTag].k, "{n} time, {amount}", "{n} times, {amount}", { amount: f0(tg[topTag].s) }) : ""],
-    [t("Extra income"), extra.length ? f0(extra.reduce((v, x) => v + amt(x, sc), 0)) : t("None"),
+    [t("Biggest purchase"), big ? esc(big.n || cat(big.c).n) + ", " + f(amt(big, sc)) : t("None"), big ? catName(big.c) + ", " + esc(dlab(big.d)) : ""],
+    [t("Most visits"), topPay ? esc(topPay) : t("None"), topPay ? tn(pay[topPay].k, "{n} time, {amount}", "{n} times, {amount}", { amount: f(pay[topPay].s) }) : ""],
+    [t("Top tag"), topTag ? esc(topTag) : t("No tags"), topTag ? tn(tg[topTag].k, "{n} time, {amount}", "{n} times, {amount}", { amount: f(tg[topTag].s) }) : ""],
+    [t("Extra income"), extra.length ? f(extra.reduce((v, x) => v + amt(x, sc), 0)) : t("None"),
       extra.length ? extra.slice(0, 3).map((x) => esc(x.n || cat(x.c).n)).join(", ") : t("Only the usual")],
   ];
 }
@@ -375,7 +374,7 @@ function desktop(m) {
   const { s } = m;
   const sec = (id, title, body, extra) => '<section class="w-mrs" aria-labelledby="' + id + '"><div class="w-mrsh2"><h2 id="' + id + '">' + title + "</h2>" + (extra || "") + "</div>" + body + "</section>";
   let html = header(m) +
-    '<section class="w-mrs w-mrtop" aria-label="' + esc(t("Summary")) + '"><div class="w-mrhero"><div><span class="k">' + (s.net >= 0 ? t("Kept") : t("Overspent")) + '</span><div class="big amt' + (s.net < 0 ? " neg" : "") + '">' + f0(Math.abs(s.net)) + "</div><p>" + m.head + "</p></div>" +
+    '<section class="w-mrs w-mrtop" aria-label="' + esc(t("Summary")) + '"><div class="w-mrhero"><div><span class="k">' + (s.net >= 0 ? t("Kept") : t("Overspent")) + '</span><div class="big amt' + (s.net < 0 ? " neg" : "") + '">' + bigMoney(Math.abs(s.net)) + "</div><p>" + m.head + "</p></div>" +
     keptBars(m) + "</div>" + tiles(m) + "</section>";
   html += sec("mr-where", t("Where it went"), whereRows(m) + (couple() ? '<p class="w-mrnote" id="mr-shared">' + sharedText(m) + "</p>" : ""), splitKey());
   html += sec("mr-chg", t("What changed"), changed(m));
@@ -397,8 +396,8 @@ export function sharedText(m) {
     if (x.by) by[x.by] = (by[x.by] || 0) + x.a;
   }
   if (!n) return t("No shared costs this month.");
-  let text = tn(n, "{amount} in {n} shared cost.", "{amount} in {n} shared costs.", { amount: f0(tot) });
-  const payers = state.people.filter((p) => by[String(p.id)]).map((p) => t("{name} paid {amount}", { name: esc(p.name), amount: f0(by[String(p.id)]) }));
+  let text = tn(n, "{amount} in {n} shared cost.", "{amount} in {n} shared costs.", { amount: f(tot) });
+  const payers = state.people.filter((p) => by[String(p.id)]).map((p) => t("{name} paid {amount}", { name: esc(p.name), amount: f(by[String(p.id)]) }));
   if (payers.length) text += " " + payers.join(", ") + ".";
   return text;
 }
@@ -423,11 +422,11 @@ function phoneStory(m) {
   const { s, keys, c } = m;
   const pageWrap = (i, label, body) => '<section class="w-mrsp" data-sp="' + i + '"' + (i === story ? "" : " hidden") + ' aria-label="' + esc(t("Page {n} of {total}: {title}", { n: i + 1, total: STORY, title: label })) + '">' + body + "</section>";
   const pages = [];
-  pages.push([t("Kept"), '<div class="w-pmr"><span class="k">' + (s.net >= 0 ? t("Kept") : t("Overspent")) + '</span><div class="big amt' + (s.net < 0 ? " neg" : "") + '">' + f0(Math.abs(s.net)) + "</div><p>" + m.head + "</p></div>" +
+  pages.push([t("Kept"), '<div class="w-pmr"><span class="k">' + (s.net >= 0 ? t("Kept") : t("Overspent")) + '</span><div class="big amt' + (s.net < 0 ? " neg" : "") + '">' + bigMoney(Math.abs(s.net)) + "</div><p>" + m.head + "</p></div>" +
     keptBars(m, "ph") + tiles(m)]);
   const top = keys.length ? c[keys[0]] : 1;
   pages.push([t("Where it went"), '<h2 class="w-mrsh">' + t("Where it went") + "</h2>" + splitKey() +
-    (keys.length ? '<div class="w-mrcard">' + keys.slice(0, 6).map((k) => '<a class="w-mrpw" href="/transactions?month=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link><span class="top">' + tile(k, 30) + "<b>" + catName(k) + '</b><span class="amt">' + f0(c[k]) + "</span></span>" +
+    (keys.length ? '<div class="w-mrcard">' + keys.slice(0, 6).map((k) => '<a class="w-mrpw" href="/transactions?month=' + mkey(m.q) + "&cat=" + encodeURIComponent(k) + '" data-link><span class="top">' + tile(k, 30) + "<b>" + catName(k) + '</b><span class="amt">' + f(c[k]) + "</span></span>" +
       splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + vsUsual(m, k) + "</a>").join("") + "</div>" : '<p class="w-hint">' + t("No spending this month.") + "</p>") +
     (couple() ? '<p class="w-mrnote">' + sharedText(m) + "</p>" : "")]);
   pages.push([t("What changed"), '<h2 class="w-mrsh">' + t("What changed") + "</h2>" + changed(m)]);
