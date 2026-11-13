@@ -18,7 +18,7 @@ from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.currency import Currency, DEFAULT_CURRENCIES
 from .services.engine import run_all, scheduler
 
-VERSION = "2.3.1"
+VERSION = "2.4.0"
 
 def init_defaults():
     with Session(database.engine) as db:
