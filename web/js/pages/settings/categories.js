@@ -1,6 +1,6 @@
 /* Settings › Categories: a list, biggest spender first (the order that gives each its color), that opens
    each category's page (name, icon, its transactions, merge, delete). Edit puts a delete button on each row. Deleting asks where its transactions go. */
-import { t, tn, esc, state, f0, PUT, POST, DEL, GET, paintColors, catRank, cat, cc, tile, isIncomeCat, catIcon, CAT_ICONS, monthsIn, START, TODAY, icon, reloadCategories } from "../../core.js";
+import { t, tn, esc, state, PUT, POST, DEL, GET, paintColors, catRank, cat, cc, tile, isIncomeCat, catIcon, CAT_ICONS, monthsIn, START, TODAY, icon, reloadCategories, f } from "../../core.js";
 import { openDialog, toast, errorToast } from "../../ui.js";
 import { refresh } from "../../shell.js";
 import { gl, gr, addRow, hero, check, minus, fieldRow, nameGate, sameName, phone, val, paint } from "./common.js";
@@ -30,7 +30,7 @@ function stats() {
   return out;
 }
 function line(k, st, months) {
-  return st.n ? tn(st.n, "{n} transaction · about {avg} a month", "{n} transactions · about {avg} a month", { avg: '<span class="amt">' + f0(st.v / months) + "</span>" }) : t("No transactions yet");
+  return st.n ? tn(st.n, "{n} transaction · about {avg} a month", "{n} transactions · about {avg} a month", { avg: '<span class="amt">' + f(st.v / months) + "</span>" }) : t("No transactions yet");
 }
 const months = () => Math.max(1, monthsIn(START, TODAY).length);
 const href = (k) => "/settings/categories/" + encodeURIComponent(k);

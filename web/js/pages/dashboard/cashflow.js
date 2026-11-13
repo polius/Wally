@@ -7,8 +7,8 @@
    only source, and in the current month it says "No income yet", as payday may still be to come.
    The card folds the smallest into "And 3 more". The bigger view
    shows every one, with a list: pointing at a row lights its flow, and the other way round. */
-import { state, t, tn, esc, amt, f, f0, pct, cc, couple, pname, pcolor, icon, tile, av, ym, TODAY, monthName, monthYear } from "../../core.js";
-import { chart, enlarge, el, hover, row, hideTip, closeDialog } from "../../ui.js";
+import { state, t, tn, esc, amt, f, pct, cc, couple, pname, pcolor, icon, tile, av, ym, TODAY, monthName, monthYear, bigMoney } from "../../core.js";
+import { chart, draw, enlarge, el, hover, row, hideTip, closeDialog } from "../../ui.js";
 import { goTx } from "./range.js";
 import { eByCat } from "./hero.js";
 
@@ -52,8 +52,8 @@ export function cashflow(r) {
   const uses = toParts(eByCat(r.start, r.end));
   const inn = sum(sources), out = sum(uses), left = inn - out;
   const overName = !r.current ? t("Overspent") : inn > 0 ? t("Overspent so far") : t("No income yet");
-  if (left >= 0.5) uses.push({ name: t("Kept"), v: left, color: "var(--s-kept)", kept: true });
-  else if (left <= -0.5) sources.push({ name: overName, short: inn > 0 ? t("Overspent") : overName, v: -left, color: "var(--w-bad)", over: true });
+  if (left >= 0.005) uses.push({ name: t("Kept"), v: left, color: "var(--s-kept)", kept: true });
+  else if (left <= -0.005) sources.push({ name: overName, short: inn > 0 ? t("Overspent") : overName, v: -left, color: "var(--w-bad)", over: true });
   return { sources, uses, inn, out, left, total: Math.max(inn, out), overName };
 }
 /* The smallest as one row. What is nobody's and no category (Kept, Overspent) always stays. */
@@ -76,8 +76,8 @@ function periodName(r) {
 export const cashflowTitle = (r) => esc(t("Cashflow")) + ' <span class="s-per">(' + esc(periodName(r)) + ")</span>";
 /* The bigger view opens with the chart's own story, left to right: what came in, what went out, what's left */
 function stats(d, r) {
-  const over = d.left <= -0.5;
-  const stat = (name, v, cls) => '<div' + (cls ? ' class="' + cls + '"' : "") + "><span>" + esc(name) + '</span><b class="amt">' + esc(f0(v)) + "</b></div>";
+  const over = d.left <= -0.005;
+  const stat = (name, v, cls) => '<div' + (cls ? ' class="' + cls + '"' : "") + "><span>" + esc(name) + '</span><b class="amt">' + bigMoney(v) + "</b></div>";
   const last = over ? d.overName : d.inn > 0 ? t("Kept") + " · " + share(Math.max(d.left, 0), d.inn) : t("Kept");
   return '<div class="w-gl s-cfstats">' + stat(t("Came in"), d.inn) + stat(t("Went out"), d.out) + stat(last, Math.abs(d.left), over ? "over" : "kept") + "</div>";
 }
@@ -152,15 +152,18 @@ function diagram(svg, w, h, d, big, r) {
 
   // Labels stay off the flows, in columns as wide as their longest line, within reason
   const widest = (list, fn, cls) => Math.max(...list.map((x) => textWidth(svg, fn(x), cls)));
-  const nameW = (list) => widest(list, (x) => x.name, "lb"), amtW = (list) => widest(list, (x) => f0(x.v), "lbam");
+  const nameW = (list) => widest(list, (x) => x.name, "lb"), amtW = (list) => widest(list, (x) => f(x.v), "lbam");
   const leftW = Math.min(namesOnly ? nameW(L) : Math.max(nameW(L), amtW(L)), w * 0.28);
-  const amtR = namesOnly ? 0 : amtW(R), rightW = Math.min(nameW(R) + (namesOnly ? 0 : 14 + amtR), w * (big ? 0.34 : 0.48));
+  const amtR = namesOnly ? 0 : amtW(R), capR = w * (big ? 0.34 : 0.48);
+  // On the card, when a name and its amount don't fit side by side, the amount goes under the name, as on the left
+  const stack = !big && !namesOnly && nameW(R) + 14 + amtR > capR;
+  const rightW = Math.min(stack ? Math.max(nameW(R), amtR) : nameW(R) + (namesOnly ? 0 : 14 + amtR), capR);
   const space = big ? 20 : 12; // between the labels and the flows
   const leftX = Math.ceil(leftW) + space, rightX = Math.floor(w - rightW) - space;
   const hubX = mid ? Math.round((leftX + rightX) / 2) : leftX;
 
   // Rows stand far enough apart for their labels; the scale gives way if they don't fit
-  const pitchL = big ? 28 : namesOnly ? 22 : 40, pitchR = big ? 28 : namesOnly ? 22 : 24, gap = roomy ? 22 : big ? 16 : 10;
+  const pitchL = big ? 28 : namesOnly ? 22 : 40, pitchR = big ? 28 : namesOnly ? 22 : stack ? 40 : 24, gap = roomy ? 22 : big ? 16 : 10;
   const n = Math.max(L.length, R.length);
   let k = Math.max(0.01, (avail - (n - 1) * gap) / d.total);
   const th = (v) => Math.max(thin, v * k);
@@ -187,14 +190,14 @@ function diagram(svg, w, h, d, big, r) {
     row(esc(d.left >= 0 ? t("Kept") : d.inn > 0 ? t("Overspent") : d.overName), esc(f(Math.abs(d.left))));
 
   const text = (g, x, cy, item, right) => {
-    if (right || namesOnly) {
+    if ((right && !stack) || namesOnly) {
       const a = el("text", { x, y: cy + 5, class: "lb" }, g);
       fit(a, item.name, (right ? rightW - (namesOnly ? 0 : amtR + 14) : leftW));
-      if (right && !namesOnly) el("text", { x: w, y: cy + 5, class: "lbam", "text-anchor": "end" }, g).textContent = f0(item.v);
+      if (right && !namesOnly) el("text", { x: w, y: cy + 5, class: "lbam", "text-anchor": "end" }, g).textContent = f(item.v);
     } else {
       const a = el("text", { x, y: cy - 3, class: "lb" }, g);
-      fit(a, item.name, leftW);
-      el("text", { x, y: cy + 15, class: "lbam" }, g).textContent = f0(item.v);
+      fit(a, item.name, right ? rightW : leftW);
+      el("text", { x, y: cy + 15, class: "lbam" }, g).textContent = f(item.v);
     }
   };
 
@@ -205,7 +208,7 @@ function diagram(svg, w, h, d, big, r) {
     const path = el("path", { class: "fl", d: right ? ribbon(x0, x.at, x1, x.y, ht, mid ? 0 : round, round) : ribbon(x0, x.y, x1, x.at, ht, round, 0) }, g);
     if (ht < 8) { path.setAttribute("stroke", "transparent"); path.setAttribute("stroke-width", 8); }
     text(g, right ? rightX + space : 0, cy, x, right);
-    const slot = Math.max(ht, 22);
+    const slot = Math.max(ht, right && stack ? 40 : 22);
     el("rect", { x: right ? rightX : 0, y: cy - slot / 2, width: right ? w - rightX : leftX, height: slot, fill: "transparent" }, g);
 
     if (big) { g.setAttribute("data-k", key); if (clickable) g.style.cursor = "pointer"; return; }
@@ -240,15 +243,20 @@ function diagram(svg, w, h, d, big, r) {
     const g = el("g", { class: "cf" }, svg), cy = hubY + hubH / 2;
     const names = wrap(svg, L[0].name, leftW), step = 18, first = cy + 6 - (names.length - (namesOnly ? 1 : 0)) * step / 2;
     names.forEach((s, i) => fit(el("text", { x: 0, y: first + i * step, class: "lb" }, g), s, leftW));
-    if (!namesOnly) el("text", { x: 0, y: first + names.length * step, class: "lbam" }, g).textContent = f0(L[0].v);
+    if (!namesOnly) el("text", { x: 0, y: first + names.length * step, class: "lbam" }, g).textContent = f(L[0].v);
     el("rect", { x: 0, y: cy - 36, width: leftX, height: 72, fill: "transparent" }, g);
     if (big) g.setAttribute("data-k", "l0"); else hover(g, summary);
   }
+  return stack;
 }
 
 /* ---------- the card ---------- */
 export function drawCashflow(id, d, r) {
-  chart(id, () => Math.max(200, 20 + rows(d, false) * 28), (svg, w, h) => diagram(svg, w, h, d, false, r), () => describe(d));
+  // Stacked rows need more height: the first drawing finds out, and draws again if that changed
+  chart(id, () => Math.max(200, 20 + rows(d, false) * (d.stack ? 42 : 28)), (svg, w, h) => {
+    const stack = diagram(svg, w, h, d, false, r);
+    if (stack !== !!d.stack) { d.stack = stack; queueMicrotask(() => draw(id)); }
+  }, () => describe(d));
 }
 
 /* ---------- the bigger view: the answer, the diagram, and every line of it ---------- */
@@ -256,7 +264,7 @@ const lead = (x) => (x.person ? av(x.person, "lg") : x.cat ? tile(x.cat)
   : '<span class="w-ico" style="background:color-mix(in srgb,' + (x.kept ? "var(--w-good)" : x.color) + " 15%,transparent);color:" + (x.kept ? "var(--w-good)" : x.color) + '">' + icon(x.kept ? "savings" : "alert") + "</span>");
 function listRow(x, key, total) {
   const tag = x.cat || x.person ? 'button type="button"' : "div";
-  return "<" + tag + ' class="s-row" data-k="' + key + '">' + lead(x) + '<span class="s-nm"><span>' + esc(x.short || x.name) + "</span><small>" + esc(share(x.v, total)) + '</small></span><span class="s-am amt">' + esc(f0(x.v)) + "</span>" + (x.cat || x.person ? icon("right", "s-chev") : '<span class="s-chev"></span>') + "</" + tag.split(" ")[0] + ">";
+  return "<" + tag + ' class="s-row" data-k="' + key + '">' + lead(x) + '<span class="s-nm"><span>' + esc(x.short || x.name) + "</span><small>" + esc(share(x.v, total)) + '</small></span><span class="s-am amt">' + esc(f(x.v)) + "</span>" + (x.cat || x.person ? icon("right", "s-chev") : '<span class="s-chev"></span>') + "</" + tag.split(" ")[0] + ">";
 }
 export function openCashflow(r) {
   const d = cashflow(r);

@@ -3,7 +3,7 @@
    a five-week calendar a button away, and each rule's story. Rules come from /recurring; price
    changes are worked out here, from past transactions. */
 import {
-  state, t, tn, esc, f, fk, f0, pct, bigMoney, dlab, dlabW, dlabL, dlabY, monthYear, F, TODAY, addD, ym, amt, tile, cc, av,
+  state, t, tn, esc, f, fk, pct, bigMoney, dlab, dlabW, dlabL, dlabY, monthYear, F, TODAY, addD, ym, amt, tile, cc, av,
   pname, couple, icon, wkOff, dows, rerank, POST, DEL, fromRule, reloadRules, reloadLedger, monthName, monthIn, relDay,
 } from "../core.js";
 import { ruleDates, occurrences, ruleAmt, perMonth, isIncome, nextOf, inDays, ruleHist, describe, shortDesc, everyN } from "../sched.js";
@@ -196,8 +196,8 @@ function summary(rules) {
   const sum30 = sum(o30, (x) => ruleAmt(x.r));
   const big = inc ? incM : billM, n = inc ? incs.length : bills.length;
   let line = inc ? tn(n, "{n} source", "{n} sources") : incM ? t("{pct} of what comes in", { pct: pct(billM / incM) }) : tn(n, "{n} active rule", "{n} active rules");
-  const soon = o30.length ? t("{amount} in the next 30 days", { amount: f0(sum30) }) : t("Nothing in the next 30 days");
-  return '<span class="rec-eye">' + esc(t("Every month")) + '</span><b class="rec-big amt' + (inc ? " pos" : "") + '">' + bdi(esc(f0(big))) + "</b>" +
+  const soon = o30.length ? t("{amount} in the next 30 days", { amount: f(sum30) }) : t("Nothing in the next 30 days");
+  return '<span class="rec-eye">' + esc(t("Every month")) + '</span><b class="rec-big amt' + (inc ? " pos" : "") + '">' + bdi(bigMoney(big)) + "</b>" +
     '<span class="rec-line">' + esc(line) + " · " + esc(soon) + "</span>";
 }
 
@@ -282,7 +282,7 @@ function list(listed, shown) {
   let html = groups.map((g) => {
     g.rows.forEach((r) => ui.order.push(r.id));
     const tot = sum(g.rows, (r) => (nextOf(r) ? ruleAmt(r) : 0));
-    return '<div class="w-dayh">' + esc(g.label) + (tot ? '<span class="amt">' + bdi(esc((ui.tab === "income" ? "+" : "") + f0(tot))) + "</span>" : "") + "</div>" + g.rows.map(ruleRow).join("");
+    return '<div class="w-dayh">' + esc(g.label) + (tot ? '<span class="amt">' + bdi(esc((ui.tab === "income" ? "+" : "") + f(tot))) + "</span>" : "") + "</div>" + g.rows.map(ruleRow).join("");
   }).join("");
   if (ended.length) {
     if (!ui.endedOpen && ended.some((r) => r.id === ui.sel)) ui.endedOpen = true;

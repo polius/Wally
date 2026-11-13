@@ -174,7 +174,9 @@ function withSymbol(s, neg) {
 }
 /* Money: f(12.5) → "12,50 €" with the household's symbol and position, in the reader's language */
 export function f(n) { return withSymbol(NUM.format(Math.abs(n)), n < 0 && Math.abs(n) >= 0.005); }
-export function f0(n) { return withSymbol(NUM0.format(Math.abs(Math.round(n))), Math.round(n) < 0); }
+/* A whole number with the symbol, for chart axis ticks and filter presets ("Over 50 €"). They are
+   scale marks and limits, not money: an amount of money is always f() or bigMoney(), with its cents. */
+export function fWhole(n) { return withSymbol(NUM0.format(Math.abs(Math.round(n))), Math.round(n) < 0); }
 export function fk(n) {
   const a = Math.abs(n);
   if (a >= 1000) return withSymbol(NUMP.format(Math.round(a / 100) / 10) + "k", n < 0);

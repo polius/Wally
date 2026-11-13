@@ -1,6 +1,6 @@
 /* Transactions: what is shown. The view state, the search language, the range and the filter.
    Nothing here touches the page; it only works out which transactions to show. */
-import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt, pname, person, parseAmt, f0 } from "../../core.js";
+import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt, pname, person, parseAmt, f } from "../../core.js";
 
 /* The view state. It lives as long as the app does; mount() resets it from the address. */
 export const S = {
@@ -58,9 +58,9 @@ export function parseQ(q) {
     let hit = null, k = Math.min(4, words.length - i);
     for (; k >= 1; k--) { const name = lower(words.slice(i, i + k).join(" ")); if (catsBy.has(name)) { hit = catsBy.get(name); break; } }
     if ((m = lw.match(/^>(\d[\d.,]*)$/)) && parseAmt(m[1]) !== null) {
-      o.min = parseAmt(m[1]); o.chips.push({ label: t("over {amount}", { amount: f0(o.min) }), idx: [i] });
+      o.min = parseAmt(m[1]); o.chips.push({ label: t("over {amount}", { amount: f(o.min) }), idx: [i] });
     } else if ((m = lw.match(/^<(\d[\d.,]*)$/)) && parseAmt(m[1]) !== null) {
-      o.max = parseAmt(m[1]); o.chips.push({ label: t("under {amount}", { amount: f0(o.max) }), idx: [i] });
+      o.max = parseAmt(m[1]); o.chips.push({ label: t("under {amount}", { amount: f(o.max) }), idx: [i] });
     } else if (lw[0] === "@" && lw.length > 1) {
       const who = lw.slice(1);
       const p = shared.has(who) ? ["shared", "shared"] : people.find(([n]) => n === who) || people.find(([n]) => n.startsWith(who));

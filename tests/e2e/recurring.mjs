@@ -24,7 +24,6 @@ const d0 = new Date();
 const TODAY = d0.getFullYear() + "-" + pad(d0.getMonth() + 1) + "-" + pad(d0.getDate());
 const addD = (s, n) => new Date(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8)) + n * 864e5).toISOString().slice(0, 10);
 const money = (n) => (n < 0 ? "−" : "") + new Intl.NumberFormat("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n)) + " €";
-const money0 = (n) => (Math.round(n) < 0 ? "−" : "") + new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(Math.abs(Math.round(n))) + " €";
 const PER = { daily: 365.25 / 12, weekly: 52.18 / 12, monthly: 1, yearly: 1 / 12 };
 
 async function startServer(port, demo) {
@@ -96,7 +95,7 @@ try {
   console.log("Recurring at 1440 px");
   let page = await open(base, "/recurring");
   const sum = await text(page, ".rec-sum");
-  ok((await text(page, ".rec-big")) === money0(billM), "Bills: one total, every month, " + money0(billM) + " (" + sum.replace(/\n/g, " ") + ")");
+  ok((await text(page, ".rec-big")) === money(billM), "Bills: one total, every month, " + money(billM) + " (" + sum.replace(/\n/g, " ") + ")");
   ok(sum.includes(Math.round(billM / incM * 100) + "% of what comes in"), "and the share of income: " + Math.round(billM / incM * 100) + "%");
   ok(/in the next 30 days/.test(sum), "and what the next 30 days hold");
   ok(await page.locator(".rec-kpis,.w-kpi").count() === 0, "no row of key figures");
@@ -131,7 +130,7 @@ try {
   ok(await page.locator(".rec-cal .w-rday.in").count() === 0, "Bills: the calendar shows no money in");
   await page.click('.rec-ctl-h [data-rtab="income"]');
   ok(await page.locator("#rec-list .w-rrow").count() === 2, "Income shows the two salaries");
-  ok((await text(page, ".rec-big")) === money0(incM), "Income: its own total, " + money0(incM));
+  ok((await text(page, ".rec-big")) === money(incM), "Income: its own total, " + money(incM));
   ok(!(await text(page, "#rec-page")).includes("Netflix went up"), "Income hides bill notices");
   ok((await text(page, "#rec-insp")).includes("Recurring income"), "the panel follows the tab");
   await page.click('.rec-ctl-h [data-rtab="expense"]');
@@ -180,13 +179,13 @@ try {
   await page.waitForSelector('.w-rrow.off[data-rid="' + gym.id + '"]');
   ok((await api("GET", "/recurring")).find((r) => r.id === gym.id).paused === true, "Pause pauses the rule on the server");
   ok((await text(page, "#toast")).includes("paused"), "a toast says it is paused");
-  ok((await text(page, ".rec-big")) === money0(billM - 39), "a paused rule leaves the monthly total");
+  ok((await text(page, ".rec-big")) === money(billM - 39), "a paused rule leaves the monthly total");
   ok((await text(page, "#rec-list")).includes("Paused"), "and waits in a Paused group");
   ok(/Next\s*Paused/.test(await text(page, "#rec-insp")) && await page.locator("#rec-insp .w-badge").innerText() === "Paused", "the panel says it is paused, with nothing next");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(400);
   ok((await api("GET", "/recurring")).find((r) => r.id === gym.id).paused === false, "Resume resumes it");
-  ok((await text(page, ".rec-big")) === money0(billM), "and it counts again");
+  ok((await text(page, ".rec-big")) === money(billM), "and it counts again");
   await page.click('#rec-insp [data-act="pause"]');
   await page.waitForTimeout(300);
   await page.click("#toast-undo");

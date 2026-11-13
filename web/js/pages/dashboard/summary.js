@@ -5,9 +5,8 @@
    dashboard.css). Spending is every expense, bills (what a recurring rule made) included.
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
-  state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, f0, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
-  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED, cc,
-} from "../../core.js";
+  state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
+  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED, cc, bigMoney, fWhole } from "../../core.js";
 import { chart, enlarge, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
@@ -17,26 +16,26 @@ import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eDayIte
 const $ = (id) => document.getElementById(id);
 
 /* ---------- small helpers ---------- */
-/* A whole amount that counts to its new value when the period changes */
+/* The big amount, cents smaller, counting to its new value when the period changes */
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 function countTo(node, to) {
   const from = typeof node._v === "number" ? node._v : null;
   node._v = to;
-  if (from === null || Math.round(from) === Math.round(to) || still.matches) { node.textContent = f0(to); return; }
+  if (from === null || Math.round(from * 100) === Math.round(to * 100) || still.matches) { node.innerHTML = bigMoney(to); return; }
   const t0 = performance.now();
   const step = (now) => {
     if (node._v !== to) return;
     const k = Math.min(1, (now - t0) / 400), e = 1 - Math.pow(1 - k, 3);
-    node.textContent = f0(from + (to - from) * e);
+    node.innerHTML = bigMoney(from + (to - from) * e);
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 /* "↓ 45 € less than October at this point": the arrow and amount green when it is good news, red when it isn't */
 function changeLine(diff, goodWhenUp, what) {
-  if (Math.abs(diff) < 0.5) return '<span class="s-ch">' + esc(t("The same as {what}", { what })) + "</span>";
+  if (Math.abs(diff) < 0.005) return '<span class="s-ch">' + esc(t("The same as {what}", { what })) + "</span>";
   const up = diff > 0, good = up === goodWhenUp;
-  return '<span class="s-ch"><b class="' + (good ? "dn-good" : "up-bad") + '">' + (up ? "↑ " : "↓ ") + esc(f0(Math.abs(diff))) + "</b> " +
+  return '<span class="s-ch"><b class="' + (good ? "dn-good" : "up-bad") + '">' + (up ? "↑ " : "↓ ") + esc(f(Math.abs(diff))) + "</b> " +
     esc(up ? t("more than {what}", { what }) : t("less than {what}", { what })) + "</span>";
 }
 /* What the period is compared with, as it reads at the end of a sentence */
@@ -128,10 +127,10 @@ function renderHero(r) {
       const by = view.hv === "tags" ? BY_TAG : BY_CAT, tot = by.sum(r.start, r.end), keys = Object.keys(tot).sort(largest(tot));
       months.forEach((x) => { x.cats = by.sum(x.a, x.b); });
       chart("c-hero", (w) => (w < 560 ? 200 : 260), (svg, w, h) => heroCats(svg, w, h, months, keys, by),
-        () => by.chartLabel(r.noun) + ": " + keys.slice(0, 5).map((k) => by.name(k) + " " + f0(tot[k])).join(", "));
+        () => by.chartLabel(r.noun) + ": " + keys.slice(0, 5).map((k) => by.name(k) + " " + f(tot[k])).join(", "));
     } else {
       chart("c-hero", (w) => (w < 560 ? 200 : 260), (svg, w, h) => heroMonthly(svg, w, h, months),
-        () => t("Income and spending by month in {range}", { range: r.noun }) + ": " + months.map((x) => monthYear(x.y, x.m) + " " + f0(x.inc) + " / " + f0(x.exp)).join(", "));
+        () => t("Income and spending by month in {range}", { range: r.noun }) + ": " + months.map((x) => monthYear(x.y, x.m) + " " + f(x.inc) + " / " + f(x.exp)).join(", "));
     }
     return;
   }
@@ -174,7 +173,7 @@ function pace(svg, w, h, o) {
   // The comparison's total, at the end of its line
   if (d.cmp) {
     const v = d.cmp[d.cmp.length - 1], y = Math.max(12, Y(v) - 10);
-    txt(svg, X(len - 1), y, t("{name} {amount}", { name: d.cmpName, amount: f0(v) }), "lb2", "end");
+    txt(svg, X(len - 1), y, t("{name} {amount}", { name: d.cmpName, amount: f(v) }), "lb2", "end");
   }
   // Crosshair and tooltip; a mouse click on a day opens its transactions
   const cross = el("line", { y1: m.t, y2: h - m.b, stroke: "var(--w-ink3)", "stroke-width": 1, opacity: 0 }, svg);
@@ -225,8 +224,8 @@ function renderSplit(r, id, by) {
   if (!any) return;
   const top = 6, shown = listOpen[id] ? keys : keys.slice(0, top);
   const pm = p.ok && r.month ? monthName(+p.start.slice(5, 7)) : p.ok && r.mode === "year" ? p.start.slice(0, 4) : "";
-  const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f0(prev[k] || 0) })
-    : pm ? t("{period}: {amount}", { period: pm, amount: f0(prev[k] || 0) }) : t("Before: {amount}", { amount: f0(prev[k] || 0) });
+  const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f(prev[k] || 0) })
+    : pm ? t("{period}: {amount}", { period: pm, amount: f(prev[k] || 0) }) : t("Before: {amount}", { amount: f(prev[k] || 0) });
   // How much it moved against the same period before, as Recurring shows a price change: up in red, down in green.
   // Nothing when there was nothing before, or when it rounds to 0 %.
   const change = (k) => {
@@ -241,9 +240,9 @@ function renderSplit(r, id, by) {
   const tot = spent.reduce((s, k) => s + cur[k], 0);
   const bar = tot > 0 ? '<div class="s-stack" role="img" aria-label="' + esc(spent.slice(0, 5).map((k) => by.name(k) + " " + pct(cur[k] / tot)).join(", ")) + '">' +
     spent.map((k) => '<i style="flex:' + cur[k].toFixed(2) + ";background:" + by.color(k) + '" data-k="' + esc(k) + '"></i>').join("") + "</div>" : "";
-  $("s-" + id).innerHTML = bar + shown.map((k) => rowHtml(by.go(k), by.tile(k), by.name(k), note(k), f0(cur[k] || 0), "", change(k))).join("") +
+  $("s-" + id).innerHTML = bar + shown.map((k) => rowHtml(by.go(k), by.tile(k), by.name(k), note(k), f(cur[k] || 0), "", change(k))).join("") +
     (keys.length > top ? '<button type="button" class="s-more w-link" data-act="' + id + '-all" aria-expanded="' + listOpen[id] + '">' + (listOpen[id] ? t("Show less") : t("Show all")) + "</button>" : "");
-  $("s-" + id).querySelectorAll(".s-stack i").forEach((n) => hover(n, () => row(esc(by.name(n.dataset.k)), f0(cur[n.dataset.k]) + " · " + pct(cur[n.dataset.k] / tot), by.color(n.dataset.k))));
+  $("s-" + id).querySelectorAll(".s-stack i").forEach((n) => hover(n, () => row(esc(by.name(n.dataset.k)), f(cur[n.dataset.k]) + " · " + pct(cur[n.dataset.k] / tot), by.color(n.dataset.k))));
 }
 
 /* ---------- Coming up: the next three, however far away ---------- */
@@ -282,7 +281,7 @@ function renderRecap(r) {
   if (!tt || !tt.n) { w.innerHTML = ""; return; }
   w.innerHTML = '<a class="s-recap" href="/review?m=' + r.start.slice(0, 7) + '" data-link><span class="s-recapi">' + icon("history") + "</span><span><b>" +
     esc(t("Your {month} recap", { month: monthIn(m) })) + "</b><small>" +
-    esc(tt.net >= 0 ? t("You kept {amount}. A few things worth knowing.", { amount: f0(tt.net) }) : t("You overspent {amount}. A few things worth knowing.", { amount: f0(-tt.net) })) +
+    esc(tt.net >= 0 ? t("You kept {amount}. A few things worth knowing.", { amount: f(tt.net) }) : t("You overspent {amount}. A few things worth knowing.", { amount: f(-tt.net) })) +
     "</small></span>" + icon("right", "s-chev") + "</a>";
 }
 
@@ -299,7 +298,7 @@ function notices(r) {
       if (next && next <= soon && last && Math.abs(last.a - x.a) > 0.005) {
         seen.add(key);
         const up = x.a > last.a, by = Math.abs(x.a - last.a);
-        out.push({ ico: "trend", cls: up ? "bad" : "good", w: 3, title: up ? t("{name} goes up {amount}", { name: x.n, amount: fk(by) }) : t("{name} goes down {amount}", { name: x.n, amount: fk(by) }),
+        out.push({ ico: "trend", cls: up ? "bad" : "good", w: 3, title: up ? t("{name} goes up {amount}", { name: x.n, amount: f(by) }) : t("{name} goes down {amount}", { name: x.n, amount: f(by) }),
           sub: t("From {from} to {to} on {date}.", { from: f(last.a), to: f(x.a), date: dlab(next) }) });
         return;
       }
@@ -308,7 +307,7 @@ function notices(r) {
         if (Math.abs(h[i].a - h[i - 1].a) > 0.005) {
           seen.add(key);
           const up = h[i].a > h[i - 1].a;
-          out.push({ ico: "trend", cls: up ? "bad" : "good", w: 2, title: up ? t("{name} went up {amount}", { name: x.n, amount: fk(Math.abs(h[i].a - h[i - 1].a)) }) : t("{name} went down {amount}", { name: x.n, amount: fk(Math.abs(h[i].a - h[i - 1].a)) }),
+          out.push({ ico: "trend", cls: up ? "bad" : "good", w: 2, title: up ? t("{name} went up {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }) : t("{name} went down {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }),
             sub: t("From {from} to {to} on {date}.", { from: f(h[i - 1].a), to: f(h[i].a), date: dlab(h[i].d) }) });
           return;
         }
@@ -325,7 +324,7 @@ function notices(r) {
     [1, 2, 3].forEach((k) => { const q = ymAdd(y, m, -k), a = ds(q[0], q[1], 1); if (a < START) return; const b = ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))), o = eByCat(a, b, undefined, false); Object.keys(o).forEach((c) => { usual[c] = (usual[c] || 0) + o[c] / 3; }); });
     Object.keys(cur).forEach((c) => {
       const u = usual[c] || 0;
-      if (u > 0 && cur[c] >= u * 1.5 && cur[c] - u >= 40) out.push({ cat: c, w: 2, title: t("{category} is well above usual", { category: c }), sub: t("{amount} so far; usually about {usual} by now.", { amount: f0(cur[c]), usual: f0(u) }) });
+      if (u > 0 && cur[c] >= u * 1.5 && cur[c] - u >= 40) out.push({ cat: c, w: 2, title: t("{category} is well above usual", { category: c }), sub: t("{amount} so far; usually about {usual} by now.", { amount: f(cur[c]), usual: f(u) }) });
     });
   }
   return out.sort((a, b) => b.w - a.w).slice(0, 3);
@@ -360,10 +359,10 @@ function renderPeople(r) {
       if (x.p === k) own += x.a; else if (x.p === null) share += amt(x, k);
     }
     const parts = [];
-    if (own >= 0.5) parts.push(t("{amount} own", { amount: f0(own) }));
-    if (share >= 0.5) parts.push(t("{amount} share of shared costs", { amount: f0(share) }));
+    if (own >= 0.005) parts.push(t("{amount} own", { amount: f(own) }));
+    if (share >= 0.005) parts.push(t("{amount} share of shared costs", { amount: f(share) }));
     return '<button type="button" class="s-person" data-go-person="' + esc(k) + '">' + av(k, "lg") + '<span class="s-nm"><span>' + esc(pp.name) + "</span><small>" +
-      esc(parts.length ? parts.join(" · ") : r.current ? t("Nothing yet this month") : t("Nothing in this period")) + '</small></span><span class="s-am amt">' + esc(f0(own + share)) + "</span></button>";
+      esc(parts.length ? parts.join(" · ") : r.current ? t("Nothing yet this month") : t("Nothing in this period")) + '</small></span><span class="s-am amt">' + esc(f(own + share)) + "</span></button>";
   });
   // Who paid the shared costs, when one person paid them all
   const shared = state.tx.filter((x) => x.d >= r.start && x.d <= r.end && x.type === "expense" && x.p === null);
@@ -405,10 +404,10 @@ function keptData(r) {
 }
 function keptHead(d) {
   const over = d.net < 0;
-  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc(f0(Math.abs(d.net))) + "</b>" +
+  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + bigMoney(Math.abs(d.net)) + "</b>" +
     (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>";
 }
-const keptLabel = (d) => t("Kept each month") + ": " + d.months.map((x) => monthYear(x.y, x.m) + " " + f0(x.net)).join(", ");
+const keptLabel = (d) => t("Kept each month") + ": " + d.months.map((x) => monthYear(x.y, x.m) + " " + f(x.net)).join(", ");
 function drawKept(svg, w, h, d, big) {
   const { months, long } = d, mg = { l: 0, r: 0, t: big ? 24 : 4, b: big ? 28 : 20 };
   const P = Math.max(...months.map((x) => Math.max(x.net, 0)), 1), N = Math.max(...months.map((x) => Math.max(-x.net, 0)), 0);
@@ -422,9 +421,10 @@ function drawKept(svg, w, h, d, big) {
   });
   // The average of the whole months, across every column, dashed like the comparison line in Spending
   if (d.avg !== null) el("line", { x1: mg.l, x2: w - mg.r, y1: z - d.avg * k, y2: z - d.avg * k, stroke: "var(--w-ink3)", "stroke-opacity": 0.55, "stroke-width": 1, "stroke-dasharray": "3 4" }, svg);
+  const vals = [];
   months.forEach((x, i) => {
     const v = x.net, hh = Math.max(1, Math.abs(v) * k), x0 = mg.l + bw * i + gap / 2;
-    if (big && bw >= 44) txt(svg, x0 + bar / 2, v >= 0 ? z - hh - 7 : z + hh + 15, f0(v), (x.on ? "lb" : "lbs") + " halo", "middle");
+    if (big && bw >= 44) vals.push(txt(svg, x0 + bar / 2, v >= 0 ? z - hh - 7 : z + hh + 15, f(v), (x.on ? "lb" : "lbs") + " halo", "middle"));
     if (!long) txt(svg, x0 + bar / 2, h - 4, big && bw >= 30 ? F.mon[x.m - 1] : F.mon[x.m - 1].charAt(0).toLocaleUpperCase(), x.on ? "lb" : "ax", "middle");
     else if (i === 0 || x.m === 1) txt(svg, x0 + bar / 2, h - 4, monLabel(x.y, x.m, true, true), "ax", i === 0 ? "start" : "middle");
     const hit = el("rect", { x: mg.l + bw * i, y: 0, width: bw, height: h, fill: "transparent", tabindex: "0", role: "img", "aria-label": monthYear(x.y, x.m), class: "s-khit" }, svg);
@@ -432,10 +432,12 @@ function drawKept(svg, w, h, d, big) {
     hover(hit, "<b>" + esc(monthYear(x.y, x.m)) + (x.partial ? ", " + esc(t("so far")) : "") + "</b>" + row(t("Came in"), f(x.inc), "var(--w-good)") + row(t("Went out"), f(x.exp)) +
       row((v >= 0 ? t("Kept") : t("Overspent")) + (v >= 0 && x.inc > 0 ? " · " + pct(v / x.inc) : ""), f(Math.abs(v))));
   });
+  // Every amount over its bar, or none: a value wider than its column would run into the next one
+  if (vals.some((n) => n.getComputedTextLength() > bw - 6)) vals.forEach((n) => n.remove());
 }
 function renderKept(r) {
   const d = keptData(r);
-  $("s-avg").innerHTML = d.avg === null ? "" : '<i class="s-dash"></i><span class="s-dk">' + esc(t("Average {amount}", { amount: f0(d.avg) })) + '</span><span class="s-ph">' + esc(t("Avg {amount}", { amount: f0(d.avg) })) + "</span>";
+  $("s-avg").innerHTML = d.avg === null ? "" : '<i class="s-dash"></i><span class="s-dk">' + esc(t("Average {amount}", { amount: f(d.avg) })) + '</span><span class="s-ph">' + esc(t("Avg {amount}", { amount: f(d.avg) })) + "</span>";
   $("s-kept").innerHTML = keptHead(d) + '<div class="cv s-keptc" id="c-kept"></div>';
   chart("c-kept", (w) => (w < 360 ? 104 : 112), (svg, w, h) => drawKept(svg, w, h, d, false), () => keptLabel(d));
 }
@@ -443,7 +445,7 @@ export function openKept(r) {
   const d = keptData(r);
   enlarge({
     title: esc(t("Kept each month")),
-    head: '<div class="s-bighead">' + keptHead(d) + (d.avg === null ? "" : '<span class="s-note"><i class="s-dash"></i>' + esc(t("Average {amount}", { amount: f0(d.avg) })) + "</span>") + "</div>",
+    head: '<div class="s-bighead">' + keptHead(d) + (d.avg === null ? "" : '<span class="s-note"><i class="s-dash"></i>' + esc(t("Average {amount}", { amount: f(d.avg) })) + "</span>") + "</div>",
     h: () => Math.max(300, Math.min(innerHeight - 240, 520)),
     draw: (svg, w, h) => drawKept(svg, w, h, d, true),
     label: () => keptLabel(d),
@@ -479,11 +481,11 @@ function yearData(r) {
 const yearTitle = (d) => (d.cur ? t("Kept this year") : t("Kept in {year}", { year: d.y }));
 function yearHead(d) {
   const over = d.kept < 0;
-  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + esc((over ? "−" : "") + f0(Math.abs(d.kept))) + "</b></div>" +
+  return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + (over ? "−" : "") + bigMoney(Math.abs(d.kept)) + "</b></div>" +
     '<p class="s-yearsub">' + (over ? esc(t("overspent since January")) : esc(t("kept since January"))) +
-    (d.end !== null ? " · " + t("on track for {amount} by {date}", { amount: '<b class="' + (d.end < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f0(d.end)) + "</b>", date: esc(dlab(d.y + "-12-31")) }) : "") + "</p>";
+    (d.end !== null ? " · " + t("on track for {amount} by {date}", { amount: '<b class="' + (d.end < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f(d.end)) + "</b>", date: esc(dlab(d.y + "-12-31")) }) : "") + "</p>";
 }
-const yearLabel = (d) => yearTitle(d) + ": " + f0(d.kept) + (d.end !== null ? ". " + t("Projected: {amount}", { amount: f0(d.end) }) : "");
+const yearLabel = (d) => yearTitle(d) + ": " + f(d.kept) + (d.end !== null ? ". " + t("Projected: {amount}", { amount: f(d.end) }) : "");
 function drawYear(svg, w, h, d, big) {
   const { y, cur, months, proj } = d, mg = { l: big ? 62 : 0, r: big ? 14 : 0, t: big ? 14 : 8, b: big ? 28 : 20 }, slots = 12, col = (w - mg.l - mg.r) / slots;
   const vals = months.map((x) => x.acc).concat(proj, [0]), hi = Math.max(...vals), lo = Math.min(...vals), sp = hi - lo || 1;
@@ -495,7 +497,7 @@ function drawYear(svg, w, h, d, big) {
     const step = niceMax(Math.max(Math.abs(hi), Math.abs(lo), 1)) / 4;
     for (let v = Math.ceil(lo / step) * step; v <= hi + step * 0.001; v += step) {
       el("line", { x1: mg.l, x2: w - mg.r, y1: Y(v), y2: Y(v), class: "grid" }, svg);
-      txt(svg, mg.l - 10, Y(v) + 4, f0(v), "ax", "end");
+      txt(svg, mg.l - 10, Y(v) + 4, fWhole(v), "ax", "end");
     }
   } else if (lo < 0) el("line", { x1: mg.l, x2: w - mg.r, y1: Y(0), y2: Y(0), class: "grid" }, svg);
   const ci = months.length - 1;
