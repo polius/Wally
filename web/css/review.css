@@ -42,6 +42,10 @@
 .w-mrbars .ax{display:flex;gap:7px;margin-top:6px}
 .w-mrbars .ax span{flex:1;min-width:0;text-align:center;font-size:var(--fs-cap);color:var(--w-ink3)}
 .w-mrbars .ax span.on{color:var(--w-ink);font-weight:600}
+/* All time: a bar a month, the year written where one starts */
+.w-mrbars.long .b,.w-mrbars.long .ax{gap:3px}
+.w-mrbars.long .ax span{text-align:start;overflow:visible;white-space:nowrap}
+.w-mrbars .b button:disabled{cursor:default}
 .w-mrtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .w-mrtile{background:var(--w-panel2);border-radius:12px;padding:14px 16px;display:grid;gap:2px;align-content:start;min-width:0}
 .w-mrtile > span:first-child{font-size:var(--fs-foot);color:var(--w-ink2)}

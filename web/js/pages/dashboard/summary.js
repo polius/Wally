@@ -224,7 +224,10 @@ function renderSplit(r, id, by) {
   if (!any) return;
   const top = 6, shown = listOpen[id] ? keys : keys.slice(0, top);
   const pm = p.ok && r.month ? monthName(+p.start.slice(5, 7)) : p.ok && r.mode === "year" ? p.start.slice(0, 4) : "";
-  const note = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f(prev[k] || 0) })
+  // Beyond a month (a year, all time, a range), each category's share of the spending first: "18 % of spending · 2025: 1,234 €"
+  const tot = spent.reduce((s, k) => s + cur[k], 0), share = !r.month && id === "cats" && tot > 0;
+  const note = (k) => [share && cur[k] > 0 ? t("{pct} of spending", { pct: cur[k] / tot < 0.005 ? "<" + pct(0.01) : pct(cur[k] / tot) }) : "", prevNote(k)].filter(Boolean).join(" · ");
+  const prevNote = (k) => !prev ? "" : r.month && r.current ? t("{month} by now: {amount}", { month: pm, amount: f(prev[k] || 0) })
     : pm ? t("{period}: {amount}", { period: pm, amount: f(prev[k] || 0) }) : t("Before: {amount}", { amount: f(prev[k] || 0) });
   // How much it moved against the same period before, as Recurring shows a price change: up in red, down in green.
   // Nothing when there was nothing before, or when it rounds to 0 %.
@@ -237,7 +240,6 @@ function renderSplit(r, id, by) {
     return '<small class="s-chg ' + (up ? "up-bad" : "dn-good") + '" aria-label="' + esc(label) + '">' + (up ? "↑ " : "↓ ") + esc(pct(Math.abs(x))) + "</small>";
   };
   // One bar with every group's share of the spending, in its own color, biggest first
-  const tot = spent.reduce((s, k) => s + cur[k], 0);
   const bar = tot > 0 ? '<div class="s-stack" role="img" aria-label="' + esc(spent.slice(0, 5).map((k) => by.name(k) + " " + pct(cur[k] / tot)).join(", ")) + '">' +
     spent.map((k) => '<i style="flex:' + cur[k].toFixed(2) + ";background:" + by.color(k) + '" data-k="' + esc(k) + '"></i>').join("") + "</div>" : "";
   $("s-" + id).innerHTML = bar + shown.map((k) => rowHtml(by.go(k), by.tile(k), by.name(k), note(k), f(cur[k] || 0), "", change(k))).join("") +
@@ -275,6 +277,16 @@ function renderRecent(r) {
 /* ---------- the month's recap: only once there is one to read ---------- */
 function renderRecap(r) {
   const w = $("s-recapw");
+  // A year (so far, while it runs) and all time open their own review; a custom range has none
+  if (r.mode === "year" || r.mode === "all") {
+    const tt = totals(r.start, r.end), y = r.start.slice(0, 4), all = r.mode === "all";
+    if (!tt.n) { w.innerHTML = ""; return; }
+    const title = all ? t("Your all-time recap") : r.current ? t("Your {year} so far", { year: y }) : t("Your {year} recap", { year: y });
+    const sub = tt.net >= 0 ? (r.current ? t("You've kept {amount} so far. A few things worth knowing.", { amount: f(tt.net) }) : t("You kept {amount}. A few things worth knowing.", { amount: f(tt.net) }))
+      : r.current ? t("You've overspent {amount} so far. A few things worth knowing.", { amount: f(-tt.net) }) : t("You overspent {amount}. A few things worth knowing.", { amount: f(-tt.net) });
+    w.innerHTML = '<a class="s-recap" href="/review?' + (all ? "all" : "y=" + y) + '" data-link><span class="s-recapi">' + icon("history") + "</span><span><b>" + esc(title) + "</b><small>" + esc(sub) + "</small></span>" + icon("right", "s-chev") + "</a>";
+    return;
+  }
   if (!r.month || r.start < START.slice(0, 8) + "01") { w.innerHTML = ""; return; }
   const [y, m] = ym(r.start), end = ds(y, m, dim(y, m));
   const tt = end < TODAY ? totals(r.start, end) : null;
@@ -298,7 +310,7 @@ function notices(r) {
       if (next && next <= soon && last && Math.abs(last.a - x.a) > 0.005) {
         seen.add(key);
         const up = x.a > last.a, by = Math.abs(x.a - last.a);
-        out.push({ ico: "trend", cls: up ? "bad" : "good", w: 3, title: up ? t("{name} goes up {amount}", { name: x.n, amount: f(by) }) : t("{name} goes down {amount}", { name: x.n, amount: f(by) }),
+        out.push({ rid: x.id, ico: "trend", cls: up ? "bad" : "good", w: 3, title: up ? t("{name} goes up {amount}", { name: x.n, amount: f(by) }) : t("{name} goes down {amount}", { name: x.n, amount: f(by) }),
           sub: t("From {from} to {to} on {date}.", { from: f(last.a), to: f(x.a), date: dlab(next) }) });
         return;
       }
@@ -307,14 +319,14 @@ function notices(r) {
         if (Math.abs(h[i].a - h[i - 1].a) > 0.005) {
           seen.add(key);
           const up = h[i].a > h[i - 1].a;
-          out.push({ ico: "trend", cls: up ? "bad" : "good", w: 2, title: up ? t("{name} went up {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }) : t("{name} went down {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }),
+          out.push({ rid: x.id, ico: "trend", cls: up ? "bad" : "good", w: 2, title: up ? t("{name} went up {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }) : t("{name} went down {amount}", { name: x.n, amount: f(Math.abs(h[i].a - h[i - 1].a)) }),
             sub: t("From {from} to {to} on {date}.", { from: f(h[i - 1].a), to: f(h[i].a), date: dlab(h[i].d) }) });
           return;
         }
       }
       if (x.freq === "yearly" && next && next <= soon) {
         seen.add(key);
-        out.push({ ico: "cal", cls: "", w: 1, title: t("{name} is due on {date}", { name: x.n, date: dlab(next) }), sub: t("A yearly bill: {amount}.", { amount: f(ruleAmt(x)) }) });
+        out.push({ rid: x.id, ico: "cal", cls: "", w: 1, title: t("{name} is due on {date}", { name: x.n, date: dlab(next) }), sub: t("A yearly bill: {amount}.", { amount: f(ruleAmt(x)) }) });
       }
     });
   }
@@ -332,8 +344,9 @@ function notices(r) {
 function renderNotice(r) {
   const list = notices(r);
   show("notice", list.length > 0);
-  $("s-notice").innerHTML = list.map((x) => '<div class="s-notice">' + (x.cat ? tile(x.cat) : '<span class="w-ico s-nico ' + x.cls + '">' + icon(x.ico) + "</span>") +
-    '<span class="s-nm"><span>' + esc(x.title) + "</span><small>" + esc(x.sub) + "</small></span></div>").join("");
+  // Every line opens what it is about: a category its transactions this month, a bill its rule in Recurring
+  $("s-notice").innerHTML = list.map((x) => '<button type="button" class="s-notice" ' + (x.cat ? BY_CAT.go(x.cat) + ">" + tile(x.cat) : 'data-go-rule="' + esc(x.rid) + '"><span class="w-ico s-nico ' + x.cls + '">' + icon(x.ico) + "</span>") +
+    '<span class="s-nm"><span>' + esc(x.title) + "</span><small>" + esc(x.sub) + "</small></span></button>").join("");
 }
 
 /* ---------- Cashflow: where the money came from and where it went (see cashflow.js) ---------- */

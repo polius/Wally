@@ -97,9 +97,13 @@ try {
   const sum = await text(page, ".rec-sum");
   ok((await text(page, ".rec-big")) === money(billM), "Bills: one total, every month, " + money(billM) + " (" + sum.replace(/\n/g, " ") + ")");
   ok(sum.includes(Math.round(billM / incM * 100) + "% of what comes in"), "and the share of income: " + Math.round(billM / incM * 100) + "%");
-  ok(/in the next 30 days/.test(sum), "and what the next 30 days hold");
+  ok(/out and \+.+ in over the next 30 days/.test(sum), "and what the next 30 days hold, out and in");
   ok(await page.locator(".rec-kpis,.w-kpi").count() === 0, "no row of key figures");
-  ok((await page.locator(".rec-ctl-h [data-rtab]").allInnerTexts()).join("|") === "Bills|Income", "Bills and Income in the toolbar, no All");
+  ok((await page.locator(".rec-ctl-h [data-rtab]").allInnerTexts()).join("|") === "All|Bills|Income", "All, Bills and Income in the toolbar");
+  ok(await page.locator('.rec-ctl-h [data-rtab="all"]').getAttribute("aria-pressed") === "true", "All is picked first");
+  ok((await text(page, "#rec-list")).includes("salary") && (await text(page, "#rec-list")).includes("Netflix"), "All lists bills and income together");
+  await page.click('.rec-ctl-h [data-rtab="expense"]');
+  ok((await text(page, ".rec-big")) === money(billM) && /in the next 30 days/.test(await text(page, ".rec-sum")), "Bills: the same total, the next 30 days of bills");
   ok(await page.locator(".rec-ctl-h [data-rview]").count() === 2 && await page.locator(".rec-ctl-p").isHidden(), "a List | Calendar switch beside them; no second row on desktop");
   ok(await page.locator(".rec-cal").count() === 0, "the list shows first");
   ok(await page.locator("#rec-list .w-rrow").count() >= 9, "the list shows the bills");
