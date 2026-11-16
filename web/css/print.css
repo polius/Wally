@@ -17,7 +17,7 @@
 /* Header and footer, every page */
 .pr-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:3.5mm;border-bottom:.6pt solid #DDD;font-size:9.9pt;color:#666}
 .pr-brand{display:inline-flex;align-items:center;gap:2.3mm;font-size:10.75pt;font-weight:600;color:var(--ink);letter-spacing:-.01em}
-.pr-brand img{width:5.2mm;height:5.2mm;border-radius:1.3mm}
+.pr-brand img{width:5.2mm;height:5.2mm}
 .pr-body{flex:1;min-height:0;overflow:hidden;padding-top:5.8mm}
 .pr-pfoot{flex:none;display:flex;align-items:flex-start;justify-content:space-between;padding:2.9mm 0 8.7mm;border-top:.6pt solid #DDD;font-size:9.1pt;color:#888}
 .pr-blk + .pr-blk{margin-top:5.8mm}
@@ -128,7 +128,6 @@
 .pr-big,.pr-kpi b,.pr-cr .v,.pr-trio b,.pr-facts b,.pr-know b,.pr-chart text{unicode-bidi:isolate}
 
 /* ---------- The report in the review's order, in black and grey ---------- */
-.pr-brand i{width:5mm;height:5mm;border-radius:1.3mm;background:var(--ink);display:inline-block}
 .pr-eye{color:var(--ink3)}
 .pr-hero{background:#fff;border:.6pt solid #DDD;border-radius:3.5mm;padding:4.7mm 5.25mm;gap:5.25mm;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:end}
 .pr-bars{direction:ltr}
@@ -187,3 +186,9 @@
 }
 
 
+/* All time: a bar a month, the year written where it starts */
+.pr-bars.long .b,.pr-bars.long .ax{gap:.5mm}
+.pr-bars.long .b i{border-radius:.5mm .5mm .2mm .2mm}
+.pr-bars.long .ax span{text-align:start;overflow:visible;white-space:nowrap}
+/* A year or all time: room for five-figure amounts */
+.pr-cat.long .pr-cr{grid-template-columns:2.6mm minmax(0,38.8mm) minmax(0,1fr) 26mm 12.8mm 28mm}

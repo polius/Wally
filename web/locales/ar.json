@@ -1349,6 +1349,7 @@
  "a tag": "وسم",
  "about": "حوالي",
  "against the {n} months before": "مقارنةً بالأشهر الـ{n} السابقة",
+ "against {year}": "مقارنةً بعام {year}",
  "all time": "كل الأوقات",
  "amount over {amount}": "مبلغ أكبر من {amount}",
  "and {n} more": {

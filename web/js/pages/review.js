@@ -293,8 +293,8 @@ function computeSpan(sp, sc) {
 /* Where a span's links go: Transactions and Summary over the same year, or all time */
 const spanTx = (m) => "/transactions?" + (m.kind === "year" ? "mode=year&year=" + m.sp.y : "mode=all");
 const spanSum = (m) => (m.kind === "year" ? "/?year=" + m.sp.y : "/?range=all");
-const spanTitle = (m) => (m.kind === "year" ? String(m.sp.y) : t("All time"));
-const spanSub = (m) => (m.kind === "year" ? (m.running ? t("Year so far") : t("Year in review")) : t("Since {date}", { date: monthYear(+START.slice(0, 4), +START.slice(5, 7)) }));
+export const spanTitle = (m) => (m.kind === "year" ? String(m.sp.y) : t("All time"));
+export const spanSub = (m) => (m.kind === "year" ? (m.running ? t("Year so far") : t("Year in review")) : t("Since {date}", { date: monthYear(+START.slice(0, 4), +START.slice(5, 7)) }));
 
 /* ---------- the page ---------- */
 export function mount(el, route) {
@@ -310,9 +310,9 @@ export function mount(el, route) {
 export function update() { render(); }
 export function unmount() { root = null; current = null; removeEventListener("beforeprint", onBeforePrint); }
 /* ⌘P / Ctrl+P prints the report, not the screen */
-function onBeforePrint() { if (current && !current.kind && pdf) pdf.beforePrint(current); }
+function onBeforePrint() { if (current && pdf) pdf.beforePrint(current); }
 async function exportPdf() {
-  if (!current || current.kind) return;
+  if (!current) return;
   hideTip();
   closeMenus();
   (pdf || (pdf = await import("./review/pdf.js"))).exportPdf(current);
@@ -369,20 +369,21 @@ function scopeSeg(m) {
       '<button type="button" data-mrsc="' + v + '" aria-pressed="' + (state.scope === v) + '">' + l + "</button>").join("") + "</div>";
 }
 /* ‹ › through closed months, ••• (Export as PDF), close */
+const moreMenu = () => '<div class="w-mrmore"><button type="button" class="w-mrc" data-menu="mrmore" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("More")) + '">' + icon("more") + "</button>" +
+  '<div class="w-menu" role="menu" hidden><button type="button" role="menuitem" data-mr-pdf>' + icon("download") + t("Export as PDF") + "</button></div></div>";
 function tools(m, id) {
   if (m && m.kind) {
-    // A year steps a year; all time has nowhere to step. No PDF yet for either.
+    // A year steps a year; all time has nowhere to step
     const y = m.sp.y, close = '<button type="button" class="w-mrc" data-mr-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button>";
-    if (m.kind === "all") return close;
+    if (m.kind === "all") return moreMenu() + close;
     return '<button type="button" class="w-mrc"' + (id ? ' id="mr-prev"' : " data-mr-prev") + ' aria-label="' + esc(t("Previous year")) + '"' + (y > firstYear() ? "" : " disabled") + ">" + icon("left") + "</button>" +
-      '<button type="button" class="w-mrc"' + (id ? ' id="mr-next"' : " data-mr-next") + ' aria-label="' + esc(t("Next year")) + '"' + (y < +TODAY.slice(0, 4) ? "" : " disabled") + ">" + icon("right") + "</button>" + close;
+      '<button type="button" class="w-mrc"' + (id ? ' id="mr-next"' : " data-mr-next") + ' aria-label="' + esc(t("Next year")) + '"' + (y < +TODAY.slice(0, 4) ? "" : " disabled") + ">" + icon("right") + "</button>" + moreMenu() + close;
   }
   const q = m ? m.q : lastClosed(), isLast = same(q, lastClosed()), canPrev = m && m.hasPrev;
   const nextName = monthOnly(ymAdd(q[0], q[1], 1));
   return (m ? '<button type="button" class="w-mrc"' + (id ? ' id="mr-prev"' : " data-mr-prev") + ' aria-label="' + esc(t("Previous month")) + '"' + (canPrev ? "" : " disabled") + ">" + icon("left") + "</button>" +
       '<button type="button" class="w-mrc"' + (id ? ' id="mr-next"' : " data-mr-next") + ' aria-label="' + esc(t("Next month")) + '"' + (isLast ? ' disabled title="' + esc(t("{month} is not over yet", { month: nextName })) + '"' : "") + ">" + icon("right") + "</button>" +
-      '<div class="w-mrmore"><button type="button" class="w-mrc" data-menu="mrmore" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("More")) + '">' + icon("more") + "</button>" +
-        '<div class="w-menu" role="menu" hidden><button type="button" role="menuitem" data-mr-pdf>' + icon("download") + t("Export as PDF") + "</button></div></div>" : "") +
+      moreMenu() : "") +
     '<button type="button" class="w-mrc" data-mr-close aria-label="' + esc(t("Close")) + '">' + icon("x") + "</button>";
 }
 function header(m) {
@@ -521,7 +522,7 @@ export function billRows(m) {
   return rows;
 }
 /* A year or all time, month by month, as four facts */
-function monthRows(m) {
+export function monthRows(m) {
   const mo = (x) => (m.kind === "year" ? F.months[x.q[1] - 1] : monthYear(x.q[0], x.q[1]));
   const rows = [];
   if (m.best) rows.push([t("Best month"), esc(mo(m.best)) + " · " + (m.best.s.net >= 0 ? t("kept {amount}", { amount: f(m.best.s.net) }) : t("overspent {amount}", { amount: f(-m.best.s.net) }))]);
@@ -530,7 +531,7 @@ function monthRows(m) {
   rows.push([t("Days without spending"), t("{n} of {total}", { n: m.nDays - m.spentDays.size, total: m.nDays })]);
   return rows;
 }
-function spanBillRows(m) {
+export function spanBillRows(m) {
   const rows = [[m.kind === "year" ? t("In {month}", { month: String(m.sp.y) }) : t("Since {date}", { date: monthYear(+START.slice(0, 4), +START.slice(5, 7)) }), tn(m.billsN, "{n} bill", "{n} bills") + " · " + f(m.s.bills)]];
   rows.push([t("Changes"), m.changes.length ? m.changes.slice(0, 2).map((x) => x.h).join(", ") + (m.changes.length > 2 ? " " + tn(m.changes.length - 2, "and {n} more", "and {n} more") : "") : t("Same bills, same prices")]);
   rows.push([t("Every month now"), f(m.billNow)]);

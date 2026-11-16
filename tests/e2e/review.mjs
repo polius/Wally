@@ -277,7 +277,19 @@ try {
     const order = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
     ok(order.join("|") === "Where it went|What changed|Each of you|Month by month|Bills|Worth knowing", "year: the same reading order, Month by month for Day by day (" + order.join(", ") + ")");
     ok(await page.locator(".w-mrev .w-mrbars .b button").count() === now.getMonth() + 1 && await page.locator(".w-mrev .w-mrbars .b button.on").count() <= 1, "year: a bar a month, at most one in colour (the best)");
-    ok(await page.locator(".w-mrev [data-menu=mrmore]").count() === 0, "year: no PDF menu yet");
+    // Export as PDF: the same report over the year, Month by month for Day by day
+    await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
+    await page.click(".w-mrh [data-menu=mrmore]");
+    await page.click(".w-mrh [data-mr-pdf]");
+    await page.waitForFunction(() => window.__printed === 1);
+    ok((await page.locator("#w-print h1").innerText()) === String(CY) && (await page.locator("#w-print .pr-eye").textContent()) === "Year so far", "year PDF: titled " + CY + ", Year so far");
+    ok(cent(euros(await page.locator("#w-print .pr-big").innerText()), Math.abs(yr.inc - yr.exp) / 100), "year PDF: Kept = the screen's");
+    ok(await page.locator("#w-print .pr-bars .b i").count() === now.getMonth() + 1, "year PDF: a bar a month");
+    const yh = await page.locator("#w-print h2").allInnerTexts();
+    ok(yh.some((x) => x.startsWith("Month by month")) && !yh.some((x) => x.startsWith("Day by day")), "year PDF: Month by month, no Day by day");
+    ok(await page.locator("#w-print").evaluate((r) => [...r.querySelectorAll(".pr-body")].every((b) => b.scrollHeight <= b.clientHeight + 1)), "year PDF: nothing runs off a page");
+    ok((await page.title()) === "Wally – " + CY, "year PDF: the file is named after the year");
+    await page.evaluate(() => dispatchEvent(new Event("afterprint")));
     ok((await page.getAttribute(".w-mrev a.w-mrwrow", "href")).startsWith("/transactions?mode=year&year=" + CY + "&cat="), "year: a category opens its transactions over the year");
     await page.click("#mr-prev");
     ok((await page.textContent("#mr-title")) === String(CY - 1) && new URL(page.url()).search === "?y=" + (CY - 1), "year: ‹ steps a year back");
@@ -301,6 +313,15 @@ try {
     ok(await page.locator("#mr-prev,#mr-next").count() === 0, "all: nowhere to step");
     ok(/a month$/.test((await page.locator(".w-mrev .w-mrtop .w-mrtile").first().innerText()).trim()), "all: each total says what a month comes to");
     ok(/^<?\d+%$/.test((await page.locator(".w-mrev a.w-mrwrow > .w-mrd").first().innerText()).trim()), "all: each category shows its share");
+    await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
+    await page.click(".w-mrh [data-menu=mrmore]");
+    await page.click(".w-mrh [data-mr-pdf]");
+    await page.waitForFunction(() => window.__printed === 1);
+    const ah = await page.locator("#w-print h2").allInnerTexts();
+    ok((await page.locator("#w-print h1").innerText()) === "All time" && !ah.some((x) => x.startsWith("What changed")), "all PDF: titled All time, no What changed");
+    ok(/a month$/.test((await page.locator("#w-print .pr-kpi > div small").first().innerText()).trim()), "all PDF: each total says what a month comes to");
+    ok(await page.locator("#w-print").evaluate((r) => [...r.querySelectorAll(".pr-body")].every((b) => b.scrollHeight <= b.clientHeight + 1)), "all PDF: nothing runs off a page");
+    await page.evaluate(() => dispatchEvent(new Event("afterprint")));
     await shot(page, "review-all", true);
     await page.click(".w-mrf .w-btn.primary");
     await page.waitForSelector("#s-title");

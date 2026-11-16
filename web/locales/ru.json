@@ -1259,6 +1259,7 @@
  "a tag": "тег",
  "about": "примерно",
  "against the {n} months before": "по сравнению с {n} предыдущими мес.",
+ "against {year}": "по сравнению с {year} г.",
  "all time": "всё время",
  "amount over {amount}": "сумма больше {amount}",
  "and {n} more": {

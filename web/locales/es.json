@@ -1214,6 +1214,7 @@
  "a tag": "una etiqueta",
  "about": "aprox.",
  "against the {n} months before": "frente a los {n} meses anteriores",
+ "against {year}": "frente a {year}",
  "all time": "todo el historial",
  "amount over {amount}": "importe superior a {amount}",
  "and {n} more": {

@@ -1124,6 +1124,7 @@
  "a tag": "タグ",
  "about": "約",
  "against the {n} months before": "過去{n}か月と比較",
+ "against {year}": "{year}年と比較",
  "all time": "全期間",
  "amount over {amount}": "{amount}を超える金額",
  "and {n} more": {

@@ -1124,6 +1124,7 @@
  "a tag": "태그",
  "about": "약",
  "against the {n} months before": "이전 {n}개월 대비",
+ "against {year}": "{year}년 대비",
  "all time": "전체 기간",
  "amount over {amount}": "{amount} 초과 금액",
  "and {n} more": {

@@ -1169,6 +1169,7 @@
  "a tag": "ein Tag",
  "about": "etwa",
  "against the {n} months before": "gegenüber den {n} Monaten davor",
+ "against {year}": "gegenüber {year}",
  "all time": "gesamter Zeitraum",
  "amount over {amount}": "Betrag über {amount}",
  "and {n} more": {
