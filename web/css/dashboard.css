@@ -86,6 +86,12 @@ button.s-title:hover{background:var(--w-fill)}
 .s-keptn{display:flex;align-items:baseline;gap:8px}
 .s-keptn b{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.1}
 .s-keptn span{font-size:var(--fs-sub);color:var(--w-ink2);font-weight:650}
+/* This month's forecast under the number; pointing at it shows how it adds up */
+.s-fc{margin-top:4px;width:fit-content;cursor:default;border-radius:4px;-webkit-tap-highlight-color:transparent}
+.s-fc .s-fci{width:14px;height:14px;margin-left:5px;vertical-align:-2px;color:var(--w-ink3)}
+.s-fc:hover .s-fci,.s-fc:focus-visible .s-fci{color:var(--w-ink2)}
+/* Its sum has longer names than most tooltips: a little wider, so each stays on one line */
+.w-tip:has(.s-fctip){max-width:min(320px,calc(100vw - 16px))}
 .s-keptc{margin-top:12px}
 /* The month pointed at */
 .chart .s-kb{transition:fill .12s,fill-opacity .12s}

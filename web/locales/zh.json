@@ -1382,5 +1382,20 @@
  "{times}, {amount} received so far": "{times}，至今已收 {amount}",
  "{x}× a weekday": "工作日的{x}倍",
  "“{name}” Key": "“{name}”密钥",
- "“{v}” is not an amount": "“{v}”不是金额"
+ "“{v}” is not an amount": "“{v}”不是金额",
+ "On track for {amount} by {date}": "预计到{date}为 {amount}",
+ "How it adds up": "计算方式",
+ "Kept so far": "目前结余",
+ "Income still to come": "待到账收入",
+ "Bills still to come": "待支付账单",
+ "On track for": "预计",
+ "On track to overspend {amount} by {date}": "预计到{date}超支 {amount}",
+ "on track to overspend {amount} by {date}": "预计到{date}超支 {amount}",
+ "On track to overspend": "预计超支",
+ "Usual income not in yet": "尚未到账的常规收入",
+ "Left after bills": "账单后剩余",
+ "Left after income to come": "计入待到账收入后剩余",
+ "Everyday spending to come": "待发生的日常支出",
+ "≈ Based on a typical month from {from} to {to}": "≈ 基于{from}至{to}的典型月份",
+ "≈ Based on {month}": "≈ 基于{month}"
 }

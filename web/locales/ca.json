@@ -1550,5 +1550,20 @@
  "{times}, {amount} received so far": "{times}, {amount} cobrats fins ara",
  "{x}× a weekday": "{x}× un dia feiner",
  "“{name}” Key": "Clau «{name}»",
- "“{v}” is not an amount": "«{v}» no és un import"
+ "“{v}” is not an amount": "«{v}» no és un import",
+ "On track for {amount} by {date}": "Previsió de {amount} a {date}",
+ "How it adds up": "Com es calcula",
+ "Kept so far": "Estalviat fins ara",
+ "Income still to come": "Ingressos per arribar",
+ "Bills still to come": "Rebuts per pagar",
+ "On track for": "Previsió",
+ "On track to overspend {amount} by {date}": "Previsió de {amount} de més a {date}",
+ "on track to overspend {amount} by {date}": "previsió de {amount} de més a {date}",
+ "On track to overspend": "Previsió de despesa de més",
+ "Usual income not in yet": "Ingressos habituals encara per arribar",
+ "Left after bills": "Queda després dels rebuts",
+ "Left after income to come": "Queda amb els ingressos per arribar",
+ "Everyday spending to come": "Despesa del dia a dia per venir",
+ "≈ Based on a typical month from {from} to {to}": "≈ Segons un mes típic ({from}–{to})",
+ "≈ Based on {month}": "≈ Segons {month}"
 }

@@ -1466,5 +1466,20 @@
  "{times}, {amount} received so far": "{times}, अब तक {amount} मिले",
  "{x}× a weekday": "आम दिन का {x}×",
  "“{name}” Key": "“{name}” कुंजी",
- "“{v}” is not an amount": "“{v}” कोई राशि नहीं है"
+ "“{v}” is not an amount": "“{v}” कोई राशि नहीं है",
+ "On track for {amount} by {date}": "{date} तक {amount} की ओर",
+ "How it adds up": "हिसाब कैसे बना",
+ "Kept so far": "अब तक बचाया",
+ "Income still to come": "आने वाली आय",
+ "Bills still to come": "आने वाले बिल",
+ "On track for": "अनुमान",
+ "On track to overspend {amount} by {date}": "{date} तक {amount} ज़्यादा खर्च की ओर",
+ "on track to overspend {amount} by {date}": "{date} तक {amount} ज़्यादा खर्च की ओर",
+ "On track to overspend": "ज़्यादा खर्च का अनुमान",
+ "Usual income not in yet": "सामान्य आय जो अभी नहीं आई",
+ "Left after bills": "बिलों के बाद बचा",
+ "Left after income to come": "आने वाली आय के साथ बचा",
+ "Everyday spending to come": "आने वाला रोज़मर्रा का खर्च",
+ "≈ Based on a typical month from {from} to {to}": "≈ {from} से {to} तक के एक सामान्य महीने के आधार पर",
+ "≈ Based on {month}": "≈ {month} के आधार पर"
 }

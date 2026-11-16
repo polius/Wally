@@ -1550,5 +1550,20 @@
  "{times}, {amount} received so far": "{times}, {amount} reçus jusqu’ici",
  "{x}× a weekday": "{x}× un jour de semaine",
  "“{name}” Key": "Clé « {name} »",
- "“{v}” is not an amount": "« {v} » n'est pas un montant"
+ "“{v}” is not an amount": "« {v} » n'est pas un montant",
+ "On track for {amount} by {date}": "Prévision de {amount} au {date}",
+ "How it adds up": "Le calcul",
+ "Kept so far": "Épargné jusqu'ici",
+ "Income still to come": "Revenus à venir",
+ "Bills still to come": "Factures à venir",
+ "On track for": "Prévision",
+ "On track to overspend {amount} by {date}": "Prévision de {amount} de dépassement au {date}",
+ "on track to overspend {amount} by {date}": "prévision de {amount} de dépassement au {date}",
+ "On track to overspend": "Prévision de dépassement",
+ "Usual income not in yet": "Revenus habituels pas encore arrivés",
+ "Left after bills": "Reste après les factures",
+ "Left after income to come": "Reste avec les revenus à venir",
+ "Everyday spending to come": "Dépenses courantes à venir",
+ "≈ Based on a typical month from {from} to {to}": "≈ D'après un mois type ({from}–{to})",
+ "≈ Based on {month}": "≈ D'après {month}"
 }

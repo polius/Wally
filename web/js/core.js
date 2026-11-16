@@ -138,9 +138,11 @@ function makeFormats() {
   const m = (opt) => new Intl.DateTimeFormat(loc, Object.assign({ timeZone: "UTC" }, opt));
   const mLong = m({ month: "long" }), mShort = m({ month: "short" });
   const standalone = (fmt, i) => { const p = fmt.formatToParts(Date.UTC(2026, i, 15)).find((x) => x.type === "month"); return p ? p.value : fmt.format(Date.UTC(2026, i, 15)); };
+  // A long name, as a word: Japanese gives the month's part as a bare "8", its "月" outside it
+  const named = (i) => { const v = standalone(mLong, i); return /^\d+$/.test(v) ? mLong.format(Date.UTC(2026, i, 15)) : v; };
   F.months = []; F.monthsIn = []; F.mon = [];
   for (let i = 0; i < 12; i++) {
-    const L = standalone(mLong, i);
+    const L = named(i);
     F.monthsIn.push(L);  // as written inside a sentence: "octubre" in Spanish, "October" in English
     F.months.push(L.charAt(0).toLocaleUpperCase(loc) + L.slice(1));  // as a heading
     F.mon.push(standalone(mShort, i).replace(/\.$/, ""));

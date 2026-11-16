@@ -1382,5 +1382,20 @@
  "{times}, {amount} received so far": "{times}, 지금까지 {amount} 받음",
  "{x}× a weekday": "평일의 {x}배",
  "“{name}” Key": "“{name}” 키",
- "“{v}” is not an amount": "금액이 아니에요: “{v}”"
+ "“{v}” is not an amount": "금액이 아니에요: “{v}”",
+ "On track for {amount} by {date}": "{date}까지 {amount} 예상",
+ "How it adds up": "계산 방법",
+ "Kept so far": "지금까지 남긴 돈",
+ "Income still to come": "예정된 수입",
+ "Bills still to come": "예정된 고정 지출",
+ "On track for": "예상",
+ "On track to overspend {amount} by {date}": "{date}까지 {amount} 초과 지출 예상",
+ "on track to overspend {amount} by {date}": "{date}까지 {amount} 초과 지출 예상",
+ "On track to overspend": "초과 지출 예상",
+ "Usual income not in yet": "아직 들어오지 않은 평소 수입",
+ "Left after bills": "고정 지출 후 남는 돈",
+ "Left after income to come": "예정 수입 포함 남는 돈",
+ "Everyday spending to come": "앞으로의 일상 지출",
+ "≈ Based on a typical month from {from} to {to}": "≈ {from}~{to}의 일반적인 달 기준",
+ "≈ Based on {month}": "≈ {month} 기준"
 }

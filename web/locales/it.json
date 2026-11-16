@@ -1550,5 +1550,20 @@
  "{times}, {amount} received so far": "{times}, finora ricevuti {amount}",
  "{x}× a weekday": "{x}× un giorno feriale",
  "“{name}” Key": "Chiave “{name}”",
- "“{v}” is not an amount": "“{v}” non è un importo"
+ "“{v}” is not an amount": "“{v}” non è un importo",
+ "On track for {amount} by {date}": "Previsti {amount} al {date}",
+ "How it adds up": "Come si calcola",
+ "Kept so far": "Risparmiato finora",
+ "Income still to come": "Entrate in arrivo",
+ "Bills still to come": "Bollette in arrivo",
+ "On track for": "Previsti",
+ "On track to overspend {amount} by {date}": "Previsti {amount} spesi di troppo al {date}",
+ "on track to overspend {amount} by {date}": "previsti {amount} spesi di troppo al {date}",
+ "On track to overspend": "Spesi di troppo previsti",
+ "Usual income not in yet": "Entrate abituali non ancora arrivate",
+ "Left after bills": "Resta dopo le bollette",
+ "Left after income to come": "Resta con le entrate in arrivo",
+ "Everyday spending to come": "Spese quotidiane in arrivo",
+ "≈ Based on a typical month from {from} to {to}": "≈ In base a un mese tipico da {from} a {to}",
+ "≈ Based on {month}": "≈ In base al mese di {month}"
 }
