@@ -1,11 +1,11 @@
-/* Month in review as a printed report, in the review's own order: A4 pages laid out here, then the browser's own print, where
+/* Month in review (or a year, or all time) as a printed report, in the review's own order: A4 pages laid out here, then the browser's own print, where
    "Save as PDF" makes the file. Text stays text, charts stay vector. It always prints light, whatever
    the theme, and it is the same report from the Export button or from ⌘P / Ctrl+P on the page.
    Pages are filled section by section: a section that doesn't fit starts the next page, so nothing
    is ever cut in two. Each page has the same header and a footer with its number. */
 import {
   t, tn, esc, state, pct, TODAY, totals, cat, pname, couple, initial, monthYear, F, dlab, ds, dim, amt, f, bigMoney } from "../../core.js";
-import { highlights, dayRows, billRows, sharedText, splitParts } from "../review.js";
+import { highlights, dayRows, billRows, monthRows, spanBillRows, sharedText, splitParts, spanTitle, spanSub } from "../review.js";
 
 /* Paper is white whatever the app's theme, and it prints in black and grey: green and red only for
    money, category colours only on the small dots that name them */
@@ -13,6 +13,9 @@ const C = ["#14804A", "#EB3745", "#FA872A", "#F0C800", "#8DB600", "#009238", "#0
 const col = (k) => C[cat(k).c] || C[C.length - 1];
 const catName = (k) => esc(cat(k).n);
 const mon = (q) => F.months[q[1] - 1];
+/* What the report is about: "October 2025", "2025" or "All time", and what it is compared with */
+const what = (m) => (m.kind ? spanTitle(m) : monthYear(m.q[0], m.q[1]));
+const before = (m) => (m.kind ? m.PY : mon(m.pq));
 /* A share of spending: under 1% says so rather than 0% */
 const share = (x) => (x > 0 && x < 0.005 ? "<" + pct(0.01) : pct(x));
 const MAX_CATS = 12;
@@ -47,60 +50,73 @@ function splitKey() {
 /* ---------- page 1 ---------- */
 function titleBlock(m) {
   const who = m.sc === "all" ? (couple() ? state.people.map((p) => esc(p.name)).join(" · ") : "") : esc(pname(m.sc));
-  return '<div class="pr-title"><span class="pr-eye">' + esc(t("Month in review")) + "</span><h1>" + esc(monthYear(m.q[0], m.q[1])) + "</h1><p>" +
+  return '<div class="pr-title"><span class="pr-eye">' + esc(m.kind ? spanSub(m) : t("Month in review")) + "</span><h1>" + esc(what(m)) + "</h1><p>" +
     esc(LONG().formatRange(new Date(m.a + "T12:00:00"), new Date(m.b + "T12:00:00"))) + (who ? " · " + who : "") + "</p></div>";
 }
-/* What was kept, and the last 12 months as bars: grey, the month in green */
+/* What was kept, and the last 12 months as bars: grey, the month in green. A year or all time:
+   every month of it, the best whole month in green, as on the screen */
 function heroBlock(m) {
   const { s, hist } = m, kept = s.net >= 0, mx = Math.max(...hist.map((x) => Math.abs(x.s.net)), 1);
-  const bars = '<div class="pr-bars"><div class="b">' + hist.map((x) => {
-    const on = x.q[0] === m.q[0] && x.q[1] === m.q[1], v = x.s.net;
-    return '<i class="' + (on ? "on" : "") + (v < 0 ? " neg" : "") + '" style="height:' + Math.max(3, (Math.abs(v) / mx) * 100).toFixed(1) + '%"></i>';
-  }).join("") + '</div><div class="ax">' + hist.map((x) => "<span" + (x.q[0] === m.q[0] && x.q[1] === m.q[1] ? ' class="on"' : "") + ">" + esc(narrow(x.q)) + "</span>").join("") + "</div></div>";
+  const on = (x) => (m.kind ? !!x.on : x.q[0] === m.q[0] && x.q[1] === m.q[1]);
+  const bars = '<div class="pr-bars' + (m.kind === "all" ? " long" : "") + '"><div class="b">' + hist.map((x) => {
+    const v = x.s.net;
+    return '<i class="' + (on(x) ? "on" : "") + (v < 0 ? " neg" : "") + '" style="height:' + Math.max(3, (Math.abs(v) / mx) * 100).toFixed(1) + '%"></i>';
+  }).join("") + '</div><div class="ax">' + hist.map((x) => "<span" + (!m.kind && on(x) ? ' class="on"' : "") + ">" + esc(m.kind ? x.ax : narrow(x.q)) + "</span>").join("") + "</div></div>";
   return '<div class="pr-hero"><div class="pr-heroL"><span class="pr-k">' + esc(kept ? t("Kept") : t("Overspent")) + '</span><div class="pr-big ' + (kept ? "good" : "bad") + '">' + bigMoney(Math.abs(s.net)) + "</div>" +
     "<p>" + m.head + "</p></div>" +
-    '<div class="pr-heroR">' + bars + '<div class="pr-cap">' + esc(t("Money kept, last {n} months", { n: hist.length })) + "</div></div></div>";
+    '<div class="pr-heroR">' + bars + '<div class="pr-cap">' + esc(m.kind ? t("Money kept, month by month") : t("Money kept, last {n} months", { n: hist.length })) + "</div></div></div>";
 }
 function kpiBlock(m) {
-  const { s, prev, u } = m, PM = mon(m.pq);
+  const { s, prev } = m, PM = before(m), u = m.u || { n: 0 };
+  // All time has nothing before it: what a month comes to instead
   const k = (label, cur, p, us, goodUp) => "<div><span>" + esc(label) + "</span><b>" + bigMoney(cur) + "</b>" + (prev ? delta(cur, p, goodUp, PM) : "") +
-    (u.n ? "<small>" + esc(t("Usual {amount}", { amount: f(us) })) + "</small>" : "") + "</div>";
+    (m.kind === "all" ? "<small>" + esc(t("{amount} a month", { amount: f(cur / m.nm) })) + "</small>" : u.n ? "<small>" + esc(t("Usual {amount}", { amount: f(us) })) + "</small>" : "") + "</div>";
   return '<div class="pr-kpi">' + k(t("Came in"), s.inc, prev && prev.inc, u.inc, true) + k(t("Went out"), s.exp, prev && prev.exp, u.exp, false) +
     k(t("Bills"), s.bills, prev && prev.bills, u.bills, false) + k(t("Everyday"), s.day, prev && prev.day, u.day, false) + "</div>";
 }
 /* Where it went: a dot names the category, the bar says who spent it */
 function catsBlock(m) {
-  const { c, cu, keys, s, u } = m;
-  if (!keys.length) return section(esc(t("Where it went")), "", '<p class="pr-note">' + esc(t("No spending this month.")) + "</p>");
+  const { c, keys, s } = m, cu = m.cu || {}, u = m.u || { n: 0 };
+  if (!keys.length) return section(esc(t("Where it went")), "", '<p class="pr-note">' + esc(m.kind ? t("No spending.") : t("No spending this month.")) + "</p>");
+  // Against usual (a month), the year before (a year); all time has only its share
+  const vs = (k) => m.kind === "all" || (m.kind === "year" && !m.hasPrev) ? ""
+    : m.kind ? (m.cp[k] ? short(c[k], m.cp[k]) : '<span class="pr-d">' + esc(t("New")) + "</span>")
+    : cu[k] ? short(c[k], cu[k]) : u.n ? '<span class="pr-d">' + esc(t("New")) + "</span>" : "";
   const shown = keys.slice(0, MAX_CATS), rest = keys.slice(MAX_CATS), top = c[keys[0]];
   const bar = (k, v) => '<span class="pr-split" style="width:' + ((v / top) * 100).toFixed(1) + '%">' + splitParts(m, k).map((x) => '<i class="' + x.cls + '" style="flex:' + x.v.toFixed(2) + '"></i>').join("") + "</span>";
   let rows = shown.map((k) => '<div class="pr-cr">' + sw(k) + '<b class="n">' + catName(k) + '</b><span class="bar">' + bar(k, c[k]) + '</span><b class="v">' + f(c[k]) + '</b><span class="sh">' +
-    esc(share(c[k] / (s.exp || 1))) + '</span><span class="vs">' + (cu[k] ? short(c[k], cu[k]) : u.n ? '<span class="pr-d">' + esc(t("New")) + "</span>" : "") + "</span></div>").join("");
+    esc(share(c[k] / (s.exp || 1))) + '</span><span class="vs">' + vs(k) + "</span></div>").join("");
   if (rest.length) {
     const v = rest.reduce((x, k) => x + c[k], 0);
     rows += '<div class="pr-cr"><i class="pr-sw" style="background:' + C[9] + '"></i><b class="n">' + esc(rest.map((k) => cat(k).n).slice(0, 3).join(", ") + (rest.length > 3 ? "…" : "")) +
       '</b><span class="bar"><span class="pr-split" style="width:' + ((v / top) * 100).toFixed(1) + '%"><i class="p1" style="flex:1"></i></span></span><b class="v">' + f(v) + '</b><span class="sh">' + esc(share(v / (s.exp || 1))) + '</span><span class="vs"></span></div>';
   }
-  return section(esc(t("Where it went")), esc(u.n ? t("against the {n} months before", { n: u.n }) : ""),
-    '<div class="pr-cat">' + rows + "</div>" + (couple() ? '<p class="pr-note">' + sharedText(m) + "</p>" : ""), "", splitKey());
+  const sub = m.kind ? (m.kind === "year" && m.hasPrev ? t("against {year}", { year: m.PY }) : "") : u.n ? t("against the {n} months before", { n: u.n }) : "";
+  return section(esc(t("Where it went")), esc(sub),
+    '<div class="pr-cat' + (m.kind ? " long" : "") + '">' + rows + "</div>" + (couple() ? '<p class="pr-note">' + sharedText(m) + "</p>" : ""), "", splitKey());
 }
 /* What changed: up on one side, down on the other */
 function changedBlock(m) {
-  if (!m.u.n) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("The first month")) + "</b> " + esc(t("Next month Wally compares against this one.")) + "</p>");
+  if (m.kind === "all") return "";
+  if (m.kind === "year") {
+    if (!m.hasPrev) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("The first year")) + "</b> " + esc(t("Next year Wally compares against this one.")) + "</p>");
+    if (!m.ups.length && !m.downs.length) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("A steady year")) + "</b> " + esc(t("Every category was close to {period}.", { period: m.PY })) + "</p>");
+  } else if (!m.u.n) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("The first month")) + "</b> " + esc(t("Next month Wally compares against this one.")) + "</p>");
   const item = (x, up) => {
     const big = up ? m.biggestIn(x.k) : null, amount = f(Math.abs(x.d));
     return '<div class="pr-li"><b>' + (up ? t("{category}, {amount} more", { category: catName(x.k), amount }) : t("{category}, {amount} less", { category: catName(x.k), amount })) + "</b><p>" +
       (big ? t("Biggest: {name}, {amount} on {date}", { name: esc(big.n || cat(big.c).n), amount: f(amt(big, m.sc)), date: esc(dlab(big.d)) }) + "."
+        : m.kind ? t("{amount}, against {before} in {period}", { amount: f(m.c[x.k] || 0), before: f(m.cp[x.k] || 0), period: m.PY }) + "."
         : m.c[x.k] ? t("{amount} this month, usually about {usual}", { amount: f(m.c[x.k] || 0), usual: f(m.cu[x.k] || 0) }) + "." : t("Nothing this month, usually about {usual}", { usual: f(m.cu[x.k] || 0) }) + ".") + "</p></div>";
   };
-  if (!m.ups.length && !m.downs.length) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("A steady month")) + "</b> " + esc(t("Every category was close to usual.")) + "</p>");
+  if (!m.kind && !m.ups.length && !m.downs.length) return section(esc(t("What changed")), "", '<p class="pr-note"><b>' + esc(t("A steady month")) + "</b> " + esc(t("Every category was close to usual.")) + "</p>");
   return section(esc(t("What changed")), "", '<div class="pr-two"><div>' + m.ups.map((x) => item(x, true)).join("") + "</div><div>" + m.downs.map((x) => item(x, false)).join("") + "</div></div>");
 }
 
 /* ---------- page 2 ---------- */
 function peopleBlock(m) {
   if (!couple()) return "";
-  const { a, b } = m, PM = mon(m.pq);
+  const { a, b } = m, PM = before(m);
   const cards = state.people.map((p) => {
     const key = String(p.id), tt = totals(a, b, key);
     let own = 0, paid = 0;
@@ -109,7 +125,7 @@ function peopleBlock(m) {
       if (x.p === key) own += x.a;
       if (x.p === null && x.by === key) paid += x.a;
     }
-    const pe = m.hasPrev ? totals(ds(m.pq[0], m.pq[1], 1), ds(m.pq[0], m.pq[1], dim(m.pq[0], m.pq[1])), key).exp : null;
+    const pe = !m.hasPrev ? null : m.kind ? totals(m.pa, m.pb, key).exp : totals(ds(m.pq[0], m.pq[1], 1), ds(m.pq[0], m.pq[1], dim(m.pq[0], m.pq[1])), key).exp;
     const kept = tt.net >= 0;
     const li = (k, v) => "<li><span>" + esc(k) + "</span><b>" + v + "</b></li>";
     return '<div class="pr-person"><div class="pr-ph">' + avatar(key) + "<b>" + esc(p.name) + '</b><span class="pr-kept ' + (kept ? "good" : "bad") + '">' +
@@ -121,6 +137,8 @@ function peopleBlock(m) {
 }
 function daysBillsBlock(m) {
   const list = (rows) => '<ul class="pr-kv">' + rows.map(([k, v]) => "<li><span>" + k + "</span><b>" + v + "</b></li>").join("") + "</ul>";
+  if (m.kind) return '<div class="pr-two">' + section(esc(t("Month by month")), "", list(monthRows(m))) +
+    section(esc(t("Bills")), esc(tn(m.billsN, "{n} payment, {amount}", "{n} payments, {amount}", { amount: f(m.s.bills) })), list(spanBillRows(m))) + "</div>";
   return '<div class="pr-two">' +
     section(esc(t("Day by day")), m.sc === "all" ? esc(t("household, without bills")) : esc(t("{name}, without bills", { name: pname(m.sc) })), list(dayRows(m))) +
     section(esc(t("Bills")), esc(tn(m.billsN, "{n} payment, {amount}", "{n} payments, {amount}", { amount: f(m.s.bills) })), list(pdfBills(m))) + "</div>";
@@ -141,8 +159,8 @@ function knowBlock(m) {
 function sheet(m, first) {
   const s = document.createElement("div");
   s.className = "pr-sheet";
-  s.innerHTML = '<header class="pr-head"><span class="pr-brand"><i></i>Wally</span><span>' +
-    esc(monthYear(m.q[0], m.q[1])) + " · " + esc(m.sc === "all" ? t("Household") : pname(m.sc)) + "</span></header>" +
+  s.innerHTML = '<header class="pr-head"><span class="pr-brand"><img src="/icons/wally.svg" alt="">Wally</span><span>' +
+    esc(what(m)) + " · " + esc(m.sc === "all" ? t("Household") : pname(m.sc)) + "</span></header>" +
     '<div class="pr-body' + (first ? " first" : "") + '"></div><footer class="pr-pfoot"><span>' + esc(t("Created {date}", { date: LONG().format(new Date(TODAY + "T12:00:00")) })) + '</span><span class="pr-pn"></span></footer>';
   return s;
 }
@@ -178,7 +196,7 @@ function build(m) {
 }
 
 /* The browser names the file after the page title */
-function fileTitle(m) { return "Wally – " + monthYear(m.q[0], m.q[1]) + (m.sc === "all" ? "" : " – " + pname(m.sc)); }
+function fileTitle(m) { return "Wally – " + what(m) + (m.sc === "all" ? "" : " – " + pname(m.sc)); }
 
 let restore = null;
 function cleanUp() {

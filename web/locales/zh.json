@@ -1124,6 +1124,7 @@
  "a tag": "标签",
  "about": "约",
  "against the {n} months before": "对比之前 {n} 个月",
+ "against {year}": "对比 {year} 年",
  "all time": "全部时间",
  "amount over {amount}": "金额大于 {amount}",
  "and {n} more": {

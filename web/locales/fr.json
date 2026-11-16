@@ -1214,6 +1214,7 @@
  "a tag": "une étiquette",
  "about": "environ",
  "against the {n} months before": "par rapport aux {n} mois précédents",
+ "against {year}": "par rapport à {year}",
  "all time": "tout l’historique",
  "amount over {amount}": "montant supérieur à {amount}",
  "and {n} more": {
