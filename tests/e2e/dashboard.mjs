@@ -137,6 +137,7 @@ try {
   await page.locator("body").press("2");
   ok((await text(page, "#s-title")) === String(CY), "key 2: the year");
   ok((await text(page, "#s-lines")).includes("same days of " + (CY - 1)), "Year compares with the same days last year");
+  ok(/^(<?\d+%) of spending/.test(await text(page, "#s-cats .s-row small")), "Year: each category starts with its share of the spending: " + await text(page, "#s-cats .s-row small"));
   await page.click('.s-steps [data-step="-1"]');
   ok((await text(page, "#s-title")) === String(CY - 1), "‹ in a year steps a year back");
   ok(new URL(page.url()).searchParams.get("year") === String(CY - 1), "the address names the year: ?year=" + (CY - 1), page.url());

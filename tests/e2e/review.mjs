@@ -260,6 +260,61 @@ try {
     await page.context().close();
   }
 
+  /* ---------- Year in review and All time: the same story, over a year or everything ---------- */
+  {
+    const CY = now.getFullYear(), CUR = mk([CY, now.getMonth() + 1]);
+    const ysum = await api(base, `/summary/monthly?from=${CY}-01&to=${CUR}`);
+    const yr = ysum.months.reduce((o, x) => ({ inc: o.inc + x.income, exp: o.exp + x.expense, rec: o.rec + x.recurring }), { inc: 0, exp: 0, rec: 0 });
+    // Summary's year shows the card, and it opens the year so far
+    let page = await open(base, "/?year=" + CY);
+    await page.waitForSelector("#s-recapw .s-recap");
+    ok((await page.textContent("#s-recapw")).includes("Your " + CY + " so far"), "year: Summary's This year shows “Your " + CY + " so far”");
+    await page.click("#s-recapw .s-recap");
+    await page.waitForSelector(".w-mrev .w-mrtop .w-mrtile");
+    ok(new URL(page.url()).search === "?y=" + CY && (await page.textContent("#mr-title")) === String(CY) && (await page.textContent(".w-mrh .t p")) === "Year so far", "year: it opens /review?y=" + CY + ", Year so far");
+    ok(cent(euros(await kpi(page, 0)), yr.inc / 100) && cent(euros(await kpi(page, 1)), yr.exp / 100) && cent(euros(await kpi(page, 2)), yr.rec / 100), "year: Came in, Went out and Bills = /summary/monthly over the year (" + (await kpi(page, 1)) + ")");
+    ok(cent(euros(await page.textContent(".w-mrhero .big")), Math.abs(yr.inc - yr.exp) / 100), "year: Kept = income − expense over the year");
+    const order = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
+    ok(order.join("|") === "Where it went|What changed|Each of you|Month by month|Bills|Worth knowing", "year: the same reading order, Month by month for Day by day (" + order.join(", ") + ")");
+    ok(await page.locator(".w-mrev .w-mrbars .b button").count() === now.getMonth() + 1 && await page.locator(".w-mrev .w-mrbars .b button.on").count() <= 1, "year: a bar a month, at most one in colour (the best)");
+    ok(await page.locator(".w-mrev [data-menu=mrmore]").count() === 0, "year: no PDF menu yet");
+    ok((await page.getAttribute(".w-mrev a.w-mrwrow", "href")).startsWith("/transactions?mode=year&year=" + CY + "&cat="), "year: a category opens its transactions over the year");
+    await page.click("#mr-prev");
+    ok((await page.textContent("#mr-title")) === String(CY - 1) && new URL(page.url()).search === "?y=" + (CY - 1), "year: ‹ steps a year back");
+    ok(await page.locator("#mr-next").isEnabled(), "year: › goes forward again");
+    await page.locator(".w-mrev .w-mrbars .b button:not([disabled])").first().click();
+    await page.waitForFunction(() => location.search.startsWith("?m="));
+    ok(/Month in review/.test(await page.textContent(".w-mrh")), "year: a bar opens that month's review");
+    noErrors(page, "year");
+    await page.context().close();
+
+    // All time
+    page = await open(base, "/");
+    await page.keyboard.press("4");
+    await page.waitForSelector("#s-recapw .s-recap");
+    ok((await page.textContent("#s-recapw")).includes("Your all-time recap"), "all: Summary's All time shows “Your all-time recap”");
+    await page.click("#s-recapw .s-recap");
+    await page.waitForSelector(".w-mrev .w-mrtop .w-mrtile");
+    ok(new URL(page.url()).search === "?all" && (await page.textContent("#mr-title")) === "All time" && /^Since /.test(await page.textContent(".w-mrh .t p")), "all: it opens /review?all, All time, Since …");
+    const aorder = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
+    ok(!aorder.includes("What changed") && aorder.includes("Month by month"), "all: no What changed (nothing to compare with)");
+    ok(await page.locator("#mr-prev,#mr-next").count() === 0, "all: nowhere to step");
+    ok(/a month$/.test((await page.locator(".w-mrev .w-mrtop .w-mrtile").first().innerText()).trim()), "all: each total says what a month comes to");
+    ok(/^<?\d+%$/.test((await page.locator(".w-mrev a.w-mrwrow > .w-mrd").first().innerText()).trim()), "all: each category shows its share");
+    await shot(page, "review-all", true);
+    await page.click(".w-mrf .w-btn.primary");
+    await page.waitForSelector("#s-title");
+    ok((await page.textContent("#s-title")) === "All time", "all: Open in Summary keeps All time");
+    noErrors(page, "all time");
+    await page.context().close();
+
+    // The phone: four pages for all time
+    page = await open(base, "/review?all", { width: 390, height: 844, theme: "dark" });
+    await page.waitForSelector(".w-mrstory");
+    ok(await page.locator(".w-mrstory .w-story i").count() === 4, "all, phone: four pages");
+    await page.context().close();
+  }
+
   /* ---------- the command bar ---------- */
   {
     const page = await open(base, "/");

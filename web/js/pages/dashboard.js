@@ -117,6 +117,8 @@ export function mount(el, route) {
   if (/^\d{4}-\d\d$/.test(q || "") && +q.slice(5) >= 1 && +q.slice(5) <= 12 && q <= TODAY.slice(0, 7)) setMonth(+q.slice(0, 4), +q.slice(5));
   const y = route && route.query.get("year");
   if (/^(19|20)\d\d$/.test(y || "") && +y <= +TODAY.slice(0, 4)) setYear(+y);
+  // All time (/?range=all, as All time in review's "Open in Summary" does)
+  if (route && route.query.get("range") === "all") setMode("all");
   root.addEventListener("click", onClick);
   root.addEventListener("s-day", onDay);
   root.addEventListener("touchstart", onTouchStart, { passive: true });

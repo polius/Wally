@@ -15,7 +15,7 @@ const RECENT = 548;          // a price change from the last 18 months is still 
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 
-const ui = { tab: "expense", sel: null, open: false, endedOpen: false, order: [], day: null, cal: false, fromDay: false };
+const ui = { tab: "all", sel: null, open: false, endedOpen: false, order: [], day: null, cal: false, fromDay: false };
 let root = null;
 let H = new Map();           // history per rule, worked out once per render
 
@@ -53,7 +53,7 @@ function latestVersion(r) {
   state.rules.forEach((x) => { if (x.type === r.type && norm(x.n) === norm(r.n) && x.start > best.start) best = x; });
   return best;
 }
-function keep(r) { return (ui.tab === "income") === isIncome(r); }
+function keep(r) { return ui.tab === "all" || (ui.tab === "income") === isIncome(r); }
 function byNext(list) {
   return list.slice().sort((a, b) => { const x = nextOf(a) || "9", y = nextOf(b) || "9"; return x < y ? -1 : x > y ? 1 : a.n.localeCompare(b.n); });
 }
@@ -111,10 +111,10 @@ export function key(ev) {
   else if (k === "Backspace" || k === "Delete") { ev.preventDefault(); deleteRule(r); }
 }
 
-/* Bills | Income, then List | Calendar */
+/* All | Bills | Income, then List | Calendar */
 function controls() {
   return '<div class="w-seg rec-tabs" role="group" aria-label="' + esc(t("Show")) + '">' +
-      [["expense", t("Bills")], ["income", t("Income")]].map(([v, l]) => '<button type="button" data-rtab="' + v + '" aria-pressed="' + (ui.tab === v) + '">' + l + "</button>").join("") + "</div>" +
+      [["all", t("All")], ["expense", t("Bills")], ["income", t("Income")]].map(([v, l]) => '<button type="button" data-rtab="' + v + '" aria-pressed="' + (ui.tab === v) + '">' + l + "</button>").join("") + "</div>" +
     '<div class="w-seg rec-views" role="group" aria-label="' + esc(t("View")) + '">' +
       '<button type="button" data-rview="list" aria-pressed="' + !ui.cal + '" aria-label="' + esc(t("List")) + '" title="' + esc(t("List")) + '">' + icon("list") + "</button>" +
       '<button type="button" data-rview="cal" aria-pressed="' + ui.cal + '" aria-label="' + esc(t("Calendar")) + '" title="' + esc(t("Calendar")) + '">' + icon("cal") + "</button></div>";
@@ -146,7 +146,7 @@ function render() {
   let sel = ruleById(ui.sel);
   if (sel && superseded(sel)) { sel = latestVersion(sel); ui.sel = sel.id; }
   if (sel && ruleAmt(sel) <= 0) sel = null;
-  if (sel && !keep(sel)) sel = null;      // Bills | Income: the panel follows the tab
+  if (sel && !keep(sel)) sel = null;      // All | Bills | Income: the panel follows the tab
   const listed = rules.filter((r) => !superseded(r));
   const shown = listed.filter(keep);
   if (!sel && wide() && shown.length) {
@@ -191,12 +191,14 @@ function summary(rules) {
   const live = rules.filter((r) => nextOf(r));
   const bills = live.filter((r) => !isIncome(r)), incs = live.filter(isIncome);
   const billM = sum(bills, (r) => perMonth(r)), incM = sum(incs, (r) => perMonth(r));
+  // All shows what the bills cost, as Bills does; its next 30 days count both ways
   const to30 = addD(TODAY, 30), inc = ui.tab === "income";
-  const o30 = occurrences(addD(TODAY, 1), to30).filter((x) => isIncome(x.r) === inc && ruleAmt(x.r) > 0);
-  const sum30 = sum(o30, (x) => ruleAmt(x.r));
+  const o30 = occurrences(addD(TODAY, 1), to30).filter((x) => keep(x.r) && ruleAmt(x.r) > 0);
+  const out30 = sum(o30.filter((x) => !isIncome(x.r)), (x) => ruleAmt(x.r)), in30 = sum(o30.filter((x) => isIncome(x.r)), (x) => ruleAmt(x.r));
   const big = inc ? incM : billM, n = inc ? incs.length : bills.length;
   let line = inc ? tn(n, "{n} source", "{n} sources") : incM ? t("{pct} of what comes in", { pct: pct(billM / incM) }) : tn(n, "{n} active rule", "{n} active rules");
-  const soon = o30.length ? t("{amount} in the next 30 days", { amount: f(sum30) }) : t("Nothing in the next 30 days");
+  const soon = !o30.length ? t("Nothing in the next 30 days") : out30 && in30 ? t("{out} out and {in} in over the next 30 days", { out: f(out30), in: "+" + f(in30) })
+    : t("{amount} in the next 30 days", { amount: (in30 ? "+" : "") + f(out30 || in30) });
   return '<span class="rec-eye">' + esc(t("Every month")) + '</span><b class="rec-big amt' + (inc ? " pos" : "") + '">' + bdi(bigMoney(big)) + "</b>" +
     '<span class="rec-line">' + esc(line) + " · " + esc(soon) + "</span>";
 }
@@ -264,7 +266,7 @@ function list(listed, shown) {
   ui.order = [];
   if (!shown.length) {
     const who = state.scope === "all" ? "" : pname(state.scope);
-    return '<div class="w-empty"><b>' + t("No rules") + "</b><p>" + (ui.tab === "income" ? t("No recurring income here yet.") : who ? t("Nothing repeats for {name} yet.", { name: esc(who) }) : t("No recurring bills here yet.")) + "</p></div>";
+    return '<div class="w-empty"><b>' + t("No rules") + "</b><p>" + (ui.tab === "income" ? t("No recurring income here yet.") : who ? t("Nothing repeats for {name} yet.", { name: esc(who) }) : ui.tab === "all" ? t("Nothing repeats yet") : t("No recurring bills here yet.")) + "</p></div>";
   }
   const running = shown.filter((r) => !over(r)), ended = shown.filter(over);
   // Next 7 days, then the rest of that month, then month by month; paused at the end
@@ -281,8 +283,10 @@ function list(listed, shown) {
   if (at.paused) { groups.splice(groups.indexOf(at.paused), 1); groups.push(at.paused); }
   let html = groups.map((g) => {
     g.rows.forEach((r) => ui.order.push(r.id));
-    const tot = sum(g.rows, (r) => (nextOf(r) ? ruleAmt(r) : 0));
-    return '<div class="w-dayh">' + esc(g.label) + (tot ? '<span class="amt">' + bdi(esc((ui.tab === "income" ? "+" : "") + f(tot))) + "</span>" : "") + "</div>" + g.rows.map(ruleRow).join("");
+    // Money in and money out apart: "+2,500 € · 1,180 €" when a group in All has both
+    const due = g.rows.filter((r) => nextOf(r)), tin = sum(due.filter(isIncome), ruleAmt), tout = sum(due.filter((r) => !isIncome(r)), ruleAmt);
+    const tot = [tin ? "+" + f(tin) : "", tout ? f(tout) : ""].filter(Boolean).join(" · ");
+    return '<div class="w-dayh">' + esc(g.label) + (tot ? '<span class="amt">' + bdi(esc(tot)) + "</span>" : "") + "</div>" + g.rows.map(ruleRow).join("");
   }).join("");
   if (ended.length) {
     if (!ui.endedOpen && ended.some((r) => r.id === ui.sel)) ui.endedOpen = true;
