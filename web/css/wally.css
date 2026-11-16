@@ -996,6 +996,10 @@ button.w-gr:not([disabled]):hover,a.w-gr:hover,label.w-gr:hover{background:var(-
 .w-tip b{font-weight:600}
 .w-tip .r{display:flex;justify-content:space-between;gap:14px;color:var(--w-ink2);align-items:center}
 .w-tip .r b{color:var(--w-ink);font-weight:500}
+/* An amount never breaks ("≈ 2,516.72 €" stays one piece); a total sits under a line, its name as dark as its amount */
+.w-tip .r b{white-space:nowrap}
+.w-tip .r.d-sum{margin-top:4px;padding-top:4px;border-top:1px solid var(--w-line2);color:var(--w-ink)}
+.w-tip .r.d-sum b{font-weight:600}
 .w-tip .w-tiphint{display:block;margin-top:5px;padding-top:5px;border-top:1px solid var(--w-line2);color:var(--w-ink3);font-size:var(--fs-cap)}
 .w-tip .w-tipday{margin-top:5px;padding-top:5px;border-top:1px solid var(--w-line2)}
 .w-tip .w-tipday span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

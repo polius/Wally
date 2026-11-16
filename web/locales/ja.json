@@ -1382,5 +1382,20 @@
  "{times}, {amount} received so far": "{times}、これまでに{amount}を受け取り",
  "{x}× a weekday": "平日の{x}倍",
  "“{name}” Key": "「{name}」キー",
- "“{v}” is not an amount": "「{v}」は金額ではありません"
+ "“{v}” is not an amount": "「{v}」は金額ではありません",
+ "On track for {amount} by {date}": "{date}には{amount}の見込み",
+ "How it adds up": "計算の内訳",
+ "Kept so far": "現在までの黒字",
+ "Income still to come": "今後の収入",
+ "Bills still to come": "今後の固定費",
+ "On track for": "見込み",
+ "On track to overspend {amount} by {date}": "{date}には{amount}の使いすぎの見込み",
+ "on track to overspend {amount} by {date}": "{date}には{amount}の使いすぎの見込み",
+ "On track to overspend": "使いすぎの見込み",
+ "Usual income not in yet": "まだ入っていない通常の収入",
+ "Left after bills": "固定費を引いた残り",
+ "Left after income to come": "今後の収入を含めた残り",
+ "Everyday spending to come": "今後の日常の支出",
+ "≈ Based on a typical month from {from} to {to}": "≈ {from}〜{to}の典型的な月に基づく",
+ "≈ Based on {month}": "≈ {month}に基づく"
 }

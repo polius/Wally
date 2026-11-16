@@ -368,6 +368,100 @@ try {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);
 
+  console.log("This month's forecast");
+  {
+    const lastDay = now.getDate() === new Date(CY, CM, 0).getDate();
+    const fresh = await open();
+    if (lastDay) ok(await fresh.locator(".s-fc").count() === 0, "on the month's last day there is nothing left to forecast");
+    else {
+      // "≈ −1,234.56 €" → -1234.56
+      const money = (s) => +s.replace(/[≈€\s,+]/g, "").replace("−", "-");
+      const sum = async (p) => {
+        await p.locator(".s-fc").hover();
+        await p.waitForTimeout(150);
+        const tip = await p.evaluate(() => ({
+          head: document.querySelector("#tip > b").textContent,
+          rows: [...document.querySelectorAll("#tip .r")].map((r) => ({ k: r.firstChild.textContent, v: r.lastChild.textContent, total: r.classList.contains("d-sum") })),
+          note: document.querySelector("#tip .w-tiphint").textContent,
+        }));
+        await p.mouse.move(5, 5);
+        return tip;
+      };
+      // Each part adds up to the total under it; the last total is the line's amount
+      const addsUp = (tip, line) => {
+        let run = 0, good = true;
+        for (const r of tip.rows) {
+          const v = money(r.v);
+          if (!r.total) { run += v; continue; }
+          const shown = /overspend/.test(r.k) ? -v : v;
+          if (Math.abs(run - shown) > 0.011) good = false;
+          run = shown;
+        }
+        const said = money(line.split("≈")[1].replace(/ by .*$/, "")) * (/overspend/.test(line) ? -1 : 1);
+        return good && Math.abs(run - said) < 0.011;
+      };
+      const line = await text(fresh, "#s-kept .s-fc");
+      ok(/^On track (for|to overspend) ≈ .+ by \w{3} \d+$/.test(line), "Kept each month says where this month is heading: " + line);
+      let tip = await sum(fresh);
+      ok(tip.head === "How it adds up" && /^(Kept|Overspent) so far$/.test(tip.rows[0].k) && tip.rows.some((r) => r.k === "Everyday spending to come"),
+        "pointing at it shows how it adds up: " + tip.rows.map((r) => r.k + " " + r.v).join(" · "));
+      ok(addsUp(tip, line), "and every part adds up to the total under it, and to the line");
+      ok(tip.rows.filter((r) => r.v.startsWith("≈")).every((r) => /Everyday|Usual|On track/.test(r.k)) && tip.rows.find((r) => r.k === "Everyday spending to come").v.startsWith("≈"),
+        "only the estimates are marked ≈");
+      ok(/^≈ Based on (a typical month from \w+ to \w+|\w+)$/.test(tip.note), "and it says what the estimates are based on: " + tip.note);
+      const bills = tip.rows.find((r) => r.k.startsWith("Bills still to come"));
+      if (bills) ok(tip.rows.some((r) => r.total && r.k === "Left after bills"), "what is known adds up first: Left after bills");
+
+      // Salaries added by hand, this month's not in yet: their usual amount still counts
+      await fresh.evaluate(async () => {
+        const { state, TODAY } = await import("/js/core.js");
+        state.rules.forEach((r) => { if (r.type === "income") r.paused = true; });
+        state.tx.forEach((x) => { if (x.type === "income") x.rid = null; });
+        const first = TODAY.slice(0, 8) + "01";
+        for (let i = state.tx.length - 1; i >= 0; i--) if (state.tx[i].type === "income" && state.tx[i].d >= first) state.tx.splice(i, 1);
+      });
+      const redraw = async () => {
+        await fresh.click('.s-steps [data-step="-1"]');
+        await fresh.waitForTimeout(200);
+        ok(await fresh.locator(".s-fc").count() === 0, "an earlier month has no forecast");
+        await fresh.click('.s-steps [data-step="1"]');
+        await fresh.waitForTimeout(300);
+      };
+      await redraw();
+      const byHand = await text(fresh, "#s-kept .s-fc");
+      tip = await sum(fresh);
+      ok(tip.rows.some((r) => r.k === "Usual income not in yet" && r.v.startsWith("≈ +")) && /^On track for/.test(byHand),
+        "salaries added by hand and not in yet still count, as usual income: " + byHand);
+      ok(addsUp(tip, byHand), "and it still adds up");
+
+      // A big one-off today: heading for overspending, said so in red
+      await fresh.evaluate(async () => {
+        const { state, TODAY } = await import("/js/core.js");
+        state.tx.unshift(Object.assign({}, state.tx.find((x) => x.type === "expense"), { id: "e2e-big", d: TODAY, a: 99999, rid: null, n: "Big one-off", p: null }));
+      });
+      await redraw();
+      const over = await text(fresh, "#s-kept .s-fc");
+      tip = await sum(fresh);
+      ok(/^On track to overspend ≈ /.test(over) && await fresh.locator(".s-fc b.up-bad").count() === 1 && tip.rows.at(-1).k === "On track to overspend",
+        "heading for overspending says so, in red: " + over);
+      ok(addsUp(tip, over), "and it still adds up");
+    }
+    await fresh.context().close();
+
+    // A finger keeps it open to be read, until a tap elsewhere
+    if (!lastDay) {
+      const phone = await open({ w: 390, h: 844 });
+      await phone.locator(".s-fc").scrollIntoViewIfNeeded();
+      await phone.locator(".s-fc").tap();
+      await phone.waitForTimeout(3000);
+      ok(await phone.locator("#tip.on").count() === 1, "phone: a tap keeps the sum open to be read");
+      await phone.locator("#s-title").tap();
+      await phone.waitForTimeout(200);
+      ok(await phone.locator("#tip.on").count() === 0, "and a tap elsewhere closes it");
+      await phone.context().close();
+    }
+  }
+
   console.log("The folded sidebar");
   await page.click("[data-side-toggle]");
   await page.mouse.move(700, 500);

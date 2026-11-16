@@ -413,12 +413,92 @@ function keptData(r) {
     months.push({ y, m: mo, a, net: x.net, inc: x.inc, exp: x.exp, partial: end > TODAY, on: end >= r.start && a <= r.end });
   }
   const done = months.filter((x) => !x.partial), avg = done.length ? done.reduce((s0, x) => s0 + x.net, 0) / done.length : null;
-  return { months, avg, long: n > 12, net: tt.net, soFar: r.current };
+  return { months, avg, long: n > 12, net: tt.net, soFar: r.current, fc: r.month && r.current ? forecast(tt.net) : null };
+}
+/* Where this month is heading: kept so far, plus the repeating income and bills still to come (from tomorrow:
+   the server's engine has already recorded today's), plus the usual income added by hand that hasn't come in yet,
+   less the usual everyday spending for the days left. Everyday is every expense no rule made.
+   "Usual" is the middle one of up to the last three whole months (a daily rate for spending), so one unusual month,
+   a holiday or a bonus, doesn't move it. None before a whole month has been recorded, or on the month's last day. */
+const median = (list) => { const o = list.slice().sort((x, y) => x - y), h = o.length >> 1; return o.length % 2 ? o[h] : (o[h - 1] + o[h]) / 2; };
+function byHand(type, a, b) { let v = 0; for (const x of state.tx) if (x.type === type && !x.rid && x.d >= a && x.d <= b) v += amt(x); return v; }
+function forecast(net) {
+  const [y, m] = ym(TODAY), first = ds(y, m, 1), end = ds(y, m, dim(y, m)), days = span(TODAY, end) - 1, used = [];
+  if (days < 1) return null;
+  for (let k = 3; k >= 1; k--) { const q = ymAdd(y, m, -k); if (ds(q[0], q[1], 1) >= START) used.push(q); }
+  if (!used.length) return null;
+  const whole = used.map(([qy, qm]) => [ds(qy, qm, 1), ds(qy, qm, dim(qy, qm)), dim(qy, qm)]);
+  const everyday = median(whole.map(([a, b, n]) => byHand("expense", a, b) / n)) * days;
+  const usualIn = Math.max(0, median(whole.map(([a, b]) => byHand("income", a, b))) - byHand("income", first, TODAY));
+  const occ = occurrences(addD(TODAY, 1), end).filter((x) => ruleAmt(x.r) > 0);
+  const sumOf = (list) => list.reduce((s0, x) => s0 + ruleAmt(x.r), 0);
+  const bills = occ.filter((x) => !isIncome(x.r)), income = occ.filter((x) => isIncome(x.r));
+  const out = sumOf(bills), inn = sumOf(income);
+  return { end, used, everyday, usualIn, bills: bills.length, out, incomes: income.length, inn, v: net + inn + usualIn - out - everyday };
 }
 function keptHead(d) {
   const over = d.net < 0;
   return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + bigMoney(Math.abs(d.net)) + "</b>" +
-    (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>";
+    (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>" + fcLine(d);
+}
+/* "On track for ≈ 1,450.00 € by Nov 30", or "On track to overspend ≈ 300.00 € by Nov 30", as Kept this year says it */
+const onTrack = (v) => '<b class="' + (v < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f(Math.abs(v))) + "</b>";
+function fcLine(d) {
+  if (!d.fc) return "";
+  const v = d.fc.v, args = { amount: onTrack(v), date: esc(dlab(d.fc.end)) };
+  return '<p class="s-yearsub s-fc" tabindex="0">' + (v < 0 ? t("On track to overspend {amount} by {date}", args) : t("On track for {amount} by {date}", args)) + icon("info", "s-fci") + "</p>";
+}
+/* Pointing at it shows how it adds up: what is known first (kept so far, the repeating income and bills to come)
+   with its total when anything is still to come, then the estimates, each marked ≈, and where the month is heading */
+function fcTip(d) {
+  const c = d.fc, first = c.used[0], last = c.used[c.used.length - 1];
+  const money = (v, about) => (about ? "≈ " : "") + (v < 0 ? "−" : v > 0 ? "+" : "") + f(Math.abs(v));
+  const total = (label, v, about) => '<div class="r d-sum"><span>' + esc(label) + "</span><b>" + esc((about ? "≈ " : "") + (v < 0 ? "−" : "") + f(Math.abs(v))) + "</b></div>";
+  const known = d.net + c.inn - c.out;
+  const basis = c.used.length > 1 ? t("≈ Based on a typical month from {from} to {to}", { from: monthIn(first[1]), to: monthIn(last[1]) })
+    : t("≈ Based on {month}", { month: monthIn(first[1]) });
+  return '<b class="s-fctip">' + esc(t("How it adds up")) + "</b>" +
+    row(esc(d.net >= 0 ? t("Kept so far") : t("Overspent so far")), esc((d.net < 0 ? "−" : "") + f(Math.abs(d.net)))) +
+    (c.incomes ? row(esc(t("Income still to come") + " (" + num(c.incomes) + ")"), esc(money(c.inn)), "var(--w-good)") : "") +
+    (c.bills ? row(esc(t("Bills still to come") + " (" + num(c.bills) + ")"), esc(money(-c.out))) : "") +
+    (c.incomes || c.bills ? total(c.bills ? t("Left after bills") : t("Left after income to come"), known) : "") +
+    (c.usualIn >= 0.005 ? row(esc(t("Usual income not in yet")), esc(money(c.usualIn, true)), "var(--w-good)") : "") +
+    row(esc(t("Everyday spending to come")), esc(money(-c.everyday, true))) +
+    total(c.v < 0 ? t("On track to overspend") : t("On track for"), Math.abs(c.v), true) +
+    '<small class="w-tiphint">' + esc(basis) + "</small>";
+}
+/* Pointing or focusing shows the sum as any tooltip does. A finger keeps it open to be read, until the next tap
+   elsewhere or a scroll, rather than the usual two and a half seconds: the mouse events a tap also sends are
+   ignored, and the tap's click shows it again after any other tooltip has hidden on them. Screen readers hear
+   it from a hidden copy. */
+let fcIds = 0;
+function tipFc(root, d) {
+  const n = root.querySelector(".s-fc");
+  if (!n) return;
+  const html = () => fcTip(d), show = (ev) => showTip(html(), ev), id = "s-fcsum" + (++fcIds);
+  n.setAttribute("aria-describedby", id);
+  n.insertAdjacentHTML("afterend", '<span class="w-sr" id="' + id + '"></span>');
+  const said = html().replace(/^<b[^>]*>(.*?)<\/b>/, "$1. ").replace(/<\/span><b>/g, "</span>: <b>").replace(/<\/(div|small)>/g, ". ");
+  root.querySelector("#" + id).textContent = n.textContent + ". " + new DOMParser().parseFromString(said, "text/html").body.textContent;
+  let pinned = false;
+  const unpin = (ev) => {
+    if (ev.type === "touchstart" && n.contains(ev.target)) return;
+    pinned = false;
+    hideTip();
+    removeEventListener("touchstart", unpin, true);
+    removeEventListener("scroll", unpin, true);
+  };
+  n.addEventListener("pointermove", (ev) => { if (ev.pointerType !== "touch") show(ev); });
+  n.addEventListener("pointerleave", (ev) => { if (ev.pointerType !== "touch") hideTip(); });
+  n.addEventListener("focus", (ev) => { if (!pinned) show(ev); });
+  n.addEventListener("blur", () => { if (!pinned) hideTip(); });
+  n.addEventListener("touchstart", () => {
+    showTip(html(), { target: n });
+    if (pinned) return;
+    pinned = true;
+    setTimeout(() => { addEventListener("touchstart", unpin, { capture: true, passive: true }); addEventListener("scroll", unpin, { capture: true, passive: true }); });
+  }, { passive: true });
+  n.addEventListener("click", () => { if (pinned) showTip(html(), { target: n }); });
 }
 const keptLabel = (d) => t("Kept each month") + ": " + d.months.map((x) => monthYear(x.y, x.m) + " " + f(x.net)).join(", ");
 function drawKept(svg, w, h, d, big) {
@@ -452,6 +532,7 @@ function renderKept(r) {
   const d = keptData(r);
   $("s-avg").innerHTML = d.avg === null ? "" : '<i class="s-dash"></i><span class="s-dk">' + esc(t("Average {amount}", { amount: f(d.avg) })) + '</span><span class="s-ph">' + esc(t("Avg {amount}", { amount: f(d.avg) })) + "</span>";
   $("s-kept").innerHTML = keptHead(d) + '<div class="cv s-keptc" id="c-kept"></div>';
+  tipFc($("s-kept"), d);
   chart("c-kept", (w) => (w < 360 ? 104 : 112), (svg, w, h) => drawKept(svg, w, h, d, false), () => keptLabel(d));
 }
 export function openKept(r) {
@@ -462,12 +543,13 @@ export function openKept(r) {
     h: () => Math.max(300, Math.min(innerHeight - 240, 520)),
     draw: (svg, w, h) => drawKept(svg, w, h, d, true),
     label: () => keptLabel(d),
+    open: (root) => tipFc(root, d),
   });
 }
 
 /* ---------- Kept this year: kept since January, and where it is heading by December 31 ----------
-   The line is the running total at each month's end (this month so far). The dotted part assumes the
-   rest of the year goes like the last three whole months. */
+   The line is the running total at each month's end (this month so far). The dotted part ends this month where
+   its forecast says, then assumes the rest of the year goes like the last three whole months. */
 function yearData(r) {
   const y = +r.end.slice(0, 4), now = +TODAY.slice(0, 4), cur = y === now, last = cur ? +TODAY.slice(5, 7) : 12, months = [];
   for (let mo = 1; mo <= last; mo++) {
@@ -485,7 +567,8 @@ function yearData(r) {
   const avg = whole.length ? whole.reduce((a, b) => a + b, 0) / whole.length : null;
   const proj = [];
   if (cur && avg !== null && last < 12) {
-    const base = kept - months[last - 1].net + Math.max(months[last - 1].net, avg);
+    // This month ends where its own forecast says (see Kept each month), or at least at the pace when there is none
+    const fc = forecast(months[last - 1].net), base = kept - months[last - 1].net + (fc ? fc.v : Math.max(months[last - 1].net, avg));
     proj.push(base);
     for (let mo = last + 1; mo <= 12; mo++) proj.push(proj[proj.length - 1] + avg);
   }
@@ -496,7 +579,8 @@ function yearHead(d) {
   const over = d.kept < 0;
   return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + (over ? "−" : "") + bigMoney(Math.abs(d.kept)) + "</b></div>" +
     '<p class="s-yearsub">' + (over ? esc(t("overspent since January")) : esc(t("kept since January"))) +
-    (d.end !== null ? " · " + t("on track for {amount} by {date}", { amount: '<b class="' + (d.end < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f(d.end)) + "</b>", date: esc(dlab(d.y + "-12-31")) }) : "") + "</p>";
+    (d.end !== null ? " · " + (d.end < 0 ? t("on track to overspend {amount} by {date}", { amount: onTrack(d.end), date: esc(dlab(d.y + "-12-31")) })
+      : t("on track for {amount} by {date}", { amount: onTrack(d.end), date: esc(dlab(d.y + "-12-31")) })) : "") + "</p>";
 }
 const yearLabel = (d) => yearTitle(d) + ": " + f(d.kept) + (d.end !== null ? ". " + t("Projected: {amount}", { amount: f(d.end) }) : "");
 function drawYear(svg, w, h, d, big) {

@@ -1634,5 +1634,20 @@
  "{times}, {amount} received so far": "{times}, всего получено {amount}",
  "{x}× a weekday": "{x}× от будней",
  "“{name}” Key": "Ключ «{name}»",
- "“{v}” is not an amount": "«{v}» — не сумма"
+ "“{v}” is not an amount": "«{v}» — не сумма",
+ "On track for {amount} by {date}": "Прогноз к {date}: {amount}",
+ "How it adds up": "Как это считается",
+ "Kept so far": "Отложено на сегодня",
+ "Income still to come": "Ожидаемые поступления",
+ "Bills still to come": "Предстоящие счета",
+ "On track for": "Прогноз",
+ "On track to overspend {amount} by {date}": "Прогноз к {date}: перерасход {amount}",
+ "on track to overspend {amount} by {date}": "прогноз к {date}: перерасход {amount}",
+ "On track to overspend": "Прогноз перерасхода",
+ "Usual income not in yet": "Обычные поступления, ещё не пришедшие",
+ "Left after bills": "Остаётся после счетов",
+ "Left after income to come": "Остаётся с ожидаемыми поступлениями",
+ "Everyday spending to come": "Траты до конца месяца",
+ "≈ Based on a typical month from {from} to {to}": "≈ По типичному месяцу ({from}–{to})",
+ "≈ Based on {month}": "≈ По месяцу: {month}"
 }
