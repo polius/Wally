@@ -626,7 +626,6 @@
  "New password": "Contrasenya nova",
  "New recovery codes saved": "S’han desat els codis de recuperació nous",
  "New recurring": "Recurrent nova",
- "New rule": "Regla nova",
  "Next": "Següent",
  "Next 7 days": "Propers 7 dies",
  "Next five weeks": "Pròximes cinc setmanes",
@@ -839,7 +838,6 @@
  "Same as {month}": "Igual que {month}",
  "Same bills, same prices": "Mateixos rebuts, mateixos preus",
  "Same one: keep once": "És la mateixa: desa’n només una",
- "Sample data. Nothing you change is kept after the container stops.": "Dades d’exemple. Res del que canviïs es conserva quan s’atura el contenidor.",
  "Saturday": "Dissabte",
  "Save": "Desa",
  "Save password": "Desa la contrasenya",
@@ -1566,5 +1564,7 @@
  "Everyday spending to come": "Despesa del dia a dia per venir",
  "≈ Based on a typical month from {from} to {to}": "≈ Segons un mes típic ({from}–{to})",
  "≈ Based on {month}": "≈ Segons {month}",
- "Keyboard shortcuts": "Dreceres de teclat"
+ "Keyboard shortcuts": "Dreceres de teclat",
+ "Nothing here is kept.": "Res del que hi ha aquí es desa.",
+ "Add a bill or a salary": "Afegeix una factura o un sou"
 }

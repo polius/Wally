@@ -570,7 +570,6 @@
  "New password": "새 비밀번호",
  "New recovery codes saved": "새 복구 코드를 저장했어요",
  "New recurring": "새 반복",
- "New rule": "새 규칙",
  "Next": "다음",
  "Next 7 days": "앞으로 7일",
  "Next five weeks": "앞으로 5주",
@@ -777,7 +776,6 @@
  "Same as {month}": "{month} 대비 변화 없음",
  "Same bills, same prices": "고정 지출도 금액도 그대로",
  "Same one: keep once": "같은 거래: 하나만 남기기",
- "Sample data. Nothing you change is kept after the container stops.": "샘플 데이터예요. 컨테이너가 멈추면 변경 사항은 남지 않아요.",
  "Saturday": "토요일",
  "Save": "저장",
  "Save password": "비밀번호 저장",
@@ -1398,5 +1396,7 @@
  "Everyday spending to come": "앞으로의 일상 지출",
  "≈ Based on a typical month from {from} to {to}": "≈ {from}~{to}의 일반적인 달 기준",
  "≈ Based on {month}": "≈ {month} 기준",
- "Keyboard shortcuts": "키보드 단축키"
+ "Keyboard shortcuts": "키보드 단축키",
+ "Nothing here is kept.": "여기서는 아무것도 저장되지 않습니다.",
+ "Add a bill or a salary": "청구서나 급여 추가"
 }

@@ -186,7 +186,7 @@ function render() {
 function emptyRules() {
   return '<div class="w-empty rec-empty"><span class="w-empty-i">' + icon("repeat") + "</span><b>" + t("Nothing repeats yet") + "</b><p>" +
     t("Add rent, salaries and subscriptions once. Wally adds each one on its day, and the calendars count them before they happen.") +
-    '</p><button type="button" class="w-btn primary" data-new>' + icon("plus") + t("New rule") + "</button></div>";
+    '</p><button type="button" class="w-btn primary" data-new>' + icon("plus") + t("Add a bill or a salary") + "</button></div>";
 }
 
 /* ---------- the figures at the top: one total, then what it means ---------- */

@@ -598,7 +598,6 @@
  "New password": "नया पासवर्ड",
  "New recovery codes saved": "नए रिकवरी कोड सेव हो गए",
  "New recurring": "नया आवर्ती",
- "New rule": "नया नियम",
  "Next": "आगे",
  "Next 7 days": "अगले 7 दिन",
  "Next five weeks": "अगले पाँच हफ़्ते",
@@ -808,7 +807,6 @@
  "Same as {month}": "{month} जितना ही",
  "Same bills, same prices": "वही बिल, वही दाम",
  "Same one: keep once": "वही है: एक बार रखें",
- "Sample data. Nothing you change is kept after the container stops.": "सैंपल डेटा। कंटेनर रुकने के बाद आपके बदलाव नहीं बचते।",
  "Saturday": "शनिवार",
  "Save": "सेव करें",
  "Save password": "पासवर्ड सेव करें",
@@ -1482,5 +1480,7 @@
  "Everyday spending to come": "आने वाला रोज़मर्रा का खर्च",
  "≈ Based on a typical month from {from} to {to}": "≈ {from} से {to} तक के एक सामान्य महीने के आधार पर",
  "≈ Based on {month}": "≈ {month} के आधार पर",
- "Keyboard shortcuts": "कीबोर्ड शॉर्टकट"
+ "Keyboard shortcuts": "कीबोर्ड शॉर्टकट",
+ "Nothing here is kept.": "यहाँ कुछ भी सहेजा नहीं जाता।",
+ "Add a bill or a salary": "बिल या वेतन जोड़ें"
 }

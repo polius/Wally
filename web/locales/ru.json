@@ -654,7 +654,6 @@
  "New password": "Новый пароль",
  "New recovery codes saved": "Новые резервные коды сохранены",
  "New recurring": "Новый регулярный платёж",
- "New rule": "Новое правило",
  "Next": "Далее",
  "Next 7 days": "Следующие 7 дней",
  "Next five weeks": "Следующие пять недель",
@@ -870,7 +869,6 @@
  "Same as {month}": "{month}: столько же",
  "Same bills, same prices": "Те же счета, те же цены",
  "Same one: keep once": "Та же: оставить одну",
- "Sample data. Nothing you change is kept after the container stops.": "Демо-данные. Изменения не сохранятся после остановки контейнера.",
  "Saturday": "Суббота",
  "Save": "Сохранить",
  "Save password": "Сохранить пароль",
@@ -1650,5 +1648,7 @@
  "Everyday spending to come": "Траты до конца месяца",
  "≈ Based on a typical month from {from} to {to}": "≈ По типичному месяцу ({from}–{to})",
  "≈ Based on {month}": "≈ По месяцу: {month}",
- "Keyboard shortcuts": "Сочетания клавиш"
+ "Keyboard shortcuts": "Сочетания клавиш",
+ "Nothing here is kept.": "Здесь ничего не сохраняется.",
+ "Add a bill or a salary": "Добавить счёт или зарплату"
 }

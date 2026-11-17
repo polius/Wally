@@ -16,7 +16,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 .w-boot .w-mark{width:44px;height:44px;opacity:0;animation:w-pulse 1.4s var(--ease) 2s infinite forwards}
 @keyframes w-pulse{0%,100%{opacity:.35;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
 .w-mark.lg{width:44px;height:44px}
-.w-banner{position:sticky;top:0;z-index:30;background:var(--w-accent-soft);color:var(--w-accent-ink);font-size:var(--fs-foot);font-weight:500;text-align:center;padding:7px 16px;padding-top:calc(7px + env(safe-area-inset-top,0px))}
+.w-banner{position:sticky;top:0;z-index:30;background:linear-gradient(var(--w-accent-soft),var(--w-accent-soft)) var(--w-canvas);color:var(--w-accent-ink);font-size:var(--fs-foot);font-weight:500;text-align:center;padding:7px 16px;padding-top:calc(7px + env(safe-area-inset-top,0px))}
 .w-gatecard{max-width:420px;margin:12vh auto;padding:28px;background:var(--w-panel);border:1px solid var(--w-line);border-radius:var(--r-card);display:grid;gap:12px;justify-items:start}
 .w-gatecard h1{font-size:var(--fs-title);font-weight:600;letter-spacing:-.02em}
 .w-gatecard p{color:var(--w-ink2)}

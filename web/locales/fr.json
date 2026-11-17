@@ -626,7 +626,6 @@
  "New password": "Nouveau mot de passe",
  "New recovery codes saved": "Nouveaux codes de secours enregistrés",
  "New recurring": "Nouvelle récurrence",
- "New rule": "Nouvelle règle",
  "Next": "Suivant",
  "Next 7 days": "7 prochains jours",
  "Next five weeks": "Cinq prochaines semaines",
@@ -839,7 +838,6 @@
  "Same as {month}": "Comme en {month}",
  "Same bills, same prices": "Mêmes factures, mêmes prix",
  "Same one: keep once": "La même : garder une fois",
- "Sample data. Nothing you change is kept after the container stops.": "Données d'exemple. Rien de ce que vous modifiez n'est conservé après l'arrêt du conteneur.",
  "Saturday": "Samedi",
  "Save": "Enregistrer",
  "Save password": "Enregistrer le mot de passe",
@@ -1566,5 +1564,7 @@
  "Everyday spending to come": "Dépenses courantes à venir",
  "≈ Based on a typical month from {from} to {to}": "≈ D'après un mois type ({from}–{to})",
  "≈ Based on {month}": "≈ D'après {month}",
- "Keyboard shortcuts": "Raccourcis clavier"
+ "Keyboard shortcuts": "Raccourcis clavier",
+ "Nothing here is kept.": "Rien ici n’est conservé.",
+ "Add a bill or a salary": "Ajouter une facture ou un salaire"
 }
