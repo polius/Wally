@@ -4,14 +4,10 @@
 import { t, esc, f, cat, PUT, DEL, reloadBudgets } from "./core.js";
 import { openDialog, closeDialog, dialogError, toast, seg } from "./ui.js";
 import { refresh } from "./shell.js";
-import { EVERYTHING, thisMonth, limitFor, monthSpent, monthAdd } from "./budget.js";
+import { EVERYTHING, thisMonth, limitFor, usualMonth } from "./budget.js";
 
 const label = (category) => (category === EVERYTHING ? t("Everything") : cat(category).n);
-/* What is usually spent in a month: the last three full months */
-function usual(category) {
-  const now = thisMonth();
-  return [1, 2, 3].reduce((s, k) => s + monthSpent(category, monthAdd(now, -k)), 0) / 3;
-}
+const usual = usualMonth;
 const parse = (s) => { const v = Number(String(s || "").replace(",", ".").trim()); return Number.isFinite(v) && v > 0 ? v : 0; };
 
 async function save(category, period, amount) {

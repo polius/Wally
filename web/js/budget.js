@@ -21,7 +21,8 @@ export function monthAdd(month, k) { const [y, m] = ym(first(month)); const q = 
 
 /* The limits in force in a month: at most one per category */
 export function limitsIn(month) {
-  return (state.budgets || []).filter((b) => b.since <= month && (!b.until || b.until >= month));
+  // A limit left on a category deleted on another device meanwhile is not shown
+  return (state.budgets || []).filter((b) => b.since <= month && (!b.until || b.until >= month) && (b.category === EVERYTHING || state.categories.includes(b.category)));
 }
 export function limitFor(category, month) { return limitsIn(month || thisMonth()).find((b) => b.category === category) || null; }
 export function anyLimits() { return (state.budgets || []).length > 0; }
@@ -51,7 +52,7 @@ export function figure(b, month) {
   const now = month === thisMonth(), year = b.period === "year";
   const a = year ? month.slice(0, 4) + "-01-01" : first(month);
   const end = year ? month.slice(0, 4) + "-12-31" : last(month);
-  const upTo = now ? (TODAY < end ? TODAY : end) : end;
+  const upTo = TODAY < end ? TODAY : end;   // never what is dated after today
   const limit = Number(b.amount);
   const spent = spentIn(b.category, a, upTo);
   const due = now && !year ? dueIn(b.category, addD(TODAY, 1), end) : 0;
@@ -78,14 +79,18 @@ export function usuallyByNow(category) {
 }
 /* A month's total, for the last months */
 export function monthSpent(category, month) { return spentIn(category, first(month), last(month)); }
+/* The last three full months that have history */
+export function pastMonths() { const now = thisMonth(); return [1, 2, 3].map((k) => monthAdd(now, -k)).filter((mo) => first(mo) >= START); }
+/* What is usually spent in a month: the average of those months */
+export function usualMonth(category) { const ms = pastMonths(); return ms.length ? ms.reduce((s, mo) => s + monthSpent(category, mo), 0) / ms.length : 0; }
 
 /* The first time: a limit for everything and one per category, each from the last three full months,
    rounded up (to the next ten for a category, the next hundred for everything). Categories that are
    almost all recurring bills (rent) are left out: a limit there says nothing. The biggest everyday
    ones start switched on. With less than one full month of history there is nothing to go by. */
 export function suggestions() {
-  const now = thisMonth(), months = [1, 2, 3].map((k) => monthAdd(now, -k)).filter((mo) => first(mo) >= START);
-  const avg = (cat) => months.reduce((s, mo) => s + monthSpent(cat, mo), 0) / months.length;
+  const months = pastMonths();
+  const avg = usualMonth;
   const fromBills = {}, total = {}, count = {}, inMonth = {};
   for (const x of state.tx) {
     if (x.type !== "expense" || !months.length || x.d < first(months[months.length - 1]) || x.d > last(months[0])) continue;

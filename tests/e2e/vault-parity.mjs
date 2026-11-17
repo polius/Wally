@@ -224,6 +224,9 @@ try {
   await both("", "PUT", "/budgets", { category: "Food", amount: "120,5", month: M(-1) });
   await both("no such", "PUT", "/budgets", { category: "Nope", amount: "1", month: M(0) });
   await both("zero", "PUT", "/budgets", { category: "Food", amount: "0", month: M(0) });
+  for (const a of ["0.125", "1.015", "1.005", "+40", ".5"]) await both("rounding " + a, "PUT", "/budgets", { category: "Shopping", amount: a, month: M(0) });
+  for (const a of ["NaN", "1e3", "-5", "0.004"]) await both("refused " + a, "PUT", "/budgets", { category: "Shopping", amount: a, month: M(0) });
+  await both("", "DELETE", "/budgets?category=Gone&month=" + M(0));
   await both("bad month", "PUT", "/budgets", { category: "Food", amount: "10", month: "2026-13" });
   await both("", "DELETE", "/budgets?category=&month=" + M(1));
   await both("", "DELETE", "/budgets?category=Groceries&month=" + M(0));

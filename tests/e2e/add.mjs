@@ -136,7 +136,8 @@ await shot(page, "desk-filled");
 let saved = await saveWith(page);
 check(/^Mercadona/.test(saved.name) && saved.amount === "20.55" && saved.category === "Groceries", "Ctrl+Enter adds", saved);
 check(!(await isOpen(page)), "sheet closes after adding");
-check(/Added Mercadona/.test(await toastText(page, /Added Mercadona/)), "toast says what was added");
+// The demo has limits: the toast says what is left of Groceries' (B5); with no limit it names what was added
+check(/Added Mercadona|Added · .*Groceries/.test(await toastText(page, /Added/)), "toast says what was added, or what is left", await toastText(page, /Added/).catch(() => ""));
 check(await core(page, (c, id) => c.state.tx.some((x) => x.id === id), saved.id), "ledger in the browser has it");
 await page.click("#toast-undo");
 await toastText(page, /Undone/);

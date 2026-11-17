@@ -725,9 +725,24 @@ def test_config_validates(client):
     c = client.put("/config", json={"savings_target": 20, "saved_views": [{"name": "Holidays", "query": "#holiday"}]}).json()
     assert c["savings_target"] == 20 and c["saved_views"] == [{"name": "Holidays", "query": "#holiday"}]
 
-def test_budgets_and_goals_are_gone(client):
-    assert client.get("/budgets").status_code == 404 and client.get("/goals").status_code == 404
-    assert not {"budget", "goal", "goalentry"} & set(sqlmodel.SQLModel.metadata.tables)
+def test_goals_are_gone(client):
+    assert client.get("/goals").status_code == 404
+    assert not {"goal", "goalentry"} & set(sqlmodel.SQLModel.metadata.tables)
+
+def test_a_budget_table_from_before_2_0_is_replaced(make_client, tmp_path):
+    """Development builds before 2.0 had a budget table of another shape (removed before any release)"""
+    client = make_client()
+    client.post("/people", json={"name": "Alex"})
+    client.__exit__(None, None, None)
+    conn = sqlite3.connect(tmp_path / "wally.db")
+    conn.execute('DROP TABLE "budget"')
+    conn.execute('CREATE TABLE "budget" (id INTEGER PRIMARY KEY, category VARCHAR, amount NUMERIC(10, 2), kind VARCHAR, rollover BOOLEAN)')
+    conn.execute('INSERT INTO "budget" VALUES (1, \'Food\', 100, \'flexible\', 0)')
+    conn.commit(); conn.close()
+    client = make_client()
+    client.headers["x-wally-person"] = "1"
+    assert client.get("/budgets").json() == []
+    assert client.put("/budgets", json={"category": "", "amount": "2700", "month": "2026-10"}).status_code == 200
 
 def test_backup_and_restore(couple):
     client, *_ = couple
@@ -969,8 +984,12 @@ def test_a_limit_changed_in_a_month_applies_from_then_and_earlier_months_keep_th
     # Removed in the month it started: gone
     assert client.delete("/budgets?category=&month=2026-10").status_code == 200
     assert not [b for b in client.get("/budgets").json() if b["category"] == ""]
-    # Refused: no amount, a bad month, a category that doesn't exist
-    assert client.put("/budgets", json={"category": "Groceries", "amount": "0", "month": "2026-10"}).status_code == 400
+    # Amounts as people type them, rounded half up as everywhere in Wally
+    for typed, saved in (("120,5", "120.50"), ("1.005", "1.01"), ("0.125", "0.13"), ("1.015", "1.02"), (99.5, "99.50")):
+        assert client.put("/budgets", json={"category": "Food", "amount": typed, "month": "2026-12"}).json()["amount"] == saved, typed
+    # Refused: no amount, nonsense, a bad month, a category that doesn't exist
+    for bad in ("0", "0.004", "NaN", "1e3", "abc", "-5", ""):
+        assert client.put("/budgets", json={"category": "Groceries", "amount": bad, "month": "2026-10"}).status_code == 400, bad
     assert client.put("/budgets", json={"category": "Groceries", "amount": "10", "month": "2026-13"}).status_code == 400
     assert client.put("/budgets", json={"category": "Nope", "amount": "10", "month": "2026-10"}).status_code == 404
 

@@ -179,6 +179,16 @@ def _record_upgrade(report: dict):
     with engine.begin() as conn:
         conn.exec_driver_sql("INSERT OR REPLACE INTO appconfig (key, value) VALUES ('UPGRADE_REPORT', ?)", (json.dumps(report, ensure_ascii=False),))
 
+def _drop_old_budget(tables: set[str]):
+    """A budget table from the development builds before 2.0 (removed before any release) has another
+    shape: it goes, so the limits' table can be made. Its budgets were already gone from the app."""
+    if "budget" not in tables:
+        return
+    with engine.begin() as conn:
+        cols = {c["name"] for c in inspect(conn).get_columns("budget")}
+        if "since" not in cols:
+            conn.exec_driver_sql('DROP TABLE "budget"')
+
 def migrate_db():
     """Bring the database up to SCHEMA_VERSION in small additive steps.
 
@@ -196,6 +206,7 @@ def migrate_db():
         return
 
     if version >= SCHEMA_VERSION:
+        _drop_old_budget(tables)
         SQLModel.metadata.create_all(engine)
         _add_columns()
         return

@@ -686,17 +686,26 @@ const categories = {
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 function monthBefore(m) { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (!mo) { y--; mo = 12; } return y + "-" + (mo < 10 ? "0" : "") + mo; }
 function budgetPublic(b) { return { id: b.id, category: b.category || "", period: b.period, amount: (b.cents / 100).toFixed(2), since: b.since, until: b.until || null }; }
-function checkLimit(d, category, month) {
+function checkLimit(d, category, month, exists = true) {
   if (!MONTH.test(month || "")) throw fail(400, "The month must be YYYY-MM.");
-  if (category && !d.get("cat", category)) throw fail(404, "This category does not exist.");
+  if (exists && category && !d.get("cat", category)) throw fail(404, "This category does not exist.");
+}
+/* As routers/budgets.py parse_amount: "120,5" too, in cents rounded half up */
+function limitCents(value) {
+  const s = String(value === undefined || value === null ? "" : value).trim().replace(",", ".");
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) throw fail(400, "Enter an amount.");
+  const cents = toCents(s);
+  if (cents <= 0 || cents >= 1e10) throw fail(400, "Enter an amount above zero.");
+  return cents;
 }
 /* Clear the way from month on, as the server does; the row starting that month, if any */
 function endFrom(d, category, month) {
   let starting = null;
-  for (const b of d.all("budget")) {
+  for (const b of d.all("budget").sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {
     if ((b.category || "") !== category) continue;
     if (b.since > month) d.del("budget", b.id);
-    else if (b.since === month) starting = b;
+    // Two devices that set a first limit at once leave two rows for one month: one stays
+    else if (b.since === month) { if (!starting) starting = b; else d.del("budget", b.id); }
     else if (!b.until || b.until >= month) d.put("budget", Object.assign(clone(b), { until: monthBefore(month) }));
   }
   return starting;
@@ -707,20 +716,17 @@ const budgets = {
   set: (body) => {
     const fresh = randomId();
     return run((d) => {
-      const category = String(body.category || ""), month = body.month, period = body.period || "month";
+      const category = String(body.category || ""), month = body.month, period = body.period === undefined || body.period === null ? "month" : body.period;
       checkLimit(d, category, month);
       if (period !== "month" && period !== "year") throw fail(422, "period is month or year.");
-      const s = String(body.amount === undefined || body.amount === null ? "" : body.amount).replace(",", ".").trim();
-      if (!/^\d+(\.\d+)?$/.test(s)) throw fail(400, "Enter an amount.");
-      const cents = Math.round(Number(s) * 100);
-      if (cents <= 0 || cents >= 1e10) throw fail(400, "Enter an amount above zero.");
+      const cents = limitCents(body.amount);
       const row = endFrom(d, category, month), id = row ? row.id : fresh;
       d.put("budget", { id, category, period, cents, since: month, until: null });
       return () => budgetPublic(read("budget", id));
     });
   },
   remove: (category, month) => run((d) => {
-    checkLimit(d, category, month);
+    checkLimit(d, category, month, false);
     const row = endFrom(d, category, month);
     if (row) d.del("budget", row.id);
     return { ok: true };
