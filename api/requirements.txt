@@ -1,9 +1,9 @@
 bcrypt==5.0.0
 cryptography==50.0.2
-fastapi==0.162.6
+fastapi==0.162.7
 uvicorn==0.54.0
 python-multipart==0.0.34
 tzdata==2026.6
 PyJWT==2.15.1
 python-dateutil==4.0.0
-sqlmodel==0.0.49
+sqlmodel==0.0.50
