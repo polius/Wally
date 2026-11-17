@@ -82,11 +82,17 @@ export function forgetFrame() { try { localStorage.removeItem(FRAME); } catch (e
 
 /* ---------- the person switch ---------- */
 export function setScope(sc) {
+  // Picked from the menu: the focus goes back to the menu's button, not to the page
+  const from = [...document.querySelectorAll(".w-pswitch")].findIndex((w) => w.contains(document.activeElement));
   state.scope = sc;
   try { localStorage.setItem("wally.scope", sc); } catch (e) { /* fine */ }
   closeMenus();
   refresh({ scope: true });
   document.querySelectorAll(".w-pswitch").forEach((w) => { w.outerHTML = scopeSwitch(); });
+  if (from >= 0) {
+    const back = () => { const b = document.querySelectorAll(".w-pswitch")[from]; if (b && !b.contains(document.activeElement)) b.querySelector(".w-pswitch-b").focus(); };
+    back(); requestAnimationFrame(back);
+  }
 }
 function scopeButtons() {
   const all = '<button type="button" role="menuitemradio" data-scope="all" aria-checked="' + (state.scope === "all") + '">' + av("all") + "<span>" + t("Everyone") + "</span><span>" + state.people.length + "</span></button>";
@@ -227,6 +233,11 @@ function menuKeys(ev) {
     ev.preventDefault();
     const k = ev.key === "ArrowDown" ? 1 : -1;
     items[(i + k + items.length) % items.length].focus();
+    return true;
+  }
+  if ((ev.key === "Home" || ev.key === "End") && items.length) {
+    ev.preventDefault();
+    items[ev.key === "Home" ? 0 : items.length - 1].focus();
     return true;
   }
   if (ev.key === "Tab") { closeMenus(); return false; }
