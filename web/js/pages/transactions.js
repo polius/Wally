@@ -567,7 +567,8 @@ export function key(ev) {
   if (!x) return;
   if ((k === "e" || k === "E") && !S.selMode) { ev.preventDefault(); return edit(x); }
   if ((k === "d" || k === "D") && !S.selMode) { ev.preventDefault(); return duplicate(x); }
-  if ((k === "Backspace" || k === "Delete") && (neutral || a.closest("#tx-bulk"))) {
+  // Deleting by key only from the list, the panel or the bulk bar: a stray key on the page itself deletes nothing
+  if ((k === "Backspace" || k === "Delete") && !blank && (neutral || a.closest("#tx-bulk"))) {
     ev.preventDefault();
     if (S.selMode) { if (S.picked.size) bulkDelete(cur.list.filter((y) => S.picked.has(y.id))).then((ok) => { if (ok) { S.picked = new Set(); renderBulk(cur.list); } }); return; }
     return remove(x);

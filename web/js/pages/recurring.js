@@ -108,7 +108,10 @@ export function key(ev) {
   const r = ruleById(ui.sel);
   if (!r) return;
   if (k === "e" || k === "E") { ev.preventDefault(); editRule(r); }
-  else if (k === "Backspace" || k === "Delete") { ev.preventDefault(); deleteRule(r); }
+  else if ((k === "Backspace" || k === "Delete") && document.activeElement && document.activeElement.closest && document.activeElement.closest("#rec-list, #rec-insp")) {
+    // Only from the list or the panel: a stray key on the page itself deletes nothing
+    ev.preventDefault(); deleteRule(r);
+  }
 }
 
 /* All | Bills | Income, then List | Calendar */
