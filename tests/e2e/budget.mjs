@@ -28,14 +28,18 @@ ok((await p.$$('.bg-lead .bg-bar')).length === 1 && (await p.$$('.bg-lead .bg-ba
 const names = await p.$$eval('.bg-row h6', (l) => l.map((h) => h.textContent));
 ok(names.join() === 'Groceries,Utilities,Food,Shopping,Entertainment,Travel', 'B1 rows by limit, largest first; yearly after', names);
 ok((await p.$$('.bg-list .bg-bar u')).length === 6 && !/Even pace/.test(await txt(p, '.bg-sum')) && (await p.$$('.bg-legend')).length === 0, 'B1 the even pace by today on every bar; no legend');
+await p.click('.w-pswitch-b'); await p.waitForTimeout(200);
+const pmenu = await txt(p, '.w-pswitch-m');
+ok(/Everyone/.test(await txt(p, '.w-pswitch-b')) && (await p.$$('.w-pswitch-m button:disabled')).length === 2 && (await p.$$('.w-pswitch-m [data-scope]')).length === 0 && /Budget is for the whole household/.test(pmenu), 'B1 the person menu says Everyone; the people are disabled, and it says why', pmenu);
+await p.keyboard.press('Escape');
 ok(/of 200\.00\s€ · 24\.00\s€ still due/.test(await txt(p, '[data-bid="Utilities"]')) && !/%/.test(await txt(p, '.bg-list')) && !/%/.test(await txt(p, '.bg-key')) && !/still due/.test(await txt(p, '[data-bid="Entertainment"]')) && !/this year/.test(await txt(p, '[data-bid="Travel"]')), 'B1 bills still due named only when they put a limit over');
 ok(/left for Groceries/.test(await txt(p, '#bg-insp')), 'B1 the panel opens on the first limit');
 await p.click('[data-bid="Shopping"]'); await p.waitForTimeout(300);
 const insp = await txt(p, '#bg-insp');
 ok(/over for Shopping/.test(insp) && !/Even pace|usual/.test(insp) && /Spent\s*128\.99\s€ of 120\.00\s€/.test(insp) && !/%/.test(insp) && /Remove limit/.test(insp), 'B1 a row opens its panel: spent of the limit, no pace or usual rows', insp.slice(0, 160));
-await p.hover('.bg-lead .bg-bar u'); await p.waitForTimeout(250);
+await p.hover('.bg-lead .bg-bar', { position: { x: 10, y: 3 } }); await p.waitForTimeout(250);
 const tipT = await txt(p, '#tip');
-ok(await p.$eval('#tip', (e) => e.classList.contains('on')) && /^Everything/.test(tipT) && /Spent\s*1,9\d\d\.\d\d\s€/.test(tipT) && /Even pace by today\s*[\d,]+\.\d\d\s€/.test(tipT) && /Above the even pace\s*[\d,]+\.\d\d\s€/.test(tipT) && /evenly over the month/.test(tipT), 'B1 hovering the mark: spent, the even pace and how far apart', tipT);
+ok(await p.$eval('#tip', (e) => e.classList.contains('on')) && /^Everything/.test(tipT) && /Spent\s*1,9\d\d\.\d\d\s€/.test(tipT) && /(Left to spend|Over the limit)\s*[\d,]+\.\d\d\s€/.test(tipT) && /Even pace by today\s*[\d,]+\.\d\d\s€/.test(tipT) && /Above the even pace\s*[\d,]+\.\d\d\s€/.test(tipT) && /same amount each day/.test(tipT), 'B1 hovering anywhere on the bar: spent, left or over, the even pace and how far apart', tipT);
 await p.mouse.move(5, 5); await p.waitForTimeout(250);
 ok(await p.$eval('#tip', (e) => !e.classList.contains('on')), 'B1 and the tooltip goes when the mouse leaves');
 // B3 edit

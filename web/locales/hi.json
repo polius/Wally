@@ -1553,6 +1553,6 @@
   "one": "{total} में से {n} श्रेणी सीमा के भीतर",
   "other": "{total} में से {n} श्रेणियाँ सीमा के भीतर"
  },
- "Your limit spread evenly over the month, up to today.": "आपकी सीमा को महीने भर में बराबर बाँटकर, आज तक की रकम।",
- "Your limit spread evenly over the year, up to today.": "आपकी सीमा को साल भर में बराबर बाँटकर, आज तक की रकम।"
+ "Where you’d be today if you spent the same amount each day.": "अगर आप हर दिन बराबर रकम खर्च करते, तो आज तक इतना होता।",
+ "Budget is for the whole household.": "बजट पूरे घर के लिए है।"
 }

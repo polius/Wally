@@ -36,13 +36,17 @@ div.bg-row:hover{background:none}
 .bg-bar.over i:not(.due){background:var(--bg-overc)}
 /* The even pace by today: a short, thin mark across the bar */
 .bg-bar u{position:absolute;top:-5px;bottom:-5px;width:1.5px;border-radius:1px;background:var(--w-ink)}
-/* With a mouse it shows a tooltip: a target wider than the 2 px it draws */
-@media (hover:hover){.bg-bar u::before{content:"";position:absolute;inset:-6px -7px}}
-/* Its tooltip: the name, spent, the even pace (drawn as the mark), and how far apart they are */
+/* With a mouse the whole bar shows a tooltip: a target taller than the 6 px it draws */
+@media (hover:hover){.bg-bar::before{content:"";position:absolute;inset:-8px 0}}
+/* Its tooltip: the name, spent, bills still due, what is left or over; this month the even pace (drawn as the mark),
+   and how far apart they are */
 .w-tip .bg-tiph{display:block;margin-bottom:4px}
-.w-tip .r i.bg-tk{width:1.5px;height:11px;border-radius:1px;background:var(--w-ink);margin:0 9px 0 3px}
-.w-tip .r b.bg-good{color:var(--w-good)}
-.w-tip .r b.bg-bad{color:var(--w-bad)}
+/* The pace's key is a piece of the bar, as wide as Spent's square, with the mark across it: not a bare line, which reads as a letter */
+.w-tip .r i.bg-tk{position:relative;width:10px;height:4px;border-radius:2px;background:color-mix(in srgb,var(--w-ink) 22%,transparent);margin-inline:0 4px}
+.w-tip .r i.bg-tk::after{content:"";position:absolute;inset-inline-start:4.25px;top:-3.5px;bottom:-3.5px;width:1.5px;border-radius:1px;background:var(--w-ink)}
+.w-tip .r .bg-good{color:var(--w-good)}
+.w-tip .r .bg-bad{color:var(--w-bad)}
+.w-tip .bg-tippace{margin-top:5px;padding-top:5px;border-top:1px solid var(--w-line2)}
 /* Without a limit: a shorter row, a smaller tile; this month it opens the sheet */
 .rec-list .bg-none{min-height:46px;padding-block:6px}
 .bg-none .w-ico{width:32px!important;height:32px!important;border-radius:8px!important;justify-self:center}
@@ -56,7 +60,11 @@ div.bg-none:hover{background:none}
 .bg-insp .rec-sh{border-bottom:1px solid var(--w-line2);margin-bottom:4px}
 /* The lead: spent against the limit for everything, as a bar with a quiet key under it */
 .bg-sum .rec-big{margin-bottom:2px}
-.bg-lead{margin-top:12px}
+/* The per-day line with the limit on its right, over the bar's end; the limit wraps under it, still on the right */
+.bg-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.bg-lim{margin-inline-start:auto;font-size:var(--fs-foot);color:var(--w-ink2);white-space:nowrap}
+.bg-lim b{font-weight:400;font-variant-numeric:tabular-nums}
+.bg-lead{margin-top:8px}
 /* The lead with its bar is a card from 768 px, as the Summary's number with its chart is; on phones it sits on the page.
    --bg-lead-under is what its bar and key sit on */
 .bg-sum{--bg-lead-under:var(--w-canvas)}
@@ -67,7 +75,6 @@ div.bg-none:hover{background:none}
 .bg-key{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;font-size:var(--fs-foot);color:var(--w-ink2)}
 .bg-key span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .bg-key b{font-weight:400;font-variant-numeric:tabular-nums}
-.bg-key .lim{margin-inline-start:auto}
 .bg-key i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--bg-spent)}
 .bg-key i.du{background:color-mix(in srgb,var(--bg-spent) var(--bg-mix),var(--bg-lead-under))}
 .bg-key i.over{background:var(--bg-overc)}

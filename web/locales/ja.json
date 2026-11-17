@@ -1466,6 +1466,6 @@
  "{n} of {total} category within": {
   "other": "{total}カテゴリー中{n}件が上限内"
  },
- "Your limit spread evenly over the month, up to today.": "上限を月全体に均等に割り振った、今日までの額。",
- "Your limit spread evenly over the year, up to today.": "上限を年全体に均等に割り振った、今日までの額。"
+ "Where you’d be today if you spent the same amount each day.": "毎日同じ額を使った場合の、今日までの額。",
+ "Budget is for the whole household.": "予算は世帯全体のものです。"
 }

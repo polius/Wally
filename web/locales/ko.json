@@ -1466,6 +1466,6 @@
  "{n} of {total} category within": {
   "other": "{total}개 카테고리 중 {n}개 한도 이내"
  },
- "Your limit spread evenly over the month, up to today.": "한도를 한 달에 고르게 나눈, 오늘까지의 금액.",
- "Your limit spread evenly over the year, up to today.": "한도를 한 해에 고르게 나눈, 오늘까지의 금액."
+ "Where you’d be today if you spent the same amount each day.": "매일 같은 금액을 쓴다면 오늘까지 쓰게 될 금액.",
+ "Budget is for the whole household.": "예산은 가구 전체에 적용돼요."
 }

@@ -1466,6 +1466,6 @@
  "{n} of {total} category within": {
   "other": "{total} 个类别中有 {n} 个未超上限"
  },
- "Your limit spread evenly over the month, up to today.": "把上限平均分到整个月，到今天为止的金额。",
- "Your limit spread evenly over the year, up to today.": "把上限平均分到整年，到今天为止的金额。"
+ "Where you’d be today if you spent the same amount each day.": "如果每天花同样多的钱，到今天应花的金额。",
+ "Budget is for the whole household.": "预算适用于全家。"
 }

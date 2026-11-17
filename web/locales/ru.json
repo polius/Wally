@@ -1727,6 +1727,6 @@
   "many": "{n} из {total} категорий в пределах лимита",
   "other": "{n} из {total} категорий в пределах лимита"
  },
- "Your limit spread evenly over the month, up to today.": "Ваш лимит, равномерно распределённый по месяцу, до сегодняшнего дня.",
- "Your limit spread evenly over the year, up to today.": "Ваш лимит, равномерно распределённый по году, до сегодняшнего дня."
+ "Where you’d be today if you spent the same amount each day.": "Где вы были бы сегодня, если бы тратили одинаковую сумму каждый день.",
+ "Budget is for the whole household.": "Бюджет общий для всей семьи."
 }
