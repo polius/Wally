@@ -134,8 +134,8 @@ function groups(monthly, yearly, limits) {
 }
 function bar(fg) {
   const pct = Math.min(100, (fg.spent / fg.limit) * 100), due = Math.max(0, Math.min(100 - pct, (fg.due / fg.limit) * 100));
-  // Dark only when what was spent has filled it; a limit that bills still due will pass stays grey, with its hatching
-  return '<div class="bg-bar" aria-hidden="true"><i class="' + (fg.spent > fg.limit ? "over" : "") + '" style="width:' + pct.toFixed(2) + '%"></i>' +
+  // Over the limit (bills still due included): the whole bar is red
+  return '<div class="bg-bar' + (fg.over ? " over" : "") + '" aria-hidden="true"><i style="width:' + pct.toFixed(2) + '%"></i>' +
     (due > 0.05 ? '<i class="due" style="inset-inline-start:' + pct.toFixed(2) + "%;width:" + due.toFixed(2) + '%"></i>' : "") +
     (fg.today !== null ? '<u style="inset-inline-start:calc(' + (fg.today * 100).toFixed(2) + '% - 1px)"></u>' : "") + "</div>";
 }

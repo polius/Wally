@@ -20,9 +20,11 @@
 div.bg-row{cursor:default}
 div.bg-row:hover{background:none}
 .bg-bar{position:relative;height:6px;border-radius:3px;background:var(--w-fill2);margin-top:9px}
-.bg-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--w-ink3);max-width:100%}
-.bg-bar i.over{background:var(--w-ink)}
-.bg-bar i.due{background:repeating-linear-gradient(135deg,var(--w-ink3) 0 2px,transparent 2px 5px);border-radius:0 3px 3px 0}
+/* What was spent in the accent; bills still due in the same colour, hatched; a limit gone over is red */
+.bg-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--w-accent);max-width:100%}
+.bg-bar i.due{background:repeating-linear-gradient(135deg,var(--w-accent) 0 2px,transparent 2px 5px);border-radius:0 3px 3px 0}
+.bg-bar.over i{background:var(--w-bad)}
+.bg-bar.over i.due{background:repeating-linear-gradient(135deg,var(--w-bad) 0 2px,transparent 2px 5px)}
 [dir="rtl"] .bg-bar i.due{border-radius:3px 0 0 3px}
 .bg-bar u{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--w-ink)}
 .bg-none{cursor:default}
@@ -31,7 +33,7 @@ div.bg-row:hover{background:none}
 .bg-legend{display:flex;gap:16px;align-items:center;font-size:var(--fs-cap);color:var(--w-ink3);padding:14px 0 2px}
 .bg-legend span{display:inline-flex;gap:6px;align-items:center}
 .bg-legend u{display:inline-block;width:2px;height:12px;background:var(--w-ink);border-radius:1px}
-.bg-legend i{display:inline-block;width:14px;height:6px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--w-ink3) 0 2px,transparent 2px 5px)}
+.bg-legend i{display:inline-block;width:14px;height:6px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--w-accent) 0 2px,transparent 2px 5px)}
 
 /* The first time: what to start with */
 .bg-hello{font-size:var(--fs-large);font-weight:650;letter-spacing:-.02em;line-height:1.2;margin:2px 0 6px}
