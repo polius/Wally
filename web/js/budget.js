@@ -26,7 +26,6 @@ export function limitsIn(month) {
   return (state.budgets || []).filter((b) => b.since <= month && (!b.until || b.until >= month) && (b.category === EVERYTHING || state.categories.includes(b.category)));
 }
 export function limitFor(category, month) { return limitsIn(month || thisMonth()).find((b) => b.category === category) || null; }
-export function anyLimits() { return (state.budgets || []).length > 0; }
 
 /* What was spent between two days: one category, or everything */
 export function spentIn(category, a, b) {
@@ -74,32 +73,11 @@ export function pastMonths() { const now = thisMonth(); return [1, 2, 3].map((k)
 /* What is usually spent in a month: the average of those months */
 export function usualMonth(category) { const ms = pastMonths(); return ms.length ? ms.reduce((s, mo) => s + monthSpent(category, mo), 0) / ms.length : 0; }
 
-/* The first time: a limit for everything and one per category, each from the last three full months,
-   rounded up (to the next ten for a category, the next hundred for everything). Categories that are
-   almost all recurring bills (rent) are left out: a limit there says nothing. The biggest everyday
-   ones start switched on. With less than one full month of history there is nothing to go by. */
-export function suggestions() {
-  const months = pastMonths();
-  const avg = usualMonth;
-  const fromBills = {}, total = {}, count = {}, inMonth = {};
-  for (const x of state.tx) {
-    if (x.type !== "expense" || !months.length || x.d < first(months[months.length - 1]) || x.d > last(months[0])) continue;
-    total[x.c] = (total[x.c] || 0) + x.a;
-    if (x.rec) fromBills[x.c] = (fromBills[x.c] || 0) + x.a;
-    else { count[x.c] = (count[x.c] || 0) + 1; (inMonth[x.c] = inMonth[x.c] || new Set()).add(x.d.slice(0, 7)); }
-  }
-  // Everyday: bought in every one of those months, at least twice a month, and not mostly bills (travel is not)
-  const everydayCat = (c) => (fromBills[c] || 0) / total[c] < 0.5 && (inMonth[c] ? inMonth[c].size : 0) === months.length && (count[c] || 0) >= 2 * months.length;
-  const up = (v, step) => (v > 0 ? Math.ceil(v / step) * step : null);
-  const cats = Object.keys(total).filter((c) => total[c] > 0 && (fromBills[c] || 0) / total[c] < 0.9)
-    .map((c) => ({ category: c, usual: avg(c) })).sort((a, b) => b.usual - a.usual);
-  let everyday = 0;
-  cats.forEach((s) => {
-    s.amount = months.length ? up(s.usual, 10) : null;
-    s.on = !!s.amount && everydayCat(s.category) && everyday++ < 3;
-  });
-  const usual = months.length ? avg(EVERYTHING) : 0;
-  return { history: months.length > 0, everything: { category: EVERYTHING, usual, amount: months.length ? up(usual, 100) : null, on: months.length > 0 }, cats };
+/* A limit to start from: what is usually spent, rounded up to the next hundred for everything and the next ten
+   for a category. null with no full month of history. */
+export function suggested(category) {
+  const v = usualMonth(category), step = category === EVERYTHING ? 100 : 10;
+  return v > 0.004 ? Math.ceil(v / step) * step : null;
 }
 
 /* The toast after adding an expense (B5): what is left, or how far over. null when there is no limit. */

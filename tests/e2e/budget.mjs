@@ -1,5 +1,5 @@
 /* Budget (B1–B9) on the demo: the page, a limit's panel and sheet, past months, no limit for everything,
-   Settings › Categories, Worth noticing, the toast after adding, the phone, and the setup.
+   Settings › Categories, Worth noticing, the toast after adding, the phone, and no limits at all.
      BASE=http://localhost:8891 node budget.mjs   (a demo server: DEMO=true) */
 import { chromium } from "playwright";
 const BASE = process.env.BASE || "http://localhost:8891";
@@ -57,7 +57,8 @@ ok((await p.$$('[data-bid="Shopping"]')).length === 1, 'B3 Undo brings it back')
 // A category without a limit: selected, the sheet opens to set one
 ok((await p.$$('.bg-none[data-limit="Healthcare"]')).length === 1, 'B3 a category without a limit can be selected');
 await p.click('.bg-none[data-limit="Healthcare"]'); await p.waitForTimeout(300);
-ok((await p.inputValue('#lim-amt')) === '' && /Healthcare/.test(await txt(p, '#dlg')) && !/Remove limit/.test(await txt(p, '#dlg')), 'B3 its sheet opens empty, with nothing to remove');
+const hcSug = await p.inputValue('#lim-amt');
+ok(/^\d+0\.00$/.test(hcSug) && /Healthcare/.test(await txt(p, '#dlg')) && (await p.$$('#dlg #lim-per')).length === 1 && !/Remove limit/.test(await txt(p, '#dlg')), 'B3 its sheet starts from what is usually spent, rounded up to ten; Month or Year; nothing to remove', hcSug);
 await p.fill('#lim-amt', '100'); await p.click('[data-dlg-ok]'); await p.waitForTimeout(600);
 ok((await p.$$('[data-bid="Healthcare"]')).length === 1 && (await p.$$('.bg-none[data-limit="Healthcare"]')).length === 0, 'B3 saved: it moves up among the limits');
 await api(p, '/budgets?category=Healthcare&month=' + new Date().toISOString().slice(0, 7), 'DELETE');
@@ -75,11 +76,17 @@ const m = new Date().toISOString().slice(0, 7);
 await api(p, '/budgets?category=&month=' + m, 'DELETE');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(400);
 const nolim = await txt(p, '.bg-sum');
-ok(/^Spending/.test(nolim) && /No limit for the whole month\. Set one/.test(nolim), 'B9 leads with spending and offers the limit quietly', nolim);
+ok(/^Spending/.test(nolim) && /You usually spend [\d,]+\.\d\d\s€ a month\. Set a limit/.test(nolim), 'B9 leads with spending, what is usually spent, and offers the limit', nolim);
 await p.click('[data-limit=""]'); await p.waitForTimeout(300);
-ok(/Everything/.test(await txt(p, '#dlg h5')) && (await p.inputValue('#lim-amt')) === '', 'B9 Set one opens the sheet for everything');
+const allSug = await p.inputValue('#lim-amt'), allDlg = await txt(p, '#dlg');
+ok(/Everything/.test(await txt(p, '#dlg h5')) && /^\d+00\.00$/.test(allSug) && /Limit, each month/.test(allDlg) && (await p.$$('#dlg #lim-per')).length === 0, 'B9 Set a limit opens the sheet for everything: the usual, rounded up to a hundred; monthly only, no Month or Year', allSug);
+ok((await api(p, '/budgets', 'PUT', { category: '', period: 'year', amount: '30000', month: m })).s === 400, 'B9 the API refuses a yearly limit for everything');
+p.errors = p.errors.filter((e) => !/status of 400/.test(e)); // that refusal, asked for on purpose
 await p.fill('#lim-amt', '2700'); await p.click('[data-dlg-ok]'); await p.waitForTimeout(600);
 ok(/Left to spend/.test(await txt(p, '.bg-sum')), 'B9 set: the page leads with what is left again');
+await p.click('.bg-sum [data-limit=""]'); await p.waitForTimeout(300);
+ok((await p.inputValue('#lim-amt')) === '2700.00' && /Remove limit/.test(await txt(p, '#dlg')), 'B9 Edit on the lead opens its sheet: change it or remove it');
+await p.keyboard.press('Escape'); await p.waitForTimeout(200);
 // B7 Settings › Categories › Groceries
 await p.goto(BASE + '/settings/categories/Groceries', { waitUntil: 'networkidle' }); await p.waitForTimeout(400);
 ok(/Limit\s*600\.00\s€ each month/.test(await txt(p, '#set-pane')), 'B7 a category has a Limit row', (await txt(p, '#set-pane')).slice(0, 200));
@@ -130,23 +137,26 @@ await p.tap('#bg-insp [data-close]'); await p.waitForTimeout(400);
 ok(!(await p.$eval('#bg-insp', (e) => e.classList.contains('open'))), 'B1 phone: back to the list');
 ok(p.errors.length === 0, 'phone: no console errors', p.errors);
 await p.done();
-// B2 setup: no limits at all
+// B2 no limits at all: the same page, what was spent by category, and a link to set a limit; no setup
 p = await open('desktop', '/budget');
 const all = (await api(p, '/budgets')).j;
-for (const c of [...new Set(all.map((b) => b.category))]) await api(p, '/budgets?category=' + encodeURIComponent(c) + '&month=' + all.filter((b) => b.category === c).map((b) => b.since).sort()[0], 'DELETE');
+await p.route(/\/api\/budgets(\?|$)/, (r) => r.request().method() === 'GET' ? r.fulfill({ json: [] }) : r.continue());
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500);
-const setup = await txt(p, '#bg-page');
-ok(/See what’s left as you spend/.test(setup) && /Everything/.test(setup) && /Start with these/.test(setup), 'B2 no limits: the page is the setup');
-const sug = await p.$$eval('[data-ei]', (l) => l.map((b) => b.textContent.replace(/[^\d.]/g, "")));
-ok(sug.length > 2 && sug.every((v) => /^\d+\.00$/.test(v)) && Number(sug[0]) % 100 === 0 && sug.slice(1).every((v) => Number(v) % 10 === 0), 'B2 amounts filled from the last three months, rounded up', sug);
-// Selecting an amount makes it a field; Return shows it as an amount again
-await p.click('[data-ei="1"]'); await p.waitForTimeout(200);
-ok(await p.evaluate(() => document.activeElement.matches('[data-si="1"]')), 'B2 selecting an amount makes it a field');
-await p.keyboard.type('555'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
-ok(/555\.00/.test(await p.$eval('[data-ei="1"]', (b) => b.textContent)), 'B2 Return shows it as an amount again');
-await p.click('[data-start]'); await p.waitForTimeout(1200);
-ok(/Left to spend/.test(await txt(p, '.bg-sum')) && (await p.$$('.bg-row')).length >= 1, 'B2 Start with these: the budget is on');
-ok(p.errors.length === 0, 'setup: no console errors', p.errors);
+const none = await txt(p, '#bg-page');
+ok(all.length > 0 && /^Spending/.test(none) && /Set a limit/.test(none) && /No limit/.test(none) && (await p.$$('.bg-none[data-limit]')).length > 2 && !/Start with these/.test(none) && (await p.$$('#bg-insp')).length === 0, 'B2 no limits: the page lists what was spent and offers a limit, no setup', none.slice(0, 160));
+ok(await p.$eval('[data-step="-1"]', (b) => !b.disabled), 'B2 no limits: past months can still be opened');
+// Back to the real limits
+await p.unroute(/\/api\/budgets(\?|$)/); await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(400);
+ok(p.errors.length === 0, 'no limits: no console errors', p.errors);
+await p.done();
+// The panel: a long transaction name gives way, the date and the amount stay inside it
+p = await open('desktop', '/budget');
+await api(p, '/transactions', 'POST', { type: 'expense', category: 'Groceries', amount: 11, date: new Date().toISOString().slice(0, 10), name: 'Fira Medieval - Llangonissa artesana de la Garrotxa i del Ripollès', person: 1 });
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(400);
+await p.click('[data-bid="Groceries"]'); await p.waitForTimeout(300);
+const past2 = await p.$eval('#bg-insp', (box) => { const r = box.getBoundingClientRect().right; return [...box.querySelectorAll('.rec-kv b')].filter((b) => b.getBoundingClientRect().right > r + 0.5).length; });
+ok(past2 === 0 && await p.$eval('#bg-insp .bg-txn', (e) => e.scrollWidth > e.clientWidth), 'B1 a long name ends in an ellipsis; every amount stays inside the panel', past2);
+ok(p.errors.length === 0, 'panel: no console errors', p.errors);
 await p.done();
 await browser.close();
 console.log(fails ? fails + " failed" : "all passed");

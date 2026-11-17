@@ -75,6 +75,9 @@ class LimitIn(BaseModel):
 def set_limit(body: LimitIn, db: Annotated[Session, Depends(get_session)]):
     """A limit from this month on: the month's row is changed, or the running one ends and a new one starts"""
     _check(body.category, body.month, db)
+    if body.category == "" and body.period != "month":
+        # The limit for everything is the month's: what is left today, per day and in the toast all count a month
+        raise HTTPException(status_code=400, detail="The limit for everything is for each month.")
     amount = parse_amount(body.amount)
     row = _end_from(db, body.category, body.month)
     if row is None:
