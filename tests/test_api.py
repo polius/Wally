@@ -992,6 +992,8 @@ def test_a_limit_changed_in_a_month_applies_from_then_and_earlier_months_keep_th
         assert client.put("/budgets", json={"category": "Groceries", "amount": bad, "month": "2026-10"}).status_code == 400, bad
     assert client.put("/budgets", json={"category": "Groceries", "amount": "10", "month": "2026-13"}).status_code == 400
     assert client.put("/budgets", json={"category": "Nope", "amount": "10", "month": "2026-10"}).status_code == 404
+    # The limit for everything is for each month: never for a year
+    assert client.put("/budgets", json={"category": "", "amount": "30000", "period": "year", "month": "2026-10"}).status_code == 400
 
 def test_limits_follow_a_category_renamed_and_go_with_one_deleted(couple):
     client, alex, ana = couple

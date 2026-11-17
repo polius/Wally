@@ -1,10 +1,11 @@
 /* Setting a limit (B3): one sheet, from the Budget page and from a category in Settings.
-   The amount and Month or Year; one sentence on what is usually spent; Remove limit last, in red,
-   with no question asked: Undo in the toast brings it back. */
+   The amount (with no limit yet, what is usually spent, rounded up) and Month or Year (the limit for everything is
+   always the month's); one sentence on what is usually spent; Remove limit last, in red, with no question asked:
+   Undo in the toast brings it back. */
 import { t, esc, f, cat, PUT, DEL, reloadBudgets } from "./core.js";
 import { openDialog, closeDialog, dialogError, toast, seg } from "./ui.js";
 import { refresh } from "./shell.js";
-import { EVERYTHING, thisMonth, limitFor, usualMonth } from "./budget.js";
+import { EVERYTHING, thisMonth, limitFor, usualMonth, suggested } from "./budget.js";
 
 const label = (category) => (category === EVERYTHING ? t("Everything") : cat(category).n);
 const usual = usualMonth;
@@ -18,17 +19,21 @@ async function save(category, period, amount) {
 
 export function openLimit(category) {
   const now = limitFor(category);
-  let period = now ? now.period : "month";
+  // The limit for everything is always the month's: no Month or Year to choose
+  const all = category === EVERYTHING;
+  let period = all ? "month" : now ? now.period : "month";
   const u = usual(category);
+  // No limit yet: the amount starts from what is usually spent, rounded up
+  const start = now ? now.amount : suggested(category) ? suggested(category).toFixed(2) : "";
   const note = category === EVERYTHING
     ? t("You usually spend {amount} a month. Bills count too.", { amount: f(u) })
     : t("You usually spend {amount} a month on {category}. Bills in it count too.", { amount: f(u), category: label(category) });
   openDialog({
     title: esc(label(category)), ok: t("Save"), kind: "sheet",
     body:
-      '<div class="w-gl"><label class="w-gr"><span class="k">' + t("Limit") + '</span><input id="lim-amt" class="w-end" inputmode="decimal" autocomplete="off" value="' +
-        esc(now ? now.amount : "") + '" placeholder="' + esc(t("Amount")) + '" aria-label="' + esc(t("Limit")) + '"></label>' +
-      '<div class="w-gr"><span class="k">' + t("Each") + "</span>" + seg("lim-per", [["month", t("Month")], ["year", t("Year")]], period, t("Each"), "sm") + "</div></div>" +
+      '<div class="w-gl"><label class="w-gr"><span class="k">' + (all ? t("Limit, each month") : t("Limit")) + '</span><input id="lim-amt" class="w-end" inputmode="decimal" autocomplete="off" value="' +
+        esc(start) + '" placeholder="' + esc(t("Amount")) + '" aria-label="' + esc(t("Limit")) + '"></label>' +
+      (all ? "" : '<div class="w-gr"><span class="k">' + t("Each") + "</span>" + seg("lim-per", [["month", t("Month")], ["year", t("Year")]], period, t("Each"), "sm") + "</div>") + "</div>" +
       '<p class="w-glf">' + esc(note) + "</p>" +
       (now ? '<div class="w-gl"><button type="button" class="w-gr red" id="lim-del">' + t("Remove limit") + "</button></div>" : ""),
     onOpen: (root) => {
@@ -36,7 +41,7 @@ export function openLimit(category) {
       const check = () => { ok.disabled = !parse(input.value); };
       input.addEventListener("input", check);
       check();
-      root.querySelector("#lim-per").addEventListener("click", (ev) => {
+      if (!all) root.querySelector("#lim-per").addEventListener("click", (ev) => {
         const b = ev.target.closest("[data-v]");
         if (!b) return;
         period = b.dataset.v;

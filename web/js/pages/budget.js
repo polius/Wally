@@ -4,18 +4,19 @@
    will still take this month, as the lead's key names them; this month the mark is the even pace by
    today. Hovering a bar shows its parts, what is left or over, and the pace. Categories without a limit come last, with
    what they cost, so the page adds up to the month; this month, one opens the sheet to set its limit.
-   With no limit yet, the page is the setup.
+   With no limit yet the page is the same: what was spent, by category, and a link to set a limit, the sheet
+   filled with what is usually spent.
    Every figure comes from js/budget.js; the limits are set in js/limit.js. */
-import { state, t, tn, esc, f, bigMoney, tile, icon, cat, monthName, dlab, dlabW, TODAY, PUT, reloadBudgets, ym } from "../core.js";
-import { toast, errorToast, trapFocus, sw, showTip, moveTip, hideTip, row } from "../ui.js";
-import { refresh, headActions } from "../shell.js";
-import { EVERYTHING, thisMonth, monthAdd, limitsIn, figure, spentIn, monthSpent, suggestions, anyLimits } from "../budget.js";
+import { state, t, tn, esc, f, bigMoney, tile, icon, cat, monthName, dlab, dlabW, TODAY, ym } from "../core.js";
+import { trapFocus, showTip, moveTip, hideTip, row } from "../ui.js";
+import { headActions } from "../shell.js";
+import { EVERYTHING, thisMonth, monthAdd, limitsIn, figure, spentIn, monthSpent, usualMonth } from "../budget.js";
 import { openLimit, remove } from "../limit.js";
 
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 const wide = () => wideMQ.matches, phone = () => phoneMQ.matches;
-const ui = { month: null, sel: null, open: false, setup: null, editing: null, more: null };
+const ui = { month: null, sel: null, open: false, more: null };
 let root = null;
 
 const bdi = (html) => "<bdi>" + html + "</bdi>";
@@ -33,7 +34,6 @@ export function mount(el, route) {
   ui.month = q && /^\d{4}-\d\d$/.test(q) && q <= thisMonth() ? q : thisMonth();
   ui.sel = route.query.get("c");
   ui.open = ui.sel !== null;
-  ui.setup = null;
   root.innerHTML =
     '<header class="w-head s-head bg-head"><div class="s-titlew"><h3 class="s-title" id="bg-title"></h3></div>' +
     '<div class="s-steps w-steps" id="bg-steps"><button type="button" class="s-stepb" data-step="-1" aria-label="' + esc(t("Previous month")) + '">' + icon("left") + "</button>" +
@@ -43,20 +43,16 @@ export function mount(el, route) {
     '<div id="bg-page"></div>';
   root.addEventListener("click", onClick);
   root.addEventListener("keydown", onKeydown);
-  root.addEventListener("input", onChange);
   // A bar says what it holds, on hover (a mouse only: on touch, the row and the panel name it)
   root.addEventListener("mouseover", onMark);
   root.addEventListener("mousemove", onMark);
   root.addEventListener("mouseleave", hideTip);
-  // Leaving an amount, or Return: it shows as an amount again
-  root.addEventListener("focusout", (ev) => { if (ev.target.matches("[data-si]") && ui.setup) { ui.editing = null; setTimeout(render); } });
-  root.addEventListener("keydown", (ev) => { if (ev.key === "Enter" && ev.target.matches("[data-si]")) ev.target.blur(); });
   phoneMQ.addEventListener("change", render);
   wideMQ.addEventListener("change", render);
   render();
 }
 export function unmount() {
-  if (root) { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKeydown); root.removeEventListener("input", onChange); root.removeEventListener("mouseover", onMark); root.removeEventListener("mousemove", onMark); root.removeEventListener("mouseleave", hideTip); }
+  if (root) { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKeydown); root.removeEventListener("mouseover", onMark); root.removeEventListener("mousemove", onMark); root.removeEventListener("mouseleave", hideTip); }
   hideTip();
   phoneMQ.removeEventListener("change", render);
   wideMQ.removeEventListener("change", render);
@@ -71,8 +67,7 @@ function render() {
   root.querySelector("#bg-title").textContent = monthTitle(ui.month);
   const steps = root.querySelector("#bg-steps");
   steps.querySelector('[data-step="1"]').disabled = ui.month >= thisMonth();
-  steps.querySelector('[data-step="-1"]').disabled = !anyLimits() || !state.tx.length || first(ui.month) <= state.tx[state.tx.length - 1].d.slice(0, 8) + "01";
-  if (!anyLimits()) { page.innerHTML = setup(); setOpen(false); return; }
+  steps.querySelector('[data-step="-1"]').disabled = !state.tx.length || first(ui.month) <= state.tx[state.tx.length - 1].d.slice(0, 8) + "01";
 
   const now = ui.month === thisMonth();
   const limits = limitsIn(ui.month).filter((b) => b.period === "month" || now);
@@ -88,8 +83,8 @@ function render() {
   const panel = now && shown.length;
 
   page.innerHTML =
-    // With its bar, the lead is a card, as the Summary's number with its chart is (not on phones)
-    '<section class="rec-sum bg-sum' + (all ? " bg-card" : "") + '" aria-live="polite">' + lead(all) + "</section>" +
+    // The lead is a card, with a limit or without, as the Summary's number is (not on phones)
+    '<section class="rec-sum bg-sum bg-card" aria-live="polite">' + lead(all) + "</section>" +
     '<div class="' + (panel ? "w-tx rec-body" : "bg-one") + '">' +
       '<section class="w-panel rec-list bg-list" aria-label="' + esc(t("Limits")) + '">' + groups(monthly, yearly, limits) + "</section>" +
       (panel ? '<aside class="w-panel w-insp rec-insp bg-insp" id="bg-insp" tabindex="-1" aria-label="' + esc(ui.sel !== null ? name(ui.sel) : t("Limit")) + '"></aside>' : "") +
@@ -108,8 +103,11 @@ function lead(all) {
   const now = ui.month === thisMonth();
   if (!all) {
     const spent = spentIn(EVERYTHING, first(ui.month), now ? TODAY : lastDay(ui.month));
+    // This month, what is usually spent, and a link to set a limit (the sheet comes filled with a suggestion)
+    const usual = now ? usualMonth(EVERYTHING) : 0;
     return '<span class="rec-eye">' + t("Spending") + '</span><b class="rec-big amt">' + bdi(bigMoney(spent)) + "</b>" +
-      '<span class="rec-line">' + t("No limit for the whole month.") + (now ? ' <button type="button" class="w-link" data-limit="">' + t("Set one") + "</button>" : "") + "</span>";
+      '<span class="rec-line">' + (usual > 0.004 ? esc(t("You usually spend {amount} a month.", { amount: f(usual) })) + ' <button type="button" class="w-link" data-limit="">' + t("Set a limit") + "</button>"
+        : t("No limit for the whole month.") + (now ? ' <button type="button" class="w-link" data-limit="">' + t("Set one") + "</button>" : "")) + "</span>";
   }
   const fg = figure(all, ui.month);
   const eye = now ? (fg.over ? t("Over the limit") : t("Left to spend"))
@@ -118,7 +116,9 @@ function lead(all) {
   const line = now && fg.perDay !== null ? t("{amount} a day until {date}", { amount: f(fg.perDay), date: dlab(lastDay(ui.month)) }) : "";
   // The limit sits over the bar's end, as iPhone Storage puts its total: on the per-day line's right, or under it when
   // there is no room (a narrow phone, a long language). Under the bar a key: each part named, with its amount
-  return '<span class="rec-eye">' + esc(eye) + '</span><b class="rec-big amt">' + bdi(bigMoney(Math.abs(fg.left))) + "</b>" +
+  // This month the limit can be changed or removed from here: Edit opens its sheet, as a limit's panel does
+  const edit = now ? '<button type="button" class="w-plink rec-edit" data-limit="" aria-label="' + esc(t("Edit") + ": " + t("Limit for {category}", { category: name(EVERYTHING) })) + '">' + t("Edit") + "</button>" : "";
+  return '<div class="bg-eyeh"><span class="rec-eye">' + esc(eye) + "</span>" + edit + '</div><b class="rec-big amt">' + bdi(bigMoney(Math.abs(fg.left))) + "</b>" +
     '<div class="bg-top">' + (line ? '<span class="rec-line">' + esc(line) + "</span>" : "") +
       '<span class="bg-lim">' + esc(t("Limit")) + " <b>" + m(fg.limit) + "</b></span></div>" +
     '<div class="bg-lead">' + bar(fg, false, name(EVERYTHING)) +
@@ -210,7 +210,8 @@ function inspector(box, b) {
     (fg.due > 0.004 ? kv(t("Bills still due"), m(fg.due)) : "");
   // The last three; See all shows the rest here, in the panel, until another limit is picked
   const all = ui.more === c;
-  const list = (all ? txs : txs.slice(0, 3)).map((x) => kv(esc(x.n || cat(x.c).n) + " · " + esc(dlabW(x.d)), '<span class="amt">' + m(x.a) + "</span>")).join("");
+  // A long name gives way (an ellipsis) so the date and the amount stay whole and inside the panel
+  const list = (all ? txs : txs.slice(0, 3)).map((x) => '<div class="rec-kv bg-tx"><span><span class="bg-txn" title="' + esc(x.n || cat(x.c).n) + '">' + esc(x.n || cat(x.c).n) + '</span><span class="bg-txd">&nbsp;· ' + esc(dlabW(x.d)) + '</span></span><b><span class="amt">' + m(x.a) + "</span></b></div>").join("");
   const seeAll = txs.length > 3 ? '<p class="rec-cap"><button type="button" class="w-link" data-more aria-expanded="' + all + '">' + (all ? t("Show less") : tn(txs.length, "See all {n} transaction", "See all {n} transactions")) + "</button></p>" : "";
   const months = lastMonths.length ? '<div class="rec-sec2"><div class="rec-sh">' + t("Last months") + "</div>" + lastMonths.map((mo) => kv(esc(monthTitle(mo)), '<span class="amt">' + m(monthSpent(c, mo)) + "</span>")).join("") + "</div>" : "";
   const thisMonthSec = '<div class="rec-sec2"><div class="rec-sh">' + (year ? t("This year") : t("This month")) + "</div>" + (list || kv(t("Nothing spent yet"), "")) + seeAll + "</div>";
@@ -231,43 +232,6 @@ function inspector(box, b) {
       '<span class="rec-iname">' + esc(leftLine) + "</span>" + (perDay ? '<span class="rec-idesc">' + esc(perDay) + "</span>" : "") + "</div>" +
     '<div class="rec-kvs">' + facts + "</div>" + thisMonthSec + months +
     '<div class="w-pacts rec-acts"><button type="button" class="red" data-remove>' + t("Remove limit") + "</button></div>";
-}
-
-/* ---------- the first time: the setup (B2) ---------- */
-function setup() {
-  if (!ui.setup) {
-    const s = suggestions();
-    ui.setup = [s.everything].concat(s.cats).map((x) => ({ category: x.category, usual: x.usual, amount: x.amount ? x.amount.toFixed(2) : "", on: x.on }));
-    ui.hasHistory = s.history;
-  }
-  const rowOf = (x, i) => '<div class="w-rrow bg-row bg-sug">' + (x.category === EVERYTHING ? '<span class="w-ico bg-all">' + icon("wallet") + "</span>" : tile(x.category, 40)) +
-    '<div class="rec-rn"><h6>' + esc(name(x.category)) + "</h6><p>" + (ui.hasHistory ? esc(t("Usually {amount}", { amount: f(x.usual) })) : esc(t("Not enough history yet"))) + "</p></div>" +
-    '<span class="bg-sugv">' + (ui.editing === i || !x.amount
-      ? '<input class="bg-suga" data-si="' + i + '" inputmode="decimal" autocomplete="off" value="' + esc(x.amount) + '" placeholder="' + esc(t("Amount")) + '" aria-label="' + esc(t("Limit for {category}", { category: name(x.category) })) + '">'
-      : '<button type="button" class="bg-sugb' + (x.on ? "" : " off") + '" data-ei="' + i + '" aria-label="' + esc(t("Limit for {category}", { category: name(x.category) }) + ": " + f(Number(x.amount))) + '">' + m(Number(x.amount)) + "</button>") +
-    sw("bg-sw" + i, x.on, t("Limit for {category}", { category: name(x.category) })).replace('class="w-switch"', 'class="w-switch" data-sw="' + i + '"') + "</span></div>";
-  const ready = ui.setup.some((x) => x.on && Number(String(x.amount).replace(",", ".")) > 0);
-  return '<section class="rec-sum bg-sum"><span class="rec-eye">' + t("Budget") + '</span><b class="bg-hello">' + t("See what’s left as you spend") + "</b>" +
-      '<span class="rec-line">' + (ui.hasHistory ? t("Set a limit for the month, for a category, or both. These come from your last three months, rounded up.") : t("Set a limit for the month, for a category, or both.")) + "</span></section>" +
-    '<div class="bg-one bg-setup"><section class="w-panel rec-list bg-list">' +
-      '<div class="w-dayh">' + t("The whole month") + "</div>" + rowOf(ui.setup[0], 0) +
-      (ui.setup.length > 1 ? '<div class="w-dayh">' + t("Categories") + "</div>" + ui.setup.slice(1).map((x, i) => rowOf(x, i + 1)).join("") : "") +
-      '<div class="bg-cta"><button type="button" class="w-btn primary" data-start' + (ready ? "" : " disabled") + ">" + t("Start with these") + "</button></div>" +
-    "</section></div>";
-}
-async function start(btn) {
-  btn.disabled = true;
-  const month = thisMonth();
-  try {
-    for (const x of ui.setup) {
-      const v = Number(String(x.amount).replace(",", "."));
-      if (x.on && v > 0) await PUT("/budgets", { category: x.category, period: "month", amount: String(v), month });
-    }
-    await reloadBudgets();
-  } catch (e) { btn.disabled = false; errorToast(e); return; }
-  ui.setup = null;
-  toast(t("Budget started"));
-  refresh({ budget: true });
 }
 
 /* ---------- the panel below 1280 px: over the list, or a page on phones ---------- */
@@ -317,15 +281,6 @@ export function key(ev) {
     if (b && !b.disabled && !b.parentNode.hidden) { ev.preventDefault(); b.click(); }
   }
 }
-/* Typing an amount in the setup: kept, and Start follows it, without drawing the list again */
-function onChange(ev) {
-  const i = ev.target.closest("[data-si]");
-  if (!i || !ui.setup) return;
-  ui.setup[+i.dataset.si].amount = i.value;
-  const ok = ui.setup.some((x) => x.on && Number(String(x.amount).replace(",", ".")) > 0);
-  const s = root.querySelector("[data-start]");
-  if (s) s.disabled = !ok;
-}
 function onClick(ev) {
   const g = (sel) => ev.target.closest(sel);
   let b;
@@ -336,20 +291,4 @@ function onClick(ev) {
   if (g("[data-remove]")) { const c = ui.sel; ui.open = false; remove(c); return; }
   if ((b = g("[data-limit]"))) { openLimit(b.dataset.limit); return; }
   if (g("[data-more]")) { ui.more = ui.more === ui.sel ? null : ui.sel; render(); const m2 = root.querySelector("[data-more]"); if (m2) m2.focus(); return; }
-  if ((b = g("[data-sw]"))) {
-    const x = ui.setup[+b.dataset.sw];
-    x.on = !x.on;
-    // Switched on with no amount: the field takes the focus
-    render();
-    if (x.on && !x.amount) { const input = root.querySelector('[data-si="' + b.dataset.sw + '"]'); if (input) input.focus(); }
-    return;
-  }
-  if ((b = g("[data-start]"))) { start(b); return; }
-  // An amount in the setup: selected, it becomes a field
-  if ((b = g("[data-ei]"))) {
-    ui.editing = +b.dataset.ei;
-    render();
-    const input = root.querySelector('[data-si="' + b.dataset.ei + '"]');
-    if (input) { input.focus(); input.select(); }
-  }
 }
