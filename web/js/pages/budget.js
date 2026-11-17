@@ -202,7 +202,7 @@ function setup() {
   const ready = ui.setup.some((x) => x.on && Number(String(x.amount).replace(",", ".")) > 0);
   return '<section class="rec-sum bg-sum"><span class="rec-eye">' + t("Budget") + '</span><b class="bg-hello">' + t("See what’s left as you spend") + "</b>" +
       '<span class="rec-line">' + (ui.hasHistory ? t("Set a limit for the month, for a category, or both. These come from your last three months, rounded up.") : t("Set a limit for the month, for a category, or both.")) + "</span></section>" +
-    '<div class="bg-one"><section class="w-panel rec-list bg-list">' +
+    '<div class="bg-one bg-setup"><section class="w-panel rec-list bg-list">' +
       '<div class="w-dayh">' + t("The whole month") + "</div>" + rowOf(ui.setup[0], 0) +
       (ui.setup.length > 1 ? '<div class="w-dayh">' + t("Categories") + "</div>" + ui.setup.slice(1).map((x, i) => rowOf(x, i + 1)).join("") : "") +
       '<div class="bg-cta"><button type="button" class="w-btn primary" data-start' + (ready ? "" : " disabled") + ">" + t("Start with these") + "</button></div>" +

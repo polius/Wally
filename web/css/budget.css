@@ -42,7 +42,8 @@ div.bg-row:hover{background:none}
 
 /* The first time: what to start with */
 .bg-hello{font-size:var(--fs-large);font-weight:650;letter-spacing:-.02em;line-height:1.2;margin:2px 0 6px}
-.bg-one .bg-list{max-width:720px}
+/* The setup is a narrow form; a past month's list, with no panel beside it, takes the whole width */
+.bg-setup .bg-list{max-width:720px}
 .bg-sug{align-items:center!important}
 .bg-sug .w-ico{margin-top:0}
 .w-ico.bg-all{width:40px;height:40px;background:var(--w-fill);color:var(--w-ink2);display:grid;place-items:center}
