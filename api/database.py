@@ -46,7 +46,7 @@ STATE = {"read_only": None, "vault": None}
 
 def import_models():
     # Every table must be registered before create_all
-    from .models import app, people, api_keys, transactions, recurring_transactions, categories, tags, currency, money, vault  # noqa: F401
+    from .models import app, people, api_keys, transactions, recurring_transactions, categories, tags, currency, money, vault, budget  # noqa: F401
 
 def create_db_and_tables():
     DATA_DIR.mkdir(parents=True, exist_ok=True)

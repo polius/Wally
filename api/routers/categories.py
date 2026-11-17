@@ -9,6 +9,7 @@ from ..models.categories import Category, CategoryIcon, CategoryCreate, Category
 from ..models.transactions import Transaction
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.money import ImportRule
+from .budgets import rename_category, drop_category
 from .auth import check_login
 
 router = APIRouter(tags=["Categories"], dependencies=[Depends(check_login)])
@@ -100,8 +101,9 @@ def update_category(
             recurring_transaction.category = new_category_name
             db.add(recurring_transaction)
 
-        # Import rules follow the category
+        # Import rules and limits follow the category
         db.exec(update(ImportRule).where(ImportRule.category == category_name).values(category=new_category_name))
+        rename_category(db, category_name, new_category_name)
 
     # The icon moves with the name, then takes the new value
     if new_category_name != category_name:
@@ -162,6 +164,8 @@ def delete_category(
     kept = db.get(CategoryIcon, category_name)
     if kept:
         db.delete(kept)
+    # Its limits go; a category it was merged into keeps its own
+    drop_category(db, category_name)
     db.delete(category)
     db.commit()
     return {"ok": True}

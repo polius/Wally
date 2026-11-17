@@ -21,6 +21,7 @@ from ..database import get_session
 from ..models.app import AppConfig
 from ..models.categories import Category, CategoryIcon
 from ..models.money import ImportRule
+from ..models.budget import Budget
 from ..models.people import Person
 from ..models.recurring_transactions import RecurringTransaction
 from ..models.tags import Tag, TagIcon
@@ -265,6 +266,8 @@ def export_items(db: Session) -> list[dict]:
             "k": "irule", "id": str(i.id), "match": i.match, "category": i.category, "person_id": i.person_id, "set_person": bool(i.set_person),
             "uses": i.uses, "learned": bool(i.learned), "position": i.position, "created_at": _fmt(i.created_at),
         })
+    for b in db.exec(select(Budget)).all():
+        out.append({"k": "budget", "id": b.id, "category": b.category, "period": b.period, "cents": to_cents(b.amount), "since": b.since, "until": b.until})
     return out
 
 @router.get("/vault/convert/export")
@@ -351,6 +354,12 @@ def import_item(nx: Session, item: dict):
                 uses=int(item.get("uses") or 0), learned=bool(item.get("learned")), position=int(item.get("position") or 0),
                 created_at=_parse_dt(item.get("created_at")) or utcnow(),
             )
+        elif kind == "budget":
+            cents = int(item["cents"])
+            if cents <= 0 or item.get("period") not in ("month", "year") or not re.match(r"^[0-9a-f]{32}$", str(item["id"])):
+                raise ValueError("limit")
+            row = Budget(id=str(item["id"]), category=item.get("category") or "", period=item["period"], amount=from_cents(cents),
+                         since=str(item["since"]), until=item.get("until") or None)
         else:
             raise ValueError("kind")
     except (KeyError, ValueError, TypeError) as error:
@@ -397,7 +406,7 @@ class Finish(BaseModel):
     count: int
 
 def _plain_count(db: Session) -> int:
-    return sum(db.exec(select(func.count()).select_from(m)).one() for m in (Transaction, RecurringTransaction, Category, Tag, ImportRule))
+    return sum(db.exec(select(func.count()).select_from(m)).one() for m in (Transaction, RecurringTransaction, Category, Tag, ImportRule, Budget))
 
 @router.post("/vault/convert/finish")
 def convert_finish(

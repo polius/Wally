@@ -16,6 +16,8 @@ from .models.people import Person
 from .models.transactions import Transaction
 from .models.recurring_transactions import RecurringTransaction
 from .models.money import ImportRule
+from .models.budget import Budget
+from .models.categories import Category
 from .models.tags import Tag
 from .services.engine import run_all
 from .services.ledger import resolve_owner
@@ -156,6 +158,13 @@ def generate_demo():
         for position, (match, category, person, learned) in enumerate([("MERCADONA", "Groceries", N, True), ("NETFLIX", "Entertainment", None, False),
                                                                         ("HOLALUZ", "Utilities", A, True), ("DECATHLON", "Shopping", A, False), ("GLOVO", "Food", None, True)]):
             db.add(ImportRule(match=match, category=category, person_id=person, learned=learned, position=position, uses=rng.randint(8, 80)))
+
+        # Limits, set three months ago, so the Budget opens working and its past months have them too
+        since = (today.replace(day=1) - relativedelta(months=3)).strftime("%Y-%m")
+        for category, period, amount in [("", "month", "2700"), ("Groceries", "month", "600"), ("Utilities", "month", "200"), ("Shopping", "month", "120"),
+                                         ("Food", "month", "120"), ("Entertainment", "month", "60"), ("Travel", "year", "1600")]:
+            if not category or db.get(Category, category):
+                db.add(Budget(category=category, period=period, amount=Decimal(amount), since=since))
         db.commit()
 
     print(f"✅ Demo database created in {db_path.resolve()}.")

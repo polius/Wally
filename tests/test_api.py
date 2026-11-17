@@ -865,7 +865,7 @@ KEY_READ = {
     "/transactions/past-12-months", "/transactions/year-to-date", "/transactions/to-date", "/transactions/between", "/transactions/first",
     "/transactions/search", "/recurring", "/recurring/{recurring_transaction_id}", "/categories", "/categories/icons", "/categories/stats",
     "/categories/{category_name}/usage", "/tags", "/tags/icons", "/tags/stats", "/people", "/people/{person_id}/usage",
-    "/people/from-tag/preview", "/currency", "/summary/monthly", "/auth/status", "/login/check",
+    "/people/from-tag/preview", "/currency", "/summary/monthly", "/auth/status", "/login/check", "/budgets",
 }
 KEY_WRITE = {
     ("POST", "/transactions"), ("POST", "/transactions/group"), ("PUT", "/transactions/{transaction_id}"), ("DELETE", "/transactions/{transaction_id}"),
@@ -946,3 +946,52 @@ def test_the_ledger_answers_304_until_anything_changes(couple):
     r = client.get("/ledger", headers={"If-None-Match": tag}); assert r.status_code == 200; tag = r.headers["etag"]
     assert client.post("/recurring", json={"name": "Gym", "category": "Health", "amount": "30", "frequency": "monthly", "startDate": "2026-09-01"}).status_code == 200
     r = client.get("/ledger", headers={"If-None-Match": tag}); assert r.status_code == 200 and r.headers["etag"] != tag
+
+# ---------- limits ----------
+def test_a_limit_changed_in_a_month_applies_from_then_and_earlier_months_keep_theirs(couple):
+    client, alex, ana = couple
+    r = client.put("/budgets", json={"category": "Groceries", "amount": "500", "month": "2026-08"})
+    assert r.status_code == 200 and r.json()["since"] == "2026-08" and r.json()["amount"] == "500.00"
+    # Changed in October: August's row ends in September, a new one starts
+    client.put("/budgets", json={"category": "Groceries", "amount": "600", "month": "2026-10"})
+    rows = client.get("/budgets").json()
+    assert [(b["since"], b["until"], b["amount"]) for b in rows] == [("2026-08", "2026-09", "500.00"), ("2026-10", None, "600.00")]
+    # Changed again the same month: that month's row changes, no new one
+    client.put("/budgets", json={"category": "Groceries", "amount": "650", "period": "year", "month": "2026-10"})
+    rows = client.get("/budgets").json()
+    assert len(rows) == 2 and rows[1]["amount"] == "650.00" and rows[1]["period"] == "year"
+    # Everything: the empty category
+    assert client.put("/budgets", json={"category": "", "amount": "2700", "month": "2026-10"}).status_code == 200
+    # Removed from November: October keeps it
+    assert client.delete("/budgets?category=Groceries&month=2026-11").status_code == 200
+    rows = [b for b in client.get("/budgets").json() if b["category"] == "Groceries"]
+    assert rows[-1]["until"] == "2026-10"
+    # Removed in the month it started: gone
+    assert client.delete("/budgets?category=&month=2026-10").status_code == 200
+    assert not [b for b in client.get("/budgets").json() if b["category"] == ""]
+    # Refused: no amount, a bad month, a category that doesn't exist
+    assert client.put("/budgets", json={"category": "Groceries", "amount": "0", "month": "2026-10"}).status_code == 400
+    assert client.put("/budgets", json={"category": "Groceries", "amount": "10", "month": "2026-13"}).status_code == 400
+    assert client.put("/budgets", json={"category": "Nope", "amount": "10", "month": "2026-10"}).status_code == 404
+
+def test_limits_follow_a_category_renamed_and_go_with_one_deleted(couple):
+    client, alex, ana = couple
+    client.put("/budgets", json={"category": "Groceries", "amount": "600", "month": "2026-10"})
+    client.put("/budgets", json={"category": "Food", "amount": "120", "month": "2026-10"})
+    assert client.put("/categories/Groceries", json={"name": "Market"}).status_code == 200
+    assert {b["category"] for b in client.get("/budgets").json()} == {"Market", "Food"}
+    expense(client, category="Food")
+    # Merged into Market: Food's limit goes, Market keeps its own
+    assert client.delete("/categories/Food?move_to=Market").status_code == 200
+    assert [(b["category"], b["amount"]) for b in client.get("/budgets").json()] == [("Market", "600.00")]
+
+def test_a_read_key_reads_limits_and_cannot_change_them(couple):
+    client, alex, ana = couple
+    read = client.post("/api-keys", json={"name": "Read", "scope": "read"}).json()["key"]
+    write = client.post("/api-keys", json={"name": "Write"}).json()["key"]
+    client.put("/budgets", json={"category": "", "amount": "2700", "month": "2026-10"})
+    turn_on_signin(client, alex, ana)
+    anon = TestClient(client.app)
+    assert len(anon.get("/budgets", headers={"x-api-key": read}).json()) == 1
+    assert anon.put("/budgets", json={"amount": "1", "month": "2026-10"}, headers={"x-api-key": read}).status_code == 403
+    assert anon.put("/budgets", json={"amount": "1", "month": "2026-10"}, headers={"x-api-key": write}).status_code == 403
