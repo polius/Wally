@@ -1,0 +1,16 @@
+# Only api/, web/ and nginx.conf go into the image. Never a database or a local data folder.
+**/data
+*.db
+**/__pycache__
+**/*.pyc
+.git
+.github
+.claude
+.handover
+.vscode
+.pytest_cache
+.DS_Store
+tests
+scripts
+assets
+utils
