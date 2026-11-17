@@ -1,5 +1,6 @@
+import hashlib
 import json
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
 from typing import Annotated
 from uuid import UUID, uuid4
 from decimal import Decimal
@@ -57,6 +58,7 @@ LEDGER_COLUMNS = ["id", "date", "name", "category", "cents", "type", "created", 
 
 @router.get("/ledger")
 def read_ledger(
+    request: Request,
     db: Annotated[Session, Depends(get_session)]
 ):
     """Every transaction, compact, for the web app, which works out every figure in the browser.
@@ -83,7 +85,14 @@ def read_ledger(
             row.pop()
         out.append(row)
     body = json.dumps({"columns": LEDGER_COLUMNS, "rows": out}, ensure_ascii=False, separators=(",", ":"))
-    return Response(content=body, media_type="application/json")
+    # Its tag is a hash of the body itself, so it can never be stale: any change to any transaction is a
+    # new tag. A browser that already has this exact ledger gets 304 and no body. nginx makes the tag weak
+    # (W/"...") when it compresses, so both forms match.
+    tag = '"' + hashlib.sha256(body.encode()).hexdigest()[:32] + '"'
+    sent = [t.strip().removeprefix("W/") for t in request.headers.get("if-none-match", "").split(",")]
+    if tag in sent:
+        return Response(status_code=304, headers={"ETag": tag})
+    return Response(content=body, media_type="application/json", headers={"ETag": tag})
 
 @router.get("/transactions/id/{transaction_id}", response_model=list[TransactionPublic])
 def get_transaction_by_id(
