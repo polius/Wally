@@ -100,6 +100,8 @@ def record_id(item: dict, house: Household) -> str:
     """The record id the browser gives an item, as js/vault/session.js does when turning encryption on."""
     if item["k"] in ("tx", "rule"):
         return item["id"].replace("-", "").lower()
+    if item["k"] == "budget":
+        return item["id"]
     if item["k"] in ("cat", "tag"):
         return house.id_for(f"{item['k']}|{item['name']}")
     if item["k"] == "irule":

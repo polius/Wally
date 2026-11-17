@@ -17,6 +17,7 @@ import {
 import { toast, openDialog, trapFocus, hideTip, dialogOpen, holdPage } from "./ui.js";
 import { refresh } from "./shell.js";
 import { describe, nextOf } from "./sched.js";
+import { afterAdding } from "./budget.js";
 import * as C from "./add/calc.js";
 import * as Q from "./add/queue.js";
 import { fqOf, formRule, nextText, notesHtml, lc1, shortLabel, clampInt, withYear as dShort, withYearW as dShortW } from "./add/repeat.js";
@@ -904,6 +905,15 @@ function waiting(kind, payload, qid) {
   return { msg: t("No connection. {name} is kept on this device and sent when Wally is back.", { name: nameOf(kind === "group" ? payload[0] : payload) }), undo: () => { Q.dequeue(item.qid); refresh({ tx: true }); }, offline: true };
 }
 
+/* Added an expense in a month with a limit: the toast says what is left of it (B5) */
+function budgetLine(b) {
+  if (b.type !== "expense") return "";
+  const left = afterAdding(b.category, b.date);
+  if (!left) return "";
+  const name = cat(left.category).n;
+  if (left.over) return left.category ? t("Added · {category} is {amount} over", { category: name, amount: f(-left.left) }) : t("Added · {amount} over this month", { amount: f(-left.left) });
+  return left.category ? t("Added · {amount} left for {category}", { amount: f(left.left), category: name }) : t("Added · {amount} left this month", { amount: f(left.left) });
+}
 /* A new transaction, or changes to one */
 async function saveTx() {
   const b = body(amount(), ad.cat);
@@ -919,7 +929,7 @@ async function saveTx() {
   try { res = await POST("/transactions", b); } catch (e) { if (e.status === 0) return waiting("tx", b); throw e; }
   upsertTx(res);
   return {
-    msg: t("Added {name}, {amount}", { name: nameOf(b), amount: f(amount()) }), id: res.id,
+    msg: budgetLine(b) || t("Added {name}, {amount}", { name: nameOf(b), amount: f(amount()) }), id: res.id,
     undo: async () => { await DEL("/transactions/" + res.id); removeTx([res.id]); refresh({ tx: true }); },
   };
 }

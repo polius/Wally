@@ -84,14 +84,14 @@ try {
     ok(cent(euros(await page.textContent(".w-mrhero .big")), Math.abs(M.income - M.expense) / 100), "review: Kept = income − expense");
     // The story order, and the two blocks that went
     const order = await page.$$eval(".w-mrev h2", (l) => l.map((h) => h.textContent));
-    ok(order.join("|") === "Where it went|What changed|Each of you|Day by day|Bills|Worth knowing", "review: one reading order (" + order.join(", ") + ")");
+    ok(order.join("|") === "Where it went|What changed|Budget|Each of you|Day by day|Bills|Worth knowing", "review: one reading order, the month's limits after what changed (" + order.join(", ") + ")");
     ok(!(await page.textContent(".w-mrev")).includes("Who spent on what") && await page.locator(".w-mrev .w-mrcal").count() === 0, "review: no second breakdown, no calendar grid");
     ok(!(await page.textContent(".w-mrev")).includes("dashed line") && !(await page.textContent(".w-mrev")).includes("Click a month"), "review: no notes on how to read the charts");
     // Categories
-    const rows = await page.$$eval(".w-mrev a.w-mrwrow", (l) => l.map((a) => [a.dataset.cat, a.querySelector(":scope > b").textContent]));
+    const rows = await page.$$eval(".w-mrev a.w-mrwrow[data-cat]", (l) => l.map((a) => [a.dataset.cat, a.querySelector(":scope > b").textContent]));
     const catOk = rows.every(([c, v]) => M.categories[c] && cent(euros(v), M.categories[c].total / 100));
     ok(rows.length > 3 && catOk, "review: every category total matches the API (" + rows.length + " categories)");
-    ok(await page.locator(".w-mrev .w-mrkey").count() === 1 && await page.locator(".w-mrev a.w-mrwrow .w-mrsplit i").count() > rows.length, "review: who spent it, inside each bar");
+    ok(await page.locator(".w-mrev .w-mrkey").count() === 1 && await page.locator(".w-mrev a.w-mrwrow[data-cat] .w-mrsplit i").count() > rows.length, "review: who spent it, inside each bar");
     // People: always everyone, each by share
     const cards = page.locator(".w-mrev .w-mrpc");
     ok(await cards.count() === 2, "review: Each of you shows both people");
@@ -181,7 +181,7 @@ try {
     const usualExp = six.reduce((s, m) => s + m.expense, 0) / six.length / 100;
     const usualText = await page.locator("#w-print .pr-kpi > div").nth(1).locator("small").textContent();
     ok(cent(euros(usualText), usualExp), "report: usual = average of the 6 months before, to the cent (" + usualText + " vs " + usualExp.toFixed(2) + ")");
-    ok(sheets === 2 && (await page.locator("#w-print .pr-sheet").nth(1).locator("h2").first().innerText()).startsWith("Each of you"), "page 2 starts with Each of you");
+    ok(sheets === 2 && (await page.locator("#w-print .pr-sheet").nth(1).locator("h2").first().innerText()).startsWith("Budget"), "page 2 starts with the month's limits");
     const billsKv = await page.locator("#w-print .pr-sheet").nth(1).locator(".pr-kv").nth(1).innerText();
     ok((/[\d,.]+\s*€\s+in\s+\d+\s+bills?/.test(billsKv) && /First\s+\S/.test(billsKv)) || /No bills/.test(billsKv), "report: next month's bills, then the first one on its own line (" + billsKv.replace(/\s+/g, " ") + ")");
     ok(await page.locator("#w-print .pr-grid").count() === 0 && await page.locator("#w-print .pr-split i").count() > 0, "the report has no day grid, and who spent it is in the bars");
@@ -222,10 +222,12 @@ try {
     });
     ok(await page.locator('[data-sp="2"]').isVisible(), "phone: swiping goes on");
     await page.click("#mr-snext");
-    ok(await page.locator('[data-sp="3"]').isVisible() && (await page.textContent('[data-sp="3"]')).includes("Each of you"), "phone: page 4, each of you");
+    ok(await page.locator('[data-sp="3"]').isVisible() && /^Budget/.test((await page.textContent('[data-sp="3"] .w-mrsh')).trim()) && await page.locator('[data-sp="3"] .w-mrbud').count() > 0, "phone: page 4, the month's limits");
     await page.click("#mr-snext");
-    ok(await page.locator('[data-sp="4"]').isVisible() && await page.locator("#mr-snext").isHidden(), "phone: page 5 is the last");
-    const p5 = await page.textContent('[data-sp="4"]');
+    ok(await page.locator('[data-sp="4"]').isVisible() && (await page.textContent('[data-sp="4"]')).includes("Each of you"), "phone: page 5, each of you");
+    await page.click("#mr-snext");
+    ok(await page.locator('[data-sp="5"]').isVisible() && await page.locator("#mr-snext").isHidden(), "phone: page 6 is the last");
+    const p5 = await page.textContent('[data-sp="5"]');
     ok(p5.includes("Day by day") && p5.includes("Bills") && p5.includes("Worth knowing"), "phone: the last page has day by day, bills and worth knowing");
     await shot(page, "review-phone-5");
     await page.click(".w-mrstory [data-mr-prev]");

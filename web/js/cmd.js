@@ -56,6 +56,7 @@ function build(q) {
   const fixed = [
     [t("Go to"), t("Summary"), "overview", go("/")],
     [t("Go to"), t("Transactions"), "list", go("/transactions")],
+    [t("Go to"), t("Budget"), "target", go("/budget")],
     [t("Go to"), t("Recurring"), "repeat", go("/recurring")],
     [t("Go to"), t("Month in review"), "cal", go("/review")],
     [t("Go to"), t("Settings"), "settings", go("/settings")],

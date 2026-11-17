@@ -21,11 +21,12 @@
        imports (tests/e2e/flows.mjs checks that). */
     (function () {
       var PAGES = {
-        dashboard: ["sched", "pages/dashboard", "pages/dashboard/range", "pages/dashboard/summary", "pages/dashboard/cashflow", "pages/dashboard/hero"],
+        dashboard: ["sched", "budget", "pages/dashboard", "pages/dashboard/range", "pages/dashboard/summary", "pages/dashboard/cashflow", "pages/dashboard/hero"],
         transactions: ["sched", "calendar", "pages/transactions", "pages/transactions/query", "pages/transactions/list", "pages/transactions/panel", "pages/transactions/actions", "pages/transactions/sheets"],
         recurring: ["sched", "pages/recurring"],
+        budget: ["sched", "budget", "limit", "pages/budget"],
         settings: ["pages/settings", "pages/settings/common"],
-        review: ["sched", "pages/review"]
+        review: ["sched", "budget", "pages/review"]
       };
       var page = PAGES[location.pathname.split("/")[1]] || PAGES.dashboard;
       ["core", "ui", "shell"].concat(page).forEach(function (f) {
@@ -46,6 +47,7 @@
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="/css/transactions.css">
   <link rel="stylesheet" href="/css/recurring.css">
+  <link rel="stylesheet" href="/css/budget.css">
   <link rel="stylesheet" href="/css/add.css">
   <link rel="stylesheet" href="/css/settings.css">
   <link rel="stylesheet" href="/css/signin.css">

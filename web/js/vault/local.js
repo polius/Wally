@@ -15,11 +15,11 @@ export function setEnv(e) { env = e; }
 const fail = (status, detail) => new env.ApiError(status, detail);
 
 /* ---------- the copy, by kind ---------- */
-const KEY = { tx: "id", rule: "id", irule: "id", cat: "name", tag: "name" };
+const KEY = { tx: "id", rule: "id", irule: "id", cat: "name", tag: "name", budget: "id" };
 let built = -1, index = null;
 function idx() {
   if (built === vault.gen && index) return index;
-  index = { tx: new Map(), rule: new Map(), cat: new Map(), tag: new Map(), irule: new Map() };
+  index = { tx: new Map(), rule: new Map(), cat: new Map(), tag: new Map(), irule: new Map(), budget: new Map() };
   for (const [rid, r] of vault.recs) {
     const o = r.obj;
     if (o && index[o.k]) index[o.k].set(o[KEY[o.k]], rid);
@@ -35,7 +35,7 @@ function base(kind, key) {
 function clone(o) { return o === null || o === undefined ? null : JSON.parse(JSON.stringify(o)); }
 async function ridOf(kind, key) {
   if (kind === "tx" || kind === "rule") return String(key).replace(/-/g, "").toLowerCase();
-  if (kind === "irule") return key;
+  if (kind === "irule" || kind === "budget") return key;
   return idx()[kind].get(key) || idFor(vault.keys, kind + "|" + key);
 }
 
@@ -652,6 +652,8 @@ const categories = {
     if (to !== name) {
       if (d.get("cat", to)) throw fail(400, "A category with this name already exists.");
       moveCategory(d, name, to);
+      // Its limits follow it
+      for (const b of d.all("budget")) if (b.category === name) d.put("budget", Object.assign(clone(b), { category: to }));
       d.del("cat", name);
     }
     // The icon moves with the name; "" goes back to the one picked from the name
@@ -673,7 +675,60 @@ const categories = {
       }
       moveCategory(d, name, moveTo);
     }
+    // Its limits go; a category it was merged into keeps its own
+    for (const b of d.all("budget")) if (b.category === name) d.del("budget", b.id);
     d.del("cat", name);
+    return { ok: true };
+  }),
+};
+
+/* ---------- limits (routers/budgets.py) ---------- */
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+function monthBefore(m) { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (!mo) { y--; mo = 12; } return y + "-" + (mo < 10 ? "0" : "") + mo; }
+function budgetPublic(b) { return { id: b.id, category: b.category || "", period: b.period, amount: (b.cents / 100).toFixed(2), since: b.since, until: b.until || null }; }
+function checkLimit(d, category, month, exists = true) {
+  if (!MONTH.test(month || "")) throw fail(400, "The month must be YYYY-MM.");
+  if (exists && category && !d.get("cat", category)) throw fail(404, "This category does not exist.");
+}
+/* As routers/budgets.py parse_amount: "120,5" too, in cents rounded half up */
+function limitCents(value) {
+  const s = String(value === undefined || value === null ? "" : value).trim().replace(",", ".");
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) throw fail(400, "Enter an amount.");
+  const cents = toCents(s);
+  if (cents <= 0 || cents >= 1e10) throw fail(400, "Enter an amount above zero.");
+  return cents;
+}
+/* Clear the way from month on, as the server does; the row starting that month, if any */
+function endFrom(d, category, month) {
+  let starting = null;
+  for (const b of d.all("budget").sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {
+    if ((b.category || "") !== category) continue;
+    if (b.since > month) d.del("budget", b.id);
+    // Two devices that set a first limit at once leave two rows for one month: one stays
+    else if (b.since === month) { if (!starting) starting = b; else d.del("budget", b.id); }
+    else if (!b.until || b.until >= month) d.put("budget", Object.assign(clone(b), { until: monthBefore(month) }));
+  }
+  return starting;
+}
+const budgets = {
+  list: () => serial(() => new Draft().all("budget").map(budgetPublic)
+    .sort((a, b) => (a.category < b.category ? -1 : a.category > b.category ? 1 : a.since < b.since ? -1 : a.since > b.since ? 1 : 0))),
+  set: (body) => {
+    const fresh = randomId();
+    return run((d) => {
+      const category = String(body.category || ""), month = body.month, period = body.period === undefined || body.period === null ? "month" : body.period;
+      checkLimit(d, category, month);
+      if (period !== "month" && period !== "year") throw fail(422, "period is month or year.");
+      const cents = limitCents(body.amount);
+      const row = endFrom(d, category, month), id = row ? row.id : fresh;
+      d.put("budget", { id, category, period, cents, since: month, until: null });
+      return () => budgetPublic(read("budget", id));
+    });
+  },
+  remove: (category, month) => run((d) => {
+    checkLimit(d, category, month, false);
+    const row = endFrom(d, category, month);
+    if (row) d.del("budget", row.id);
     return { ok: true };
   }),
 };
@@ -1018,6 +1073,9 @@ const ROUTES = [
   ["PUT", /^\/tags\/([^/]+)$/, (m, b) => tags.update(dec(m[1]), b || {})],
   ["DELETE", /^\/tags\/([^/]+)$/, (m) => tags.remove(dec(m[1]))],
   ["GET", /^\/rules$/, () => importer.rules()],
+  ["GET", /^\/budgets$/, () => budgets.list()],
+  ["PUT", /^\/budgets$/, (m, b) => budgets.set(b || {})],
+  ["DELETE", /^\/budgets$/, (m, b, q) => budgets.remove(q.get("category") || "", q.get("month"))],
   ["POST", /^\/import\/preview$/, (m, b) => importer.preview(b)],
   ["POST", /^\/import\/commit$/, (m, b) => importer.commit(b)],
   ["GET", /^\/people\/(\d+)\/usage$/, (m) => people.usage(m[1])],
@@ -1027,7 +1085,7 @@ const ROUTES = [
   ["POST", /^\/people\/from-tags$/, (m, b) => people.fromTags(b || {}, false)],
 ];
 /* Paths only the server can answer, even when encrypted */
-export const LOCAL = /^\/(transactions|ledger|recurring|categories|tags|summary|import|rules)(\/|$|\?)|^\/people\/(\d+\/usage|\d+\/from-tag|from-tags?)(\/|$|\?)/;
+export const LOCAL = /^\/(transactions|ledger|recurring|categories|tags|summary|import|rules|budgets)(\/|$|\?)|^\/people\/(\d+\/usage|\d+\/from-tag|from-tags?)(\/|$|\?)/;
 
 /* Answer a request from the copy, the way the server would. send() reaches the server. */
 export async function handle(method, path, body, send) {

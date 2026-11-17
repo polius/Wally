@@ -6,6 +6,8 @@ import { refresh } from "../../shell.js";
 import { gl, gr, addRow, hero, check, minus, fieldRow, nameGate, sameName, phone, val, paint } from "./common.js";
 import { setAction, openPane, replaceSub } from "../settings.js";
 import { openIconPicker } from "./iconpicker.js";
+import { limitFor } from "../../budget.js";
+import { openLimit } from "../../limit.js";
 
 let box = null;
 let sub = "";          // "" for the list, or a category's name for its page
@@ -62,10 +64,13 @@ function renderCategory() {
   const first = [gr({ k: t("Name"), v: name, chev: true, act: "rename", attrs: ' data-k="rename"' }),
     gr({ k: t("Icon"), v: icon(cat(k).i), chev: true, act: "icon", attrs: ' data-k="icon"' })];
   const same = state.categories.filter((x) => x !== k && isIncomeCat(x) === income);
+  // Spending categories have a limit: the same sheet as the Budget page
+  const lim = income ? null : limitFor(k);
+  const limit = income ? "" : gl([gr({ k: t("Limit"), v: lim ? esc(lim.period === "year" ? t("{amount} each year", { amount: f(Number(lim.amount)) }) : t("{amount} each month", { amount: f(Number(lim.amount)) })) : t("None"), chev: true, act: "limit", attrs: ' data-k="limit"' })]);
   const second = [gr({ tag: "a", href: "/transactions?mode=all&cat=" + encodeURIComponent(k), k: t("See its transactions"), chev: true, attrs: ' data-k="see"' })];
   if (same.length) second.push(gr({ k: t("Merge into another…"), chev: true, act: "merge", attrs: ' data-k="merge"' }));
   setAction("");
-  paint(box, hero(tile(k), name, line(k, st, months())) + gl(first) + gl(second) +
+  paint(box, hero(tile(k), name, line(k, st, months())) + gl(first) + limit + gl(second) +
     (state.categories.length > 1 ? gl([gr({ k: t("Delete category"), cls: "red", act: "delete", attrs: ' data-name="' + name + '" data-k="delete"' })]) : ""));
 }
 
@@ -78,6 +83,7 @@ async function onClick(ev) {
   if (b.dataset.act === "delete") return remove(name);
   if (b.dataset.act === "icon") return pickIcon(name);
   if (b.dataset.act === "merge") return merge(name);
+  if (b.dataset.act === "limit") return openLimit(name);
 }
 
 function pickIcon(name) {

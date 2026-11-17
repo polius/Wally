@@ -229,10 +229,10 @@ def vault_on() -> bool:
 READS = ("GET", "HEAD", "OPTIONS")
 
 # What an API key can reach. A key lives in a script or a phone shortcut, so it gets the household's
-# money (transactions, recurring rules, categories and tags) and nothing that guards the household:
+# money (transactions, recurring rules, categories and tags; limits to read) and nothing that guards the household:
 # sign-in, sessions, two-step, keys, backups, restore, encryption, settings, import and changes to
 # people all answer 403 to any key.
-KEY_READS = re.compile(r"^/(transactions|ledger|recurring|categories|tags|people|currency|summary)(/|$)|^/(auth/status|login/check)$")
+KEY_READS = re.compile(r"^/(transactions|ledger|recurring|categories|tags|people|currency|summary|budgets)(/|$)|^/(auth/status|login/check)$")
 KEY_WRITES = re.compile(r"^/(transactions(/(?!import$)[^/]+)?|recurring(/[^/]+(/(end|pause|resume|missed))?)?|(categories|tags)(/.+)?)$")
 
 def api_path(request: Request) -> str:

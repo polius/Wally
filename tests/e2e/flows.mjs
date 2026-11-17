@@ -30,7 +30,7 @@ async function open(width, height) {
     for (const m of readFileSync(new URL(file, web), "utf8").matchAll(/from\s+"(\.[^"]+)"/g)) closure(new URL(m[1], new URL(file, web)).pathname.split("/web/js/")[1], seen);
     return seen;
   };
-  for (const [path, file] of [["/", "pages/dashboard.js"], ["/transactions", "pages/transactions.js"], ["/recurring", "pages/recurring.js"], ["/settings/people", "pages/settings.js"], ["/review", "pages/review.js"]]) {
+  for (const [path, file] of [["/", "pages/dashboard.js"], ["/transactions", "pages/transactions.js"], ["/recurring", "pages/recurring.js"], ["/budget", "pages/budget.js"], ["/settings/people", "pages/settings.js"], ["/review", "pages/review.js"]]) {
     await page.goto(BASE + path, { waitUntil: "networkidle" });
     const listed = await page.$$eval('link[rel="modulepreload"]', (ls) => ls.map((l) => new URL(l.href).pathname.slice(4)).sort());
     const real = [...closure(file), "ui.js", "shell.js", "core.js"].filter((f, i, a) => a.indexOf(f) === i).sort();
@@ -131,14 +131,19 @@ async function open(width, height) {
   await page.goto(BASE + "/", { waitUntil: "networkidle" });
   ok(await page.locator("#tabbar").isVisible(), "the tab bar shows on a phone");
   ok(!(await page.locator("#side").isVisible()), "the sidebar is hidden");
-  ok(await page.locator("#tabbar .w-tabpill a").count() === 4, "four tabs: Summary, Transactions, Recurring, Settings");
-  for (const href of ["/transactions", "/recurring", "/settings", "/"]) {
+  ok(await page.locator("#tabbar .w-tabpill a").count() === 4, "four tabs: Summary, Transactions, Budget, Recurring");
+  for (const href of ["/transactions", "/budget", "/recurring", "/"]) {
     await page.click(`#tabbar a[href="${href}"]`);
     await page.waitForTimeout(300);
     ok((await page.locator(`#tabbar a[href="${href}"]`).getAttribute("aria-current")) === "page", "tab " + href + " is current");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     ok(overflow <= 0, "no sideways scroll on " + href);
   }
+  // Settings is in the person menu, as in iOS apps
+  await page.click("#main .w-pswitch-b"); await page.waitForTimeout(200);
+  await page.click('#main .w-pswitch-m a[href="/settings"]'); await page.waitForTimeout(500);
+  ok(new URL(page.url()).pathname === "/settings", "Settings opens from the person menu");
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
   // Without the sidebar, the person menu is where you switch person (or sign out)
   await page.click(".w-pswitch-b");
   ok(await page.locator(".w-pswitch-m [data-switch]").isVisible(), "the person menu offers Switch person");

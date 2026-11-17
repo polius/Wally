@@ -22,10 +22,10 @@ run() { # run <suite> [env...]
   if env "$@" node "$HERE/$name.mjs"; then echo "--- $name passed"; else echo "--- $name FAILED"; FAILED="$FAILED $name"; fi
 }
 
-SUITES=${*:-"dashboard transactions add recurring settings signin review flows vault vault-parity vault-setup touch"}
+SUITES=${*:-"dashboard transactions add recurring budget settings signin review flows vault vault-parity vault-setup touch"}
 for s in $SUITES; do
   case $s in
-    dashboard|add|flows)
+    dashboard|add|flows|budget)
       serve 8891 "$TMP/$s" true && run "$s" BASE=http://localhost:8891; stop 8891 ;;
     transactions)
       serve 8891 "$TMP/$s" true && run "$s" BASE=http://localhost:8891 SUITE=demo; stop 8891

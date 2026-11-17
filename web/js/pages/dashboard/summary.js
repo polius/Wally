@@ -6,10 +6,11 @@
    Clicks are handled in dashboard.js from data-* attributes. */
 import {
   state, t, tn, esc, TODAY, START, ds, dim, ym, ymAdd, span, addD, f, fk, pct, num, F, dlab, monthName, monthIn, monthYear,
-  totals, amt, tile, pname, couple, icon, relDay, av, T, UNTAGGED, cc, bigMoney, fWhole } from "../../core.js";
+  totals, amt, tile, cat, pname, couple, icon, relDay, av, T, UNTAGGED, cc, bigMoney, fWhole } from "../../core.js";
 import { chart, enlarge, niceMax, el, txt, hover, row, showTip, hideTip, empty } from "../../ui.js";
 import { occurrences, ruleAmt, isIncome, ruleHist, nextOf } from "../../sched.js";
 import { view, prevOf } from "./range.js";
+import { largestOverrun } from "../../budget.js";
 import { cashflow, cashflowTitle, drawCashflow } from "./cashflow.js";
 import { heroMonthly, heroCats, monthsOf, monLabel, paceData, paceLabel, eDayItems, eByCat, BY_CAT, BY_TAG, anyTags } from "./hero.js";
 
@@ -331,6 +332,16 @@ function notices(r) {
     });
   }
   // A category well above usual: after the first week, against the last three months by the same day
+  // A limit gone over, the largest overrun only: it outranks everything else here, and opens Budget
+  if (r.month && r.current) {
+    const fg = largestOverrun();
+    if (fg) {
+      const daysLeft = fg.days - 1;
+      out.push({ cat: fg.b.category, budget: true, w: 4, title: t("{category} is {amount} over its limit", { category: cat(fg.b.category).n, amount: f(-fg.left) }),
+        sub: (fg.due > 0.004 ? t("{spent} of {limit}, with {due} in bills still due.", { spent: f(fg.spent), limit: f(fg.limit), due: f(fg.due) }) : t("{spent} of {limit}.", { spent: f(fg.spent), limit: f(fg.limit) })) +
+          (daysLeft > 0 ? " " + tn(daysLeft, "{n} day to go.", "{n} days to go.") : "") });
+    }
+  }
   if (r.month && r.current && +TODAY.slice(8) >= 8) {
     const [y, m] = ym(r.start), day = +TODAY.slice(8), cur = eByCat(r.start, r.end, undefined, false), usual = {};
     [1, 2, 3].forEach((k) => { const q = ymAdd(y, m, -k), a = ds(q[0], q[1], 1); if (a < START) return; const b = ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))), o = eByCat(a, b, undefined, false); Object.keys(o).forEach((c) => { usual[c] = (usual[c] || 0) + o[c] / 3; }); });
@@ -345,7 +356,7 @@ function renderNotice(r) {
   const list = notices(r);
   show("notice", list.length > 0);
   // Every line opens what it is about: a category its transactions this month, a bill its rule in Recurring
-  $("s-notice").innerHTML = list.map((x) => '<button type="button" class="s-notice" ' + (x.cat ? BY_CAT.go(x.cat) + ">" + tile(x.cat) : 'data-go-rule="' + esc(x.rid) + '"><span class="w-ico s-nico ' + x.cls + '">' + icon(x.ico) + "</span>") +
+  $("s-notice").innerHTML = list.map((x) => '<button type="button" class="s-notice" ' + (x.budget ? 'data-go-budget="' + esc(x.cat) + '">' + tile(x.cat) : x.cat ? BY_CAT.go(x.cat) + ">" + tile(x.cat) : 'data-go-rule="' + esc(x.rid) + '"><span class="w-ico s-nico ' + x.cls + '">' + icon(x.ico) + "</span>") +
     '<span class="s-nm"><span>' + esc(x.title) + "</span><small>" + esc(x.sub) + "</small></span></button>").join("");
 }
 
@@ -441,12 +452,14 @@ function keptHead(d) {
   return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + bigMoney(Math.abs(d.net)) + "</b>" +
     (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>" + fcLine(d);
 }
-/* "On track for ≈ 1,450.00 € by Nov 30", or "On track to overspend ≈ 300.00 € by Nov 30", as Kept this year says it */
-const onTrack = (v) => '<b class="' + (v < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f(Math.abs(v))) + "</b>";
+/* "≈ 1,450.00 € by Nov 30" under the month's figure, or "On track to overspend ≈ 300.00 € by Nov 30". Kept this year
+   keeps its "on track for", which its own sentence needs.
+   Quiet, in the line's own grey: only overspending is coloured, red, because that one is a warning */
+const onTrack = (v) => '<b' + (v < 0 ? ' class="up-bad"' : "") + '>≈ ' + esc(f(Math.abs(v))) + "</b>";
 function fcLine(d) {
   if (!d.fc) return "";
   const v = d.fc.v, args = { amount: onTrack(v), date: esc(dlab(d.fc.end)) };
-  return '<p class="s-yearsub s-fc" tabindex="0">' + (v < 0 ? t("On track to overspend {amount} by {date}", args) : t("On track for {amount} by {date}", args)) + icon("info", "s-fci") + "</p>";
+  return '<p class="s-yearsub s-fc" tabindex="0">' + (v < 0 ? t("On track to overspend {amount} by {date}", args) : t("{amount} by {date}", args)) + "</p>";
 }
 /* Pointing at it shows how it adds up: what is known first (kept so far, the repeating income and bills to come)
    with its total when anything is still to come, then the estimates, each marked ≈, and where the month is heading */

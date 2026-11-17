@@ -102,6 +102,8 @@ class View:
             kind = it["k"]
             if kind in ("tx", "rule"):
                 rid = it["id"].replace("-", "").lower()
+            elif kind == "budget":
+                rid = it["id"]
             elif kind in ("cat", "tag"):
                 rid = self.names.get((kind, it["name"])) or self.hh.id_for(f"{kind}|{it['name']}")
             else:

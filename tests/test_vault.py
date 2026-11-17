@@ -39,6 +39,10 @@ def plain_household(client):
     client.post("/categories", json={"name": "Kids", "color": 3, "icon": "dog"})
     client.post("/tags", json={"name": "holiday"})
     client.put("/tags/holiday", json={"icon": "palm"})
+    # Limits: one for everything, one for a category, one that ended
+    client.put("/budgets", json={"category": "Groceries", "amount": "450", "month": "2026-08"})
+    client.put("/budgets", json={"category": "Groceries", "amount": "600", "month": "2026-10"})
+    client.put("/budgets", json={"category": "", "amount": "2700", "period": "month", "month": "2026-10"})
     r = client.put("/signin", json={"enabled": True, "password": PASS})
     assert r.status_code == 200, r.text
     client.headers.pop("x-wally-person", None)
@@ -135,7 +139,7 @@ def test_turning_on_leaves_nothing_in_the_clear(encrypted):
     assert status["vault"]["on"] and status["vault"]["kdf"]
     # Every plain table is empty, and no plain backup or old file is left
     conn = sqlite3.connect(database.DB_PATH)
-    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "tagicon", "importrule"):
+    for table in ("transaction", "recurringtransaction", "category", "categorycolor", "categoryicon", "tag", "tagicon", "importrule", "budget"):
         assert conn.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] == 0, table
     assert conn.execute("SELECT COUNT(*) FROM record").fetchone()[0] == result["count"] == len(before)
     conn.close()
@@ -230,6 +234,7 @@ def test_an_api_key_reads_an_encrypted_household(encrypted):
     assert {"Mercadona", "Farmacia Sant Jordi", "Dentist", "AMAZON MKTPLACE 99"} <= names
     assert "Kids" in plain.get("/categories", headers=key).json()
     assert plain.get("/summary/monthly", headers=key).status_code == 200
+    assert sorted((b["category"], b["amount"], b["until"]) for b in plain.get("/budgets", headers=key).json()) == [("", "2700.00", None), ("Groceries", "450.00", "2026-09"), ("Groceries", "600.00", None)]
     # Nothing it opened is left behind in the clear
     assert plain_rows() == 0
     # Signed in in a browser, the same routes still answer from the browser only

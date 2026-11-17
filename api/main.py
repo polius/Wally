@@ -11,7 +11,7 @@ from sqlmodel import Session
 from . import database
 from .database import create_db_and_tables, STATE
 from .demo import generate_demo
-from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault, kit
+from .routers import transactions, recurring_transactions, categories, tags, currency, auth, api_keys, me, people, money, data, vault, kit, budgets
 from .services import conversion, sealed_view, defaults
 from .services.vault import load_state, purge_tombstones, required
 from .models.app import AppConfig, DEFAULT_CONFIG
@@ -90,7 +90,7 @@ app.add_middleware(
 
 # With encryption on, the household's data is sealed records the server can't read: these answer
 # from the browser instead (js/vault/local.js), and the server says so if asked
-PLAIN_DATA = re.compile(r"^/(transactions|ledger|recurring|categories|tags|summary|import|rules)(/|$)|^/people/(\d+/usage|\d+/from-tag|from-tags?)(/|$)|^/backups/(.+/restore|upload)$")
+PLAIN_DATA = re.compile(r"^/(transactions|ledger|recurring|categories|tags|summary|import|rules|budgets)(/|$)|^/people/(\d+/usage|\d+/from-tag|from-tags?)(/|$)|^/backups/(.+/restore|upload)$")
 # What an API key can't do while Wally is encrypted: backups are sealed files, put back from the app
 KEYS_NEVER = re.compile(r"^/backups/")
 # While encryption is being turned on or off, the household is read-only except for these
@@ -148,6 +148,7 @@ app.include_router(data.router)
 app.include_router(api_keys.router)
 app.include_router(vault.router)
 app.include_router(kit.router)
+app.include_router(budgets.router)
 
 # Add root route
 @app.get("/", tags=["Root"])

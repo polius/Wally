@@ -4,8 +4,8 @@
    Pages are filled section by section: a section that doesn't fit starts the next page, so nothing
    is ever cut in two. Each page has the same header and a footer with its number. */
 import {
-  t, tn, esc, state, pct, TODAY, totals, cat, pname, couple, initial, monthYear, F, dlab, ds, dim, amt, f, bigMoney } from "../../core.js";
-import { highlights, dayRows, billRows, monthRows, spanBillRows, sharedText, splitParts, spanTitle, spanSub } from "../review.js";
+  t, tn, esc, state, pct, TODAY, totals, cat, pname, ppastel, couple, initial, monthYear, F, dlab, ds, dim, amt, f, bigMoney } from "../../core.js";
+import { highlights, dayRows, billRows, monthRows, spanBillRows, sharedText, splitParts, spanTitle, spanSub, budgetHeadParts, budgetName } from "../review.js";
 
 /* Paper is white whatever the app's theme, and it prints in black and grey: green and red only for
    money, category colours only on the small dots that name them */
@@ -42,7 +42,7 @@ function section(title, sub, body, cls, extra) {
 }
 function splitKey() {
   if (!couple()) return "";
-  const ppl = state.people.map((p, i) => '<span><i class="p' + Math.min(i, 5) + '"></i>' + esc(p.name) + "</span>");
+  const ppl = state.people.map((p, i) => '<span><i class="p' + Math.min(i, 5) + '" style="background:' + ppastel(String(p.id)) + '"></i>' + esc(p.name) + "</span>");
   ppl.splice(1, 0, '<span><i class="sh"></i>' + esc(t("Shared")) + "</span>");
   return '<span class="pr-key">' + ppl.join("") + "</span>";
 }
@@ -83,7 +83,7 @@ function catsBlock(m) {
     : m.kind ? (m.cp[k] ? short(c[k], m.cp[k]) : '<span class="pr-d">' + esc(t("New")) + "</span>")
     : cu[k] ? short(c[k], cu[k]) : u.n ? '<span class="pr-d">' + esc(t("New")) + "</span>" : "";
   const shown = keys.slice(0, MAX_CATS), rest = keys.slice(MAX_CATS), top = c[keys[0]];
-  const bar = (k, v) => '<span class="pr-split" style="width:' + ((v / top) * 100).toFixed(1) + '%">' + splitParts(m, k).map((x) => '<i class="' + x.cls + '" style="flex:' + x.v.toFixed(2) + '"></i>').join("") + "</span>";
+  const bar = (k, v) => '<span class="pr-split" style="width:' + ((v / top) * 100).toFixed(1) + '%">' + splitParts(m, k).map((x) => '<i class="' + x.cls + '" style="flex:' + x.v.toFixed(2) + (x.id ? ";background:" + ppastel(x.id) : "") + '"></i>').join("") + "</span>";
   let rows = shown.map((k) => '<div class="pr-cr">' + sw(k) + '<b class="n">' + catName(k) + '</b><span class="bar">' + bar(k, c[k]) + '</span><b class="v">' + f(c[k]) + '</b><span class="sh">' +
     esc(share(c[k] / (s.exp || 1))) + '</span><span class="vs">' + vs(k) + "</span></div>").join("");
   if (rest.length) {
@@ -94,6 +94,20 @@ function catsBlock(m) {
   const sub = m.kind ? (m.kind === "year" && m.hasPrev ? t("against {year}", { year: m.PY }) : "") : u.n ? t("against the {n} months before", { n: u.n }) : "";
   return section(esc(t("Where it went")), esc(sub),
     '<div class="pr-cat' + (m.kind ? " long" : "") + '">' + rows + "</div>" + (couple() ? '<p class="pr-note">' + sharedText(m) + "</p>" : ""), "", splitKey());
+}
+/* The month's limits: spent against each, grey, or red when over; what was left or over */
+function budgetBlock(m) {
+  const bg = m.budget;
+  if (!bg) return "";
+  const rows = bg.rows.map((r) => {
+    const fg = r.fg, w = Math.min(100, (fg.spent / fg.limit) * 100).toFixed(1);
+    return '<div class="pr-br' + (r.k ? "" : " all") + '">' + (r.k ? sw(r.k) : '<i class="pr-sw" style="background:#3A3D45"></i>') + '<b class="n">' + esc(budgetName(r.k)) + "</b>" +
+      '<span class="bar' + (fg.over ? " over" : "") + '"><i style="width:' + w + '%"></i></span>' +
+      '<span class="of">' + esc(t("{spent} of {limit}", { spent: f(fg.spent), limit: f(fg.limit) })) + "</span>" +
+      '<span class="pr-d ' + (fg.over ? "bad" : "good") + '">' + esc(fg.over ? t("{amount} over", { amount: f(-fg.left) }) : t("{amount} left", { amount: f(fg.left) })) + "</span></div>";
+  }).join("");
+  const head = budgetHeadParts(bg).map(([s, c]) => '<span class="' + (c ? "pr-" + c : "") + '">' + esc(s) + "</span>").join(" · ");
+  return section(esc(t("Budget")), head, '<div class="pr-bud">' + rows + "</div>");
 }
 /* What changed: up on one side, down on the other */
 function changedBlock(m) {
@@ -172,8 +186,8 @@ function build(m) {
   root.dir = document.documentElement.dir || "ltr";
   root.lang = document.documentElement.lang;
   document.body.appendChild(root);
-  // Page 1 answers "how did we do"; page 2 starts with the people
-  const blocks = [[titleBlock(m)], [heroBlock(m)], [kpiBlock(m)], [catsBlock(m)], [changedBlock(m)], [peopleBlock(m), true], [daysBillsBlock(m), !couple()], [knowBlock(m)]].filter((x) => x[0]);
+  // Page 1 answers "how did we do"; page 2 starts with the month's limits when it had any, else with the people
+  const blocks = [[titleBlock(m)], [heroBlock(m)], [kpiBlock(m)], [catsBlock(m)], [changedBlock(m)], [budgetBlock(m), true], [peopleBlock(m), !m.budget], [daysBillsBlock(m), !couple()], [knowBlock(m)]].filter((x) => x[0]);
   let page = sheet(m, true), body = page.querySelector(".pr-body");
   root.appendChild(page);
   const next = () => { page = sheet(m, false); root.appendChild(page); body = page.querySelector(".pr-body"); };

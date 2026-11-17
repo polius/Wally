@@ -74,6 +74,22 @@
 .w-mrwrow > .amt{text-align:end;font-weight:400;font-variant-numeric:tabular-nums}
 .w-mrwrow > .w-mrd{text-align:end;font-size:14px}
 .w-mrsplit{display:flex;height:10px;gap:2px;border-radius:5px;overflow:hidden;min-width:6px;max-width:100%}
+/* The month's limits: Budget's bar, spent against the limit, red when over, in Budget's own pastels (--bg-spent, --bg-overc in budget.css) */
+.w-mrbrow{grid-template-columns:200px minmax(0,1fr) 190px 110px}
+.w-mrbrow > .amt{color:var(--w-ink2);white-space:nowrap}
+.w-mrbud{display:block;position:relative;height:8px;border-radius:5px;background:var(--w-fill2);overflow:hidden}
+/* The limit for everything leads: its name and amounts in full weight, a thicker bar, a firmer line under it */
+.w-mrbrow.all{padding-block:13px}
+.w-mrbrow.all .n b{font-weight:600}
+.w-mrbrow.all > .amt{color:var(--w-ink);font-weight:500}
+.w-mrbrow.all .w-mrbud{height:12px;border-radius:6px}
+.w-mrbrow.all + .w-mrbrow{border-top-color:var(--w-line)}
+.w-mrbud i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:5px;background:var(--bg-spent)}
+.w-mrbud.over i{background:var(--bg-overc)}
+.w-ico.w-mrall{width:30px;height:30px;border-radius:8px;background:var(--w-fill);color:var(--w-ink2);display:grid;place-items:center}
+.w-mrall svg.i{width:15px;height:15px}
+.w-mrgood{color:var(--w-good)}
+.w-mrbad{color:var(--w-bad)}
 .w-mrsplit i{display:block;height:100%;min-width:2px}
 /* What changed */
 .w-mrchgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
@@ -109,6 +125,7 @@
 @media (max-width:1023px){
   .w-mrhero{grid-template-columns:minmax(0,1fr)}
   .w-mrwrow{grid-template-columns:150px minmax(0,1fr) 76px 92px}
+  .w-mrbrow{grid-template-columns:140px minmax(0,1fr) 190px 100px}
   .w-mr2{grid-template-columns:minmax(0,1fr)}
 }
 
@@ -150,6 +167,11 @@
   .w-mrpw .top b{flex:1;font-weight:500;font-size:var(--fs-body)}
   .w-mrpw .top .amt{font-size:var(--fs-body);font-variant-numeric:tabular-nums}
   .w-mrpw .w-mrd{font-size:12.5px}
+  .w-mrpw .top .w-mrd{font-size:var(--fs-sub);white-space:nowrap}
+  .w-mrpw .w-mrbud{height:6px}
+  .w-mrpw.all .top b{font-weight:650}
+  .w-mrpw.all .w-mrbud{height:10px}
+  .w-mrsp .w-mrcard + .w-mrcard{margin-top:10px}
   .w-mrsp .w-mrchgs{grid-template-columns:minmax(0,1fr)}
   .w-mrsp .w-mrpcs{grid-template-columns:minmax(0,1fr)}
   .w-mrsp .w-mrpc{background:var(--w-panel)}
