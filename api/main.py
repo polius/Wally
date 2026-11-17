@@ -97,12 +97,7 @@ KEYS_NEVER = re.compile(r"^/backups/")
 DURING_PAUSE = re.compile(r"^/(vault/convert/|logout|login|vault/kdf|auth/status)")
 
 def _api_path(request: Request) -> str:
-    path, root = request.url.path, request.scope.get("root_path", "")
-    if root and path.startswith(root):
-        path = path[len(root):]
-    if path.startswith("/api/"):
-        path = path[4:]
-    return path.rstrip("/") or "/"
+    return auth.api_path(request)
 
 @app.middleware("http")
 async def guards(request: Request, call_next):

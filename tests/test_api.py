@@ -856,3 +856,70 @@ def test_an_impossible_rule_change_is_refused_not_a_crash(client):
     assert client.put(f"/recurring/{r['id']}", json={"endDate": "2026-10-21", "applyTo": "all"}).status_code == 200
     bad = client.put(f"/recurring/{r['id']}", json={"startDate": "2026-10-23", "applyTo": "all"})
     assert bad.status_code == 422 and "endDate" in bad.text
+
+# ---------- what an API key can reach ----------
+# The household's money, and nothing that guards the household. Written out by hand: this list is the rule.
+KEY_READ = {
+    "/transactions", "/ledger", "/transactions/id/{transaction_id}", "/transactions/names/search", "/transactions/date/{year}-{month}",
+    "/transactions/range/{from_year}-{from_month}/{to_year}-{to_month}", "/transactions/past-3-months", "/transactions/past-6-months",
+    "/transactions/past-12-months", "/transactions/year-to-date", "/transactions/to-date", "/transactions/between", "/transactions/first",
+    "/transactions/search", "/recurring", "/recurring/{recurring_transaction_id}", "/categories", "/categories/icons", "/categories/stats",
+    "/categories/{category_name}/usage", "/tags", "/tags/icons", "/tags/stats", "/people", "/people/{person_id}/usage",
+    "/people/from-tag/preview", "/currency", "/summary/monthly", "/auth/status", "/login/check",
+}
+KEY_WRITE = {
+    ("POST", "/transactions"), ("POST", "/transactions/group"), ("PUT", "/transactions/{transaction_id}"), ("DELETE", "/transactions/{transaction_id}"),
+    ("POST", "/transactions/bulk"), ("POST", "/transactions/restore"),
+    ("POST", "/recurring"), ("PUT", "/recurring/{recurring_transaction_id}"), ("DELETE", "/recurring/{recurring_transaction_id}"),
+    ("POST", "/recurring/{recurring_transaction_id}/end"), ("POST", "/recurring/{recurring_transaction_id}/pause"),
+    ("POST", "/recurring/{recurring_transaction_id}/resume"), ("POST", "/recurring/{recurring_transaction_id}/missed"),
+    ("POST", "/categories"), ("PUT", "/categories/{category_name}"), ("DELETE", "/categories/{category_name}"),
+    ("POST", "/tags"), ("PUT", "/tags/{tag_name}"), ("DELETE", "/tags/{tag_name}"),
+}
+PUBLIC = {
+    ("GET", "/"), ("GET", "/health"), ("GET", "/version"), ("GET", "/auth/status"), ("GET", "/language"), ("GET", "/vault/kdf"),
+    ("POST", "/login"), ("POST", "/login/code"), ("POST", "/logout"), ("POST", "/kit/recover"), ("POST", "/kit/password"),
+}
+FILL = {"transaction_id": "8d4f2a40-0000-4000-8000-000000000001", "recurring_transaction_id": "8d4f2a40-0000-4000-8000-000000000002",
+        "year": "2026", "month": "10", "from_year": "2026", "from_month": "01", "to_year": "2026", "to_month": "10",
+        "category_name": "Nothing", "tag_name": "nothing", "person_id": "999", "currency_name": "XXX", "old_name": "XXX", "position": "0",
+        "rule_id": "999", "api_key_id": "999", "name": "nothing.db", "language": "en"}
+
+def test_api_keys_reach_the_money_and_nothing_else(couple):
+    client, alex, ana = couple
+    read = client.post("/api-keys", json={"name": "Read", "scope": "read"}).json()["key"]
+    write = client.post("/api-keys", json={"name": "Write", "scope": "write"}).json()["key"]
+    turn_on_signin(client, alex, ana)
+    anon = TestClient(client.app)
+    routes = [(m.upper(), p) for p, ops in client.app.openapi()["paths"].items() for m in ops]
+    assert len(routes) > 100
+    checked = 0
+    for method, path in routes:
+        url = path
+        for k, v in FILL.items():
+            url = url.replace("{" + k + "}", v)
+        call = lambda key: anon.request(method, url, headers={"x-api-key": key} if key else {}, json={} if method != "GET" else None)
+        # Open to anyone: signing in, recovering with the Emergency Kit, and what the first screen needs
+        public = (method, path) in PUBLIC
+        if path != "/login/code":  # a step of signing in that answers 401 to anyone without one under way
+            assert public == (call(None).status_code != 401), ("public?", method, path)
+        for kind, key in (("read", read), ("write", write)):
+            allowed = (method == "GET" and path in KEY_READ) or (kind == "write" and (method, path) in KEY_WRITE)
+            status = call(key).status_code
+            if allowed:
+                assert status != 403, (kind, method, path, status)
+            elif not public:
+                assert status == 403, (kind, method, path, status)
+                checked += 1
+    assert checked > 100
+    # The cases found in the audit, by name
+    assert anon.get("/backups", headers={"x-api-key": read}).status_code == 403
+    assert anon.get("/backups/auto-2026-10-24-030000.db", headers={"x-api-key": read}).status_code == 403
+    assert anon.post("/backups/upload", headers={"x-api-key": write}).status_code == 403
+    assert anon.put("/signin", json={"enabled": False}, headers={"x-api-key": write}).status_code == 403
+    assert anon.get("/sessions", headers={"x-api-key": write}).status_code == 403
+    # And both still do their job
+    assert anon.get("/transactions", headers={"x-api-key": read}).status_code == 200
+    r = anon.post("/transactions", json={"name": "Café", "category": "Food", "amount": "2.5", "date": TODAY}, headers={"x-api-key": write})
+    assert r.status_code == 200, r.text
+    assert anon.post("/transactions", json={"name": "Café", "category": "Food", "amount": "2.5", "date": TODAY}, headers={"x-api-key": read}).status_code == 403

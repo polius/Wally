@@ -281,6 +281,13 @@ def test_a_read_key_only_reads_and_keys_end_when_deleted(encrypted):
     assert plain.get("/transactions", headers={"x-api-key": raw}).status_code == 200
     r = plain.post("/transactions", json={"name": "x", "category": "Groceries", "amount": "1", "date": TODAY}, headers={"x-api-key": raw})
     assert r.status_code == 403
+    # Nor reach what guards the household: backups, sessions, import
+    assert plain.get("/backups", headers={"x-api-key": raw}).status_code == 403
+    assert plain.get("/sessions", headers={"x-api-key": raw}).status_code == 403
+    write = make_key(client, result)
+    assert plain.get("/backups/anything.db", headers={"x-api-key": write}).status_code == 403
+    assert plain.post("/import/commit", json={}, headers={"x-api-key": write}).status_code == 403
+    assert plain.post("/rules", json={}, headers={"x-api-key": write}).status_code == 403
     # A key can't make or delete keys
     assert plain.post("/api-keys", json={"name": "more"}, headers={"x-api-key": raw}).status_code in (403, 400)
     kid = client.get("/api-keys").json()[0]["id"]

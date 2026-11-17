@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import hashlib
 import hmac
@@ -227,6 +228,31 @@ def vault_on() -> bool:
 
 READS = ("GET", "HEAD", "OPTIONS")
 
+# What an API key can reach. A key lives in a script or a phone shortcut, so it gets the household's
+# money (transactions, recurring rules, categories and tags) and nothing that guards the household:
+# sign-in, sessions, two-step, keys, backups, restore, encryption, settings, import and changes to
+# people all answer 403 to any key.
+KEY_READS = re.compile(r"^/(transactions|ledger|recurring|categories|tags|people|currency|summary)(/|$)|^/(auth/status|login/check)$")
+KEY_WRITES = re.compile(r"^/(transactions(/(?!import$)[^/]+)?|recurring(/[^/]+(/(end|pause|resume|missed))?)?|(categories|tags)(/.+)?)$")
+
+def api_path(request: Request) -> str:
+    """The path inside the API, the same behind nginx (/api/...) and without it"""
+    # The path the router matches, not one parsed again from the URL
+    path, root = request.scope.get("path", ""), request.scope.get("root_path", "")
+    if root and path.startswith(root):
+        path = path[len(root):]
+    if path.startswith("/api/"):
+        path = path[4:]
+    return path.rstrip("/") or "/"
+
+def key_refusal(scope: str | None, method: str, path: str) -> str | None:
+    """Why an API key can't make this call, or None when it can"""
+    if method in READS:
+        return None if KEY_READS.match(path) else "An API key can't reach this."
+    if (scope or "write") == "read":
+        return "This key can only read."
+    return None if KEY_WRITES.match(path) else "An API key can't reach this."
+
 def identify(db: Session, request: Request) -> Actor | None:
     # An encrypted household's data, opened for this call by its key (services/sealed_view.py)
     view = getattr(request.state, "view", None)
@@ -239,8 +265,9 @@ def identify(db: Session, request: Request) -> Actor | None:
             raise HTTPException(status_code=401, detail="API keys are off on this server.")
         actor = _key_actor(db, raw_key)
         if actor:
-            if actor.scope == "read" and request.method not in READS:
-                raise HTTPException(status_code=403, detail="This key can only read.")
+            refused = key_refusal(actor.scope, request.method, api_path(request))
+            if refused:
+                raise HTTPException(status_code=403, detail=refused)
             return actor
         if flag(db, "LOGIN_PAGE"):
             raise HTTPException(status_code=401, detail="Invalid API key")
