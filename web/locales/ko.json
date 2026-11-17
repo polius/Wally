@@ -620,7 +620,6 @@
  "Nothing changes for {name}": "{name} 님은 변경 없음",
  "Nothing found": "검색 결과 없음",
  "Nothing here yet": "아직 아무것도 없어요",
- "Nothing in the next 30 days": "앞으로 30일 동안 없음",
  "Nothing in this period": "이 기간에는 아무것도 없어요",
  "Nothing in this range yet": "이 기간에는 아직 아무것도 없어요",
  "Nothing in {month} yet": "{month}에는 아직 아무것도 없어요",
@@ -1192,7 +1191,6 @@
  "{added} added and {matched} kept once with what you had typed.": "{added}개 추가했고, {matched}개는 직접 입력한 거래와 합쳐 하나만 남겼어요.",
  "{amount} a month": "월 {amount}",
  "{amount} in bills": "고정 지출 {amount}",
- "{amount} in the next 30 days": "앞으로 30일 동안 {amount}",
  "{amount} in total. You can undo for a few seconds afterwards.": "총 {amount}. 몇 초 동안은 실행 취소할 수 있어요.",
  "{amount} in {n} bill": {
   "other": "고정 지출 {n}건, {amount}"
@@ -1369,10 +1367,9 @@
   "other": "{n}건 전송 대기 중"
  },
  "{n}, longest run {run}": "{n}일, 최장 {run}일 연속",
- "{out} out and {in} in over the next 30 days": "앞으로 30일 동안 지출 {out}, 수입 {in}",
  "{pct} of spending": "지출의 {pct}",
  "{pct} of what came in.": "수입 대비 {pct}.",
- "{pct} of what comes in": "수입의 {pct}",
+ "{pct} of the {amount} that comes in": "수입 {amount}의 {pct}",
  "{period}: {amount}": "{period}: {amount}",
  "{rule}, starting {date}, last one {last}.": "{rule}, {date}부터, 마지막 {last}.",
  "{rule}, starting {date}.": "{rule}, {date}부터.",
@@ -1381,7 +1378,7 @@
  "{x}× a weekday": "평일의 {x}배",
  "“{name}” Key": "“{name}” 키",
  "“{v}” is not an amount": "금액이 아니에요: “{v}”",
- "On track for {amount} by {date}": "{date}까지 {amount} 예상",
+ "{amount} by {date}": "{date}까지 {amount}",
  "How it adds up": "계산 방법",
  "Kept so far": "지금까지 남긴 돈",
  "Income still to come": "예정된 수입",
@@ -1433,7 +1430,6 @@
  "Spent this year": "올해 지출",
  "Start with these": "이대로 시작",
  "The whole month": "한 달 전체",
- "Usually by now": "보통 이맘때",
  "Usually {amount}": "보통 {amount}",
  "Year": "년",
  "You usually spend {amount} a month on {category}. Bills in it count too.": "보통 {category}에 한 달 {amount}를 씁니다. 고정 지출도 포함됩니다.",
@@ -1442,7 +1438,6 @@
  "left for {category}": "{category} 남음",
  "over": "초과",
  "over for {category}": "{category} 초과",
- "this year": "올해",
  "{amount} a day until {date}": "{date}까지 하루 {amount}",
  "{amount} each month": "매월 {amount}",
  "{amount} each year": "매년 {amount}",
@@ -1464,11 +1459,12 @@
  "{n} day to go.": {
   "other": "{n}일 남았습니다."
  },
- "Even share by today": "오늘까지의 균등 몫",
- "{amount} a day · {n} day left": {
-  "other": "하루 {amount} · {n}일 남음"
- },
- "{n} day left": {
-  "other": "{n}일 남음"
- }
+ "Even pace by today": "오늘까지의 균등 페이스",
+ "Below the even pace": "균등 페이스보다 적음",
+ "Above the even pace": "균등 페이스보다 많음",
+ "Within every limit": "모든 한도 이내",
+ "Within {n} of {total} limits": "{total}개 중 {n}개 한도 이내",
+ "Over every limit": "모든 한도 초과",
+ "Your limit spread evenly over the month, up to today.": "한도를 한 달에 고르게 나눈, 오늘까지의 금액.",
+ "Your limit spread evenly over the year, up to today.": "한도를 한 해에 고르게 나눈, 오늘까지의 금액."
 }

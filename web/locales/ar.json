@@ -760,7 +760,6 @@
  "Nothing changes for {name}": "لا شيء يتغير لـ {name}",
  "Nothing found": "لم يُعثر على شيء",
  "Nothing here yet": "لا شيء هنا بعد",
- "Nothing in the next 30 days": "لا شيء خلال الثلاثين يومًا القادمة",
  "Nothing in this period": "لا شيء في هذه الفترة",
  "Nothing in this range yet": "لا شيء في هذه الفترة بعد",
  "Nothing in {month} yet": "لا شيء في {month} بعد",
@@ -1432,7 +1431,6 @@
  "{added} added and {matched} kept once with what you had typed.": "أُضيف {added}، واحتُفظ بـ {matched} مرة واحدة مع ما كتبته.",
  "{amount} a month": "{amount} شهريًا",
  "{amount} in bills": "{amount} في الفواتير",
- "{amount} in the next 30 days": "{amount} خلال الثلاثين يومًا القادمة",
  "{amount} in total. You can undo for a few seconds afterwards.": "{amount} إجمالًا. يمكنك التراجع خلال ثوانٍ قليلة بعد ذلك.",
  "{amount} in {n} bill": {
   "zero": "{amount} في {n} فاتورة",
@@ -1789,10 +1787,9 @@
   "zero": "لا شيء بانتظار الإرسال"
  },
  "{n}, longest run {run}": "{n}، أطول سلسلة {run}",
- "{out} out and {in} in over the next 30 days": "{out} تخرج و{in} تدخل خلال الثلاثين يومًا القادمة",
  "{pct} of spending": "{pct} من الإنفاق",
  "{pct} of what came in.": "{pct} مما دخل.",
- "{pct} of what comes in": "{pct} مما يدخل",
+ "{pct} of the {amount} that comes in": "{pct} من {amount} تدخل",
  "{period}: {amount}": "{period}: {amount}",
  "{rule}, starting {date}, last one {last}.": "{rule}، بدءًا من {date}، وآخرها {last}.",
  "{rule}, starting {date}.": "{rule}، بدءًا من {date}.",
@@ -1801,7 +1798,7 @@
  "{x}× a weekday": "{x}× يوم العمل",
  "“{name}” Key": "مفتاح «{name}»",
  "“{v}” is not an amount": "«{v}» ليس مبلغًا",
- "On track for {amount} by {date}": "في الطريق إلى {amount} بحلول {date}",
+ "{amount} by {date}": "{amount} بحلول {date}",
  "How it adds up": "طريقة الحساب",
  "Kept so far": "تم ادخاره حتى الآن",
  "Income still to come": "دخل قادم",
@@ -1853,7 +1850,6 @@
  "Spent this year": "المنفق هذا العام",
  "Start with these": "ابدأ بهذه",
  "The whole month": "الشهر كله",
- "Usually by now": "عادةً حتى الآن",
  "Usually {amount}": "عادةً {amount}",
  "Year": "سنة",
  "You usually spend {amount} a month on {category}. Bills in it count too.": "تنفق عادةً {amount} شهريًا على {category}. تُحسب الفواتير أيضًا.",
@@ -1862,7 +1858,6 @@
  "left for {category}": "متبقٍ لـ {category}",
  "over": "تجاوز",
  "over for {category}": "تجاوز في {category}",
- "this year": "هذا العام",
  "{amount} a day until {date}": "{amount} يوميًا حتى {date}",
  "{amount} each month": "{amount} كل شهر",
  "{amount} each year": "{amount} كل سنة",
@@ -1894,21 +1889,12 @@
   "many": "بقي {n} يومًا.",
   "other": "بقي {n} يوم."
  },
- "Even share by today": "الحصة المتساوية حتى اليوم",
- "{amount} a day · {n} day left": {
-  "zero": "{amount} يوميًا · لم يبقَ أي يوم",
-  "one": "{amount} يوميًا · بقي يوم واحد",
-  "two": "{amount} يوميًا · بقي يومان",
-  "few": "{amount} يوميًا · بقيت {n} أيام",
-  "many": "{amount} يوميًا · بقي {n} يومًا",
-  "other": "{amount} يوميًا · بقي {n} يوم"
- },
- "{n} day left": {
-  "zero": "لم يبقَ أي يوم",
-  "one": "بقي يوم واحد",
-  "two": "بقي يومان",
-  "few": "بقيت {n} أيام",
-  "many": "بقي {n} يومًا",
-  "other": "بقي {n} يوم"
- }
+ "Even pace by today": "الوتيرة المتساوية حتى اليوم",
+ "Below the even pace": "أقل من الوتيرة المتساوية",
+ "Above the even pace": "أعلى من الوتيرة المتساوية",
+ "Within every limit": "ضمن كل الحدود",
+ "Within {n} of {total} limits": "ضمن {n} من {total} حدود",
+ "Over every limit": "تجاوز كل الحدود",
+ "Your limit spread evenly over the month, up to today.": "حدّك موزّعًا بالتساوي على الشهر، حتى اليوم.",
+ "Your limit spread evenly over the year, up to today.": "حدّك موزّعًا بالتساوي على السنة، حتى اليوم."
 }

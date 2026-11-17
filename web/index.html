@@ -26,7 +26,7 @@
         recurring: ["sched", "pages/recurring"],
         budget: ["sched", "budget", "limit", "pages/budget"],
         settings: ["pages/settings", "pages/settings/common"],
-        review: ["sched", "pages/review"]
+        review: ["sched", "budget", "pages/review"]
       };
       var page = PAGES[location.pathname.split("/")[1]] || PAGES.dashboard;
       ["core", "ui", "shell"].concat(page).forEach(function (f) {

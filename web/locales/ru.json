@@ -704,7 +704,6 @@
  "Nothing changes for {name}": "Для участника {name} ничего не меняется",
  "Nothing found": "Ничего не найдено",
  "Nothing here yet": "Здесь пока пусто",
- "Nothing in the next 30 days": "Ничего в ближайшие 30 дней",
  "Nothing in this period": "За этот период ничего нет",
  "Nothing in this range yet": "За этот период пока ничего нет",
  "Nothing in {month} yet": "Пока ничего нет: {month}",
@@ -1336,7 +1335,6 @@
  "{added} added and {matched} kept once with what you had typed.": "Добавлено: {added}. Совпали с уже введёнными и сохранены один раз: {matched}.",
  "{amount} a month": "{amount} в месяц",
  "{amount} in bills": "{amount} по счетам",
- "{amount} in the next 30 days": "{amount} в ближайшие 30 дней",
  "{amount} in total. You can undo for a few seconds afterwards.": "Всего {amount}. В течение нескольких секунд это можно отменить.",
  "{amount} in {n} bill": {
   "one": "{amount} по {n} счёту",
@@ -1621,10 +1619,9 @@
   "other": "Ожидают отправки: {n}"
  },
  "{n}, longest run {run}": "{n}, самая длинная серия — {run}",
- "{out} out and {in} in over the next 30 days": "{out} уходит и {in} приходит в ближайшие 30 дней",
  "{pct} of spending": "{pct} расходов",
  "{pct} of what came in.": "{pct} от поступлений.",
- "{pct} of what comes in": "{pct} от доходов",
+ "{pct} of the {amount} that comes in": "{pct} от {amount} доходов",
  "{period}: {amount}": "{period}: {amount}",
  "{rule}, starting {date}, last one {last}.": "{rule}. Начало: {date}, последний: {last}.",
  "{rule}, starting {date}.": "{rule}. Начало: {date}.",
@@ -1633,7 +1630,7 @@
  "{x}× a weekday": "{x}× от будней",
  "“{name}” Key": "Ключ «{name}»",
  "“{v}” is not an amount": "«{v}» — не сумма",
- "On track for {amount} by {date}": "Прогноз к {date}: {amount}",
+ "{amount} by {date}": "{amount} к {date}",
  "How it adds up": "Как это считается",
  "Kept so far": "Отложено на сегодня",
  "Income still to come": "Ожидаемые поступления",
@@ -1685,7 +1682,6 @@
  "Spent this year": "Потрачено в этом году",
  "Start with these": "Начать с этих",
  "The whole month": "Весь месяц",
- "Usually by now": "Обычно к этому дню",
  "Usually {amount}": "Обычно {amount}",
  "Year": "Год",
  "You usually spend {amount} a month on {category}. Bills in it count too.": "Обычно вы тратите {amount} в месяц на «{category}». Счета тоже учитываются.",
@@ -1694,7 +1690,6 @@
  "left for {category}": "осталось на «{category}»",
  "over": "сверх",
  "over for {category}": "сверх лимита на «{category}»",
- "this year": "в этом году",
  "{amount} a day until {date}": "{amount} в день до {date}",
  "{amount} each month": "{amount} в месяц",
  "{amount} each year": "{amount} в год",
@@ -1722,17 +1717,12 @@
   "many": "Осталось {n} дней.",
   "other": "Осталось {n} дня."
  },
- "Even share by today": "Равная доля на сегодня",
- "{amount} a day · {n} day left": {
-  "one": "{amount} в день · остался {n} день",
-  "few": "{amount} в день · осталось {n} дня",
-  "many": "{amount} в день · осталось {n} дней",
-  "other": "{amount} в день · осталось {n} дня"
- },
- "{n} day left": {
-  "one": "Остался {n} день",
-  "few": "Осталось {n} дня",
-  "many": "Осталось {n} дней",
-  "other": "Осталось {n} дня"
- }
+ "Even pace by today": "Равномерный темп на сегодня",
+ "Below the even pace": "Ниже равномерного темпа",
+ "Above the even pace": "Выше равномерного темпа",
+ "Within every limit": "Все лимиты соблюдены",
+ "Within {n} of {total} limits": "Соблюдено лимитов: {n} из {total}",
+ "Over every limit": "Все лимиты превышены",
+ "Your limit spread evenly over the month, up to today.": "Ваш лимит, равномерно распределённый по месяцу, до сегодняшнего дня.",
+ "Your limit spread evenly over the year, up to today.": "Ваш лимит, равномерно распределённый по году, до сегодняшнего дня."
 }

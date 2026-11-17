@@ -401,7 +401,7 @@ try {
         return good && Math.abs(run - said) < 0.011;
       };
       const line = await text(fresh, "#s-kept .s-fc");
-      ok(/^On track (for|to overspend) ≈ .+ by \w{3} \d+$/.test(line), "Kept each month says where this month is heading: " + line);
+      ok(/^(On track to overspend )?≈ .+ by \w{3} \d+$/.test(line), "Kept each month says where this month is heading: " + line);
       let tip = await sum(fresh);
       ok(tip.head === "How it adds up" && /^(Kept|Overspent) so far$/.test(tip.rows[0].k) && tip.rows.some((r) => r.k === "Everyday spending to come"),
         "pointing at it shows how it adds up: " + tip.rows.map((r) => r.k + " " + r.v).join(" · "));
@@ -430,7 +430,7 @@ try {
       await redraw();
       const byHand = await text(fresh, "#s-kept .s-fc");
       tip = await sum(fresh);
-      ok(tip.rows.some((r) => r.k === "Usual income not in yet" && r.v.startsWith("≈ +")) && /^On track for/.test(byHand),
+      ok(tip.rows.some((r) => r.k === "Usual income not in yet" && r.v.startsWith("≈ +")) && /^≈ /.test(byHand),
         "salaries added by hand and not in yet still count, as usual income: " + byHand);
       ok(addsUp(tip, byHand), "and it still adds up");
 

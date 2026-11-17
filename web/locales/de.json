@@ -648,7 +648,6 @@
  "Nothing changes for {name}": "Für {name} ändert sich nichts",
  "Nothing found": "Nichts gefunden",
  "Nothing here yet": "Hier ist noch nichts",
- "Nothing in the next 30 days": "Nichts in den nächsten 30 Tagen",
  "Nothing in this period": "Nichts in diesem Zeitraum",
  "Nothing in this range yet": "Noch nichts in diesem Zeitraum",
  "Nothing in {month} yet": "Im {month} noch nichts",
@@ -1240,7 +1239,6 @@
  "{added} added and {matched} kept once with what you had typed.": "{added} hinzugefügt und {matched} mit deinen Eingaben zusammengeführt.",
  "{amount} a month": "{amount} pro Monat",
  "{amount} in bills": "{amount} an Rechnungen",
- "{amount} in the next 30 days": "{amount} in den nächsten 30 Tagen",
  "{amount} in total. You can undo for a few seconds afterwards.": "Insgesamt {amount}. Danach kannst du es ein paar Sekunden lang rückgängig machen.",
  "{amount} in {n} bill": {
   "one": "{amount} in {n} Rechnung",
@@ -1453,10 +1451,9 @@
   "other": "{n} warten aufs Senden"
  },
  "{n}, longest run {run}": "{n}, längste Serie {run}",
- "{out} out and {in} in over the next 30 days": "{out} gehen raus und {in} kommen rein in den nächsten 30 Tagen",
  "{pct} of spending": "{pct} der Ausgaben",
  "{pct} of what came in.": "{pct} der Einnahmen.",
- "{pct} of what comes in": "{pct} der Einnahmen",
+ "{pct} of the {amount} that comes in": "{pct} von {amount} Einnahmen",
  "{period}: {amount}": "{period}: {amount}",
  "{rule}, starting {date}, last one {last}.": "{rule}, ab {date}, zuletzt am {last}.",
  "{rule}, starting {date}.": "{rule}, ab {date}.",
@@ -1465,7 +1462,7 @@
  "{x}× a weekday": "das {x}-Fache eines Wochentags",
  "“{name}” Key": "Schlüssel „{name}“",
  "“{v}” is not an amount": "„{v}“ ist kein Betrag",
- "On track for {amount} by {date}": "Auf Kurs für {amount} bis {date}",
+ "{amount} by {date}": "{amount} bis {date}",
  "How it adds up": "So wird gerechnet",
  "Kept so far": "Bisher gespart",
  "Income still to come": "Noch kommende Einnahmen",
@@ -1517,7 +1514,6 @@
  "Spent this year": "Dieses Jahr ausgegeben",
  "Start with these": "Damit starten",
  "The whole month": "Der ganze Monat",
- "Usually by now": "Sonst bis jetzt",
  "Usually {amount}": "Sonst {amount}",
  "Year": "Jahr",
  "You usually spend {amount} a month on {category}. Bills in it count too.": "Du gibst sonst {amount} im Monat für {category} aus. Rechnungen darin zählen mit.",
@@ -1526,7 +1522,6 @@
  "left for {category}": "übrig für {category}",
  "over": "drüber",
  "over for {category}": "drüber bei {category}",
- "this year": "dieses Jahr",
  "{amount} a day until {date}": "{amount} pro Tag bis {date}",
  "{amount} each month": "{amount} jeden Monat",
  "{amount} each year": "{amount} jedes Jahr",
@@ -1550,13 +1545,12 @@
   "one": "Noch {n} Tag.",
   "other": "Noch {n} Tage."
  },
- "Even share by today": "Gleichmäßiger Anteil bis heute",
- "{amount} a day · {n} day left": {
-  "one": "{amount} pro Tag · noch {n} Tag",
-  "other": "{amount} pro Tag · noch {n} Tage"
- },
- "{n} day left": {
-  "one": "Noch {n} Tag",
-  "other": "Noch {n} Tage"
- }
+ "Even pace by today": "Gleichmäßiges Tempo bis heute",
+ "Below the even pace": "Unter dem gleichmäßigen Tempo",
+ "Above the even pace": "Über dem gleichmäßigen Tempo",
+ "Within every limit": "Alle Limits eingehalten",
+ "Within {n} of {total} limits": "{n} von {total} Limits eingehalten",
+ "Over every limit": "Alle Limits überschritten",
+ "Your limit spread evenly over the month, up to today.": "Dein Limit gleichmäßig über den Monat verteilt, bis heute.",
+ "Your limit spread evenly over the year, up to today.": "Dein Limit gleichmäßig über das Jahr verteilt, bis heute."
 }

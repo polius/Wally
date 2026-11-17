@@ -194,16 +194,13 @@ function summary(rules) {
   const live = rules.filter((r) => nextOf(r));
   const bills = live.filter((r) => !isIncome(r)), incs = live.filter(isIncome);
   const billM = sum(bills, (r) => perMonth(r)), incM = sum(incs, (r) => perMonth(r));
-  // All shows what the bills cost, as Bills does; its next 30 days count both ways
-  const to30 = addD(TODAY, 30), inc = ui.tab === "income";
-  const o30 = occurrences(addD(TODAY, 1), to30).filter((x) => keep(x.r) && ruleAmt(x.r) > 0);
-  const out30 = sum(o30.filter((x) => !isIncome(x.r)), (x) => ruleAmt(x.r)), in30 = sum(o30.filter((x) => isIncome(x.r)), (x) => ruleAmt(x.r));
+  // All shows what the bills cost, as Bills does. One short line under it, about the same month: what is coming
+  // soon is the list itself, with a total on each group, so it is not said again here
+  const inc = ui.tab === "income";
   const big = inc ? incM : billM, n = inc ? incs.length : bills.length;
-  let line = inc ? tn(n, "{n} source", "{n} sources") : incM ? t("{pct} of what comes in", { pct: pct(billM / incM) }) : tn(n, "{n} active rule", "{n} active rules");
-  const soon = !o30.length ? t("Nothing in the next 30 days") : out30 && in30 ? t("{out} out and {in} in over the next 30 days", { out: f(out30), in: "+" + f(in30) })
-    : t("{amount} in the next 30 days", { amount: (in30 ? "+" : "") + f(out30 || in30) });
+  const line = inc ? tn(n, "{n} source", "{n} sources") : incM ? t("{pct} of the {amount} that comes in", { pct: pct(billM / incM), amount: f(incM) }) : tn(n, "{n} active rule", "{n} active rules");
   return '<span class="rec-eye">' + esc(t("Every month")) + '</span><b class="rec-big amt' + (inc ? " pos" : "") + '">' + bdi(bigMoney(big)) + "</b>" +
-    '<span class="rec-line">' + esc(line) + " · " + esc(soon) + "</span>";
+    '<span class="rec-line">' + esc(line) + "</span>";
 }
 
 /* ---------- five weeks: when money leaves and arrives ---------- */

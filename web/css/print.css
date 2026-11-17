@@ -1,4 +1,5 @@
 /* Month in review as a printed report (js/pages/review/pdf.js). A4 pages, always light.
+   Secondary text is --ink2, dark enough to read on paper; only page furniture (header, footer, axes) is lighter.
    On screen the pages are laid out out of sight, so they can be measured; in print they are all
    there is. Sizes are in points and millimetres, as on paper. */
 
@@ -25,7 +26,7 @@
 /* Title */
 .pr-eye{display:block;font-size:8.7pt;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.6mm}
 .pr-title h1{font-size:24.8pt;font-weight:700;letter-spacing:-.03em;line-height:1.15}
-.pr-title p{margin-top:.4mm;font-size:10.75pt;color:#777}
+.pr-title p{margin-top:.4mm;font-size:10.75pt;color:var(--ink2)}
 .pr-blk:has(.pr-title) + .pr-blk{margin-top:4.1mm}
 
 /* Hero: what was kept, and the last 12 months */
@@ -50,14 +51,14 @@
 .pr-kpi b{font-size:15.7pt;font-weight:650;letter-spacing:-.02em;line-height:1.45}
 .pr-kpi b .c{font-size:.6em;letter-spacing:-.01em;color:inherit}
 .pr-kpi small{font-size:9.1pt;color:#666}
-.pr-d{font-size:9.9pt;color:#777;font-weight:400}
+.pr-d{font-size:9.9pt;color:var(--ink2);font-weight:400}
 .pr-d.good{color:var(--good)}
 .pr-d.bad{color:var(--bad)}
 
 /* Sections */
 .pr-sec > h2{display:flex;align-items:baseline;gap:2.3mm;flex-wrap:wrap;font-size:14pt;font-weight:650;letter-spacing:-.01em;line-height:1.45;padding-bottom:1.75mm;margin-bottom:2.3mm;border-bottom:.6pt solid #DDD}
-.pr-sec > h2 small{font-size:9.5pt;font-weight:400;color:#777;letter-spacing:0}
-.pr-note{font-size:9.5pt;color:#777;margin-top:2.3mm}
+.pr-sec > h2 small{font-size:9.5pt;font-weight:400;color:var(--ink2);letter-spacing:0}
+.pr-note{font-size:9.5pt;color:var(--ink2);margin-top:2.3mm}
 .pr-note b{color:var(--ink);font-weight:600}
 .pr-sw{display:inline-block;width:2.6mm;height:2.6mm;border-radius:.9mm;flex:none}
 
@@ -85,6 +86,21 @@
 
 /* Where it went */
 .pr-cat{display:grid}
+/* The month's limits */
+.pr-bud{display:grid}
+.pr-br{display:grid;grid-template-columns:2.6mm minmax(0,38.8mm) minmax(0,1fr) 52mm 28mm;align-items:center;padding:1.75mm 0;border-bottom:.6pt solid #EEE}
+.pr-br:last-child{border-bottom:0}
+.pr-br .n{font-weight:400;font-size:10.75pt;padding-inline-start:2.3mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pr-br .bar{display:block;position:relative;height:2.33mm;margin-inline:3.5mm;border-radius:1mm;background:var(--line2);overflow:hidden}
+.pr-br .bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:1mm;background:#808AF5}
+.pr-br .bar.over i{background:#F58083}
+.pr-br .of{text-align:end;font-size:10.75pt;unicode-bidi:isolate;white-space:nowrap}
+.pr-br .pr-d{text-align:end}
+/* The limit for everything leads */
+.pr-br.all{padding-block:2.4mm;border-bottom:.6pt solid #DDD}
+.pr-br.all .n,.pr-br.all .of{font-weight:600}
+.pr-br.all .bar{height:3.2mm;border-radius:1.6mm}
+.pr-br.all .bar i{border-radius:1.6mm}
 .pr-cr{display:grid;grid-template-columns:2.6mm minmax(0,1fr) 44mm 22mm 11mm 25mm;gap:3.4mm;align-items:center;padding:1.75mm 0;border-bottom:.6pt solid #EEE}
 .pr-cr:last-child{border-bottom:0}
 .pr-cr.hd{padding:0 0 1.8mm;font-size:7.3pt;color:var(--ink3);font-weight:500;border-bottom:.6pt solid var(--line)}
@@ -93,7 +109,7 @@
 .pr-cr .bar{height:1.8mm;border-radius:1mm;background:var(--line2);overflow:hidden;display:flex}
 .pr-cr .bar span{border-radius:1mm}
 .pr-cr .v{text-align:end;font-weight:600;font-size:10.75pt}
-.pr-cr .sh{text-align:end;font-size:10.75pt;color:#777}
+.pr-cr .sh{text-align:end;font-size:10.75pt;color:var(--ink2)}
 .pr-cr .vs{text-align:end}
 
 /* What changed, bills */
@@ -122,7 +138,7 @@
 .pr-know > div{background:var(--soft);border-radius:2.9mm;padding:2.9mm 3.5mm;display:grid;gap:.3mm;align-content:start}
 .pr-know span{font-size:9.1pt;color:#666;font-weight:400}
 .pr-know b{font-size:10.75pt;font-weight:700;letter-spacing:0;line-height:1.45}
-.pr-know p{font-size:9.1pt;color:#777;line-height:1.45}
+.pr-know p{font-size:9.1pt;color:var(--ink2);line-height:1.45}
 .pr-foot{font-size:7.3pt;color:var(--ink3);line-height:1.5;margin-top:3.6mm}
 /* Amounts read left to right inside right-to-left text */
 .pr-big,.pr-kpi b,.pr-cr .v,.pr-trio b,.pr-facts b,.pr-know b,.pr-chart text{unicode-bidi:isolate}
@@ -161,7 +177,7 @@
 .pr-two > div{display:grid;gap:1.75mm;align-content:start}
 .pr-li{display:block;padding:0}
 .pr-li b{font-size:10.75pt;font-weight:700}
-.pr-li p{font-size:9.9pt;color:#777;margin-top:0}
+.pr-li p{font-size:9.9pt;color:var(--ink2);margin-top:0}
 .pr-av{background:#EEEFF2;color:var(--ink2)}
 .pr-kept{font-size:10.75pt;font-weight:600}
 .pr-kept.good{color:var(--good)}.pr-kept.bad{color:var(--bad)}
@@ -174,7 +190,7 @@
 .pr-kv li:first-child{border-top:0}
 .pr-two .pr-sec > h2{margin-bottom:2.3mm}
 .pr-know > div{background:#fff;border:.6pt solid #DDD}
-.pr-know p{color:#777}
+.pr-know p{color:var(--ink2)}
 
 @media print{
   @page{size:A4;margin:0}

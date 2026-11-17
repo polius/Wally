@@ -620,7 +620,6 @@
  "Nothing changes for {name}": "{name}没有变化",
  "Nothing found": "未找到任何内容",
  "Nothing here yet": "这里还什么都没有",
- "Nothing in the next 30 days": "未来 30 天没有",
  "Nothing in this period": "此期间没有内容",
  "Nothing in this range yet": "此范围内还没有内容",
  "Nothing in {month} yet": "{month}还没有内容",
@@ -1192,7 +1191,6 @@
  "{added} added and {matched} kept once with what you had typed.": "已添加{added}笔，{matched}笔与你手动输入的记录合并为一笔。",
  "{amount} a month": "每月 {amount}",
  "{amount} in bills": "账单 {amount}",
- "{amount} in the next 30 days": "未来 30 天 {amount}",
  "{amount} in total. You can undo for a few seconds afterwards.": "共 {amount}。之后几秒内可以撤销。",
  "{amount} in {n} bill": {
   "other": "{n}笔账单共 {amount}"
@@ -1369,10 +1367,9 @@
   "other": "{n}笔等待发送"
  },
  "{n}, longest run {run}": "{n}，最长连续{run}天",
- "{out} out and {in} in over the next 30 days": "未来 30 天支出 {out}，收入 {in}",
  "{pct} of spending": "占支出的 {pct}",
  "{pct} of what came in.": "相当于收入的 {pct}。",
- "{pct} of what comes in": "占收入的 {pct}",
+ "{pct} of the {amount} that comes in": "占收入 {amount} 的 {pct}",
  "{period}: {amount}": "{period}：{amount}",
  "{rule}, starting {date}, last one {last}.": "{rule}，从{date}开始，最后一次为{last}。",
  "{rule}, starting {date}.": "{rule}，从{date}开始。",
@@ -1381,7 +1378,7 @@
  "{x}× a weekday": "工作日的{x}倍",
  "“{name}” Key": "“{name}”密钥",
  "“{v}” is not an amount": "“{v}”不是金额",
- "On track for {amount} by {date}": "预计到{date}为 {amount}",
+ "{amount} by {date}": "到{date}为 {amount}",
  "How it adds up": "计算方式",
  "Kept so far": "目前结余",
  "Income still to come": "待到账收入",
@@ -1433,7 +1430,6 @@
  "Spent this year": "今年已花",
  "Start with these": "就用这些开始",
  "The whole month": "整月",
- "Usually by now": "通常到现在",
  "Usually {amount}": "通常 {amount}",
  "Year": "年",
  "You usually spend {amount} a month on {category}. Bills in it count too.": "你通常每月在{category}上花 {amount}。其中的账单也算在内。",
@@ -1442,7 +1438,6 @@
  "left for {category}": "{category}剩余",
  "over": "超出",
  "over for {category}": "{category}超出",
- "this year": "今年",
  "{amount} a day until {date}": "到{date}每天 {amount}",
  "{amount} each month": "每月 {amount}",
  "{amount} each year": "每年 {amount}",
@@ -1464,11 +1459,12 @@
  "{n} day to go.": {
   "other": "还剩{n}天。"
  },
- "Even share by today": "到今天的平均份额",
- "{amount} a day · {n} day left": {
-  "other": "每天 {amount} · 还剩{n}天"
- },
- "{n} day left": {
-  "other": "还剩{n}天"
- }
+ "Even pace by today": "到今天的均匀进度",
+ "Below the even pace": "低于均匀进度",
+ "Above the even pace": "高于均匀进度",
+ "Within every limit": "全部在上限内",
+ "Within {n} of {total} limits": "{total} 个上限中有 {n} 个未超",
+ "Over every limit": "全部超出上限",
+ "Your limit spread evenly over the month, up to today.": "把上限平均分到整个月，到今天为止的金额。",
+ "Your limit spread evenly over the year, up to today.": "把上限平均分到整年，到今天为止的金额。"
 }

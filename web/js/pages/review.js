@@ -1,14 +1,16 @@
 /* Month in review: the month that just closed, read in one direction. Did we do OK (kept, and the
    four totals), where it went (with who spent it inside each bar), what changed against "usual"
-   (the average of the 6 months before), each of you, day by day, bills, and what's worth knowing.
+   (the average of the 6 months before), the month's limits when it had any, each of you, day by day, bills,
+   and what's worth knowing.
    Every figure is worked out here from the ledger, for whoever is shown; "Each of you" always shows
    everyone. On a phone it is a few pages you tap or swipe through. Route: /review?m=YYYY-MM */
 import {
   t, tn, esc, state, f, fk, pct, pad, ds, dim, addD, wd, ym, ymAdd, TODAY, START, totals, byCat, amt,
-  tile, cat, cc, av, pname, couple, isIncomeCat, dlab, dlabW, monthYear, F, icon, bigMoney } from "../core.js";
+  tile, cat, cc, av, pname, ppastel, couple, isIncomeCat, dlab, dlabW, monthYear, F, icon, bigMoney } from "../core.js";
 import { hover, row, hideTip } from "../ui.js";
 import { navigate, setScope, closeMenus } from "../shell.js";
 import { occurrences, ruleAmt, ruleHist, shortDesc, isIncome, nextOf, perMonth } from "../sched.js";
+import { EVERYTHING, limitsIn, figure } from "../budget.js";
 
 let root = null;
 let shown = null;        // [year, month] on screen, in Month in review
@@ -177,8 +179,28 @@ function compute(q, sc) {
   const topTag = Object.keys(tg).sort((x, y) => tg[y].s - tg[x].s)[0];
   const extra = state.tx.filter((x) => x.type === "income" && !x.rec && x.d >= a && x.d <= b && amt(x, sc) > 0);
 
-  return { q, a, b, D, pq, nq, hasPrev, s, prev, u, hist, c, cu, cp, keys, colOf, ups, downs, biggestIn, head, vals, ns, best, peak, weekday, weekend, billsN, changes, next, big, pay, topPay, tg, topTag, extra, sc, parts };
+  return { q, a, b, D, pq, nq, hasPrev, s, prev, u, hist, c, cu, cp, keys, colOf, ups, downs, biggestIn, head, vals, ns, best, peak, weekday, weekend, billsN, changes, next, big, pay, topPay, tg, topTag, extra, sc, parts,
+    budget: sc === "all" ? budgetOf(q) : null };
 }
+/* The month's limits, as Budget showed them when it ended: the limit for everything first, then the
+   categories, largest limit first. Limits are the household's, so only the household's recap has them;
+   a yearly limit belongs to its year, not to one month. Nothing when the month had none. */
+function budgetOf(q) {
+  const month = mkey(q);
+  const rows = limitsIn(month).filter((b) => b.period === "month")
+    .sort((x, y) => (x.category === EVERYTHING) - (y.category === EVERYTHING) ? (x.category === EVERYTHING ? -1 : 1) : Number(y.amount) - Number(x.amount) || x.category.localeCompare(y.category))
+    .map((b) => ({ k: b.category, fg: figure(b, month) }));
+  if (!rows.length) return null;
+  const kept = rows.filter((r) => !r.fg.over).length;
+  return { month, rows, kept, total: rows.length };
+}
+/* "Within every limit", "Within 4 of 6 limits", "Over the limit" */
+export function budgetHead(bg) {
+  if (bg.kept === bg.total) return t("Within every limit");
+  if (!bg.kept) return bg.total === 1 ? t("Over the limit") : t("Over every limit");
+  return t("Within {n} of {total} limits", { n: bg.kept, total: bg.total });
+}
+export const budgetName = (k) => (k === EVERYTHING ? t("Everything") : cat(k).n);
 
 /* ---------- a year, or all time ----------
    The same story as a month, read over a longer span. A year compares with the year before (the same
@@ -339,7 +361,7 @@ function render() {
   }
   shown = clamp(shown);
   const m = (current = span ? computeSpan(span, state.scope) : compute(shown, state.scope));
-  STORY = (couple() ? 5 : 4) - (m.kind === "all" ? 1 : 0);
+  STORY = (couple() ? 5 : 4) - (m.kind === "all" ? 1 : 0) + (m.budget ? 1 : 0);
   story = Math.min(story, STORY - 1);
   root.innerHTML = '<div class="w-mrpage"><article class="w-mrev" aria-labelledby="mr-title">' + desktop(m) + "</article>" + phoneStory(m) + "</div>";
   wireHeader(m);
@@ -446,11 +468,12 @@ export function splitParts(m, k) {
   return out.filter((x) => x.v > 0.005);
 }
 export function splitBar(m, k, width) {
-  return '<span class="w-mrsplit" style="width:' + width + '%">' + splitParts(m, k).map((x) => '<i class="' + x.cls + '" style="flex:' + x.v.toFixed(2) + '"></i>').join("") + "</span>";
+  return '<span class="w-mrsplit" style="width:' + width + '%">' + splitParts(m, k).map((x) => '<i class="' + x.cls + '" style="flex:' + x.v.toFixed(2) + (x.id ? ";background:" + ppastel(x.id) : "") + '"></i>').join("") + "</span>";
 }
+/* Who is who in the bars: each person in their own colour (their avatar's, as a pastel, so a red-orange never reads as "over"), shared hatched */
 export function splitKey() {
   if (!couple()) return "";
-  const ppl = state.people.map((p, i) => '<span><i class="p' + Math.min(i, 5) + '"></i>' + esc(p.name) + "</span>");
+  const ppl = state.people.map((p, i) => '<span><i class="p' + Math.min(i, 5) + '" style="background:' + ppastel(String(p.id)) + '"></i>' + esc(p.name) + "</span>");
   ppl.splice(1, 0, '<span><i class="sh"></i>' + t("Shared") + "</span>");
   return '<span class="w-mrkey">' + ppl.join("") + "</span>";
 }
@@ -473,6 +496,31 @@ function whereRows(m) {
     '<span class="n">' + tile(k, 30) + "<b>" + catName(k) + "</b></span>" + '<span class="bar">' + splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + "</span>" +
     '<b class="amt">' + f(c[k]) + "</b>" + vsUsual(m, k) + "</a>").join("") + "</div>";
 }
+/* The month's limits: spent against each, as Budget draws it, and what was left or over; a row opens Budget on that month */
+const budIcon = (k, size) => (k === EVERYTHING ? '<span class="w-ico w-mrall">' + icon("wallet") + "</span>" : tile(k, size));
+function budBar(fg) {
+  return '<span class="w-mrbud' + (fg.over ? " over" : "") + '"><i style="width:' + Math.min(100, (fg.spent / fg.limit) * 100).toFixed(1) + '%"></i></span>';
+}
+// Looking back, what was left is good news, so green, as "less" is in Where it went; over is red
+const budLeft = (fg) => '<span class="w-mrd ' + (fg.over ? "bad" : "good") + '">' + esc(fg.over ? t("{amount} over", { amount: f(-fg.left) }) : t("{amount} left", { amount: f(fg.left) })) + "</span>";
+const budOf = (fg) => esc(t("{spent} of {limit}", { spent: f(fg.spent), limit: f(fg.limit) }));
+/* The limit for everything leads, as on Budget: heavier, a thicker bar, set apart from the categories under it */
+const isAll = (r) => r.k === EVERYTHING;
+function budgetRows(m) {
+  const bg = m.budget;
+  return '<div class="w-mrwhere">' + bg.rows.map((r) => '<a class="w-mrwrow w-mrbrow' + (isAll(r) ? " all" : "") + '" href="/budget?m=' + bg.month + '" data-link>' +
+    '<span class="n">' + budIcon(r.k, 30) + "<b>" + esc(budgetName(r.k)) + "</b></span>" + '<span class="bar">' + budBar(r.fg) + "</span>" +
+    '<span class="amt">' + budOf(r.fg) + "</span>" + budLeft(r.fg) + "</a>").join("") + "</div>";
+}
+function budgetPhone(m) {
+  const bg = m.budget;
+  return '<h2 class="w-mrsh">' + t("Budget") + '</h2><p class="w-mrnote' + (bg.kept === bg.total ? " good" : "") + '">' + esc(budgetHead(bg)) + "</p>" +
+    // On a phone the limit for everything is a card of its own, above the categories'
+    [bg.rows.filter(isAll), bg.rows.filter((r) => !isAll(r))].filter((g) => g.length).map((g) => '<div class="w-mrcard">' + g.map((r) =>
+      '<a class="w-mrpw' + (isAll(r) ? " all" : "") + '" href="/budget?m=' + bg.month + '" data-link><span class="top">' + budIcon(r.k, 30) + "<b>" + esc(budgetName(r.k)) + "</b>" + budLeft(r.fg) + "</span>" +
+      budBar(r.fg) + '<span class="w-mrd">' + budOf(r.fg) + "</span></a>").join("") + "</div>").join("");
+}
+
 /* What changed: up on one side, down on the other */
 function changedItem(m, x, up) {
   const big = up ? m.biggestIn(x.k) : null, amount = f(Math.abs(x.d));
@@ -560,6 +608,7 @@ function desktop(m) {
     keptBars(m) + "</div>" + tiles(m) + "</section>";
   html += sec("mr-where", t("Where it went"), whereRows(m) + (couple() ? '<p class="w-mrnote" id="mr-shared">' + sharedText(m) + "</p>" : ""), splitKey());
   if (m.kind !== "all") html += sec("mr-chg", t("What changed"), changed(m));
+  if (m.budget) html += sec("mr-bud", t("Budget"), budgetRows(m), '<span class="w-mrd' + (m.budget.kept === m.budget.total ? " good" : "") + '">' + esc(budgetHead(m.budget)) + "</span>");
   if (couple()) html += sec("mr-ppl", t("Each of you"), '<div class="w-mrpcs">' + state.people.map((p) => person(m, String(p.id))).join("") + "</div>");
   html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-days"><h2 id="mr-days">' + (m.kind ? t("Month by month") : t("Day by day")) + "</h2>" + kvList(m.kind ? monthRows(m) : dayRows(m)) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-bills"><h2 id="mr-bills">' + t("Bills") + "</h2>" + kvList(m.kind ? spanBillRows(m) : billRows(m)) + "</section></div>";
@@ -626,6 +675,7 @@ function phoneStory(m) {
       splitBar(m, k, ((c[k] / top) * 100).toFixed(1)) + vsUsual(m, k) + "</a>").join("") + "</div>" : '<p class="w-hint">' + (m.kind ? t("No spending.") : t("No spending this month.")) + "</p>") +
     (couple() ? '<p class="w-mrnote">' + sharedText(m) + "</p>" : "")]);
   if (m.kind !== "all") pages.push([t("What changed"), '<h2 class="w-mrsh">' + t("What changed") + "</h2>" + changed(m)]);
+  if (m.budget) pages.push([t("Budget"), budgetPhone(m)]);
   if (couple()) pages.push([t("Each of you"), '<h2 class="w-mrsh">' + t("Each of you") + '</h2><div class="w-mrpcs">' + state.people.map((p) => person(m, String(p.id))).join("") + "</div>"]);
   const dayT = m.kind ? t("Month by month") : t("Day by day");
   pages.push([dayT, '<h2 class="w-mrsh">' + dayT + '</h2><div class="w-mrcard">' + kvList(m.kind ? monthRows(m) : dayRows(m)) + "</div>" +

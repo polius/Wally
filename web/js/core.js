@@ -272,6 +272,14 @@ export function pindex(key) { const i = state.people.findIndex((p) => String(p.i
 /* A person's own color, 1 to 12 (see .w-av.c1 to c12); people without one get it from their place, as avatars always did */
 export const PCOLORS = [6, 2, 4, 7, 3, 5, 1, 8];
 export function pcolor(key) { const p = person(key); return p && p.color >= 1 && p.color <= 12 ? p.color : PCOLORS[pindex(key) % 6]; }
+/* That color for drawing (bars, keys): the avatar's own --avN, as .w-av.c1 to c12 map them.
+   ppastel: the same color as a full, solid pastel (the dark theme's --av0 to --av11, a little deeper: lightness at most
+   74%, saturation at least 80%), never mixed into the background, the same in both themes and on paper. For bars that
+   sit next to red and green money: a red-orange avatar never reads as "over" */
+const AVN = [6, 1, 4, 2, 5, 0, 3, 7, 8, 9, 10, 11];
+export function pvar(key) { return "var(--av" + AVN[pcolor(key) - 1] + ")"; }
+const AVPASTEL = ["#7A84FF", "#FFA77A", "#7EF1B4", "#F288EA", "#FFD87A", "#88DBF2", "#FF7A7A", "#FF7AB4", "#C5EF73", "#6EEFCE", "#7ABCFF", "#9E7AFF"];
+export function ppastel(key) { return AVPASTEL[AVN[pcolor(key) - 1]]; }
 export function initial(name) { return (name || "?").trim().charAt(0).toLocaleUpperCase(LANG); }
 export function av(key, cls) {
   if (key === null || key === undefined || key === "shared") return '<span class="w-av shared ' + (cls || "") + '" aria-hidden="true"></span>';

@@ -452,12 +452,14 @@ function keptHead(d) {
   return '<div class="s-keptn"><b class="amt' + (over ? " up-bad" : "") + '">' + bigMoney(Math.abs(d.net)) + "</b>" +
     (over ? '<span class="up-bad">' + esc(d.soFar ? t("overspent so far") : t("overspent")) + "</span>" : d.soFar ? "<span>" + esc(t("so far")) + "</span>" : "") + "</div>" + fcLine(d);
 }
-/* "On track for ≈ 1,450.00 € by Nov 30", or "On track to overspend ≈ 300.00 € by Nov 30", as Kept this year says it */
-const onTrack = (v) => '<b class="' + (v < 0 ? "up-bad" : "dn-good") + '">≈ ' + esc(f(Math.abs(v))) + "</b>";
+/* "≈ 1,450.00 € by Nov 30" under the month's figure, or "On track to overspend ≈ 300.00 € by Nov 30". Kept this year
+   keeps its "on track for", which its own sentence needs.
+   Quiet, in the line's own grey: only overspending is coloured, red, because that one is a warning */
+const onTrack = (v) => '<b' + (v < 0 ? ' class="up-bad"' : "") + '>≈ ' + esc(f(Math.abs(v))) + "</b>";
 function fcLine(d) {
   if (!d.fc) return "";
   const v = d.fc.v, args = { amount: onTrack(v), date: esc(dlab(d.fc.end)) };
-  return '<p class="s-yearsub s-fc" tabindex="0">' + (v < 0 ? t("On track to overspend {amount} by {date}", args) : t("On track for {amount} by {date}", args)) + icon("info", "s-fci") + "</p>";
+  return '<p class="s-yearsub s-fc" tabindex="0">' + (v < 0 ? t("On track to overspend {amount} by {date}", args) : t("{amount} by {date}", args)) + "</p>";
 }
 /* Pointing at it shows how it adds up: what is known first (kept so far, the repeating income and bills to come)
    with its total when anything is still to come, then the estimates, each marked ≈, and where the month is heading */

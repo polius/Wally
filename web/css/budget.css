@@ -1,5 +1,5 @@
 /* Budget: built from Recurring's pieces (.rec-sum, .rec-list, .rec-insp, .rec-kv), with what is its own:
-   the bars, the legend and the setup. Recurring's rules that name its page are repeated here for this one. */
+   the bars, their mark and the setup. Recurring's rules that name its page are repeated here for this one. */
 #bg-page{display:grid;gap:16px}
 [data-page="budget"]{gap:16px}
 [data-page="budget"] .w-rrow{text-align:start}
@@ -19,34 +19,64 @@
 .bg-row .amt small.over{color:var(--w-bad)}
 div.bg-row{cursor:default}
 div.bg-row:hover{background:none}
+.rec-list .bg-row{row-gap:8px}
+.bg-row > .w-ico{grid-row:1/span 2}
+.bg-row > .bg-bar{grid-column:2/-1;margin-top:0}
 .bg-bar{position:relative;height:6px;border-radius:3px;background:var(--w-fill2);margin-top:9px}
-/* What was spent in the accent; bills still due in the same colour, hatched; a limit gone over is red */
-.bg-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--w-accent);max-width:100%}
-.bg-bar i.due{background:repeating-linear-gradient(135deg,var(--w-accent) 0 2px,transparent 2px 5px);border-radius:0 3px 3px 0}
-.bg-bar.over i{background:var(--w-bad)}
-.bg-bar.over i.due{background:repeating-linear-gradient(135deg,var(--w-bad) 0 2px,transparent 2px 5px)}
-[dir="rtl"] .bg-bar i.due{border-radius:3px 0 0 3px}
-.bg-bar u{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--w-ink)}
-.bg-none{cursor:default}
-.bg-none:hover{background:none}
-.bg-none h6{font-weight:400!important;color:var(--w-ink2)}
-/* The lead: spent against the limit for everything, as a bar with its two amounts under it */
-.bg-lead{margin-top:16px}
-.bg-lead .bg-bar{height:10px;border-radius:5px;margin-top:0}
-.bg-lead .bg-bar i{border-radius:5px}
-.bg-lead .bg-bar i.due{border-radius:0 5px 5px 0}
-.bg-key{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:10px;font-size:var(--fs-foot);color:var(--w-ink2)}
+/* What was spent; bills still due carry on from it, in a lighter shade, as one bar: square where they meet, rounded only
+   at the ends. A limit gone over is red. Every bar, the lead's too, is in the same pastel (the accent and the red at
+   lightness 73%, saturation 85%), as the Recap and its PDF draw them: solid accent is for what can be tapped; the lead
+   stands out by its card, its size and its number. --bg-under is what a bar sits on. */
+:root{--bg-spent:#808AF5;--bg-overc:#F58083}
+.bg-bar{--bg-under:var(--w-panel);--bg-due:color-mix(in srgb,var(--bg-spent) var(--bg-mix),var(--bg-under))}
+.bg-bar.over{--bg-due:color-mix(in srgb,var(--bg-overc) var(--bg-mix),var(--bg-under))}
+.bg-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:inherit;background:var(--bg-spent);max-width:100%}
+.bg-bar i:not(:last-child){border-start-end-radius:0;border-end-end-radius:0}
+.bg-bar i.due{background:var(--bg-due);border-start-start-radius:0;border-end-start-radius:0}
+.bg-bar.over i:not(.due){background:var(--bg-overc)}
+/* The even pace by today: a short, thin mark across the bar */
+.bg-bar u{position:absolute;top:-5px;bottom:-5px;width:1.5px;border-radius:1px;background:var(--w-ink)}
+/* With a mouse it shows a tooltip: a target wider than the 2 px it draws */
+@media (hover:hover){.bg-bar u::before{content:"";position:absolute;inset:-6px -7px}}
+/* Its tooltip: the name, spent, the even pace (drawn as the mark), and how far apart they are */
+.w-tip .bg-tiph{display:block;margin-bottom:4px}
+.w-tip .r i.bg-tk{width:1.5px;height:11px;border-radius:1px;background:var(--w-ink);margin:0 9px 0 3px}
+.w-tip .r b.bg-good{color:var(--w-good)}
+.w-tip .r b.bg-bad{color:var(--w-bad)}
+/* Without a limit: a shorter row, a smaller tile; this month it opens the sheet */
+.rec-list .bg-none{min-height:46px;padding-block:6px}
+.bg-none .w-ico{width:32px!important;height:32px!important;border-radius:8px!important;justify-self:center}
+.bg-none .w-ico svg.i{width:16px!important;height:16px!important}
+.bg-none h6{font-weight:400!important}
+div.bg-none{cursor:default}
+div.bg-none:hover{background:none}
+/* The panel: no rule under every row, one under each heading */
+.bg-insp .rec-kv{border-top:0;min-height:40px;padding-block:8px}
+.bg-insp .rec-kvs{border-top:1px solid var(--w-line2);padding-top:4px}
+.bg-insp .rec-sh{border-bottom:1px solid var(--w-line2);margin-bottom:4px}
+/* The lead: spent against the limit for everything, as a bar with a quiet key under it */
+.bg-sum .rec-big{margin-bottom:2px}
+.bg-lead{margin-top:12px}
+/* The lead with its bar is a card from 768 px, as the Summary's number with its chart is; on phones it sits on the page.
+   --bg-lead-under is what its bar and key sit on */
+.bg-sum{--bg-lead-under:var(--w-canvas)}
+@media (min-width:768px){
+  .bg-card{--bg-lead-under:var(--w-panel);background:var(--w-panel);border-radius:var(--r-card);padding:20px 22px;box-shadow:0 1px 2px rgba(20,22,27,.04)}
+}
+.bg-lead .bg-bar{--bg-under:var(--bg-lead-under);height:10px;border-radius:5px;margin-top:0}
+.bg-key{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;font-size:var(--fs-foot);color:var(--w-ink2)}
 .bg-key span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.bg-key b{font-weight:500;color:var(--w-ink);font-variant-numeric:tabular-nums}
+.bg-key b{font-weight:400;font-variant-numeric:tabular-nums}
 .bg-key .lim{margin-inline-start:auto}
-.bg-key i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--w-accent)}
-.bg-key i.du{background:repeating-linear-gradient(135deg,var(--w-accent) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--w-accent)}
-.bg-key i.over{background:var(--w-bad)}
-.bg-key i.du.over{background:repeating-linear-gradient(135deg,var(--w-bad) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--w-bad)}
-.bg-legend{display:flex;gap:16px;align-items:center;font-size:var(--fs-cap);color:var(--w-ink3);padding:14px 0 2px}
-.bg-legend span{display:inline-flex;gap:6px;align-items:center}
-.bg-legend u{display:inline-block;width:2px;height:12px;background:var(--w-ink);border-radius:1px}
-.bg-legend i{display:inline-block;width:14px;height:6px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--w-accent) 0 2px,transparent 2px 5px)}
+.bg-key i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--bg-spent)}
+.bg-key i.du{background:color-mix(in srgb,var(--bg-spent) var(--bg-mix),var(--bg-lead-under))}
+.bg-key i.over{background:var(--bg-overc)}
+.bg-key i.du.over{background:color-mix(in srgb,var(--bg-overc) var(--bg-mix),var(--bg-lead-under))}
+
+/* The lighter shade for bills still due: stronger in dark mode, where 38% sinks into the track */
+:root{--bg-mix:38%}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg-mix:55%}}
+:root[data-theme="dark"]{--bg-mix:55%}
 
 /* The first time: what to start with */
 .bg-hello{font-size:var(--fs-large);font-weight:650;letter-spacing:-.02em;line-height:1.2;margin:2px 0 6px}
@@ -65,9 +95,6 @@ div.bg-row:hover{background:none}
 .bg-cta{display:flex;justify-content:flex-end;padding:16px 0 6px}
 
 @media (max-width:767px){
-  /* The key in two rows: Spent and the limit, then bills still due */
-  .bg-key{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px}
-  .bg-key .lim{grid-column:2;grid-row:1;margin:0}
   .bg-list{padding:4px 16px 10px}
   [data-page="budget"] .w-rrow h6{font-size:var(--fs-body);font-weight:400}
   [data-page="budget"] .w-rrow .amt{font-size:var(--fs-body)}

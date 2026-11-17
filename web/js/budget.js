@@ -8,7 +8,7 @@
      today and before the month ends, from rules that are not paused, at their current amount.
    - Left = limit − spent − bills still due; below zero it is "over". For a year, limit − spent.
    - A day = left ÷ the days from today to the month's end, today included; this month only, when left > 0.
-   - Today's mark, the even share by today: the limit spread evenly over the period, up to the end of
+   - The even pace by today (the mark on each bar, and its tooltip): the limit spread evenly over the period, up to the end of
      today (the day of the month ÷ its days, or the day of the year ÷ its days).
    Amounts are never rounded. */
 import { state, TODAY, ds, dim, ym, ymAdd, addD, span, byCat, START } from "./core.js";
@@ -67,18 +67,6 @@ export function figure(b, month) {
   };
 }
 
-/* What a category (or everything) usually costs by this day of the month: the last three months, as Worth noticing does */
-export function usuallyByNow(category) {
-  const [y, m] = ym(TODAY), day = +TODAY.slice(8);
-  let v = 0, n = 0;
-  for (let k = 1; k <= 3; k++) {
-    const q = ymAdd(y, m, -k), a = ds(q[0], q[1], 1);
-    if (a < START) continue;
-    v += spentIn(category, a, ds(q[0], q[1], Math.min(day, dim(q[0], q[1]))));
-    n++;
-  }
-  return n ? v / n : null;
-}
 /* A month's total, for the last months */
 export function monthSpent(category, month) { return spentIn(category, first(month), last(month)); }
 /* The last three full months that have history */

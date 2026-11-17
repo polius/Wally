@@ -7,7 +7,7 @@
    only source, and in the current month it says "No income yet", as payday may still be to come.
    The card folds the smallest into "And 3 more". The bigger view
    shows every one, with a list: pointing at a row lights its flow, and the other way round. */
-import { state, t, tn, esc, amt, f, pct, cc, couple, pname, pcolor, icon, tile, av, ym, TODAY, monthName, monthYear, bigMoney } from "../../core.js";
+import { state, t, tn, esc, amt, f, pct, cc, couple, pname, pcolor, pvar, icon, tile, av, ym, TODAY, monthName, monthYear, bigMoney } from "../../core.js";
 import { chart, draw, enlarge, el, hover, row, hideTip, closeDialog } from "../../ui.js";
 import { goTx } from "./range.js";
 import { eByCat } from "./hero.js";
@@ -18,8 +18,7 @@ const biggest = (a, b) => b.v - a.v;
 /* Never "0%" for money that did move */
 const share = (v, total) => (v / total < 0.005 ? "<" + pct(0.01) : pct(v / total));
 /* A person's colour, the one on their avatar (see .w-av.c1 to c12) */
-const AV = [6, 1, 4, 2, 5, 0, 3, 7, 8, 9, 10, 11];
-const personColor = (k) => "var(--av" + AV[pcolor(k) - 1] + ")";
+const personColor = (k) => pvar(k);
 
 /* ---------- the numbers ---------- */
 function incomes(a, b) {
