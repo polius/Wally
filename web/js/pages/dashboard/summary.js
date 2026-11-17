@@ -45,7 +45,7 @@ function againstWhat(r, p) {
 }
 /* A card: a title, something on its right, and its body */
 const sec = (id, title, right) => '<section class="s-sec" data-w="' + id + '"><div class="s-sh"><h4>' + title + "</h4>" + (right || "") + '</div><div class="s-body" id="s-' + id + '"></div></section>';
-const expand = (act) => '<button type="button" class="s-expand" data-act="' + act + '" aria-label="' + esc(t("Enlarge")) + '" title="' + esc(t("Enlarge")) + '">' + icon("l-maximize-2") + "</button>";
+const expand = (act) => '<button type="button" class="s-expand" data-act="' + act + '" aria-label="' + esc(t("Enlarge")) + '" title="' + esc(t("Enlarge")) + '">' + icon("maximize") + "</button>";
 const seeAll = (href) => '<a class="w-link s-all" href="' + href + '" data-link>' + t("See all") + "</a>";
 /* attrs null: a row with nowhere to go */
 const rowHtml = (attrs, lead, name, sub, amount, cls, under) => (attrs === null ? '<div class="s-row">' : '<button type="button" class="s-row" ' + attrs + ">") + lead + '<span class="s-nm"><span>' + esc(name) + "</span>" +
