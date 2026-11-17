@@ -30,7 +30,7 @@ async function open(width, height) {
     for (const m of readFileSync(new URL(file, web), "utf8").matchAll(/from\s+"(\.[^"]+)"/g)) closure(new URL(m[1], new URL(file, web)).pathname.split("/web/js/")[1], seen);
     return seen;
   };
-  for (const [path, file] of [["/", "pages/dashboard.js"], ["/transactions", "pages/transactions.js"], ["/recurring", "pages/recurring.js"], ["/settings/people", "pages/settings.js"], ["/review", "pages/review.js"]]) {
+  for (const [path, file] of [["/", "pages/dashboard.js"], ["/transactions", "pages/transactions.js"], ["/recurring", "pages/recurring.js"], ["/budget", "pages/budget.js"], ["/settings/people", "pages/settings.js"], ["/review", "pages/review.js"]]) {
     await page.goto(BASE + path, { waitUntil: "networkidle" });
     const listed = await page.$$eval('link[rel="modulepreload"]', (ls) => ls.map((l) => new URL(l.href).pathname.slice(4)).sort());
     const real = [...closure(file), "ui.js", "shell.js", "core.js"].filter((f, i, a) => a.indexOf(f) === i).sort();

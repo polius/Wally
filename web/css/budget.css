@@ -1,0 +1,63 @@
+/* Budget: built from Recurring's pieces (.rec-sum, .rec-list, .rec-insp, .rec-kv), with what is its own:
+   the bars, the legend and the setup. Recurring's rules that name its page are repeated here for this one. */
+#bg-page{display:grid;gap:16px}
+[data-page="budget"]{gap:16px}
+[data-page="budget"] .w-rrow{text-align:start}
+[data-page="budget"] .w-rrow .w-ico{border-radius:10px}
+[data-page="budget"] .w-rrow .w-ico svg.i{width:18px;height:18px}
+[data-page="budget"] .w-rrow h6{font-size:16px;font-weight:500}
+[data-page="budget"] .w-rrow p{font-size:var(--fs-foot);color:var(--w-ink2)}
+[data-page="budget"] .w-rrow .amt{font-size:16px;font-weight:400;text-align:end}
+[data-page="budget"] .w-rrow .amt small{font-size:12px;color:var(--w-ink2)}
+.bg-one{display:grid;grid-template-columns:minmax(0,1fr)}
+
+/* A limit: its name and what was spent, the bar under them, what is left on the right */
+.bg-row{align-items:start!important}
+.bg-row .w-ico{margin-top:2px}
+.bg-row .rec-rn p{display:block}
+.bg-row .amt{min-width:96px}
+.bg-row .amt small.over{color:var(--w-bad)}
+div.bg-row{cursor:default}
+div.bg-row:hover{background:none}
+.bg-bar{position:relative;height:6px;border-radius:3px;background:var(--w-fill2);margin-top:9px}
+.bg-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--w-ink3);max-width:100%}
+.bg-bar i.over{background:var(--w-ink)}
+.bg-bar i.due{background:repeating-linear-gradient(135deg,var(--w-ink3) 0 2px,transparent 2px 5px);border-radius:0 3px 3px 0}
+[dir="rtl"] .bg-bar i.due{border-radius:3px 0 0 3px}
+.bg-bar u{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--w-ink)}
+.bg-none{cursor:default}
+.bg-none:hover{background:none}
+.bg-none h6{font-weight:400!important;color:var(--w-ink2)}
+.bg-legend{display:flex;gap:16px;align-items:center;font-size:var(--fs-cap);color:var(--w-ink3);padding:14px 0 2px}
+.bg-legend span{display:inline-flex;gap:6px;align-items:center}
+.bg-legend u{display:inline-block;width:2px;height:12px;background:var(--w-ink);border-radius:1px}
+.bg-legend i{display:inline-block;width:14px;height:6px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--w-ink3) 0 2px,transparent 2px 5px)}
+
+/* The first time: what to start with */
+.bg-hello{font-size:var(--fs-large);font-weight:650;letter-spacing:-.02em;line-height:1.2;margin:2px 0 6px}
+.bg-one .bg-list{max-width:720px}
+.bg-sug{align-items:center!important}
+.bg-sug .w-ico{margin-top:0}
+.w-ico.bg-all{width:40px;height:40px;background:var(--w-fill);color:var(--w-ink2);display:grid;place-items:center}
+.bg-sugv{display:flex;align-items:center;gap:12px}
+.bg-suga{width:116px;text-align:end;border:0;background:none;font:inherit;font-size:16px;font-variant-numeric:tabular-nums;color:var(--w-ink);padding:6px 8px;border-radius:8px}
+.bg-suga:hover,.bg-suga:focus{background:var(--w-fill)}
+.bg-suga.off{color:var(--w-ink3)}
+.bg-sugb{min-width:116px;text-align:end;font-size:16px;font-variant-numeric:tabular-nums;color:var(--w-ink);padding:6px 8px;border-radius:8px;cursor:text}
+.bg-sugb:hover{background:var(--w-fill)}
+.bg-sugb.off{color:var(--w-ink3)}
+.bg-cta{display:flex;justify-content:flex-end;padding:16px 0 6px}
+
+@media (max-width:767px){
+  .bg-list{padding:4px 16px 10px}
+  [data-page="budget"] .w-rrow h6{font-size:var(--fs-body);font-weight:400}
+  [data-page="budget"] .w-rrow .amt{font-size:var(--fs-body)}
+  .bg-row .amt{min-width:84px}
+  .bg-suga{width:96px}
+  .bg-sugb{min-width:0;padding:6px 4px}
+  .bg-sug .rec-rn p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bg-sugv{gap:8px}
+  .bg-cta .w-btn{flex:1;min-height:44px}
+  /* No chevron next to ‹ ›: the person button is just the faces, as on the Summary */
+  .bg-head .w-hact{margin-inline-start:0}
+}

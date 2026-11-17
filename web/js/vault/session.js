@@ -241,6 +241,7 @@ export async function turnOn(password, progress) {
 function shapeForVault(item) { return JSON.parse(JSON.stringify(item)); }
 async function ridFor(keys, item) {
   if (item.k === "tx" || item.k === "rule") return item.id.replace(/-/g, "").toLowerCase();
+  if (item.k === "budget") return item.id;
   if (item.k === "cat" || item.k === "tag") return C.idFor(keys, item.k + "|" + item.name);
   if (item.k === "irule") { const rid = await C.idFor(keys, "irule|" + item.id); item.id = rid; return rid; }
   throw new Error("Unknown item.");

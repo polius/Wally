@@ -340,10 +340,11 @@ export function fromRule(r) {
 export async function loadAll() {
   const status = state.status;
   const meKey = status.me ? String(status.me.id) : localStorage.getItem("wally.person");
-  const [people, ledger, rules, config, currency, categories, tags, icons, tagIcons, prefs] = await Promise.all([
+  const [people, ledger, rules, config, currency, categories, tags, icons, tagIcons, prefs, budgets] = await Promise.all([
     GET("/people"), GET("/ledger"), GET("/recurring"), GET("/config"), GET("/currency"), GET("/categories"), GET("/tags"), GET("/categories/icons"), GET("/tags/icons"),
-    meKey ? GET("/me/prefs").catch(() => ({})) : {},
+    meKey ? GET("/me/prefs").catch(() => ({})) : {}, GET("/budgets").catch(() => []),
   ]);
+  state.budgets = budgets || [];
   state.people = people;
   state.tx = ledger.rows.map(fromRow);
   setStart();
@@ -370,8 +371,10 @@ export async function loadExtras() {
 }
 /* Categories and their icons, after a change in Settings or an import */
 export async function reloadCategories() {
-  const [categories, icons] = await Promise.all([GET("/categories"), GET("/categories/icons")]);
+  // Limits follow a category renamed, and go with one merged or deleted
+  const [categories, icons, budgets] = await Promise.all([GET("/categories"), GET("/categories/icons"), GET("/budgets")]);
   state.categories = categories;
+  state.budgets = budgets;
   state.icons = icons || {};
   paintColors();
 }
@@ -382,9 +385,11 @@ export async function reloadTags() {
   state.tagIcons = icons || {};
 }
 export async function reloadRules() { state.rules = (await GET("/recurring")).map(fromRule); }
+export async function reloadBudgets() { state.budgets = await GET("/budgets"); }
 /* Another device saved something: read it all again from this device's copy */
 export async function reloadAll() {
-  const [ledger, rules, categories, icons, tags, tagIcons, irules] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/icons"), GET("/tags"), GET("/tags/icons"), GET("/rules")]);
+  const [ledger, rules, categories, icons, tags, tagIcons, irules, budgets] = await Promise.all([GET("/ledger"), GET("/recurring"), GET("/categories"), GET("/categories/icons"), GET("/tags"), GET("/tags/icons"), GET("/rules"), GET("/budgets")]);
+  state.budgets = budgets;
   state.tx = ledger.rows.map(fromRow);
   setStart();
   state.rules = rules.map(fromRule);

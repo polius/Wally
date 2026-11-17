@@ -88,6 +88,7 @@ function onClick(ev) {
   if ((x = b("[data-go-id]"))) { hideTip(); goTx({ id: x.dataset.goId }); return; }
   // A month in Kept each month opens that month here
   if ((x = b("[data-go-rule]"))) { hideTip(); navigate("/recurring?id=" + encodeURIComponent(x.dataset.goRule)); return; }
+  if ((x = b("[data-go-budget]"))) { hideTip(); navigate("/budget?c=" + encodeURIComponent(x.dataset.goBudget)); return; }
   if (b("[data-new-rule]")) { import("../add.js").then((m) => m.openAdd({ repeat: true })); return; }
   if (b("[data-add-income]")) { import("../add.js").then((m) => m.openAdd({ type: "income" })); return; }
 }

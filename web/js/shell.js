@@ -6,13 +6,15 @@ const PAGES = {
   dashboard: () => import("./pages/dashboard.js"),
   transactions: () => import("./pages/transactions.js"),
   recurring: () => import("./pages/recurring.js"),
+  budget: () => import("./pages/budget.js"),
   settings: () => import("./pages/settings.js"),
   review: () => import("./pages/review.js"),
 };
-/* Places: three, plus Settings at the foot of the sidebar (and as a fourth tab on phones) */
+/* Places: four, plus Settings at the foot of the sidebar (on phones, in the person menu at the top) */
 const NAV = [
   ["dashboard", "/", "overview", () => t("Summary")],
   ["transactions", "/transactions", "list", () => t("Transactions")],
+  ["budget", "/budget", "target", () => t("Budget")],
   ["recurring", "/recurring", "repeat", () => t("Recurring")],
 ];
 const SETTINGS = ["settings", "/settings", "settings", () => t("Settings")];
@@ -173,11 +175,11 @@ function sideHint(target) {
 }
 export function hideSideHint() { hintFor = null; const el = document.getElementById("side-hint"); if (el) el.classList.remove("on"); }
 
-/* ---------- phone tab bar: the places and Settings, with Add in the middle, in thumb reach ---------- */
+/* ---------- phone tab bar: the four places, with Add in the middle, in thumb reach ---------- */
 function renderTabbar() {
   const bar = $("tabbar");
   const tab = (name, href, ic, label) => '<a href="' + href + '" data-link class="' + (pageName === name ? "on" : "") + '"' + (pageName === name ? ' aria-current="page"' : "") + ">" + icon(ic) + "<span>" + label() + "</span></a>";
-  const tabs = NAV.concat([SETTINGS]).map((n) => tab(...n));
+  const tabs = NAV.map((n) => tab(...n));
   bar.innerHTML = '<div class="w-tabpill">' + tabs.slice(0, 2).join("") +
     '<button type="button" class="w-tabadd" data-open-add aria-label="' + esc(t("Add")) + '">' + icon("plus") + "</button>" + tabs.slice(2).join("") + "</div>";
 }
@@ -190,12 +192,15 @@ export function scopeChips() {
 /* The person menu at the top right of a page: whose money is shown ("Everyone ▾"). On a phone,
    where the sidebar is gone, it also holds Switch person or Sign out. */
 export function scopeSwitch() {
-  const acts = meActions(), phoneActs = acts ? '<div class="w-menusep w-ponly" role="separator"></div>' + acts.replace(/role="menuitem"/g, 'role="menuitem" class="w-ponly"') : "";
+  // On a phone the sidebar is gone: Settings lives here, as in iOS apps, with Switch person or Sign out
+  const settings = '<a href="/settings" data-link role="menuitem" class="w-ponly">' + icon("settings") + "<span>" + t("Settings") + "</span></a>";
+  const acts = meActions(), phoneActs = '<div class="w-menusep w-ponly" role="separator"></div>' + settings + (acts ? acts.replace(/role="menuitem"/g, 'role="menuitem" class="w-ponly"') : "");
   if (!couple()) {
-    // Alone: nothing to switch; phones still need a way to sign out
-    if (!acts || !state.me) return "";
-    return '<div class="w-pswitch w-ponly"><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(pname(state.me)) + '">' +
-      av(state.me) + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" hidden>' + acts + "</div></div>";
+    // Alone: nothing to switch, but phones still need Settings (and a way to sign out)
+    const me = state.me || (state.people[0] ? String(state.people[0].id) : null);
+    if (!me) return "";
+    return '<div class="w-pswitch w-ponly"><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(pname(me)) + '">' +
+      av(me) + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" hidden>' + settings + (acts || "") + "</div></div>";
   }
   const who = state.scope === "all" ? t("Everyone") : pname(state.scope);
   return '<div class="w-pswitch"><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("Showing") + ": " + who) + '">' +
