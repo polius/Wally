@@ -87,8 +87,8 @@ try {
 
   const get = (side, path) => (side === "P" ? p("GET", path) : local("GET", path));
   async function state(side) {
-    const [led, rules, cats, icons, tags, tagIcons, irules] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/icons", "/tags", "/tags/icons", "/rules"].map((x) => get(side, x)));
-    return { led: led.data, rules: rules.data, cats: cats.data, icons: icons.data, tags: tags.data, tagIcons: tagIcons.data, irules: irules.data };
+    const [led, rules, cats, icons, tags, tagIcons, irules, budgets] = await Promise.all(["/ledger", "/recurring", "/categories", "/categories/icons", "/tags", "/tags/icons", "/rules", "/budgets"].map((x) => get(side, x)));
+    return { led: led.data, rules: rules.data, cats: cats.data, icons: icons.data, tags: tags.data, tagIcons: tagIcons.data, irules: irules.data, budgets: budgets.data };
   }
   /* New transactions and rules since the last step get labels from what they are, the same on both sides */
   function labelNew(side, st, op) {
@@ -116,13 +116,16 @@ try {
     const rules = st.rules.map((r) => ({ ...r, id: name(side, r.id), amount: Math.round(Number(r.amount) * 100), created_date: undefined })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const irules = st.irules.map((r) => ({ match: r.match, category: r.category, person_id: r.person_id, set_person: r.set_person, uses: r.uses, learned: r.learned, position: r.position }));
     const icons = Object.fromEntries(Object.entries(st.icons).sort());
-    return JSON.stringify({ rows, rules, cats: st.cats, icons, tags: st.tags, tagIcons: Object.fromEntries(Object.entries(st.tagIcons).sort()), irules });
+    // A limit's id is random on each side; everything else about it must match
+    const budgets = st.budgets.map((b) => ({ ...b, id: undefined }));
+    return JSON.stringify({ rows, rules, cats: st.cats, icons, tags: st.tags, tagIcons: Object.fromEntries(Object.entries(st.tagIcons).sort()), irules, budgets });
   }
   const sortKeys = (v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : Array.isArray(v) ? v.map(sortKeys) : v);
   function normBody(side, body) {
     // The order of keys in an object means nothing to the app; the order of a list does
-    return JSON.stringify(sortKeys(body), (k, v) => {
+    return JSON.stringify(sortKeys(body), function (k, v) {
       if (k === "created_date" || k === "created_at") return undefined;
+      if (k === "id" && this && Object.prototype.hasOwnProperty.call(this, "since")) return undefined;   // a limit's random id
       if ((k === "id" || k === "recurringID" || k === "match_id") && typeof v === "string" && v.length >= 32) return name(side, v);
       if (k === "group_id" && v) return "group";
       if (k === "amount" && (typeof v === "string" || typeof v === "number")) return Math.round(Number(v) * 100);
@@ -211,6 +214,20 @@ try {
   await both("", "POST", (s) => "/recurring/" + real(s, "r2:r0") + "/end", { date: D(400) });
   await both("", "DELETE", (s) => "/recurring/" + real(s, "r3:r0"), { applyTo: "future" });
   await both("", "DELETE", (s) => "/recurring/" + real(s, "r2:r0"), { applyTo: "all" });
+
+  console.log("Limits");
+  const M = (k) => { const d = new Date(D(0) + "T12:00:00Z"); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + k); return d.toISOString().slice(0, 7); };
+  await both("", "PUT", "/budgets", { category: "Groceries", amount: "500", month: M(-2) });
+  await both("", "PUT", "/budgets", { category: "Groceries", amount: "600", month: M(0) });
+  await both("", "PUT", "/budgets", { category: "", amount: "2700", month: M(0) });
+  await both("", "PUT", "/budgets", { category: "Groceries", amount: "650", period: "year", month: M(0) });
+  await both("", "PUT", "/budgets", { category: "Food", amount: "120,5", month: M(-1) });
+  await both("no such", "PUT", "/budgets", { category: "Nope", amount: "1", month: M(0) });
+  await both("zero", "PUT", "/budgets", { category: "Food", amount: "0", month: M(0) });
+  await both("bad month", "PUT", "/budgets", { category: "Food", amount: "10", month: "2026-13" });
+  await both("", "DELETE", "/budgets?category=&month=" + M(1));
+  await both("", "DELETE", "/budgets?category=Groceries&month=" + M(0));
+  await both("", "GET", "/budgets");
 
   console.log("Categories and tags");
   await both("", "POST", "/categories", { name: "Kids", color: 3 });
