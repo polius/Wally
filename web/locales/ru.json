@@ -1721,8 +1721,12 @@
  "Below the even pace": "Ниже равномерного темпа",
  "Above the even pace": "Выше равномерного темпа",
  "Within every limit": "Все лимиты соблюдены",
- "Within {n} of {total} limits": "Соблюдено лимитов: {n} из {total}",
- "Over every limit": "Все лимиты превышены",
+ "{n} of {total} category within": {
+  "one": "{n} из {total} категории в пределах лимита",
+  "few": "{n} из {total} категорий в пределах лимита",
+  "many": "{n} из {total} категорий в пределах лимита",
+  "other": "{n} из {total} категорий в пределах лимита"
+ },
  "Your limit spread evenly over the month, up to today.": "Ваш лимит, равномерно распределённый по месяцу, до сегодняшнего дня.",
  "Your limit spread evenly over the year, up to today.": "Ваш лимит, равномерно распределённый по году, до сегодняшнего дня."
 }

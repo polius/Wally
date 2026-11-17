@@ -194,12 +194,17 @@ function budgetOf(q) {
   const kept = rows.filter((r) => !r.fg.over).length;
   return { month, rows, kept, total: rows.length };
 }
-/* "Within every limit", "Within 4 of 6 limits", "Over the limit" */
-export function budgetHead(bg) {
-  if (bg.kept === bg.total) return t("Within every limit");
-  if (!bg.kept) return bg.total === 1 ? t("Over the limit") : t("Over every limit");
-  return t("Within {n} of {total} limits", { n: bg.kept, total: bg.total });
+/* The section's verdict. The limit for everything is the month, the categories its parts, so they are not counted
+   together: first what was left of, or over, the month's limit, then how many categories stayed within theirs.
+   "Within every limit" when nothing went over. Parts: [text, "good" | "bad" | ""]. */
+export function budgetHeadParts(bg) {
+  if (bg.kept === bg.total) return [[t("Within every limit"), "good"]];
+  const all = bg.rows.find((r) => r.k === EVERYTHING), cats = bg.rows.filter((r) => r.k !== EVERYTHING), out = [];
+  if (all) out.push(all.fg.over ? [t("{amount} over", { amount: f(-all.fg.left) }), "bad"] : [t("{amount} left", { amount: f(all.fg.left) }), "good"]);
+  if (cats.length) out.push([tn(cats.length, "{n} of {total} category within", "{n} of {total} categories within", { n: cats.filter((r) => !r.fg.over).length, total: cats.length }), ""]);
+  return out;
 }
+const budgetHeadHtml = (bg) => budgetHeadParts(bg).map(([s, c]) => '<span class="' + (c ? "w-mr" + c : "") + '">' + esc(s) + "</span>").join(" · ");
 export const budgetName = (k) => (k === EVERYTHING ? t("Everything") : cat(k).n);
 
 /* ---------- a year, or all time ----------
@@ -514,7 +519,7 @@ function budgetRows(m) {
 }
 function budgetPhone(m) {
   const bg = m.budget;
-  return '<h2 class="w-mrsh">' + t("Budget") + '</h2><p class="w-mrnote' + (bg.kept === bg.total ? " good" : "") + '">' + esc(budgetHead(bg)) + "</p>" +
+  return '<h2 class="w-mrsh">' + t("Budget") + '</h2><p class="w-mrnote">' + budgetHeadHtml(bg) + "</p>" +
     // On a phone the limit for everything is a card of its own, above the categories'
     [bg.rows.filter(isAll), bg.rows.filter((r) => !isAll(r))].filter((g) => g.length).map((g) => '<div class="w-mrcard">' + g.map((r) =>
       '<a class="w-mrpw' + (isAll(r) ? " all" : "") + '" href="/budget?m=' + bg.month + '" data-link><span class="top">' + budIcon(r.k, 30) + "<b>" + esc(budgetName(r.k)) + "</b>" + budLeft(r.fg) + "</span>" +
@@ -608,7 +613,7 @@ function desktop(m) {
     keptBars(m) + "</div>" + tiles(m) + "</section>";
   html += sec("mr-where", t("Where it went"), whereRows(m) + (couple() ? '<p class="w-mrnote" id="mr-shared">' + sharedText(m) + "</p>" : ""), splitKey());
   if (m.kind !== "all") html += sec("mr-chg", t("What changed"), changed(m));
-  if (m.budget) html += sec("mr-bud", t("Budget"), budgetRows(m), '<span class="w-mrd' + (m.budget.kept === m.budget.total ? " good" : "") + '">' + esc(budgetHead(m.budget)) + "</span>");
+  if (m.budget) html += sec("mr-bud", t("Budget"), budgetRows(m), '<span class="w-mrd">' + budgetHeadHtml(m.budget) + "</span>");
   if (couple()) html += sec("mr-ppl", t("Each of you"), '<div class="w-mrpcs">' + state.people.map((p) => person(m, String(p.id))).join("") + "</div>");
   html += '<div class="w-mr2"><section class="w-mrcol" aria-labelledby="mr-days"><h2 id="mr-days">' + (m.kind ? t("Month by month") : t("Day by day")) + "</h2>" + kvList(m.kind ? monthRows(m) : dayRows(m)) + "</section>" +
     '<section class="w-mrcol" aria-labelledby="mr-bills"><h2 id="mr-bills">' + t("Bills") + "</h2>" + kvList(m.kind ? spanBillRows(m) : billRows(m)) + "</section></div>";

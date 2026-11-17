@@ -1463,8 +1463,9 @@
  "Below the even pace": "低于均匀进度",
  "Above the even pace": "高于均匀进度",
  "Within every limit": "全部在上限内",
- "Within {n} of {total} limits": "{total} 个上限中有 {n} 个未超",
- "Over every limit": "全部超出上限",
+ "{n} of {total} category within": {
+  "other": "{total} 个类别中有 {n} 个未超上限"
+ },
  "Your limit spread evenly over the month, up to today.": "把上限平均分到整个月，到今天为止的金额。",
  "Your limit spread evenly over the year, up to today.": "把上限平均分到整年，到今天为止的金额。"
 }

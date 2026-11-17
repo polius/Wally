@@ -1463,8 +1463,9 @@
  "Below the even pace": "균등 페이스보다 적음",
  "Above the even pace": "균등 페이스보다 많음",
  "Within every limit": "모든 한도 이내",
- "Within {n} of {total} limits": "{total}개 중 {n}개 한도 이내",
- "Over every limit": "모든 한도 초과",
+ "{n} of {total} category within": {
+  "other": "{total}개 카테고리 중 {n}개 한도 이내"
+ },
  "Your limit spread evenly over the month, up to today.": "한도를 한 달에 고르게 나눈, 오늘까지의 금액.",
  "Your limit spread evenly over the year, up to today.": "한도를 한 해에 고르게 나눈, 오늘까지의 금액."
 }

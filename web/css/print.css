@@ -96,6 +96,8 @@
 .pr-br .bar.over i{background:#F58083}
 .pr-br .of{text-align:end;font-size:10.75pt;unicode-bidi:isolate;white-space:nowrap}
 .pr-br .pr-d{text-align:end}
+.pr-good{color:var(--good)}
+.pr-bad{color:var(--bad)}
 /* The limit for everything leads */
 .pr-br.all{padding-block:2.4mm;border-bottom:.6pt solid #DDD}
 .pr-br.all .n,.pr-br.all .of{font-weight:600}

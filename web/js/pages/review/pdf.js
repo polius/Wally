@@ -5,7 +5,7 @@
    is ever cut in two. Each page has the same header and a footer with its number. */
 import {
   t, tn, esc, state, pct, TODAY, totals, cat, pname, ppastel, couple, initial, monthYear, F, dlab, ds, dim, amt, f, bigMoney } from "../../core.js";
-import { highlights, dayRows, billRows, monthRows, spanBillRows, sharedText, splitParts, spanTitle, spanSub, budgetHead, budgetName } from "../review.js";
+import { highlights, dayRows, billRows, monthRows, spanBillRows, sharedText, splitParts, spanTitle, spanSub, budgetHeadParts, budgetName } from "../review.js";
 
 /* Paper is white whatever the app's theme, and it prints in black and grey: green and red only for
    money, category colours only on the small dots that name them */
@@ -106,7 +106,8 @@ function budgetBlock(m) {
       '<span class="of">' + esc(t("{spent} of {limit}", { spent: f(fg.spent), limit: f(fg.limit) })) + "</span>" +
       '<span class="pr-d ' + (fg.over ? "bad" : "good") + '">' + esc(fg.over ? t("{amount} over", { amount: f(-fg.left) }) : t("{amount} left", { amount: f(fg.left) })) + "</span></div>";
   }).join("");
-  return section(esc(t("Budget")), esc(budgetHead(bg)), '<div class="pr-bud">' + rows + "</div>");
+  const head = budgetHeadParts(bg).map(([s, c]) => '<span class="' + (c ? "pr-" + c : "") + '">' + esc(s) + "</span>").join(" · ");
+  return section(esc(t("Budget")), head, '<div class="pr-bud">' + rows + "</div>");
 }
 /* What changed: up on one side, down on the other */
 function changedBlock(m) {

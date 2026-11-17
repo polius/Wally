@@ -1893,8 +1893,14 @@
  "Below the even pace": "أقل من الوتيرة المتساوية",
  "Above the even pace": "أعلى من الوتيرة المتساوية",
  "Within every limit": "ضمن كل الحدود",
- "Within {n} of {total} limits": "ضمن {n} من {total} حدود",
- "Over every limit": "تجاوز كل الحدود",
+ "{n} of {total} category within": {
+  "zero": "{n} من {total} فئات ضمن الحد",
+  "one": "{n} من {total} فئات ضمن الحد",
+  "two": "{n} من {total} فئات ضمن الحد",
+  "few": "{n} من {total} فئات ضمن الحد",
+  "many": "{n} من {total} فئات ضمن الحد",
+  "other": "{n} من {total} فئات ضمن الحد"
+ },
  "Your limit spread evenly over the month, up to today.": "حدّك موزّعًا بالتساوي على الشهر، حتى اليوم.",
  "Your limit spread evenly over the year, up to today.": "حدّك موزّعًا بالتساوي على السنة، حتى اليوم."
 }

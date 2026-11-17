@@ -102,7 +102,7 @@ const prevM = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth
 await p.goto(BASE + '/review?m=' + prevM, { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
 const rb = await txt(p, '.w-mrev section[aria-labelledby="mr-bud"]');
 const order = await p.$$eval('.w-mrev h2', (l) => l.map((h) => h.textContent));
-ok(/Budget/.test(rb) && /Within \d of \d limits|Within every limit/.test(rb) && /Groceries\s*630\.20\s€ of 600\.00\s€\s*30\.20\s€ over/.test(rb) && /^Everything/.test((await txt(p, '.w-mrev .w-mrbrow')).trim()), 'Recap: the month\'s limits, everything first, what was over', rb.slice(0, 200));
+ok(/Budget/.test(rb) && /42\.07\s€ left · 3 of 5 categories within/.test(rb) && /Groceries\s*630\.20\s€ of 600\.00\s€\s*30\.20\s€ over/.test(rb) && /^Everything/.test((await txt(p, '.w-mrev .w-mrbrow')).trim()), 'Recap: the month\'s limits, everything first, what was over; the header gives the month, then the categories', rb.slice(0, 200));
 ok(order.indexOf('Budget') === order.indexOf('What changed') + 1, 'Recap: Budget right after What changed', order);
 ok((await p.$eval('.w-mrev .w-mrbrow', (a) => a.getAttribute('href'))) === '/budget?m=' + prevM, 'Recap: a limit opens Budget on that month');
 await p.evaluate(() => window.dispatchEvent(new Event('beforeprint'))); await p.waitForTimeout(300);

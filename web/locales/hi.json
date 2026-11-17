@@ -1549,8 +1549,10 @@
  "Below the even pace": "समान रफ़्तार से कम",
  "Above the even pace": "समान रफ़्तार से ज़्यादा",
  "Within every limit": "हर सीमा के भीतर",
- "Within {n} of {total} limits": "{total} में से {n} सीमाओं के भीतर",
- "Over every limit": "हर सीमा से ज़्यादा",
+ "{n} of {total} category within": {
+  "one": "{total} में से {n} श्रेणी सीमा के भीतर",
+  "other": "{total} में से {n} श्रेणियाँ सीमा के भीतर"
+ },
  "Your limit spread evenly over the month, up to today.": "आपकी सीमा को महीने भर में बराबर बाँटकर, आज तक की रकम।",
  "Your limit spread evenly over the year, up to today.": "आपकी सीमा को साल भर में बराबर बाँटकर, आज तक की रकम।"
 }

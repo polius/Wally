@@ -1635,8 +1635,11 @@
  "Below the even pace": "Per sota del ritme uniforme",
  "Above the even pace": "Per sobre del ritme uniforme",
  "Within every limit": "Dins de tots els límits",
- "Within {n} of {total} limits": "Dins de {n} de {total} límits",
- "Over every limit": "Per sobre de tots els límits",
+ "{n} of {total} category within": {
+  "one": "{n} de {total} categoria dins del límit",
+  "many": "{n} de {total} categories dins del límit",
+  "other": "{n} de {total} categories dins del límit"
+ },
  "Your limit spread evenly over the month, up to today.": "El teu límit repartit per igual al llarg del mes, fins avui.",
  "Your limit spread evenly over the year, up to today.": "El teu límit repartit per igual al llarg de l’any, fins avui."
 }

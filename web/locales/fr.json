@@ -1635,8 +1635,11 @@
  "Below the even pace": "Sous le rythme régulier",
  "Above the even pace": "Au-dessus du rythme régulier",
  "Within every limit": "Dans toutes les limites",
- "Within {n} of {total} limits": "Dans {n} limites sur {total}",
- "Over every limit": "Au-dessus de toutes les limites",
+ "{n} of {total} category within": {
+  "one": "{n} catégorie sur {total} dans la limite",
+  "many": "{n} catégories sur {total} dans la limite",
+  "other": "{n} catégories sur {total} dans la limite"
+ },
  "Your limit spread evenly over the month, up to today.": "Votre limite répartie également sur le mois, jusqu’à aujourd’hui.",
  "Your limit spread evenly over the year, up to today.": "Votre limite répartie également sur l’année, jusqu’à aujourd’hui."
 }

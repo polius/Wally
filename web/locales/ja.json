@@ -1463,8 +1463,9 @@
  "Below the even pace": "均等ペースより少ない",
  "Above the even pace": "均等ペースより多い",
  "Within every limit": "すべての上限内",
- "Within {n} of {total} limits": "{total}件中{n}件が上限内",
- "Over every limit": "すべての上限を超過",
+ "{n} of {total} category within": {
+  "other": "{total}カテゴリー中{n}件が上限内"
+ },
  "Your limit spread evenly over the month, up to today.": "上限を月全体に均等に割り振った、今日までの額。",
  "Your limit spread evenly over the year, up to today.": "上限を年全体に均等に割り振った、今日までの額。"
 }
