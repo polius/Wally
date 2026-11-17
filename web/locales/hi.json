@@ -1551,7 +1551,6 @@
   "other": "{n} दिन बाकी।"
  },
  "Even share by today": "आज तक का बराबर हिस्सा",
- "{amount} limit": "सीमा {amount}",
  "{amount} a day · {n} day left": {
   "one": "हर दिन {amount} · {n} दिन बाकी",
   "other": "हर दिन {amount} · {n} दिन बाकी"

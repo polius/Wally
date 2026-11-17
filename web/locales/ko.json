@@ -1465,7 +1465,6 @@
   "other": "{n}일 남았습니다."
  },
  "Even share by today": "오늘까지의 균등 몫",
- "{amount} limit": "한도 {amount}",
  "{amount} a day · {n} day left": {
   "other": "하루 {amount} · {n}일 남음"
  },

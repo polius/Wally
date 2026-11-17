@@ -1465,7 +1465,6 @@
   "other": "还剩{n}天。"
  },
  "Even share by today": "到今天的平均份额",
- "{amount} limit": "限额 {amount}",
  "{amount} a day · {n} day left": {
   "other": "每天 {amount} · 还剩{n}天"
  },

@@ -109,7 +109,11 @@ function lead(all) {
     : tn(fg.days, "{n} day left", "{n} days left");
   return '<span class="rec-eye">' + esc(eye) + '</span><b class="rec-big amt">' + bdi(bigMoney(Math.abs(fg.left))) + "</b>" +
     (line ? '<span class="rec-line">' + esc(line) + "</span>" : "") +
-    '<div class="bg-lead">' + bar(fg) + '<div class="bg-leadcap"><span>' + esc(t("{amount} spent", { amount: f(fg.spent) })) + "</span><span>" + esc(t("{amount} limit", { amount: f(fg.limit) })) + "</span></div></div>";
+    '<div class="bg-lead">' + bar(Object.assign({}, fg, { today: null })) +
+      // A key under the bar, as iPhone Storage does: each part named, with its amount; the limit at the end
+      '<div class="bg-key"><span><i class="sp' + (fg.over ? " over" : "") + '"></i>' + esc(t("Spent")) + " <b>" + m(fg.spent) + "</b></span>" +
+        (fg.due > 0.004 ? '<span><i class="du' + (fg.over ? " over" : "") + '"></i>' + esc(t("Bills still due")) + " <b>" + m(fg.due) + "</b></span>" : "") +
+        '<span class="lim">' + esc(t("Limit")) + " <b>" + m(fg.limit) + "</b></span></div></div>";
 }
 
 /* ---------- the limits, then what has none ---------- */

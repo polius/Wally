@@ -1895,7 +1895,6 @@
   "other": "بقي {n} يوم."
  },
  "Even share by today": "الحصة المتساوية حتى اليوم",
- "{amount} limit": "الحد {amount}",
  "{amount} a day · {n} day left": {
   "zero": "{amount} يوميًا · لم يبقَ أي يوم",
   "one": "{amount} يوميًا · بقي يوم واحد",

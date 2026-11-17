@@ -1637,7 +1637,6 @@
   "other": "Mancano {n} giorni."
  },
  "Even share by today": "Quota proporzionale a oggi",
- "{amount} limit": "Limite di {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} al giorno · manca {n} giorno",
   "many": "{amount} al giorno · mancano {n} giorni",

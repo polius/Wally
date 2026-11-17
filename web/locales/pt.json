@@ -1637,7 +1637,6 @@
   "other": "Faltam {n} dias."
  },
  "Even share by today": "Parte proporcional até hoje",
- "{amount} limit": "Limite de {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} por dia · falta {n} dia",
   "many": "{amount} por dia · faltam {n} dias",

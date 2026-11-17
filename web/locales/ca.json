@@ -1637,7 +1637,6 @@
   "other": "Queden {n} dies."
  },
  "Even share by today": "Part proporcional fins avui",
- "{amount} limit": "Límit de {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} al dia · queda {n} dia",
   "many": "{amount} al dia · queden {n} dies",

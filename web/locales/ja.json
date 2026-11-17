@@ -1465,7 +1465,6 @@
   "other": "残り{n}日。"
  },
  "Even share by today": "今日までの均等割り",
- "{amount} limit": "上限 {amount}",
  "{amount} a day · {n} day left": {
   "other": "1日{amount} · 残り{n}日"
  },

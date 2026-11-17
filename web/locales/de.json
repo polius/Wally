@@ -1551,7 +1551,6 @@
   "other": "Noch {n} Tage."
  },
  "Even share by today": "Gleichmäßiger Anteil bis heute",
- "{amount} limit": "Limit {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} pro Tag · noch {n} Tag",
   "other": "{amount} pro Tag · noch {n} Tage"

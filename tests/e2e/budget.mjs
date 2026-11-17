@@ -23,8 +23,8 @@ const txt = (p, sel) => p.$eval(sel, (e) => e.innerText).catch(() => '');
 let p = await open('desktop', '/budget');
 // B1
 const lead = await txt(p, '.bg-sum');
-ok(/Left to spend/.test(lead) && /a day · \d+ days? left/.test(lead) && /spent/.test(lead) && /2,700\.00\s€ limit/.test(lead), 'B1 lead: left to spend, per day and days left, then spent against the limit', lead);
-ok((await p.$$('.bg-lead .bg-bar')).length === 1, 'B1 the lead has its own bar');
+ok(/Left to spend/.test(lead) && /a day · \d+ days? left/.test(lead) && /Spent\s*1,9\d\d\.\d\d\s€/.test(lead) && /Bills still due/.test(lead) && /Limit\s*2,700\.00\s€/.test(lead), 'B1 lead: left to spend, per day and days left, then a bar with a key: spent, bills still due, limit', lead);
+ok((await p.$$('.bg-lead .bg-bar')).length === 1 && (await p.$$('.bg-lead .bg-bar u')).length === 0, 'B1 the lead has its own bar, without the even-share mark');
 const names = await p.$$eval('.bg-row h6', (l) => l.map((h) => h.textContent));
 ok(names.join() === 'Groceries,Utilities,Food,Shopping,Entertainment,Travel', 'B1 rows by limit, largest first; yearly after', names);
 ok((await p.$$('.bg-list .bg-bar u')).length === 6 && /Even share by today/.test(await txt(p, '.bg-legend')), 'B1 the even share by today on every bar, and the legend says so');

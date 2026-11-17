@@ -1723,7 +1723,6 @@
   "other": "Осталось {n} дня."
  },
  "Even share by today": "Равная доля на сегодня",
- "{amount} limit": "Лимит {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} в день · остался {n} день",
   "few": "{amount} в день · осталось {n} дня",

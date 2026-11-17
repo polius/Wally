@@ -1637,7 +1637,6 @@
   "other": "Encore {n} jours."
  },
  "Even share by today": "Part égale à ce jour",
- "{amount} limit": "Plafond de {amount}",
  "{amount} a day · {n} day left": {
   "one": "{amount} par jour · encore {n} jour",
   "many": "{amount} par jour · encore {n} jours",
