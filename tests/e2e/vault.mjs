@@ -88,13 +88,10 @@ const gateShown = (page, text, timeout = 15000) => page.waitForFunction((t) => !
 // Back at sign-in: their face and name, and the password field
 const atPassword = (page, name, timeout = 15000) => page.waitForFunction((n) => !document.getElementById("gate").hidden && document.getElementById("si-in") && document.getElementById("gate-h").textContent === n, name, { timeout }).then(() => true, () => false);
 const noErrors = (page, what) => ok(page.errors.length === 0, what + ": no console errors" + (page.errors.length ? " — " + page.errors.join(" | ") : ""));
-/* Run in the page, with core.js and the vault session, the same module instances the app uses */
-const inPage = (page, fn, arg) => page.evaluate(async ([src, a]) => {
-  const core = await import("/js/core.js");
-  const session = await import("/js/vault/session.js");
-  const store = await import("/js/vault/store.js");
-  return (0, eval)("(" + src + ")")({ core, session, store }, a);
-}, [fn.toString(), arg]);
+/* Run in the page, with core.js and the vault session, the same module instances the app uses
+   (built here and handed to the page as a function: the page's policy allows no eval) */
+const inPage = (page, fn, arg) => page.evaluate(new Function("a", `return Promise.all([import("/js/core.js"), import("/js/vault/session.js"), import("/js/vault/store.js")])
+  .then(([core, session, store]) => (${fn.toString()})({ core, session, store }, a))`), arg);
 /* Wait until fn (run in the page) returns true */
 async function until(page, fn, arg, timeout = 10000) {
   const end = Date.now() + timeout;

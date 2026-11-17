@@ -308,7 +308,7 @@ for (const size of SIZES) {
   for (const [route, open] of [["/", "r.openRange(r.rangeOf(), () => {})"], ["/transactions", "r.openRangeSheet(() => {})"]]) {
     await p.goto(BASE + route, { waitUntil: "networkidle" }); await p.waitForTimeout(300);
     const mod = route === "/" ? "/js/pages/dashboard/range.js" : "/js/pages/transactions/sheets.js";
-    await p.evaluate(async ([m, code]) => { const r = await import(m); new Function("r", code)(r); }, [mod, open]);
+    await p.evaluate(new Function("m", "return import(m).then((r) => { " + open + "; })"), mod);
     await p.waitForTimeout(300);
     const shown = await p.evaluate(() => !document.getElementById("dlg").hidden);
     check(shown, size + ": " + route + " Custom Range opens");

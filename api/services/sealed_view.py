@@ -166,17 +166,18 @@ class _Rows(list):
 def _stable(v) -> str:
     return json.dumps(v, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
-def _open(raw_key: str, method: str):
+def _open(raw_key: str, method: str, path: str):
     """The key's person and the household key it opens, or an HTTPException"""
-    from ..routers.auth import find_key, key_actor
+    from ..routers.auth import find_key, key_actor, key_refusal
     if not records.api_keys_allowed():
         raise HTTPException(status_code=401, detail="API keys are off on this server.")
     with Session(database.engine) as db:
         ak = find_key(db, raw_key)
         if not ak:
             raise HTTPException(status_code=401, detail="Invalid API key")
-        if (ak.scope or "write") == "read" and method not in READS:
-            raise HTTPException(status_code=403, detail="This key can only read.")
+        refused = key_refusal(ak.scope, method, path)
+        if refused:
+            raise HTTPException(status_code=403, detail=refused)
         if not ak.wrap:
             raise HTTPException(status_code=401, detail="This key was made before Wally was encrypted. Make a new one in Settings › API keys.")
         secret = sealing.unlock_with_api_key(raw_key, ak.wrap, records.vault_id(db))
@@ -188,7 +189,8 @@ async def serve(request, call_next, raw_key: str):
     """A call with an API key that uses an encrypted household's data"""
     changes = request.method not in READS
     try:
-        actor, household = await run_in_threadpool(_open, raw_key, request.method)
+        from ..routers.auth import api_path
+        actor, household = await run_in_threadpool(_open, raw_key, request.method, api_path(request))
     except HTTPException as error:
         return JSONResponse({"detail": error.detail}, status_code=error.status_code)
     view = View(actor, household)

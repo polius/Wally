@@ -38,7 +38,8 @@ const api = async (method, path, body) => {
   return text ? JSON.parse(text) : null;
 };
 /* Read the browser's own data */
-const core = (p, fn, arg) => p.evaluate(async ([src, arg]) => { const c = await import("/js/core.js"); return new Function("c", "arg", "return (" + src + ")(c, arg)")(c, arg); }, [fn.toString(), arg]);
+// Built here and handed to the page as a function: the page's policy allows no eval or new Function
+const core = (p, fn, arg) => p.evaluate(new Function("arg", "return import('/js/core.js').then((c) => (" + fn.toString() + ")(c, arg))"), arg);
 const title = (p) => p.$eval("#tx-title", (e) => e.textContent.trim());
 const countN = async (p) => +(await p.$eval("#tx-count", (e) => e.firstChild.textContent)).replace(/[^\d]/g, "");
 /* The period is the title, with ‹ › beside it; its menu holds five shortcuts */

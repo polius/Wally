@@ -199,7 +199,8 @@ function fatal(title, body) {
   $("boot").hidden = true;
   $("app").hidden = true;
   const g = $("gate");
-  g.innerHTML = '<div class="w-gatecard" role="alert"><span class="w-mark lg"></span><h1>' + title + "</h1><p>" + (body || "") + '</p><button type="button" class="w-btn primary" onclick="location.reload()">' + t("Try again") + "</button></div>";
+  g.innerHTML = '<div class="w-gatecard" role="alert"><span class="w-mark lg"></span><h1>' + title + "</h1><p>" + (body || "") + '</p><button type="button" class="w-btn primary" id="gate-retry">' + t("Try again") + "</button></div>";
+  $("gate-retry").addEventListener("click", () => location.reload());
   g.hidden = false;
 }
 

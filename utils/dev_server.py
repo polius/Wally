@@ -2,6 +2,9 @@
 
     WALLY_DATA=/tmp/wally DEMO=true python -m uvicorn utils.dev_server:app --port 8080
 """
+import re
+from pathlib import Path
+
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.routing import Mount
@@ -19,7 +22,17 @@ class SinglePageApp(StaticFiles):
                 return await super().get_response("index.html", scope)
             raise
 
+# The same Content-Security-Policy nginx sends with the app, so the browser tests run under it
+_NGINX = (Path(__file__).resolve().parent.parent / "nginx.conf").read_text()
+CSP = re.search(r'^    add_header Content-Security-Policy "([^"]+)" always;', _NGINX, re.M).group(1)
+
+class WithPolicy(SinglePageApp):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Content-Security-Policy"] = CSP
+        return response
+
 app = Starlette(
-    routes=[Mount("/api", app=api_app), Mount("/", app=SinglePageApp(directory="web", html=True))],
+    routes=[Mount("/api", app=api_app), Mount("/", app=WithPolicy(directory="web", html=True))],
     lifespan=lambda _: api_app.router.lifespan_context(api_app),
 )

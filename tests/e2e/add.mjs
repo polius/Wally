@@ -40,7 +40,8 @@ const api = (page, method, path, body) => page.evaluate(async ([m, p, b]) => {
   const text = await r.text();
   return { status: r.status, data: text ? JSON.parse(text) : null };
 }, [method, path, body]);
-const core = (page, fn, arg) => page.evaluate(async ([src, a]) => { const c = await import("/js/core.js"); return new Function("c", "a", "return (" + src + ")(c, a)")(c, a); }, [fn.toString(), arg]);
+// Built here and handed to the page as a function: the page's policy allows no eval or new Function
+const core = (page, fn, arg) => page.evaluate(new Function("a", "return import('/js/core.js').then((c) => (" + fn.toString() + ")(c, a))"), arg);
 async function open(page, opts) {
   if (opts === undefined) await page.keyboard.press("n");
   else await page.evaluate(async (o) => {
