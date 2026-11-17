@@ -1818,5 +1818,6 @@
  "≈ Based on {month}": "≈ بناءً على {month}",
  "Keyboard shortcuts": "اختصارات لوحة المفاتيح",
  "Nothing here is kept.": "لا يُحفظ شيء هنا.",
- "Add a bill or a salary": "أضف فاتورة أو راتبًا"
+ "Add a bill or a salary": "أضف فاتورة أو راتبًا",
+ "Wally didn’t answer ({status}).": "لم يستجب Wally ({status})."
 }

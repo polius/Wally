@@ -1650,5 +1650,6 @@
  "≈ Based on {month}": "≈ По месяцу: {month}",
  "Keyboard shortcuts": "Сочетания клавиш",
  "Nothing here is kept.": "Здесь ничего не сохраняется.",
- "Add a bill or a salary": "Добавить счёт или зарплату"
+ "Add a bill or a salary": "Добавить счёт или зарплату",
+ "Wally didn’t answer ({status}).": "Wally не ответил ({status})."
 }

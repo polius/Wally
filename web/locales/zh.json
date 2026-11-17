@@ -1398,5 +1398,6 @@
  "≈ Based on {month}": "≈ 基于{month}",
  "Keyboard shortcuts": "键盘快捷键",
  "Nothing here is kept.": "这里的内容都不会保存。",
- "Add a bill or a salary": "添加账单或工资"
+ "Add a bill or a salary": "添加账单或工资",
+ "Wally didn’t answer ({status}).": "Wally 没有响应（{status}）。"
 }

@@ -92,7 +92,13 @@ export async function api(method, path, body, opts) {
   try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
   // Encryption was turned on from another device: this one opens again, to unlock
   if (r.status === 409 && !VAULT && data && typeof data.detail === "string" && data.detail.startsWith("Wally is encrypted")) emit("encrypted");
-  if (!r.ok) throw new ApiError(r.status, data && data.detail !== undefined ? data.detail : data);
+  if (!r.ok) {
+    if (data && typeof data === "object" && data.detail !== undefined) throw new ApiError(r.status, data.detail);
+    // Not Wally's answer: a proxy's page while Wally restarts or updates. Never its markup; a gateway
+    // error counts as no connection, so a new expense waits in the queue.
+    if (r.status >= 502 && r.status <= 504) throw new ApiError(0, t("Wally can’t be reached. Check your connection."));
+    throw new ApiError(r.status, t("Wally didn’t answer ({status}).", { status: r.status }));
+  }
   return data;
 }
 export const GET = (p, o) => api("GET", p, undefined, o);

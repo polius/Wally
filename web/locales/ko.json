@@ -1398,5 +1398,6 @@
  "≈ Based on {month}": "≈ {month} 기준",
  "Keyboard shortcuts": "키보드 단축키",
  "Nothing here is kept.": "여기서는 아무것도 저장되지 않습니다.",
- "Add a bill or a salary": "청구서나 급여 추가"
+ "Add a bill or a salary": "청구서나 급여 추가",
+ "Wally didn’t answer ({status}).": "Wally가 응답하지 않았습니다({status})."
 }

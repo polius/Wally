@@ -1566,5 +1566,6 @@
  "≈ Based on {month}": "≈ D'après {month}",
  "Keyboard shortcuts": "Raccourcis clavier",
  "Nothing here is kept.": "Rien ici n’est conservé.",
- "Add a bill or a salary": "Ajouter une facture ou un salaire"
+ "Add a bill or a salary": "Ajouter une facture ou un salaire",
+ "Wally didn’t answer ({status}).": "Wally n’a pas répondu ({status})."
 }

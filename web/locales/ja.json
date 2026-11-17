@@ -1398,5 +1398,6 @@
  "≈ Based on {month}": "≈ {month}に基づく",
  "Keyboard shortcuts": "キーボードショートカット",
  "Nothing here is kept.": "ここでの変更は保存されません。",
- "Add a bill or a salary": "請求や給与を追加"
+ "Add a bill or a salary": "請求や給与を追加",
+ "Wally didn’t answer ({status}).": "Wally から応答がありません（{status}）。"
 }

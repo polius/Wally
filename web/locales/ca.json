@@ -1566,5 +1566,6 @@
  "≈ Based on {month}": "≈ Segons {month}",
  "Keyboard shortcuts": "Dreceres de teclat",
  "Nothing here is kept.": "Res del que hi ha aquí es desa.",
- "Add a bill or a salary": "Afegeix una factura o un sou"
+ "Add a bill or a salary": "Afegeix una factura o un sou",
+ "Wally didn’t answer ({status}).": "Wally no ha respost ({status})."
 }
