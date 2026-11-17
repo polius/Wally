@@ -2,7 +2,7 @@
    category, find a transaction by name, or add one by typing it: "12 coffee ana". */
 import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, LANG, MOD } from "./core.js";
 import { navigate, setScope, railed, setRail } from "./shell.js";
-import { trapFocus, hideTip } from "./ui.js";
+import { trapFocus, hideTip, holdPage } from "./ui.js";
 import { shortDesc } from "./sched.js";
 
 const MAX = 12;
@@ -178,12 +178,14 @@ export function openCmd(opts) {
   keysOnly = !!(opts && opts.keys);
   render();
   w.hidden = false;
+  holdPage("cmd", true);
   $("cmd-q").focus();
 }
 export function closeCmd() {
   const w = $("cmd");
   if (w.hidden) return;
   w.hidden = true;
+  holdPage("cmd", false);
   if (back && document.contains(back)) back.focus();
   back = null;
 }

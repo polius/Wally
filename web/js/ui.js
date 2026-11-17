@@ -138,10 +138,21 @@ export function focusables(root) { return [...root.querySelectorAll(FOCUSABLE)].
 export function trapFocus(root, ev) {
   if (ev.key !== "Tab") return;
   const list = focusables(root);
-  if (!list.length) return;
-  const first = list[0], last = list[list.length - 1];
-  if (ev.shiftKey && document.activeElement === first) { last.focus(); ev.preventDefault(); }
-  else if (!ev.shiftKey && document.activeElement === last) { first.focus(); ev.preventDefault(); }
+  if (!list.length) { ev.preventDefault(); return; }
+  const first = list[0], last = list[list.length - 1], a = document.activeElement;
+  // On the dialog itself (an alert holds the focus so Return answers it): Tab goes in, at either end
+  if (a === root || !root.contains(a)) { (ev.shiftKey ? last : first).focus(); ev.preventDefault(); }
+  else if (ev.shiftKey && a === first) { last.focus(); ev.preventDefault(); }
+  else if (!ev.shiftKey && a === last) { first.focus(); ev.preventDefault(); }
+}
+/* While a dialog, the add sheet or the command bar is open, the page behind can't be reached: not by
+   Tab, not by a click, not by a screen reader. They can stack (an alert over the add sheet), so each
+   one holds the page until it closes. */
+const holders = new Set();
+export function holdPage(who, on) {
+  if (on) holders.add(who); else holders.delete(who);
+  const app = $("app");
+  if (app) app.inert = holders.size > 0;
 }
 
 /* ---------- dialogs ----------
@@ -171,6 +182,7 @@ export function openDialog(o) {
   }
   w.innerHTML = html;
   w.hidden = false;
+  holdPage("dlg", true);
   current = { o, back };
   const root = w.firstChild;
   if (o.onOpen) o.onOpen(root);
@@ -190,6 +202,7 @@ export function closeDialog() {
   hideTip();
   $("dlg").hidden = true;
   $("dlg").innerHTML = "";
+  holdPage("dlg", false);   // before the focus goes back: an inert element can't take it
   if (back && document.contains(back)) back.focus();
 }
 export function dialogError(msg) { const e = $("dlg-err"); if (e) { e.textContent = msg; e.hidden = !msg; } }
