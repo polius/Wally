@@ -1,7 +1,7 @@
 /* Settings › Appearance: the theme. Week and time zone live in Language & Region,
    the version at the foot of the list of panes. */
 import { t } from "../../core.js";
-import { refresh, setTheme, theme } from "../../shell.js";
+import { pickTheme, theme } from "../../shell.js";
 import { gl, gr, paint, segK as seg } from "./common.js";
 import { setAction } from "../settings.js";
 
@@ -25,7 +25,6 @@ function render() {
 function onClick(ev) {
   const b = ev.target.closest("#ap-theme [data-v]");
   if (!b) return;
-  setTheme(b.dataset.v);
+  pickTheme(b.dataset.v);
   render();
-  refresh({ theme: true });
 }

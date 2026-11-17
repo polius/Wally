@@ -90,18 +90,20 @@ export function setScope(sc) {
   try { localStorage.setItem("wally.scope", sc); } catch (e) { /* fine */ }
   closeMenus();
   refresh({ scope: true });
-  document.querySelectorAll(".w-pswitch").forEach((w) => { w.outerHTML = scopeSwitch(); });
+  document.querySelectorAll(".w-pswitch").forEach((w) => { w.outerHTML = scopeSwitch({ household: w.hasAttribute("data-household") }); });
   if (from >= 0) {
     const back = () => { const b = document.querySelectorAll(".w-pswitch")[from]; if (b && !b.contains(document.activeElement)) b.querySelector(".w-pswitch-b").focus(); };
     back(); requestAnimationFrame(back);
   }
 }
-function scopeButtons() {
-  const all = '<button type="button" role="menuitemradio" data-scope="all" aria-checked="' + (state.scope === "all") + '">' + av("all") + "<span>" + t("Everyone") + "</span><span>" + state.people.length + "</span></button>";
+/* household: a page whose figures are the whole household's (Budget). Everyone is ticked and the people are
+   there but disabled, with a line that says why; picking Everyone there changes nothing on the other pages */
+function scopeButtons(household) {
+  const all = '<button type="button" role="menuitemradio"' + (household ? "" : ' data-scope="all"') + ' aria-checked="' + (household || state.scope === "all") + '">' + av("all") + "<span>" + t("Everyone") + "</span><span>" + state.people.length + "</span></button>";
   return all + state.people.map((p) => {
     const k = String(p.id);
-    return '<button type="button" role="menuitemradio" data-scope="' + k + '" aria-checked="' + (state.scope === k) + '">' + av(k) + "<span>" + esc(p.name) + "</span><span>" + (k === state.me ? t("You") : "") + "</span></button>";
-  }).join("");
+    return '<button type="button" role="menuitemradio"' + (household ? ' aria-checked="false" disabled' : ' data-scope="' + k + '" aria-checked="' + (state.scope === k) + '"') + ">" + av(k) + "<span>" + esc(p.name) + "</span><span>" + (k === state.me ? t("You") : "") + "</span></button>";
+  }).join("") + (household ? '<p class="w-menunote" role="note">' + t("Budget is for the whole household.") + "</p>" : "");
 }
 const navLink = ([name, href, ic, label]) =>
   // Month in review opens from Summary, so Summary stays lit under it
@@ -134,8 +136,31 @@ export function renderSide() {
     '<div class="w-sidehead"><a class="w-brand" href="/" data-link><span class="w-mark"></span><span class="w-brand-t">Wally</span></a>' +
     '<button type="button" class="w-sidetog" data-side-toggle data-hint-always aria-controls="side" aria-expanded="' + !railed() + '" aria-label="' + label + '" data-hint="' + label + '">' + icon("sidebar") + "</button></div>" +
     '<nav class="w-nav" aria-label="' + esc(t("Pages")) + '">' + NAV.map(navLink).join("") + "</nav>" +
-    '<div class="w-sidefoot"><nav class="w-nav">' + navLink(SETTINGS) + "</nav>" +
+    '<div class="w-sidefoot"><nav class="w-nav">' + navLink(SETTINGS) + "</nav>" + themeButton() +
     (meb ? '<div class="w-me">' + meb + "</div>" : "") + "</div>";
+}
+
+/* The theme, a click away: Auto, Light or Dark, as Settings › Appearance sets it. In the sidebar a row under Settings
+   with a menu that opens upward (beside the rail when it is folded); on phones a switch in the person menu */
+const THEMES = [["auto", "l-sun-moon", () => t("Auto")], ["light", "sun", () => t("Light")], ["dark", "moon", () => t("Dark")]];
+const themeOf = () => THEMES.find((x) => x[0] === theme()) || THEMES[0];
+function themeButton() {
+  const [, ic, name] = themeOf();
+  const items = THEMES.map(([k, i, n]) => '<button type="button" role="menuitemradio" data-theme-set="' + k + '" aria-checked="' + (k === themeOf()[0]) + '">' + icon(i) + "<span>" + esc(n()) + "</span></button>").join("");
+  return '<div class="w-thw"><button type="button" class="w-thb" data-menu="theme" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("Appearance") + ": " + name()) + '" data-hint="' + esc(t("Appearance")) + '" data-hint-sub="' + esc(name()) + '">' +
+    icon(ic) + '<span class="w-lbl">' + esc(t("Appearance")) + '</span><span class="w-lbl w-thv">' + esc(name()) + "</span></button>" +
+    '<div class="w-menu w-memenu w-thmenu" role="menu" aria-label="' + esc(t("Appearance")) + '" hidden>' + items + "</div></div>";
+}
+function themeSwitch() {
+  return '<div class="w-menuseg w-ponly" role="group" aria-label="' + esc(t("Appearance")) + '">' + THEMES.map(([k, i, n]) =>
+    '<button type="button" role="menuitemradio" data-theme-set="' + k + '" aria-checked="' + (k === themeOf()[0]) + '">' + icon(i) + "<span>" + esc(n()) + "</span></button>").join("") + "</div>";
+}
+/* Picked anywhere (the sidebar, the person menu, Settings): every place that shows it follows. The person menu's
+   switch is set in place, so a menu open on a phone stays open, its focus where it was */
+export function pickTheme(mode) {
+  setTheme(mode);
+  document.querySelectorAll(".w-menuseg [data-theme-set]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.themeSet === mode)));
+  refresh({ theme: true });
 }
 
 /* The sidebar folds to an icon rail on wide screens too, and this browser remembers it.
@@ -191,24 +216,25 @@ export function scopeChips() {
 }
 /* The person menu at the top right of a page: whose money is shown ("Everyone ▾"). On a phone,
    where the sidebar is gone, it also holds Switch person or Sign out. */
-export function scopeSwitch() {
+export function scopeSwitch(opts) {
+  const household = !!(opts && opts.household);
   // On a phone the sidebar is gone: Settings lives here, as in iOS apps, with Switch person or Sign out
   const settings = '<a href="/settings" data-link role="menuitem" class="w-ponly">' + icon("settings") + "<span>" + t("Settings") + "</span></a>";
-  const acts = meActions(), phoneActs = '<div class="w-menusep w-ponly" role="separator"></div>' + settings + (acts ? acts.replace(/role="menuitem"/g, 'role="menuitem" class="w-ponly"') : "");
+  const acts = meActions(), phoneActs = '<div class="w-menusep w-ponly" role="separator"></div>' + themeSwitch() + settings + (acts ? acts.replace(/role="menuitem"/g, 'role="menuitem" class="w-ponly"') : "");
   if (!couple()) {
     // Alone: nothing to switch, but phones still need Settings (and a way to sign out)
     const me = state.me || (state.people[0] ? String(state.people[0].id) : null);
     if (!me) return "";
     return '<div class="w-pswitch w-ponly"><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(pname(me)) + '">' +
-      av(me) + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" hidden>' + settings + (acts || "") + "</div></div>";
+      av(me) + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" hidden>' + themeSwitch() + settings + (acts || "") + "</div></div>";
   }
-  const who = state.scope === "all" ? t("Everyone") : pname(state.scope);
-  return '<div class="w-pswitch"><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("Showing") + ": " + who) + '">' +
-    av(state.scope) + '<span class="w-pswho">' + esc(who) + "</span>" + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" aria-label="' + esc(t("Show money for")) + '" hidden>' + scopeButtons() + phoneActs + "</div></div>";
+  const sc = household ? "all" : state.scope, who = sc === "all" ? t("Everyone") : pname(sc);
+  return '<div class="w-pswitch"' + (household ? " data-household" : "") + '><button type="button" class="w-pswitch-b" data-menu="scope" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc(t("Showing") + ": " + who) + '">' +
+    av(sc) + '<span class="w-pswho">' + esc(who) + "</span>" + icon("down") + '</button><div class="w-menu w-pswitch-m" role="menu" aria-label="' + esc(t("Show money for")) + '" hidden>' + scopeButtons(household) + phoneActs + "</div></div>";
 }
-/* The page's own actions: the person menu, then Add (phones add from the tab bar) */
-export function headActions(extra) {
-  return '<div class="w-hact">' + (extra || "") + scopeSwitch() +
+/* The page's own actions: the person menu, then Add (phones add from the tab bar). opts.household: see scopeButtons */
+export function headActions(extra, opts) {
+  return '<div class="w-hact">' + (extra || "") + scopeSwitch(opts) +
     '<button type="button" class="w-btn primary w-hadd" data-open-add title="' + esc(t("Add")) + ' (N)">' + icon("plus") + "<span>" + t("Add") + "</span><kbd>N</kbd></button></div>";
 }
 
@@ -226,13 +252,15 @@ export function toggleMenu(b) {
   hideSideHint();
   if (was) return;
   m.hidden = false;
+  // Beside the rail a foot menu is fixed (the sidebar scrolls and would clip it): it opens level with its button
+  if (m.classList.contains("w-thmenu")) m.style.bottom = getComputedStyle(m).position === "fixed" ? Math.max(8, innerHeight - b.getBoundingClientRect().bottom) + "px" : "";
   b.setAttribute("aria-expanded", "true");
   (m.querySelector('[aria-checked="true"]') || m.querySelector("button,a")).focus();
 }
 function menuKeys(ev) {
   const m = ev.target.closest(".w-menu");
   if (!m) return false;
-  const items = [...m.querySelectorAll("button,a")].filter((n) => n.offsetParent !== null);
+  const items = [...m.querySelectorAll("button,a")].filter((n) => n.offsetParent !== null && !n.disabled);
   const i = items.indexOf(document.activeElement);
   if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
     ev.preventDefault();
@@ -278,9 +306,14 @@ export function initShell() {
     const mb = ev.target.closest("[data-menu]");
     if (mb) { toggleMenu(mb); return; }
     const inMenu = ev.target.closest(".w-menu");
+    // The theme switch in the person menu (phones) is a switch, not a command: the menu stays open to compare
+    const seg = ev.target.closest(".w-menuseg [data-theme-set]");
+    if (seg) { pickTheme(seg.dataset.themeSet); return; }
     if (!inMenu || ev.target.closest("a,button")) closeMenus();
     const sc = ev.target.closest("[data-scope]");
     if (sc) { setScope(sc.dataset.scope); return; }
+    const th = ev.target.closest("[data-theme-set]");
+    if (th) { pickTheme(th.dataset.themeSet); return; }
     if (ev.target.closest("[data-signout]")) { handlers.signOut && handlers.signOut(); return; }
     if (ev.target.closest("[data-switch]")) { handlers.switchPerson && handlers.switchPerson(); return; }
   });

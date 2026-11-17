@@ -1640,6 +1640,6 @@
   "many": "{n} catégories sur {total} dans la limite",
   "other": "{n} catégories sur {total} dans la limite"
  },
- "Your limit spread evenly over the month, up to today.": "Votre limite répartie également sur le mois, jusqu’à aujourd’hui.",
- "Your limit spread evenly over the year, up to today.": "Votre limite répartie également sur l’année, jusqu’à aujourd’hui."
+ "Where you’d be today if you spent the same amount each day.": "Où vous en seriez aujourd’hui en dépensant le même montant chaque jour.",
+ "Budget is for the whole household.": "Le budget vaut pour tout le foyer."
 }

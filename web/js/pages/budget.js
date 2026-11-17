@@ -2,7 +2,7 @@
    One number leads (what is left of the limit for everything, and what that is per day), then each
    limit as a row with a bar: the solid part is what was spent, the lighter part what recurring bills
    will still take this month, as the lead's key names them; this month the mark is the even pace by
-   today, said in a tooltip on hover. Categories without a limit come last, with
+   today. Hovering a bar shows its parts, what is left or over, and the pace. Categories without a limit come last, with
    what they cost, so the page adds up to the month; this month, one opens the sheet to set its limit.
    With no limit yet, the page is the setup.
    Every figure comes from js/budget.js; the limits are set in js/limit.js. */
@@ -15,7 +15,7 @@ import { openLimit, remove } from "../limit.js";
 const phoneMQ = matchMedia("(max-width:767px)");
 const wideMQ = matchMedia("(min-width:1280px)");
 const wide = () => wideMQ.matches, phone = () => phoneMQ.matches;
-const ui = { month: null, sel: null, open: false, setup: null, editing: null };
+const ui = { month: null, sel: null, open: false, setup: null, editing: null, more: null };
 let root = null;
 
 const bdi = (html) => "<bdi>" + html + "</bdi>";
@@ -37,12 +37,14 @@ export function mount(el, route) {
   root.innerHTML =
     '<header class="w-head s-head bg-head"><div class="s-titlew"><h3 class="s-title" id="bg-title"></h3></div>' +
     '<div class="s-steps w-steps" id="bg-steps"><button type="button" class="s-stepb" data-step="-1" aria-label="' + esc(t("Previous month")) + '">' + icon("left") + "</button>" +
-    '<button type="button" class="s-stepb" data-step="1" aria-label="' + esc(t("Next month")) + '">' + icon("right") + "</button></div>" + headActions() + "</header>" +
+    '<button type="button" class="s-stepb" data-step="1" aria-label="' + esc(t("Next month")) + '">' + icon("right") + "</button></div>" +
+    // Limits are the household's: the person menu says Everyone, with the people disabled
+    headActions("", { household: true }) + "</header>" +
     '<div id="bg-page"></div>';
   root.addEventListener("click", onClick);
   root.addEventListener("keydown", onKeydown);
   root.addEventListener("input", onChange);
-  // The mark on a bar says what it is, on hover (a mouse only: on touch, the panel names it)
+  // A bar says what it holds, on hover (a mouse only: on touch, the row and the panel name it)
   root.addEventListener("mouseover", onMark);
   root.addEventListener("mousemove", onMark);
   root.addEventListener("mouseleave", hideTip);
@@ -114,13 +116,14 @@ function lead(all) {
     : fg.over ? t("Over at the end of {month}", { month: monthName(+ui.month.slice(5, 7)) }) : t("Left at the end of {month}", { month: monthName(+ui.month.slice(5, 7)) });
   // What that is a day, as the panel says it; over the limit there is no such line. Then spent against the limit as a bar
   const line = now && fg.perDay !== null ? t("{amount} a day until {date}", { amount: f(fg.perDay), date: dlab(lastDay(ui.month)) }) : "";
+  // The limit sits over the bar's end, as iPhone Storage puts its total: on the per-day line's right, or under it when
+  // there is no room (a narrow phone, a long language). Under the bar a key: each part named, with its amount
   return '<span class="rec-eye">' + esc(eye) + '</span><b class="rec-big amt">' + bdi(bigMoney(Math.abs(fg.left))) + "</b>" +
-    (line ? '<span class="rec-line">' + esc(line) + "</span>" : "") +
-    // Under the bar a key, as iPhone Storage does: each part named, with its amount; the limit on the right, under the bar's end
+    '<div class="bg-top">' + (line ? '<span class="rec-line">' + esc(line) + "</span>" : "") +
+      '<span class="bg-lim">' + esc(t("Limit")) + " <b>" + m(fg.limit) + "</b></span></div>" +
     '<div class="bg-lead">' + bar(fg, false, name(EVERYTHING)) +
       '<div class="bg-key"><span><i class="sp' + (fg.over ? " over" : "") + '"></i>' + esc(t("Spent")) + " <b>" + m(fg.spent) + "</b></span>" +
-        (fg.due > 0.004 ? '<span><i class="du' + (fg.over ? " over" : "") + '"></i>' + esc(t("Bills still due")) + " <b>" + m(fg.due) + "</b></span>" : "") +
-        '<span class="lim">' + esc(t("Limit")) + " <b>" + m(fg.limit) + "</b></span></div></div>";
+        (fg.due > 0.004 ? '<span><i class="du' + (fg.over ? " over" : "") + '"></i>' + esc(t("Bills still due")) + " <b>" + m(fg.due) + "</b></span>" : "") + "</div></div>";
 }
 
 /* ---------- the limits, then what has none ---------- */
@@ -149,28 +152,37 @@ function groups(monthly, yearly, limits) {
 }
 function bar(fg, year, label) {
   const pct = Math.min(100, (fg.spent / fg.limit) * 100), due = Math.max(0, Math.min(100 - pct, (fg.due / fg.limit) * 100));
-  // Over the limit (bills still due included): the whole bar is red
-  return '<div class="bg-bar' + (fg.over ? " over" : "") + '" aria-hidden="true"><i style="width:' + pct.toFixed(2) + '%"></i>' +
+  // Over the limit (bills still due included): the whole bar is red. With a mouse, the whole bar says what it holds
+  return '<div class="bg-bar' + (fg.over ? " over" : "") + '" aria-hidden="true" data-n="' + esc(label) + '" data-s="' + fg.spent + '" data-d="' + fg.due + '" data-l="' + fg.left + '"' +
+      (fg.today !== null ? ' data-e="' + fg.even + '"' : "") + (year ? " data-year" : "") + '><i style="width:' + pct.toFixed(2) + '%"></i>' +
     (due > 0.05 ? '<i class="due" style="inset-inline-start:' + pct.toFixed(2) + "%;width:" + due.toFixed(2) + '%"></i>' : "") +
     // This month, the even share by today: where spending would be if the limit went evenly
-    (fg.today !== null ? '<u style="inset-inline-start:calc(' + (fg.today * 100).toFixed(2) + '% - 0.75px)" data-n="' + esc(label) + '" data-s="' + fg.spent + '" data-e="' + fg.even + '"' + (year ? " data-year" : "") + (fg.over ? " data-over" : "") + "></u>" : "") + "</div>";
+    (fg.today !== null ? '<u style="inset-inline-start:calc(' + (fg.today * 100).toFixed(2) + '% - 0.75px)"></u>' : "") + "</div>";
 }
 let onTip = false;
 function onMark(ev) {
-  const u = ev.target.closest && ev.target.closest(".bg-bar u[data-e]");
-  if (!u || !matchMedia("(hover:hover)").matches) { if (onTip) { hideTip(); onTip = false; } return; }
+  const bar = ev.target.closest && ev.target.closest(".bg-bar[data-n]");
+  if (!bar || !matchMedia("(hover:hover)").matches) { if (onTip) { hideTip(); onTip = false; } return; }
   if (onTip && ev.type === "mousemove") { moveTip(ev); return; }
   onTip = true;
-  showTip(paceTip(u), ev);
+  showTip(barTip(bar), ev);
 }
-/* The mark's tooltip: what was spent against the even pace by today, and how far apart they are */
-function paceTip(u) {
-  const spent = +u.dataset.s, even = +u.dataset.e, ahead = spent - even > 0.004;
-  return '<b class="bg-tiph">' + esc(u.dataset.n) + "</b>" +
-    row(esc(t("Spent")), m(spent), getComputedStyle(u.parentNode).getPropertyValue(u.hasAttribute("data-over") ? "--bg-overc" : "--bg-spent").trim()) +
-    row('<i class="bg-tk"></i>' + esc(t("Even pace by today")), m(even)) +
-    '<div class="r d-sum"><span>' + esc(ahead ? t("Above the even pace") : t("Below the even pace")) + '</span><b class="' + (ahead ? "bg-bad" : "bg-good") + '">' + m(Math.abs(spent - even)) + "</b></div>" +
-    '<small class="w-tiphint">' + esc(u.hasAttribute("data-year") ? t("Your limit spread evenly over the year, up to today.") : t("Your limit spread evenly over the month, up to today.")) + "</small>";
+/* A bar's tooltip: its parts (spent, bills still due) and what is left or over; this month, spent against the even
+   pace by today (the mark), and how far apart they are */
+function barTip(el) {
+  const d = el.dataset, spent = +d.s, due = +d.d, left = +d.l, over = el.classList.contains("over");
+  const css = getComputedStyle(el), col = (v) => css.getPropertyValue(v).trim();
+  let html = '<b class="bg-tiph">' + esc(d.n) + "</b>" +
+    row(esc(t("Spent")), m(spent), col(over ? "--bg-overc" : "--bg-spent")) +
+    (due > 0.004 ? row(esc(t("Bills still due")), m(due), col("--bg-due")) : "") +
+    '<div class="r d-sum"><span>' + esc(over ? t("Over the limit") : t("Left to spend")) + "</span><b" + (over ? ' class="bg-bad"' : "") + ">" + m(Math.abs(left)) + "</b></div>";
+  if (d.e !== undefined) {
+    const even = +d.e, ahead = spent - even > 0.004;
+    html += '<div class="bg-tippace">' + row('<i class="bg-tk"></i>' + esc(t("Even pace by today")), m(even)) +
+      row(esc(ahead ? t("Above the even pace") : t("Below the even pace")), '<span class="' + (ahead ? "bg-bad" : "bg-good") + '">' + m(Math.abs(spent - even)) + "</span>") + "</div>" +
+      '<small class="w-tiphint">' + esc(t("Where you’d be today if you spent the same amount each day.")) + "</small>";
+  }
+  return html;
 }
 function limitRow(b) {
   const fg = figure(b, ui.month), now = ui.month === thisMonth();
@@ -196,8 +208,10 @@ function inspector(box, b) {
   // Spent of the limit, and the bills still to come: the pace is the bar's mark, the history is Last months below
   const facts = kv(year ? t("Spent this year") : t("Spent"), bdi(esc(t("{spent} of {limit}", { spent: f(fg.spent), limit: f(fg.limit) })))) +
     (fg.due > 0.004 ? kv(t("Bills still due"), m(fg.due)) : "");
-  const list = txs.slice(0, 3).map((x) => kv(esc(x.n || cat(x.c).n) + " · " + esc(dlabW(x.d)), '<span class="amt">' + m(x.a) + "</span>")).join("");
-  const seeAll = txs.length > 3 ? '<p class="rec-cap"><a class="w-link" href="/transactions?cat=' + encodeURIComponent(c) + '" data-link>' + tn(txs.length, "See all {n} transaction", "See all {n} transactions") + "</a></p>" : "";
+  // The last three; See all shows the rest here, in the panel, until another limit is picked
+  const all = ui.more === c;
+  const list = (all ? txs : txs.slice(0, 3)).map((x) => kv(esc(x.n || cat(x.c).n) + " · " + esc(dlabW(x.d)), '<span class="amt">' + m(x.a) + "</span>")).join("");
+  const seeAll = txs.length > 3 ? '<p class="rec-cap"><button type="button" class="w-link" data-more aria-expanded="' + all + '">' + (all ? t("Show less") : tn(txs.length, "See all {n} transaction", "See all {n} transactions")) + "</button></p>" : "";
   const months = lastMonths.length ? '<div class="rec-sec2"><div class="rec-sh">' + t("Last months") + "</div>" + lastMonths.map((mo) => kv(esc(monthTitle(mo)), '<span class="amt">' + m(monthSpent(c, mo)) + "</span>")).join("") + "</div>" : "";
   const thisMonthSec = '<div class="rec-sec2"><div class="rec-sh">' + (year ? t("This year") : t("This month")) + "</div>" + (list || kv(t("Nothing spent yet"), "")) + seeAll + "</div>";
   if (phone()) {
@@ -321,6 +335,7 @@ function onClick(ev) {
   if (g("[data-edit]")) { openLimit(ui.sel); return; }
   if (g("[data-remove]")) { const c = ui.sel; ui.open = false; remove(c); return; }
   if ((b = g("[data-limit]"))) { openLimit(b.dataset.limit); return; }
+  if (g("[data-more]")) { ui.more = ui.more === ui.sel ? null : ui.sel; render(); const m2 = root.querySelector("[data-more]"); if (m2) m2.focus(); return; }
   if ((b = g("[data-sw]"))) {
     const x = ui.setup[+b.dataset.sw];
     x.on = !x.on;

@@ -1901,6 +1901,6 @@
   "many": "{n} من {total} فئات ضمن الحد",
   "other": "{n} من {total} فئات ضمن الحد"
  },
- "Your limit spread evenly over the month, up to today.": "حدّك موزّعًا بالتساوي على الشهر، حتى اليوم.",
- "Your limit spread evenly over the year, up to today.": "حدّك موزّعًا بالتساوي على السنة، حتى اليوم."
+ "Where you’d be today if you spent the same amount each day.": "أين كنت ستكون اليوم لو أنفقت المبلغ نفسه كل يوم.",
+ "Budget is for the whole household.": "الميزانية للأسرة بأكملها."
 }

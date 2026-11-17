@@ -51,6 +51,17 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 .w-meb{display:flex;align-items:center;gap:6px;width:100%;padding-block:7px;padding-inline:6px 10px;border-radius:var(--r-ctl);font-weight:500;color:var(--w-ink);text-decoration:none;text-align:start}
 .w-meb:hover{background:var(--w-fill)}
 .w-meb .w-av{width:24px;height:24px}
+/* Appearance, under Settings: a row like a place, with the theme on the right; its menu opens upward */
+.w-thw{position:relative}
+.w-thb{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:var(--r-ctl);color:var(--w-ink2);font-weight:500;text-align:start}
+.w-thb:hover,.w-thb[aria-expanded="true"]{color:var(--w-ink)}
+.w-thb svg.i{color:var(--w-accent)}
+.w-thb .w-thv{margin-inline-start:auto;font-size:var(--fs-foot);font-weight:400;color:var(--w-ink3)}
+/* On phones, the person menu: the three as a switch, drawn as every other one (.w-seg) */
+.w-menuseg{gap:2px;padding:3px;margin:4px 4px 6px;border-radius:9px;background:var(--w-fill)}
+.w-menuseg > button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:7px;font-size:var(--fs-cap);color:var(--w-ink2)}
+.w-menuseg > button svg.i{width:18px;height:18px}
+.w-menuseg > button[aria-checked="true"]{background:var(--w-knob);color:var(--w-ink);font-weight:500;box-shadow:var(--w-knob-shadow)}
 .w-menu.w-memenu{bottom:calc(100% + 4px);top:auto;inset-inline:0;min-width:0}
 
 /* Menus: the person switch, the sidebar's person, the period and ••• menus */
@@ -65,6 +76,11 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
 .w-menu > [aria-checked="true"]::after{content:"";width:10px;height:6px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg) translateY(-2px);margin-inline-start:auto;flex:none}
 .w-menu > [aria-checked="true"] span:nth-child(3){display:none}
 .w-menu > button .w-av{width:24px;height:24px}
+/* A menu whose choices don't apply on this page (the person menu on Budget): the people greyed out, and why */
+.w-menu > button:disabled{color:var(--w-ink3);cursor:default}
+.w-menu > button:disabled:hover{background:none}
+.w-menu > button:disabled .w-av{opacity:.45}
+.w-menunote{margin:4px 0 0;padding:8px 10px 4px;border-top:1px solid var(--w-line2);font-size:var(--fs-foot);color:var(--w-ink2);max-width:240px}
 .w-menusep{height:1px;background:var(--w-line2);margin:5px 8px}
 /* With two faces for Everyone, each name starts where Everyone does, and an icon sits centred over a face */
 .w-menu:has(.w-avpair) > :is(button,a) > .w-av:first-child{margin-inline-end:18px}
@@ -99,6 +115,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
   .w-rail .w-sidefoot{justify-items:center}
   .w-rail .w-meb{width:44px;height:44px;justify-content:center;padding:0}
   .w-rail .w-meb .w-av{width:28px;height:28px}
+  .w-rail .w-thb{width:44px;height:44px;justify-content:center;padding:0}
   .w-rail .w-menu.w-memenu{position:fixed;inset-inline:72px auto;bottom:16px;min-width:200px}
 }
 
@@ -124,6 +141,7 @@ body.w{font-family:var(--w-font);color:var(--w-ink);font-size:var(--fs-sub);line
   .w-sidefoot{justify-items:center}
   .w-meb{width:44px;height:44px;justify-content:center;padding:0}
   .w-meb .w-av{width:28px;height:28px}
+  .w-thb{width:44px;height:44px;justify-content:center;padding:0}
   /* The rail is narrow: the person's menu opens beside it */
   .w-menu.w-memenu{position:fixed;inset-inline:72px auto;bottom:16px;min-width:200px}
   .w-app > .w-main{padding:20px 20px 40px}

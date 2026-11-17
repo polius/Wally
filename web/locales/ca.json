@@ -1640,6 +1640,6 @@
   "many": "{n} de {total} categories dins del límit",
   "other": "{n} de {total} categories dins del límit"
  },
- "Your limit spread evenly over the month, up to today.": "El teu límit repartit per igual al llarg del mes, fins avui.",
- "Your limit spread evenly over the year, up to today.": "El teu límit repartit per igual al llarg de l’any, fins avui."
+ "Where you’d be today if you spent the same amount each day.": "On series avui si gastessis el mateix cada dia.",
+ "Budget is for the whole household.": "El pressupost és per a tota la llar."
 }
