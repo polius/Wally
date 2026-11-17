@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-  <img src="assets/dashboards-light.png?version=2.3" alt="Wally's Summary on a computer" width="73%" />
+  <img src="assets/dashboards-light.png?version=2.5" alt="Wally's Summary on a computer" width="73%" />
   &nbsp;
-  <img src="assets/dashboards-light-mobile.png?version=2.3" alt="Wally's Summary on a phone" width="21%" />
+  <img src="assets/dashboards-light-mobile.png?version=2.5" alt="Wally's Summary on a phone" width="21%" />
 </p>
 
 ## Features
@@ -22,6 +22,7 @@
 - **Summary**: this month against last month, where the money went, what you kept each month and what's coming. Every number opens the transactions behind it.
 - **Transactions**: search every month, filter and sort, a calendar, and bulk changes with Undo.
 - **Recurring**: rent, subscriptions and salaries, added on their day. Price rises stand out.
+- **Budget**: a limit for the month, a category or the year, and what's left of it as you spend, with the bills still to come counted in.
 - **A household**: each person's own spending, and shared costs split evenly, by income or by hand.
 - **Month in review**: a recap of last month, ready on the 1st.
 - **End-to-end encryption**, on by default with a password: whoever runs the server can't read your data.
@@ -76,7 +77,7 @@ Then open [http://localhost](http://localhost).
 
 <p align="center">
   <a href="https://pol.alzina.dev/videos/wally.mp4">
-    <img src="assets/video-poster.png?version=2.3"
-      alt="Watch the Wally video — a one-minute tour: adding on a phone, the Summary, search, recurring, a shared household, encryption and self-hosting">
+    <img src="assets/video-poster.png?version=2.5"
+      alt="Watch the Wally video — a one-minute tour: adding on a phone, the Summary, search, recurring, a budget, a shared household, encryption and self-hosting">
   </a>
 </p>
