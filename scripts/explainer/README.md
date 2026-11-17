@@ -1,6 +1,6 @@
 # Wally film
 
-The Wally promo: a **~67-second, 1920×1080, 60 fps MP4** with a neural
+The Wally promo: a **~74-second, 1920×1080, 60 fps MP4** with a neural
 voice-over, an original synthesized score, and sound design cued from the
 picture.
 
@@ -22,7 +22,7 @@ Design rules the film follows, so any future edit stays on-model:
   accent, money green and red; the logo's wallet (tan leather, green notes)
   for warmth. Never the dark theme.
 - **Show the real app.** No mock-ups of Wally's screens: the Summary, Month in
-  review, searches as they're typed, Recurring, the person menu's three views,
+  review, searches as they're typed, Recurring, Budget, the person menu's three views,
   the phone's Add sheet key by key (then split, shared and tagged), and a shared
   bill split three ways in the desktop Add sheet are all real (`capture_app.py`).
   When a claim is said, the app does it on screen; a ring marks what changed.
@@ -83,7 +83,7 @@ Stills while iterating on the visuals:
 
 ```sh
 .venv/bin/python capture.py --preview 2.6,12.0,30.5    # -> preview/*.png
-.venv/bin/python capture.py --poster 66.5 --poster-at 960,625 --poster-shade "rgba(24, 26, 42, 0.1)" \
+.venv/bin/python capture.py --poster 73.0 --poster-at 960,625 --poster-shade "rgba(24, 26, 42, 0.1)" \
     --poster-out ../../assets/video-poster.png          # the README thumbnail: the real app, shaded, with the play button
 ```
 
@@ -93,7 +93,7 @@ Stills while iterating on the visuals:
 |---|---|
 | `narration.py` | the script + pacing. **Start here** to change the wording. |
 | `web/engine.js` | the renderer: `render(t)`, scene layers + cameras, the ledger bar, the dot grid, rolling digits, awaited image swaps, the cue registry |
-| `web/scenes.js` | the ten scenes: open, add, summary, search, recurring, household, phone, private, selfhost, outro |
+| `web/scenes.js` | the eleven scenes: open, add, summary, search, recurring, budget, household, phone, private, selfhost, outro |
 | `web/style.css` | palette, type, browser / phone / terminal frames, the receipt paper |
 | `capture.py` | http server + Playwright frame loop (`--preview`, `--poster`, `--cues`) |
 | `capture_app.py` | films the real app from a demo |

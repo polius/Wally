@@ -9,8 +9,8 @@
  *
  * What's on the screens is the real app in its light theme, filmed from the
  * demo household by capture_app.py: the Summary, Month in review, searches as
- * they're typed, Recurring, the person switcher, and the phone's Add sheet
- * key by key.
+ * they're typed, Recurring, Budget, the person switcher, and the phone's Add
+ * sheet key by key.
  */
 (function () {
   const A = window.Toolkit;
@@ -536,7 +536,52 @@
   };
 
   /* ------------------------------------------------------------------ *
-   *  6. household — everyone's own view; shared costs, three ways
+   *  6. budget — a limit, what's left of it, the bills still to come counted in
+   * ------------------------------------------------------------------ */
+  SCENES.budget = (cam, api) => {
+    const s1 = api.segStart("bud1"), limitAt = api.on("bud1", "limit"), leftAt = api.on("bud1", "left"), spendAt = api.on("bud1", "spend");
+    const s2 = api.segStart("bud2"), billsAt = api.on("bud2", "bills"), countedAt = api.on("bud2", "counted");
+    const B = api.data.shots.budget.box;
+    const h1 = headline(cam, 960, 96, "See what's left.", "headline md");
+    h1.w[2].classList.add("acc");
+    const h2 = headline(cam, 960, 96, "Bills to come, counted in.", "headline md");
+    h2.w[3].classList.add("acc"); h2.w[4].classList.add("acc");
+    const br = browser(cam, 960, 640, 1180);
+    br.shot("/app/budget.png");
+    br.scroll(0);
+    // the lead's bar draws itself as you spend: a white veil over it (and today's mark) slides away
+    const veil = el("div", "abs", br.page);
+    Object.assign(veil.style, { left: B.bar[0] - 2 + "px", top: B.bar[1] - 7 + "px", width: B.bar[2] + 4 + "px", height: B.bar[3] + 14 + "px", background: "#fff" });
+    // what is left: the big amount, as wide as its digits (the box is the card's whole row)
+    const rLeft = ring(br.page, [B.big[0] - 2, B.big[1] + 6, 186, B.big[3] - 10], 6, 12);
+    const rLim = ring(br.page, B.lim, 6, 10);
+    const rDue = ring(br.page, B.due, 8, 10);
+    const rKey = ring(br.page, B.keydue, 6, 10);
+    api.cue("pop", limitAt, 0.5);
+    api.cue("ding", leftAt + 0.05, 0.6);
+    api.cue("draw", spendAt - 0.1, 0.8);
+    api.cue("tick", billsAt, 0.6);
+    api.cue("coin", countedAt + 0.05, 0.6);
+
+    return (t) => {
+      kin(h1.w, t, s1 - 0.3, 0.05, 0.55, s2 - 0.35);
+      kin(h2.w, t, s2 - 0.05, 0.05, 0.55);
+      const pin = outQuint(ramp(t, 0, 0.8));
+      br.node.style.transform = `translateY(${((1 - pin) * 70).toFixed(2)}px)`;
+      const vp = outCubic(ramp(t, spendAt - 0.15, spendAt + 0.75));
+      veil.style.left = (B.bar[0] - 2 + vp * (B.bar[2] + 4)).toFixed(2) + "px";
+      veil.style.width = ((B.bar[2] + 4) * (1 - vp)).toFixed(2) + "px";
+      veil.style.visibility = vp >= 1 ? "hidden" : "visible";
+      rLim.set(t, limitAt - 0.05, leftAt - 0.05);
+      rLeft.set(t, leftAt, s2 - 0.2);
+      rDue.set(t, billsAt, api.dur);
+      rKey.set(t, billsAt + 0.12, api.dur);
+      camera(cam, t, [[0, 1, 0, 0], [limitAt - 0.4, 1.15, -30, 70, 1.0], [billsAt - 0.3, 1.2, 40, 60, 0.9]], 0.4);
+    };
+  };
+
+  /* ------------------------------------------------------------------ *
+   *  7. household — everyone's own view; shared costs, three ways
    * ------------------------------------------------------------------ */
   SCENES.household = (cam, api) => {
     const s1 = api.segStart("home1"), evAt = api.on("home1", "everyone"), ownAt = api.on("home1", "own");
@@ -638,7 +683,7 @@
   };
 
   /* ------------------------------------------------------------------ *
-   *  7. phone — installs like an app; speaks thirteen languages
+   *  8. phone — installs like an app; speaks thirteen languages
    * ------------------------------------------------------------------ */
   SCENES.phone = (cam, api) => {
     const s1 = api.segStart("phone1"), installAt = api.on("phone1", "installs");
@@ -749,7 +794,7 @@
   };
 
   /* ------------------------------------------------------------------ *
-   *  8. private — end-to-end encrypted; the server sees noise
+   *  9. private — end-to-end encrypted; the server sees noise
    * ------------------------------------------------------------------ */
   SCENES.private = (cam, api) => {
     const s1 = api.segStart("priv1"), pwAt = api.on("priv1", "password"), encAt = api.on("priv1", "encrypted");
@@ -842,7 +887,7 @@
   };
 
   /* ------------------------------------------------------------------ *
-   *  9. selfhost — free, open source, yours; one Docker command
+   *  10. selfhost — free, open source, yours; one Docker command
    * ------------------------------------------------------------------ */
   SCENES.selfhost = (cam, api) => {
     const s1 = api.segStart("self1"), freeAt = api.on("self1", "free"), openAt = api.on("self1", "open"), hostAt = api.on("self1", "host");
@@ -909,7 +954,7 @@
   };
 
   /* ------------------------------------------------------------------ *
-   *  10. outro — the wallet, the name, the promise
+   *  11. outro — the wallet, the name, the promise
    * ------------------------------------------------------------------ */
   SCENES.outro = (cam, api) => {
     const s2 = api.segStart("outro2"), knowAt = api.on("outro2", "know"), moneyAt = api.on("outro2", "money"), goesAt = api.on("outro2", "goes");

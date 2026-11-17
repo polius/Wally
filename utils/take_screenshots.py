@@ -34,7 +34,8 @@ HIDE_DEMO_BAR = """document.addEventListener("DOMContentLoaded", () => {
 
 def shoot(browser, base, path, out, theme, viewport):
     context = browser.new_context(viewport=viewport, color_scheme=theme, device_scale_factor=2)
-    context.add_init_script(f"localStorage.setItem('wally.theme', '{theme}'); localStorage.setItem('wally.person', '1');")
+    # The sidebar collapsed to its rail on a computer: more room for the page itself
+    context.add_init_script(f"localStorage.setItem('wally.theme', '{theme}'); localStorage.setItem('wally.person', '1'); localStorage.setItem('wally.side', 'rail');")
     context.add_init_script(HIDE_DEMO_BAR)
     page = context.new_page()
     page.goto(base + path, wait_until="networkidle")

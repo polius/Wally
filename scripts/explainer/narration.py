@@ -45,6 +45,7 @@ GAP_EXTRA = {
     "sum1": 0.9,           # the split, shared, tagged receipt is saved before the cut
     "sum2": 0.3,           # the recap card opens
     "rec2": 0.3,           # the price rise lights up
+    "bud2": 0.25,          # what's left has been ringed
     "home2": 0.2,
     "phone2": 0.2,
     "priv2": 0.35,         # the receipt has scrambled
@@ -79,6 +80,10 @@ LINES = [
      {"rent": "Rent", "subs": "subscriptions", "salaries": "salaries", "day": "their day"}),
     ("rec2", "recurring", "And when a price goes up, you'll see it.",
      {"price": "price", "see": "see it"}),
+    ("bud1", "budget", "Set a limit, and see what's left as you spend.",
+     {"limit": "limit", "left": "what's left", "spend": "spend"}),
+    ("bud2", "budget", "Bills still to come are already counted in.",
+     {"bills": "Bills", "come": "to come", "counted": "counted"}),
     ("home1", "household", "Everyone gets their own view.",
      {"everyone": "Everyone", "own": "own view"}),
     ("home2", "household", "Shared costs split evenly, by income, or by hand.",

@@ -15,6 +15,7 @@ Shots (desktop 1440x900 at 2x, phone 390x844 at 3x)
   review.png          Month in review for last month, the whole page
   search/NN.png       typing searches into Transactions: a shop, a tag, a person, an amount
   rec.png, rec_spotify.png   Recurring, then Spotify picked (its price went up)
+  budget.png          Budget this month: what's left of the limit for everything, then each limit
   home_all/_1/_2.png  the Summary for Everyone, then each person
   m_add/NN.png        the phone's Add sheet: the keypad, the name, a split, shared, a tag, Save
   split_*.png         a shared IKEA bill in the desktop Add sheet: evenly, by income, by hand
@@ -155,6 +156,22 @@ def recurring(b, base):
     META["rec"] = {"box": boxes(p, {"panel": "#rec-insp", "pcard": "#rec-insp .rec-pcard", "list": ".rec-list",
                                     "sum": ".rec-sum"}),
                    "spotify": [round(box_row["x"]), round(box_row["y"]), round(box_row["width"]), round(box_row["height"])]}
+    ctx.close()
+
+
+def budget(b, base):
+    """Budget, this month (the only month with bills still to come). Filmed before the Add sequence
+    saves its expense, so the figures are the demo's own."""
+    ctx = ctx_for(b, DESK, 2)
+    p = ctx.new_page()
+    p.goto(f"{base}/budget")
+    settle(p, 800)
+    shot(p, os.path.join(OUT, "budget.png"))
+    META["budget"] = {"box": boxes(p, {"lead": ".bg-sum", "big": ".bg-sum .rec-big", "bar": ".bg-lead .bg-bar",
+                                       "due": ".bg-lead .bg-bar i.due", "key": ".bg-key", "keydue": ".bg-key span:nth-child(2)",
+                                       "lim": ".bg-lim", "list": ".bg-list"}),
+                      "text": p.evaluate("""() => ({ big: document.querySelector('.bg-sum .rec-big')?.textContent.trim(),
+                          eye: document.querySelector('.bg-sum .rec-eye')?.textContent.trim() })""")}
     ctx.close()
 
 
@@ -343,7 +360,7 @@ def main():
     meta_path = os.path.join(OUT, "shots.json")
     if os.path.exists(meta_path):
         META.update(json.load(open(meta_path)))
-    jobs = {"summary": summary, "search": search, "recurring": recurring, "household": household,
+    jobs = {"summary": summary, "search": search, "recurring": recurring, "budget": budget, "household": household,
             "phone_add": phone_add, "phone_summary": phone_summary, "household_split": household_split}
     prep_demo(base)
     with sync_playwright() as pw:
