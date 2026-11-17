@@ -1565,5 +1565,6 @@
  "Left after income to come": "Queda amb els ingressos per arribar",
  "Everyday spending to come": "Despesa del dia a dia per venir",
  "≈ Based on a typical month from {from} to {to}": "≈ Segons un mes típic ({from}–{to})",
- "≈ Based on {month}": "≈ Segons {month}"
+ "≈ Based on {month}": "≈ Segons {month}",
+ "Keyboard shortcuts": "Dreceres de teclat"
 }

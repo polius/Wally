@@ -114,7 +114,7 @@ async function startApp() {
   const cmd = later(() => import("./cmd.js"));
   setHandlers({
     openAdd: (o) => add.call("openAdd", o),
-    openCmd: () => cmd.call("openCmd"),
+    openCmd: (o) => cmd.call("openCmd", o),
     signOut,
     switchPerson,
   });

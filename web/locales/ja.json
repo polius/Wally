@@ -1397,5 +1397,6 @@
  "Left after income to come": "今後の収入を含めた残り",
  "Everyday spending to come": "今後の日常の支出",
  "≈ Based on a typical month from {from} to {to}": "≈ {from}〜{to}の典型的な月に基づく",
- "≈ Based on {month}": "≈ {month}に基づく"
+ "≈ Based on {month}": "≈ {month}に基づく",
+ "Keyboard shortcuts": "キーボードショートカット"
 }

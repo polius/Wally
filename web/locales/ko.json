@@ -1397,5 +1397,6 @@
  "Left after income to come": "예정 수입 포함 남는 돈",
  "Everyday spending to come": "앞으로의 일상 지출",
  "≈ Based on a typical month from {from} to {to}": "≈ {from}~{to}의 일반적인 달 기준",
- "≈ Based on {month}": "≈ {month} 기준"
+ "≈ Based on {month}": "≈ {month} 기준",
+ "Keyboard shortcuts": "키보드 단축키"
 }

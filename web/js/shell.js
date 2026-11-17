@@ -297,6 +297,7 @@ export function initShell() {
     const k = ev.key;
     if (k === "n" || k === "N") { ev.preventDefault(); handlers.openAdd && handlers.openAdd(); }
     else if (k === "/") { ev.preventDefault(); if (pageName !== "transactions") navigate("/transactions?focus=search"); else emit("focus-search"); }
+    else if (k === "?") { ev.preventDefault(); handlers.openCmd && handlers.openCmd({ keys: true }); }
     else if (page && page.key) page.key(ev);
   });
 }

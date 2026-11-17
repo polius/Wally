@@ -1397,5 +1397,6 @@
  "Left after income to come": "计入待到账收入后剩余",
  "Everyday spending to come": "待发生的日常支出",
  "≈ Based on a typical month from {from} to {to}": "≈ 基于{from}至{to}的典型月份",
- "≈ Based on {month}": "≈ 基于{month}"
+ "≈ Based on {month}": "≈ 基于{month}",
+ "Keyboard shortcuts": "键盘快捷键"
 }
