@@ -80,16 +80,33 @@ export function enlarge(o) {
   });
 }
 
-/* ---------- toasts, with Undo for changes that are easy to reverse ---------- */
-let toastTimer, undoFn = null;
+/* ---------- toasts, with Undo for changes that are easy to reverse ----------
+   The time stops while the pointer is on the toast or the focus is in it. Once it has gone, its Undo
+   is gone too: it can't be reached by Tab or pressed. */
+let toastTimer, undoFn = null, toastLeft = 0, toastFrom = 0, toastHeld = false, toastHover = false;
+function hideToast() {
+  $("toast").classList.remove("on");
+  undoFn = null;
+  setTimeout(() => { if (!$("toast").classList.contains("on")) $("toast-undo").hidden = true; }, 250);
+}
+function runToast(ms) { clearTimeout(toastTimer); toastLeft = ms; toastFrom = Date.now(); toastTimer = setTimeout(hideToast, ms); }
+function holdToast() {
+  if (toastHeld || !$("toast").classList.contains("on")) return;
+  toastHeld = true; clearTimeout(toastTimer); toastLeft -= Date.now() - toastFrom;
+}
+function releaseToast() {
+  const n = $("toast");
+  if (!toastHeld || toastHover || n.contains(document.activeElement)) return;
+  toastHeld = false; runToast(Math.max(toastLeft, 1500));
+}
 export function toast(msg, undo) {
   $("toast-t").textContent = msg;
   undoFn = undo || null;
   $("toast-undo").hidden = !undo;
   placeToast();
   $("toast").classList.add("on");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("toast").classList.remove("on"), undo ? 7000 : 3200);
+  toastHeld = false;
+  runToast(undo ? 7000 : 3200);
 }
 export function errorToast(e) { toast(e && e.message ? e.message : t("Something went wrong.")); }
 /* While a dialog or a sheet is open, a toast moves out of its way (to the top on a phone), so it never
@@ -102,8 +119,14 @@ export function initToast() {
   const watch = new MutationObserver(placeToast);
   ["dlg", "add-modal"].forEach((id) => { const n = $(id); if (n) watch.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
   $("toast-undo").textContent = t("Undo");
+  $("toast").addEventListener("pointerenter", () => { toastHover = true; holdToast(); });
+  $("toast").addEventListener("focusin", holdToast);
+  $("toast").addEventListener("pointerleave", () => { toastHover = false; releaseToast(); });
+  $("toast").addEventListener("focusout", () => setTimeout(releaseToast));
   $("toast-undo").addEventListener("click", async () => {
+    clearTimeout(toastTimer); toastHeld = false;
     $("toast").classList.remove("on");
+    $("toast-undo").hidden = true;
     const fn = undoFn; undoFn = null;
     if (fn) { try { await fn(); toast(t("Undone")); } catch (e) { errorToast(e); } }
   });
