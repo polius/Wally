@@ -1446,13 +1446,11 @@
  "{amount} a day until {date}": "{date}まで1日{amount}",
  "{amount} each month": "毎月{amount}",
  "{amount} each year": "毎年{amount}",
- "{amount} in bills still due": "これからの固定費 {amount}",
  "{amount} left": "残り{amount}",
  "{amount} over": "{amount}超過",
  "{amount} still due": "残り{amount}の支払い",
  "{category} is {amount} over its limit": "{category}は上限を{amount}超えています",
  "{spent} of {limit}": "{limit}中{spent}",
- "{spent} of {limit} spent": "{limit}中{spent}使用",
  "{spent} of {limit}, with {due} in bills still due.": "{limit}中{spent}、これからの固定費{due}。",
  "{spent} of {limit}.": "{limit}中{spent}。",
  "Added · {amount} left for {category}": "追加 · {category}の残り{amount}",
@@ -1465,5 +1463,13 @@
  },
  "{n} day to go.": {
   "other": "残り{n}日。"
+ },
+ "Even share by today": "今日までの均等割り",
+ "{amount} limit": "上限 {amount}",
+ "{amount} a day · {n} day left": {
+  "other": "1日{amount} · 残り{n}日"
+ },
+ "{n} day left": {
+  "other": "残り{n}日"
  }
 }

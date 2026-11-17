@@ -1614,13 +1614,11 @@
  "{amount} a day until {date}": "{amount} por dia até {date}",
  "{amount} each month": "{amount} cada mês",
  "{amount} each year": "{amount} cada ano",
- "{amount} in bills still due": "{amount} em contas a vencer",
  "{amount} left": "restam {amount}",
  "{amount} over": "{amount} a mais",
  "{amount} still due": "{amount} a vencer",
  "{category} is {amount} over its limit": "{category} passou {amount} do limite",
  "{spent} of {limit}": "{spent} de {limit}",
- "{spent} of {limit} spent": "{spent} de {limit} gastos",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} de {limit}, com {due} em contas a vencer.",
  "{spent} of {limit}.": "{spent} de {limit}.",
  "Added · {amount} left for {category}": "Adicionado · restam {amount} para {category}",
@@ -1637,5 +1635,17 @@
   "one": "Falta {n} dia.",
   "many": "Faltam {n} dias.",
   "other": "Faltam {n} dias."
+ },
+ "Even share by today": "Parte proporcional até hoje",
+ "{amount} limit": "Limite de {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} por dia · falta {n} dia",
+  "many": "{amount} por dia · faltam {n} dias",
+  "other": "{amount} por dia · faltam {n} dias"
+ },
+ "{n} day left": {
+  "one": "Falta {n} dia",
+  "many": "Faltam {n} dias",
+  "other": "Faltam {n} dias"
  }
 }

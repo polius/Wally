@@ -1614,13 +1614,11 @@
  "{amount} a day until {date}": "{amount} par jour jusqu’au {date}",
  "{amount} each month": "{amount} chaque mois",
  "{amount} each year": "{amount} chaque année",
- "{amount} in bills still due": "{amount} de factures à venir",
  "{amount} left": "{amount} restants",
  "{amount} over": "{amount} de trop",
  "{amount} still due": "{amount} à venir",
  "{category} is {amount} over its limit": "{category} dépasse son plafond de {amount}",
  "{spent} of {limit}": "{spent} sur {limit}",
- "{spent} of {limit} spent": "{spent} dépensés sur {limit}",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} sur {limit}, avec {due} de factures à venir.",
  "{spent} of {limit}.": "{spent} sur {limit}.",
  "Added · {amount} left for {category}": "Ajouté · {amount} restants pour {category}",
@@ -1637,5 +1635,17 @@
   "one": "Encore {n} jour.",
   "many": "Encore {n} jours.",
   "other": "Encore {n} jours."
+ },
+ "Even share by today": "Part égale à ce jour",
+ "{amount} limit": "Plafond de {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} par jour · encore {n} jour",
+  "many": "{amount} par jour · encore {n} jours",
+  "other": "{amount} par jour · encore {n} jours"
+ },
+ "{n} day left": {
+  "one": "Encore {n} jour",
+  "many": "Encore {n} jours",
+  "other": "Encore {n} jours"
  }
 }

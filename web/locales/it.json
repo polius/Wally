@@ -1614,13 +1614,11 @@
  "{amount} a day until {date}": "{amount} al giorno fino al {date}",
  "{amount} each month": "{amount} ogni mese",
  "{amount} each year": "{amount} ogni anno",
- "{amount} in bills still due": "{amount} di bollette in arrivo",
  "{amount} left": "restano {amount}",
  "{amount} over": "{amount} in più",
  "{amount} still due": "{amount} in arrivo",
  "{category} is {amount} over its limit": "{category} supera il limite di {amount}",
  "{spent} of {limit}": "{spent} di {limit}",
- "{spent} of {limit} spent": "{spent} spesi su {limit}",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} di {limit}, con {due} di bollette in arrivo.",
  "{spent} of {limit}.": "{spent} di {limit}.",
  "Added · {amount} left for {category}": "Aggiunto · restano {amount} per {category}",
@@ -1637,5 +1635,17 @@
   "one": "Manca {n} giorno.",
   "many": "Mancano {n} giorni.",
   "other": "Mancano {n} giorni."
+ },
+ "Even share by today": "Quota proporzionale a oggi",
+ "{amount} limit": "Limite di {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} al giorno · manca {n} giorno",
+  "many": "{amount} al giorno · mancano {n} giorni",
+  "other": "{amount} al giorno · mancano {n} giorni"
+ },
+ "{n} day left": {
+  "one": "Manca {n} giorno",
+  "many": "Mancano {n} giorni",
+  "other": "Mancano {n} giorni"
  }
 }

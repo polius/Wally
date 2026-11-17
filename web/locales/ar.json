@@ -1866,13 +1866,11 @@
  "{amount} a day until {date}": "{amount} يوميًا حتى {date}",
  "{amount} each month": "{amount} كل شهر",
  "{amount} each year": "{amount} كل سنة",
- "{amount} in bills still due": "{amount} فواتير مستحقة",
  "{amount} left": "متبقٍ {amount}",
  "{amount} over": "تجاوز {amount}",
  "{amount} still due": "{amount} مستحق",
  "{category} is {amount} over its limit": "تجاوزت {category} حدها بـ {amount}",
  "{spent} of {limit}": "{spent} من {limit}",
- "{spent} of {limit} spent": "أُنفق {spent} من {limit}",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} من {limit}، مع {due} فواتير مستحقة.",
  "{spent} of {limit}.": "{spent} من {limit}.",
  "Added · {amount} left for {category}": "أُضيف · متبقٍ {amount} لـ {category}",
@@ -1895,5 +1893,23 @@
   "few": "بقيت {n} أيام.",
   "many": "بقي {n} يومًا.",
   "other": "بقي {n} يوم."
+ },
+ "Even share by today": "الحصة المتساوية حتى اليوم",
+ "{amount} limit": "الحد {amount}",
+ "{amount} a day · {n} day left": {
+  "zero": "{amount} يوميًا · لم يبقَ أي يوم",
+  "one": "{amount} يوميًا · بقي يوم واحد",
+  "two": "{amount} يوميًا · بقي يومان",
+  "few": "{amount} يوميًا · بقيت {n} أيام",
+  "many": "{amount} يوميًا · بقي {n} يومًا",
+  "other": "{amount} يوميًا · بقي {n} يوم"
+ },
+ "{n} day left": {
+  "zero": "لم يبقَ أي يوم",
+  "one": "بقي يوم واحد",
+  "two": "بقي يومان",
+  "few": "بقيت {n} أيام",
+  "many": "بقي {n} يومًا",
+  "other": "بقي {n} يوم"
  }
 }

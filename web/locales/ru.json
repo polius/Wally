@@ -1698,13 +1698,11 @@
  "{amount} a day until {date}": "{amount} в день до {date}",
  "{amount} each month": "{amount} в месяц",
  "{amount} each year": "{amount} в год",
- "{amount} in bills still due": "{amount} — счета впереди",
  "{amount} left": "осталось {amount}",
  "{amount} over": "{amount} сверх",
  "{amount} still due": "{amount} впереди",
  "{category} is {amount} over its limit": "«{category}» превышает лимит на {amount}",
  "{spent} of {limit}": "{spent} из {limit}",
- "{spent} of {limit} spent": "потрачено {spent} из {limit}",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} из {limit}, и ещё {due} — счета впереди.",
  "{spent} of {limit}.": "{spent} из {limit}.",
  "Added · {amount} left for {category}": "Добавлено · на «{category}» осталось {amount}",
@@ -1723,5 +1721,19 @@
   "few": "Осталось {n} дня.",
   "many": "Осталось {n} дней.",
   "other": "Осталось {n} дня."
+ },
+ "Even share by today": "Равная доля на сегодня",
+ "{amount} limit": "Лимит {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} в день · остался {n} день",
+  "few": "{amount} в день · осталось {n} дня",
+  "many": "{amount} в день · осталось {n} дней",
+  "other": "{amount} в день · осталось {n} дня"
+ },
+ "{n} day left": {
+  "one": "Остался {n} день",
+  "few": "Осталось {n} дня",
+  "many": "Осталось {n} дней",
+  "other": "Осталось {n} дня"
  }
 }

@@ -30,6 +30,11 @@ div.bg-row:hover{background:none}
 .bg-none{cursor:default}
 .bg-none:hover{background:none}
 .bg-none h6{font-weight:400!important;color:var(--w-ink2)}
+/* The lead: spent against the limit for everything, as a bar with its two amounts under it */
+.bg-lead{max-width:560px;margin-top:14px}
+.bg-lead .bg-bar{height:8px;border-radius:4px;margin-top:0}
+.bg-lead .bg-bar i{border-radius:4px}
+.bg-leadcap{display:flex;justify-content:space-between;gap:12px;margin-top:7px;font-size:var(--fs-foot);color:var(--w-ink2);font-variant-numeric:tabular-nums}
 .bg-legend{display:flex;gap:16px;align-items:center;font-size:var(--fs-cap);color:var(--w-ink3);padding:14px 0 2px}
 .bg-legend span{display:inline-flex;gap:6px;align-items:center}
 .bg-legend u{display:inline-block;width:2px;height:12px;background:var(--w-ink);border-radius:1px}

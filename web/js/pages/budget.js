@@ -104,11 +104,12 @@ function lead(all) {
   const fg = figure(all, ui.month);
   const eye = now ? (fg.over ? t("Over the limit") : t("Left to spend"))
     : fg.over ? t("Over at the end of {month}", { month: monthName(+ui.month.slice(5, 7)) }) : t("Left at the end of {month}", { month: monthName(+ui.month.slice(5, 7)) });
-  const bits = [];
-  if (fg.perDay !== null) bits.push(t("{amount} a day until {date}", { amount: f(fg.perDay), date: dlab(lastDay(ui.month)) }));
-  bits.push(t("{spent} of {limit} spent", { spent: f(fg.spent), limit: f(fg.limit) }) + (fg.due > 0.004 ? ", " + t("{amount} in bills still due", { amount: f(fg.due) }) : ""));
+  // One short line, then spent against the limit as a bar: bills still due are its hatched part
+  const line = !now ? "" : fg.perDay !== null ? tn(fg.days, "{amount} a day · {n} day left", "{amount} a day · {n} days left", { amount: f(fg.perDay) })
+    : tn(fg.days, "{n} day left", "{n} days left");
   return '<span class="rec-eye">' + esc(eye) + '</span><b class="rec-big amt">' + bdi(bigMoney(Math.abs(fg.left))) + "</b>" +
-    '<span class="rec-line">' + esc(bits.join(" · ")) + "</span>";
+    (line ? '<span class="rec-line">' + esc(line) + "</span>" : "") +
+    '<div class="bg-lead">' + bar(fg) + '<div class="bg-leadcap"><span>' + esc(t("{amount} spent", { amount: f(fg.spent) })) + "</span><span>" + esc(t("{amount} limit", { amount: f(fg.limit) })) + "</span></div></div>";
 }
 
 /* ---------- the limits, then what has none ---------- */
@@ -129,7 +130,7 @@ function groups(monthly, yearly, limits) {
       free.map((c) => '<div class="w-rrow bg-none">' + tile(c, 40) + '<div class="rec-rn"><h6>' + esc(cat(c).n) + '</h6></div><span class="amt">' + m(totals[c]) + "</span></div>").join("");
   }
   if (!monthly.length && !yearly.length && !free.length) html += '<div class="w-empty"><b>' + t("Nothing spent") + "</b></div>";
-  if (now && (monthly.length || yearly.length)) html += '<div class="bg-legend" aria-hidden="true"><span><u></u>' + t("Today") + "</span><span><i></i>" + t("Bills still due") + "</span></div>";
+  if (now && (monthly.length || yearly.length)) html += '<div class="bg-legend" aria-hidden="true"><span><u></u>' + t("Even share by today") + "</span><span><i></i>" + t("Bills still due") + "</span></div>";
   return html;
 }
 function bar(fg) {
@@ -158,7 +159,9 @@ function inspector(box, b) {
   const kv = (k, v) => '<div class="rec-kv"><span>' + k + "</span><b>" + v + "</b></div>";
   const leftLine = fg.over ? t("over for {category}", { category: name(c) }) : t("left for {category}", { category: name(c) });
   const perDay = fg.perDay !== null ? t("{amount} a day until {date}", { amount: f(fg.perDay), date: dlab(lastDay(ui.month)) }) : year ? t("This year") : "";
+  // Spent right above the even share it is measured against (the mark on the bar)
   const facts = kv(t("Limit"), m(fg.limit)) + kv(year ? t("Spent this year") : t("Spent"), m(fg.spent)) +
+    (fg.even !== null ? kv(t("Even share by today"), m(fg.even)) : "") +
     (fg.due > 0.004 ? kv(t("Bills still due"), m(fg.due)) : "") + (usually !== null ? kv(t("Usually by now"), m(usually)) : "");
   const list = txs.slice(0, 3).map((x) => kv(esc(x.n || cat(x.c).n) + " · " + esc(dlabW(x.d)), '<span class="amt">' + m(x.a) + "</span>")).join("");
   const seeAll = txs.length > 3 ? '<p class="rec-cap"><a class="w-link" href="/transactions?cat=' + encodeURIComponent(c) + '" data-link>' + tn(txs.length, "See all {n} transaction", "See all {n} transactions") + "</a></p>" : "";

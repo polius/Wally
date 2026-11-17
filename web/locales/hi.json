@@ -1530,13 +1530,11 @@
  "{amount} a day until {date}": "{date} तक हर दिन {amount}",
  "{amount} each month": "हर महीने {amount}",
  "{amount} each year": "हर साल {amount}",
- "{amount} in bills still due": "{amount} के बिल अभी बाकी",
  "{amount} left": "{amount} बचे",
  "{amount} over": "{amount} ज़्यादा",
  "{amount} still due": "{amount} बाकी",
  "{category} is {amount} over its limit": "{category} अपनी सीमा से {amount} ज़्यादा है",
  "{spent} of {limit}": "{limit} में से {spent}",
- "{spent} of {limit} spent": "{limit} में से {spent} खर्च",
  "{spent} of {limit}, with {due} in bills still due.": "{limit} में से {spent}, और {due} के बिल बाकी।",
  "{spent} of {limit}.": "{limit} में से {spent}।",
  "Added · {amount} left for {category}": "जोड़ा · {category} के लिए {amount} बचे",
@@ -1551,5 +1549,15 @@
  "{n} day to go.": {
   "one": "{n} दिन बाकी।",
   "other": "{n} दिन बाकी।"
+ },
+ "Even share by today": "आज तक का बराबर हिस्सा",
+ "{amount} limit": "सीमा {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "हर दिन {amount} · {n} दिन बाकी",
+  "other": "हर दिन {amount} · {n} दिन बाकी"
+ },
+ "{n} day left": {
+  "one": "{n} दिन बाकी",
+  "other": "{n} दिन बाकी"
  }
 }

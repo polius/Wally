@@ -1446,13 +1446,11 @@
  "{amount} a day until {date}": "{date}까지 하루 {amount}",
  "{amount} each month": "매월 {amount}",
  "{amount} each year": "매년 {amount}",
- "{amount} in bills still due": "남은 고정 지출 {amount}",
  "{amount} left": "{amount} 남음",
  "{amount} over": "{amount} 초과",
  "{amount} still due": "{amount} 남은 지출",
  "{category} is {amount} over its limit": "{category}가 한도를 {amount} 넘었습니다",
  "{spent} of {limit}": "{limit} 중 {spent}",
- "{spent} of {limit} spent": "{limit} 중 {spent} 지출",
  "{spent} of {limit}, with {due} in bills still due.": "{limit} 중 {spent}, 남은 고정 지출 {due}.",
  "{spent} of {limit}.": "{limit} 중 {spent}.",
  "Added · {amount} left for {category}": "추가됨 · {category} {amount} 남음",
@@ -1465,5 +1463,13 @@
  },
  "{n} day to go.": {
   "other": "{n}일 남았습니다."
+ },
+ "Even share by today": "오늘까지의 균등 몫",
+ "{amount} limit": "한도 {amount}",
+ "{amount} a day · {n} day left": {
+  "other": "하루 {amount} · {n}일 남음"
+ },
+ "{n} day left": {
+  "other": "{n}일 남음"
  }
 }

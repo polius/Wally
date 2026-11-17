@@ -1614,13 +1614,11 @@
  "{amount} a day until {date}": "{amount} al dia fins al {date}",
  "{amount} each month": "{amount} cada mes",
  "{amount} each year": "{amount} cada any",
- "{amount} in bills still due": "{amount} en rebuts pendents",
  "{amount} left": "queden {amount}",
  "{amount} over": "{amount} de més",
  "{amount} still due": "{amount} pendent",
  "{category} is {amount} over its limit": "{category} passa {amount} del seu límit",
  "{spent} of {limit}": "{spent} de {limit}",
- "{spent} of {limit} spent": "{spent} de {limit} gastats",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} de {limit}, amb {due} en rebuts pendents.",
  "{spent} of {limit}.": "{spent} de {limit}.",
  "Added · {amount} left for {category}": "Afegit · queden {amount} a {category}",
@@ -1637,5 +1635,17 @@
   "one": "Queda {n} dia.",
   "many": "Queden {n} dies.",
   "other": "Queden {n} dies."
+ },
+ "Even share by today": "Part proporcional fins avui",
+ "{amount} limit": "Límit de {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} al dia · queda {n} dia",
+  "many": "{amount} al dia · queden {n} dies",
+  "other": "{amount} al dia · queden {n} dies"
+ },
+ "{n} day left": {
+  "one": "Queda {n} dia",
+  "many": "Queden {n} dies",
+  "other": "Queden {n} dies"
  }
 }

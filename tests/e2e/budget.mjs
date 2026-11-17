@@ -23,14 +23,15 @@ const txt = (p, sel) => p.$eval(sel, (e) => e.innerText).catch(() => '');
 let p = await open('desktop', '/budget');
 // B1
 const lead = await txt(p, '.bg-sum');
-ok(/Left to spend/.test(lead) && /a day until/.test(lead) && /of 2,700\.00\s€ spent/.test(lead), 'B1 lead: left to spend, per day, spent of limit', lead);
+ok(/Left to spend/.test(lead) && /a day · \d+ days? left/.test(lead) && /spent/.test(lead) && /2,700\.00\s€ limit/.test(lead), 'B1 lead: left to spend, per day and days left, then spent against the limit', lead);
+ok((await p.$$('.bg-lead .bg-bar')).length === 1, 'B1 the lead has its own bar');
 const names = await p.$$eval('.bg-row h6', (l) => l.map((h) => h.textContent));
 ok(names.join() === 'Groceries,Utilities,Food,Shopping,Entertainment,Travel', 'B1 rows by limit, largest first; yearly after', names);
-ok((await p.$$('.bg-bar u')).length === 6 && (await p.$$('.bg-legend')).length === 1, 'B1 a mark for today on every bar, and the legend');
+ok((await p.$$('.bg-list .bg-bar u')).length === 6 && /Even share by today/.test(await txt(p, '.bg-legend')), 'B1 the even share by today on every bar, and the legend says so');
 ok(/left for Groceries/.test(await txt(p, '#bg-insp')), 'B1 the panel opens on the first limit');
 await p.click('[data-bid="Shopping"]'); await p.waitForTimeout(300);
 const insp = await txt(p, '#bg-insp');
-ok(/over for Shopping/.test(insp) && /Usually by now/.test(insp) && /Remove limit/.test(insp), 'B1 a row opens its panel', insp.slice(0, 120));
+ok(/over for Shopping/.test(insp) && /Even share by today/.test(insp) && /Usually by now/.test(insp) && /Remove limit/.test(insp), 'B1 a row opens its panel, with the even share by today', insp.slice(0, 160));
 // B3 edit
 await p.click('#bg-insp [data-edit]'); await p.waitForTimeout(300);
 ok((await p.inputValue('#lim-amt')) === '120.00' && /usually spend/.test(await txt(p, '#dlg')), 'B3 the sheet has the amount and one sentence');

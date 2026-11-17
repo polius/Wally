@@ -1530,13 +1530,11 @@
  "{amount} a day until {date}": "{amount} pro Tag bis {date}",
  "{amount} each month": "{amount} jeden Monat",
  "{amount} each year": "{amount} jedes Jahr",
- "{amount} in bills still due": "{amount} an offenen Rechnungen",
  "{amount} left": "{amount} übrig",
  "{amount} over": "{amount} drüber",
  "{amount} still due": "{amount} offen",
  "{category} is {amount} over its limit": "{category} liegt {amount} über dem Limit",
  "{spent} of {limit}": "{spent} von {limit}",
- "{spent} of {limit} spent": "{spent} von {limit} ausgegeben",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} von {limit}, dazu {due} an offenen Rechnungen.",
  "{spent} of {limit}.": "{spent} von {limit}.",
  "Added · {amount} left for {category}": "Hinzugefügt · {amount} übrig für {category}",
@@ -1551,5 +1549,15 @@
  "{n} day to go.": {
   "one": "Noch {n} Tag.",
   "other": "Noch {n} Tage."
+ },
+ "Even share by today": "Gleichmäßiger Anteil bis heute",
+ "{amount} limit": "Limit {amount}",
+ "{amount} a day · {n} day left": {
+  "one": "{amount} pro Tag · noch {n} Tag",
+  "other": "{amount} pro Tag · noch {n} Tage"
+ },
+ "{n} day left": {
+  "one": "Noch {n} Tag",
+  "other": "Noch {n} Tage"
  }
 }

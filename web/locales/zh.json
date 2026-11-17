@@ -1446,13 +1446,11 @@
  "{amount} a day until {date}": "到{date}每天 {amount}",
  "{amount} each month": "每月 {amount}",
  "{amount} each year": "每年 {amount}",
- "{amount} in bills still due": "{amount} 待付账单",
  "{amount} left": "剩余 {amount}",
  "{amount} over": "超出 {amount}",
  "{amount} still due": "{amount} 待付",
  "{category} is {amount} over its limit": "{category}超出限额 {amount}",
  "{spent} of {limit}": "{spent} / {limit}",
- "{spent} of {limit} spent": "已花 {spent} / {limit}",
  "{spent} of {limit}, with {due} in bills still due.": "{spent} / {limit}，还有 {due} 待付账单。",
  "{spent} of {limit}.": "{spent} / {limit}。",
  "Added · {amount} left for {category}": "已添加 · {category}剩余 {amount}",
@@ -1465,5 +1463,13 @@
  },
  "{n} day to go.": {
   "other": "还剩{n}天。"
+ },
+ "Even share by today": "到今天的平均份额",
+ "{amount} limit": "限额 {amount}",
+ "{amount} a day · {n} day left": {
+  "other": "每天 {amount} · 还剩{n}天"
+ },
+ "{n} day left": {
+  "other": "还剩{n}天"
  }
 }

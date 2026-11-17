@@ -8,7 +8,8 @@
      today and before the month ends, from rules that are not paused, at their current amount.
    - Left = limit − spent − bills still due; below zero it is "over". For a year, limit − spent.
    - A day = left ÷ the days from today to the month's end, today included; this month only, when left > 0.
-   - Today's mark: the day of the month ÷ its days, or the day of the year ÷ its days.
+   - Today's mark, the even share by today: the limit spread evenly over the period, up to the end of
+     today (the day of the month ÷ its days, or the day of the year ÷ its days).
    Amounts are never rounded. */
 import { state, TODAY, ds, dim, ym, ymAdd, addD, span, byCat, START } from "./core.js";
 import { ruleDates, ruleAmt } from "./sched.js";
@@ -61,7 +62,8 @@ export function figure(b, month) {
   return {
     b, limit, spent, due, left, over: left < -0.004,
     perDay: now && !year && left > 0.004 ? left / days : null, days,
-    today: now ? (span(a, TODAY) - 1 + 0.5) / span(a, end) : null,
+    today: now ? span(a, TODAY) / span(a, end) : null,
+    even: now ? (limit * span(a, TODAY)) / span(a, end) : null,
   };
 }
 
