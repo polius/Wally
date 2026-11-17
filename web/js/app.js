@@ -114,7 +114,7 @@ async function startApp() {
   const cmd = later(() => import("./cmd.js"));
   setHandlers({
     openAdd: (o) => add.call("openAdd", o),
-    openCmd: () => cmd.call("openCmd"),
+    openCmd: (o) => cmd.call("openCmd", o),
     signOut,
     switchPerson,
   });
@@ -164,7 +164,7 @@ async function switchPerson() {
 const SEEN = "wally.seenEvents";
 function banners(status) {
   const parts = [];
-  if (status.demo) parts.push("<span><b>" + t("Demo.") + "</b> " + t("Sample data. Nothing you change is kept after the container stops.") + "</span>");
+  if (status.demo) parts.push("<span><b>" + t("Demo.") + "</b> " + t("Nothing here is kept.") + "</span>");
   const v = status.vault || {};
   if (v.paused) parts.push("<span><b>" + esc(v.paused.direction === "on" ? t("{name} is encrypting Wally.", { name: v.paused.by }) : t("{name} is turning off encryption.", { name: v.paused.by })) + "</b> " + t("Back in a minute.") + "</span>");
   if (v.required && !v.on && status.signed_in && status.onboarded) {

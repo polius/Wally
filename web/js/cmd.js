@@ -1,14 +1,15 @@
 /* The command bar (2.1), ⌘K or Ctrl+K anywhere: search, jump to any page, settings pane, rule or
    category, find a transaction by name, or add one by typing it: "12 coffee ana". */
-import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, LANG } from "./core.js";
+import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, LANG, MOD } from "./core.js";
 import { navigate, setScope, railed, setRail } from "./shell.js";
-import { trapFocus, hideTip } from "./ui.js";
+import { trapFocus, hideTip, holdPage } from "./ui.js";
 import { shortDesc } from "./sched.js";
 
 const MAX = 12;
 let items = [];
 let hl = 0;
 let back = null;   // where focus goes back to on close
+let keysOnly = false;   // opened with ?: the shortcuts alone, until something is typed
 
 /* Settings panes, as Settings names them */
 const PANES = [
@@ -101,7 +102,7 @@ function frame() {
     '<div class="w-cmdres" id="cmd-res" role="listbox" aria-label="' + esc(t("Results")) + '"></div>' +
     '<div class="w-cmdhint" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd>' + t("Move") + "</span><span><kbd>↵</kbd>" + t("Open") + "</span><span><kbd>Esc</kbd>" + t("Close") + "</span></div></div>";
   const input = $("cmd-q");
-  input.addEventListener("input", () => { hl = 0; render(); });
+  input.addEventListener("input", () => { hl = 0; keysOnly = false; render(); });
   // A modal: focus never leaves it while it is open, even when a page finishes drawing behind it
   document.addEventListener("focusin", (ev) => { if (!w.hidden && !w.contains(ev.target)) input.focus(); });
   w.addEventListener("keydown", onKey);
@@ -114,7 +115,7 @@ function frame() {
 }
 function render() {
   const q = $("cmd-q").value;
-  items = build(q);
+  items = keysOnly ? [] : build(q);
   hl = Math.min(hl, Math.max(items.length - 1, 0));
   let html = "", group = null, gi = 0;
   items.forEach((x, i) => {
@@ -122,8 +123,17 @@ function render() {
     html += '<div role="option" id="cmd-o' + i + '" class="w-cmdi" data-ci="' + i + '" aria-selected="false">' + (x.ic || "") + '<span class="l">' + esc(x.l) + "</span>" + (x.s ? "<small>" + esc(x.s) + "</small>" : "") + "</div>";
   });
   if (group !== null) html += "</div>";
+  // With nothing typed, on a device with a keyboard: the shortcuts, so they can be found in one place
+  if (!q.trim() && (html || keysOnly) && matchMedia("(hover:hover) and (pointer:fine)").matches) html += keys();
   $("cmd-res").innerHTML = html || '<div class="w-empty" role="status"><b>' + t("Nothing found") + "</b>" + t("Try a payee, a page, or “12 coffee”.") + "</div>";
   mark();
+}
+function keys() {
+  const k = (...ks) => ks.map((x) => "<kbd>" + x + "</kbd>").join("");
+  const rows = [[k("N"), t("New expense")], [k("/"), t("Search transactions")], [k(MOD, "K"), t("Command bar")], [k("↑", "↓"), t("Move")],
+    [k("E"), t("Edit")], [k("D"), t("Duplicate")], [k("⌫"), t("Delete")], [k("?"), t("Keyboard shortcuts")]];
+  return '<div role="group" aria-labelledby="cmd-gk"><div class="w-cmdg" id="cmd-gk">' + esc(t("Keyboard shortcuts")) + '</div><div class="w-cmdkeys">' +
+    rows.map(([ks, l]) => '<span><span class="k">' + ks + "</span><span>" + esc(l) + "</span></span>").join("") + "</div></div>";
 }
 /* Move the highlight without drawing the list again */
 function mark() {
@@ -157,7 +167,7 @@ function onKey(ev) {
 }
 
 /* ---------- open, close, run ---------- */
-export function openCmd() {
+export function openCmd(opts) {
   const w = $("cmd");
   if (!w.hidden) return closeCmd();   // ⌘K again closes it
   hideTip();
@@ -165,14 +175,17 @@ export function openCmd() {
   if (!w.firstChild) frame();
   $("cmd-q").value = "";
   hl = 0;
+  keysOnly = !!(opts && opts.keys);
   render();
   w.hidden = false;
+  holdPage("cmd", true);
   $("cmd-q").focus();
 }
 export function closeCmd() {
   const w = $("cmd");
   if (w.hidden) return;
   w.hidden = true;
+  holdPage("cmd", false);
   if (back && document.contains(back)) back.focus();
   back = null;
 }

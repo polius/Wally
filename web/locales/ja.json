@@ -570,7 +570,6 @@
  "New password": "新しいパスワード",
  "New recovery codes saved": "新しいリカバリーコードを保存しました",
  "New recurring": "新しい定期",
- "New rule": "新しいルール",
  "Next": "次へ",
  "Next 7 days": "今後 7 日間",
  "Next five weeks": "今後5週間",
@@ -777,7 +776,6 @@
  "Same as {month}": "{month}と同じ",
  "Same bills, same prices": "固定費も金額も変わりなし",
  "Same one: keep once": "同じ取引：1件にまとめる",
- "Sample data. Nothing you change is kept after the container stops.": "サンプルデータです。コンテナを停止すると変更内容は残りません。",
  "Saturday": "土曜日",
  "Save": "保存",
  "Save password": "パスワードを保存",
@@ -1397,5 +1395,9 @@
  "Left after income to come": "今後の収入を含めた残り",
  "Everyday spending to come": "今後の日常の支出",
  "≈ Based on a typical month from {from} to {to}": "≈ {from}〜{to}の典型的な月に基づく",
- "≈ Based on {month}": "≈ {month}に基づく"
+ "≈ Based on {month}": "≈ {month}に基づく",
+ "Keyboard shortcuts": "キーボードショートカット",
+ "Nothing here is kept.": "ここでの変更は保存されません。",
+ "Add a bill or a salary": "請求や給与を追加",
+ "Wally didn’t answer ({status}).": "Wally から応答がありません（{status}）。"
 }

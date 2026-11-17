@@ -36,8 +36,9 @@ RUN apk upgrade --no-cache && apk add --no-cache nginx
 
 WORKDIR /wally
 
-# Copy Python dependencies from builder
+# Copy Python dependencies from builder. pip isn't needed to run Wally.
 COPY --from=builder /install /usr/local
+RUN python3 -m pip uninstall -y -q pip
 
 # Copy app code
 COPY api /wally/api
@@ -46,9 +47,13 @@ RUN mkdir /wally/data
 
 # Copy Nginx config
 COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY start.sh /wally/start.sh
 
 # Expose ports
 EXPOSE 80
 
-# Start FastAPI + Nginx
-CMD ["sh", "-c", "python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --root-path /api --proxy-headers & nginx -g 'daemon off;'"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1/api/health || exit 1
+
+# Start FastAPI + Nginx, and exit when either one stops (start.sh)
+CMD ["/wally/start.sh"]

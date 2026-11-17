@@ -190,10 +190,12 @@ function diagram(svg, w, h, d, big, r) {
     row(esc(d.left >= 0 ? t("Kept") : d.inn > 0 ? t("Overspent") : d.overName), esc(f(Math.abs(d.left))));
 
   const text = (g, x, cy, item, right) => {
-    if ((right && !stack) || namesOnly) {
+    // On the Summary, Kept is named without its amount: the card under it, Kept each month, opens with it
+    const amount = !(item.kept && !big);
+    if ((right && !stack) || namesOnly || !amount) {
       const a = el("text", { x, y: cy + 5, class: "lb" }, g);
-      fit(a, item.name, (right ? rightW - (namesOnly ? 0 : amtR + 14) : leftW));
-      if (right && !namesOnly) el("text", { x: w, y: cy + 5, class: "lbam", "text-anchor": "end" }, g).textContent = f(item.v);
+      fit(a, item.name, (right ? rightW - (namesOnly || (stack && !amount) ? 0 : amtR + 14) : leftW));
+      if (right && !namesOnly && amount) el("text", { x: w, y: cy + 5, class: "lbam", "text-anchor": "end" }, g).textContent = f(item.v);
     } else {
       const a = el("text", { x, y: cy - 3, class: "lb" }, g);
       fit(a, item.name, right ? rightW : leftW);

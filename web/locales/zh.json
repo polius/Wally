@@ -570,7 +570,6 @@
  "New password": "新密码",
  "New recovery codes saved": "新恢复码已保存",
  "New recurring": "新建定期",
- "New rule": "新规则",
  "Next": "下一步",
  "Next 7 days": "未来 7 天",
  "Next five weeks": "未来五周",
@@ -777,7 +776,6 @@
  "Same as {month}": "与{month}持平",
  "Same bills, same prices": "账单和价格都没变",
  "Same one: keep once": "同一笔：只保留一次",
- "Sample data. Nothing you change is kept after the container stops.": "示例数据。容器停止后，你所做的任何更改都不会保留。",
  "Saturday": "周六",
  "Save": "保存",
  "Save password": "保存密码",
@@ -1397,5 +1395,9 @@
  "Left after income to come": "计入待到账收入后剩余",
  "Everyday spending to come": "待发生的日常支出",
  "≈ Based on a typical month from {from} to {to}": "≈ 基于{from}至{to}的典型月份",
- "≈ Based on {month}": "≈ 基于{month}"
+ "≈ Based on {month}": "≈ 基于{month}",
+ "Keyboard shortcuts": "键盘快捷键",
+ "Nothing here is kept.": "这里的内容都不会保存。",
+ "Add a bill or a salary": "添加账单或工资",
+ "Wally didn’t answer ({status}).": "Wally 没有响应（{status}）。"
 }

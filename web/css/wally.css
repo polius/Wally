@@ -630,6 +630,11 @@ button.w-brow:hover b{color:var(--w-accent-ink)}
 .w-cmdin kbd{font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 5px}
 .w-cmdres{max-height:360px;overflow:auto;padding:6px}
 .w-cmdg{font-size:var(--fs-cap);color:var(--w-ink3);padding:8px 10px 4px;font-weight:500}
+.w-cmdkeys{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;padding:4px 10px 10px;font-size:var(--fs-foot);color:var(--w-ink2)}
+.w-cmdkeys > span{display:flex;align-items:center;gap:10px;min-width:0}
+.w-cmdkeys .k{display:inline-flex;gap:3px;flex:none;min-width:46px}
+.w-cmdkeys > span > span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cmdkeys kbd{font:500 var(--fs-cap) var(--w-font);border:1px solid var(--w-line);border-radius:var(--r-ctl);padding:0 5px;min-width:20px;text-align:center;color:var(--w-ink2)}
 .w-cmdi{display:flex!important;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px!important;border-radius:var(--r-ctl);font-size:var(--fs-sub)}
 .w-cmdi small{color:var(--w-ink3);font-size:var(--fs-foot)}
 .w-cmdi kbd{margin-left:auto}

@@ -14,7 +14,7 @@ import {
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
   LANG,
 } from "./core.js";
-import { toast, openDialog, trapFocus, hideTip, dialogOpen } from "./ui.js";
+import { toast, openDialog, trapFocus, hideTip, dialogOpen, holdPage } from "./ui.js";
 import { refresh } from "./shell.js";
 import { describe, nextOf } from "./sched.js";
 import * as C from "./add/calc.js";
@@ -824,6 +824,7 @@ export function openAdd(o) {
   fill(o);
   build();
   wrap.hidden = false;
+  holdPage("add", true);
   document.documentElement.classList.add("w-addopen");
   render();
   ad.snap = snapshot();
@@ -836,10 +837,14 @@ function closeNow() {
   wrap.hidden = true;
   wrap.innerHTML = "";
   document.documentElement.classList.remove("w-addopen");
+  holdPage("add", false);
   reset();
   const back = opener;
   opener = null;
-  if (back && document.contains(back) && back.focus) back.focus({ preventScroll: true });
+  const focusBack = () => { if (back && document.contains(back) && back.focus) back.focus({ preventScroll: true }); };
+  focusBack();
+  // Closed from the Discard alert: the page is still held until the alert closes, just after this
+  if (back && document.activeElement !== back) setTimeout(focusBack);
 }
 function snapshot() {
   return JSON.stringify([ad.type, ad.amt.trim(), ad.name.trim(), ad.cat, ad.who, ad.sm, ad.pct, ad.custCents, ad.cust, ad.by, dateOf(), ad.tags, ad.tagDraft.trim(), ad.note.trim(),

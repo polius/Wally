@@ -80,16 +80,33 @@ export function enlarge(o) {
   });
 }
 
-/* ---------- toasts, with Undo for changes that are easy to reverse ---------- */
-let toastTimer, undoFn = null;
+/* ---------- toasts, with Undo for changes that are easy to reverse ----------
+   The time stops while the pointer is on the toast or the focus is in it. Once it has gone, its Undo
+   is gone too: it can't be reached by Tab or pressed. */
+let toastTimer, undoFn = null, toastLeft = 0, toastFrom = 0, toastHeld = false, toastHover = false;
+function hideToast() {
+  $("toast").classList.remove("on");
+  undoFn = null;
+  setTimeout(() => { if (!$("toast").classList.contains("on")) $("toast-undo").hidden = true; }, 250);
+}
+function runToast(ms) { clearTimeout(toastTimer); toastLeft = ms; toastFrom = Date.now(); toastTimer = setTimeout(hideToast, ms); }
+function holdToast() {
+  if (toastHeld || !$("toast").classList.contains("on")) return;
+  toastHeld = true; clearTimeout(toastTimer); toastLeft -= Date.now() - toastFrom;
+}
+function releaseToast() {
+  const n = $("toast");
+  if (!toastHeld || toastHover || n.contains(document.activeElement)) return;
+  toastHeld = false; runToast(Math.max(toastLeft, 1500));
+}
 export function toast(msg, undo) {
   $("toast-t").textContent = msg;
   undoFn = undo || null;
   $("toast-undo").hidden = !undo;
   placeToast();
   $("toast").classList.add("on");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("toast").classList.remove("on"), undo ? 7000 : 3200);
+  toastHeld = false;
+  runToast(undo ? 7000 : 3200);
 }
 export function errorToast(e) { toast(e && e.message ? e.message : t("Something went wrong.")); }
 /* While a dialog or a sheet is open, a toast moves out of its way (to the top on a phone), so it never
@@ -102,8 +119,14 @@ export function initToast() {
   const watch = new MutationObserver(placeToast);
   ["dlg", "add-modal"].forEach((id) => { const n = $(id); if (n) watch.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
   $("toast-undo").textContent = t("Undo");
+  $("toast").addEventListener("pointerenter", () => { toastHover = true; holdToast(); });
+  $("toast").addEventListener("focusin", holdToast);
+  $("toast").addEventListener("pointerleave", () => { toastHover = false; releaseToast(); });
+  $("toast").addEventListener("focusout", () => setTimeout(releaseToast));
   $("toast-undo").addEventListener("click", async () => {
+    clearTimeout(toastTimer); toastHeld = false;
     $("toast").classList.remove("on");
+    $("toast-undo").hidden = true;
     const fn = undoFn; undoFn = null;
     if (fn) { try { await fn(); toast(t("Undone")); } catch (e) { errorToast(e); } }
   });
@@ -115,10 +138,21 @@ export function focusables(root) { return [...root.querySelectorAll(FOCUSABLE)].
 export function trapFocus(root, ev) {
   if (ev.key !== "Tab") return;
   const list = focusables(root);
-  if (!list.length) return;
-  const first = list[0], last = list[list.length - 1];
-  if (ev.shiftKey && document.activeElement === first) { last.focus(); ev.preventDefault(); }
-  else if (!ev.shiftKey && document.activeElement === last) { first.focus(); ev.preventDefault(); }
+  if (!list.length) { ev.preventDefault(); return; }
+  const first = list[0], last = list[list.length - 1], a = document.activeElement;
+  // On the dialog itself (an alert holds the focus so Return answers it): Tab goes in, at either end
+  if (a === root || !root.contains(a)) { (ev.shiftKey ? last : first).focus(); ev.preventDefault(); }
+  else if (ev.shiftKey && a === first) { last.focus(); ev.preventDefault(); }
+  else if (!ev.shiftKey && a === last) { first.focus(); ev.preventDefault(); }
+}
+/* While a dialog, the add sheet or the command bar is open, the page behind can't be reached: not by
+   Tab, not by a click, not by a screen reader. They can stack (an alert over the add sheet), so each
+   one holds the page until it closes. */
+const holders = new Set();
+export function holdPage(who, on) {
+  if (on) holders.add(who); else holders.delete(who);
+  const app = $("app");
+  if (app) app.inert = holders.size > 0;
 }
 
 /* ---------- dialogs ----------
@@ -148,6 +182,7 @@ export function openDialog(o) {
   }
   w.innerHTML = html;
   w.hidden = false;
+  holdPage("dlg", true);
   current = { o, back };
   const root = w.firstChild;
   if (o.onOpen) o.onOpen(root);
@@ -167,6 +202,7 @@ export function closeDialog() {
   hideTip();
   $("dlg").hidden = true;
   $("dlg").innerHTML = "";
+  holdPage("dlg", false);   // before the focus goes back: an inert element can't take it
   if (back && document.contains(back)) back.focus();
 }
 export function dialogError(msg) { const e = $("dlg-err"); if (e) { e.textContent = msg; e.hidden = !msg; } }

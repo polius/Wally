@@ -710,7 +710,6 @@
  "New password": "كلمة المرور الجديدة",
  "New recovery codes saved": "تم حفظ رموز الاسترداد الجديدة",
  "New recurring": "متكرر جديد",
- "New rule": "قاعدة جديدة",
  "Next": "التالي",
  "Next 7 days": "الأيام السبعة القادمة",
  "Next five weeks": "الأسابيع الخمسة القادمة",
@@ -932,7 +931,6 @@
  "Same as {month}": "مثل {month}",
  "Same bills, same prices": "الفواتير نفسها، والأسعار نفسها",
  "Same one: keep once": "المعاملة نفسها: احتفظ بها مرة واحدة",
- "Sample data. Nothing you change is kept after the container stops.": "بيانات تجريبية. لن يُحفظ أي تغيير بعد توقف الحاوية.",
  "Saturday": "السبت",
  "Save": "حفظ",
  "Save password": "حفظ كلمة المرور",
@@ -1817,5 +1815,9 @@
  "Left after income to come": "المتبقي مع الدخل القادم",
  "Everyday spending to come": "الإنفاق اليومي القادم",
  "≈ Based on a typical month from {from} to {to}": "≈ بناءً على شهر نموذجي من {from} إلى {to}",
- "≈ Based on {month}": "≈ بناءً على {month}"
+ "≈ Based on {month}": "≈ بناءً على {month}",
+ "Keyboard shortcuts": "اختصارات لوحة المفاتيح",
+ "Nothing here is kept.": "لا يُحفظ شيء هنا.",
+ "Add a bill or a salary": "أضف فاتورة أو راتبًا",
+ "Wally didn’t answer ({status}).": "لم يستجب Wally ({status})."
 }

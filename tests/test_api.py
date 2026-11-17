@@ -923,3 +923,26 @@ def test_api_keys_reach_the_money_and_nothing_else(couple):
     r = anon.post("/transactions", json={"name": "Café", "category": "Food", "amount": "2.5", "date": TODAY}, headers={"x-api-key": write})
     assert r.status_code == 200, r.text
     assert anon.post("/transactions", json={"name": "Café", "category": "Food", "amount": "2.5", "date": TODAY}, headers={"x-api-key": read}).status_code == 403
+
+# ---------- the ledger's tag ----------
+def test_the_ledger_answers_304_until_anything_changes(couple):
+    client, alex, ana = couple
+    expense(client)
+    first = client.get("/ledger")
+    tag = first.headers["etag"]
+    assert first.status_code == 200 and tag.startswith('"')
+    again = client.get("/ledger", headers={"If-None-Match": tag})
+    assert again.status_code == 304 and again.content == b""
+    # nginx's gzip makes the tag weak; it still matches
+    assert client.get("/ledger", headers={"If-None-Match": "W/" + tag}).status_code == 304
+    # Every kind of change is a new tag: add, edit, delete, a recurring charge
+    t = expense(client, name="Bakery")
+    after_add = client.get("/ledger", headers={"If-None-Match": tag})
+    assert after_add.status_code == 200 and after_add.headers["etag"] != tag
+    tag = after_add.headers["etag"]
+    assert client.put(f"/transactions/{t['id']}", json={"name": "Bakery", "category": "Food", "amount": "3", "date": TODAY}).status_code == 200
+    r = client.get("/ledger", headers={"If-None-Match": tag}); assert r.status_code == 200; tag = r.headers["etag"]
+    assert client.delete(f"/transactions/{t['id']}").status_code == 200
+    r = client.get("/ledger", headers={"If-None-Match": tag}); assert r.status_code == 200; tag = r.headers["etag"]
+    assert client.post("/recurring", json={"name": "Gym", "category": "Health", "amount": "30", "frequency": "monthly", "startDate": "2026-09-01"}).status_code == 200
+    r = client.get("/ledger", headers={"If-None-Match": tag}); assert r.status_code == 200 and r.headers["etag"] != tag
