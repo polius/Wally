@@ -1,6 +1,6 @@
 bcrypt==5.0.0
 cryptography==50.0.2
-fastapi==0.162.7
+fastapi==0.163.1
 uvicorn==0.54.0
 python-multipart==0.0.34
 tzdata==2026.6
