@@ -1,6 +1,6 @@
 /* Transactions: what is shown. The view state, the search language, the range and the filter.
    Nothing here touches the page; it only works out which transactions to show. */
-import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt, pname, person, parseAmt, f } from "../../core.js";
+import { state, t, F, LANG, ds, dim, ym, pad, TODAY, START, dlab, monthYear, amt, pname, person, parseAmt, f, fold } from "../../core.js";
 
 /* The view state. It lives as long as the app does; mount() resets it from the address. */
 export const S = {
@@ -139,7 +139,7 @@ export function addRecent(q) {
 export function clearRecent() { try { localStorage.removeItem(RECENT); } catch (e) { /* fine */ } }
 
 /* ---------- the filter ---------- */
-/* What a word is looked for in, worked out once per transaction */
+/* What a word is looked for in, worked out once per transaction. Accents aside, so "cafe" finds "Café" */
 const HAY = new WeakMap();
 export function clearHay() { /* a WeakMap forgets replaced transactions by itself; people renamed need a fresh one */ HAYGEN++; }
 let HAYGEN = 0;
@@ -147,7 +147,7 @@ function hay(x) {
   let h = HAY.get(x);
   if (!h || h.g !== HAYGEN) {
     const a = x.a.toFixed(2);
-    h = { g: HAYGEN, s: lower([x.n, x.c, x.tags.join(" "), a, a.replace(".", ","), pname(x.p), x.note].join(" ")) };
+    h = { g: HAYGEN, s: fold([x.n, x.c, x.tags.join(" "), a, a.replace(".", ","), pname(x.p), x.note].join(" ")) };
     HAY.set(x, h);
   }
   return h.s;
@@ -155,7 +155,7 @@ function hay(x) {
 /* The transactions shown, newest first. ignoreDay leaves out the day picked in the strip. */
 export function txFiltered(R, P, ignoreDay) {
   const { a, b } = R, sc = state.scope, cats = S.cats, hasCats = cats.size > 0, day = ignoreDay ? null : S.day;
-  const tags = P.tags, pcats = P.cats.length ? new Set(P.cats) : null, text = P.text;
+  const tags = P.tags, pcats = P.cats.length ? new Set(P.cats) : null, text = P.text.map(fold);
   const out = [];
   for (const x of state.tx) {
     if (x.d > b) continue;
