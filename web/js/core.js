@@ -9,6 +9,8 @@ export const DAY = 864e5;
    falls back to English, so a raw key is never shown. */
 let DICT = {};
 export let LANG = "en";
+/* Text for matching: lower case, without accents, so "cafe" finds "Café" */
+export const fold = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase(LANG);
 export function t(s, vars) {
   let out = DICT[s];
   if (typeof out !== "string" || !out) out = s;

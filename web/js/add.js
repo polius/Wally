@@ -12,7 +12,7 @@
 import {
   $, t, tn, esc, state, GET, POST, PUT, DEL, TODAY, addD, ym, dim, ds, ymAdd, f, dlab, dlabL, monthName,
   icon, tile, cat, cc, av, pname, person, couple, symbol, decSep, upsertTx, removeTx, toApi, fromRule, reloadRules, reloadLedger,
-  LANG,
+  LANG, fold,
 } from "./core.js";
 import { toast, openDialog, trapFocus, hideTip, dialogOpen, holdPage } from "./ui.js";
 import { refresh } from "./shell.js";
@@ -621,14 +621,15 @@ function keypadDone() {
 function suggOpen() { const b = $("add-sugg"); return b && !b.hidden; }
 function closeSugg() { const b = $("add-sugg"), i = $("add-name"); if (b) b.hidden = true; if (i) { i.setAttribute("aria-expanded", "false"); i.removeAttribute("aria-activedescendant"); } }
 function renderSugg() {
-  const q = ad.name.trim().toLowerCase(), box = $("add-sugg"), inp = $("add-name");
+  const q = ad.name.trim().toLowerCase(), fq = fold(q), box = $("add-sugg"), inp = $("add-name");
   if (!box || !inp) return;
   // On a phone, before anything is typed: the payees this amount most likely is, none picked yet,
   // and few enough to stay clear of the phone's keyboard
   const likely = !q && layout === "phone" && !isEdit() && !ad.rule;
   ad.sugg = likely ? pickList(cache.payees, ad.type, amount()).slice(0, 3) : !q || ad.rule ? [] : cache.payees
-    .filter((x) => x.type === ad.type && x.n.toLowerCase().includes(q) && x.n.toLowerCase() !== q)
-    .sort((a, b) => a.n.toLowerCase().indexOf(q) - b.n.toLowerCase().indexOf(q) || b.k - a.k)
+    // Accents aside, so "Hello" finds "Héllo"; only the very name typed is left out
+    .filter((x) => x.type === ad.type && fold(x.n).includes(fq) && x.n.toLowerCase() !== q)
+    .sort((a, b) => fold(a.n).indexOf(fq) - fold(b.n).indexOf(fq) || b.k - a.k)
     .slice(0, 6);
   if (!ad.sugg.length || document.activeElement !== inp) { closeSugg(); return; }
   ad.hl = Math.min(ad.hl, ad.sugg.length - 1);

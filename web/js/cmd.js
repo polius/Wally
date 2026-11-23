@@ -1,6 +1,6 @@
 /* The command bar (2.1), ⌘K or Ctrl+K anywhere: search, jump to any page, settings pane, rule or
    category, find a transaction by name, or add one by typing it: "12 coffee ana". */
-import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, LANG, MOD } from "./core.js";
+import { $, t, esc, state, f, dlabW, cat, tile, av, couple, icon, MOD, fold } from "./core.js";
 import { navigate, setScope, railed, setRail } from "./shell.js";
 import { trapFocus, hideTip, holdPage } from "./ui.js";
 import { shortDesc } from "./sched.js";
@@ -18,8 +18,6 @@ const PANES = [
   ["signin", "lock", () => t("Sign-in")], ["language", "globe", () => t("Language")], ["appearance", "layout", () => t("Appearance")],
 ];
 
-/* Text for matching: lower case, without accents, so "cafe" finds "Café" */
-const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase(LANG);
 const matches = (hay, words) => { const h = fold(hay); return words.every((w) => h.includes(w)); };
 const glyph = (id) => icon(id);
 const add = (o) => import("./add.js").then((m) => m.openAdd(o));
