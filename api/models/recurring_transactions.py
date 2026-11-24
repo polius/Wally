@@ -15,8 +15,9 @@ class RecurringTransactionBase(SQLModel):
     type: Literal["expense", "income"] = Field(sa_type=String, default="expense", index=True)
     startDate: date = Field(default_factory=date.today, index=True)
     endDate: date = Field(default_factory=date.today, index=True)
-    frequency: Literal["daily", "weekly", "monthly", "yearly"] = Field(sa_type=String, default="daily", index=True)
-    
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "yearly"] = Field(sa_type=String, default="daily", index=True)
+    isSubscription: bool = Field(default=False)
+
     @model_validator(mode='after')
     def check_model(self):
         # Check amount
@@ -30,7 +31,7 @@ class RecurringTransactionBase(SQLModel):
         if self.endDate > (self.startDate + relativedelta(years=100)):
             raise ValueError("endDate cannot be more than 100 years after startDate")
 
-        # Return self        
+        # Return self
         return self
 
 class RecurringTransaction(RecurringTransactionBase, table=True):
@@ -47,8 +48,9 @@ class RecurringTransactionUpdate(SQLModel):
     amount: Decimal | None = None
     type: Literal["expense", "income"] | None = None
     endDate: date | None = None
-    frequency: Literal["daily", "weekly", "monthly", "yearly"] | None = None
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "yearly"] | None = None
     applyTo: Literal["future", "all"] = Field(default="future")
+    isSubscription: bool | None = None
 
 class RecurringTransactionDelete(SQLModel):
     applyTo: Literal["future", "all"] = Field(default="future")
@@ -62,4 +64,5 @@ class RecurringTransactionPublic(SQLModel):
     type: Literal["expense", "income"]
     startDate: date
     endDate: date
-    frequency: Literal["daily", "weekly", "monthly", "yearly"]
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "yearly"]
+    isSubscription: bool

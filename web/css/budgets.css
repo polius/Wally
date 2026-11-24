@@ -123,3 +123,11 @@ main h2 {
         font-size: 1.35rem;
     }
 }
+.budget-alert {
+    border-radius: 10px;
+}
+
+.budget-alert strong {
+    display: block;
+    margin-bottom: 0.15rem;
+}

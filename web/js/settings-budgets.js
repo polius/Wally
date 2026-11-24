@@ -8,6 +8,7 @@
     const categoryInput = document.getElementById('budgetCategoryInput');
     const limitInput = document.getElementById('budgetLimitInput');
     const periodInput = document.getElementById('budgetPeriodInput');
+    const startDateInput = document.getElementById('budgetStartDateInput');
     const addButton = document.getElementById('budgetAddButton');
     const saveButton = document.getElementById('budgetSaveButton');
     const errorBox = document.getElementById('budgetFormError');
@@ -130,6 +131,7 @@
 
     modal.addEventListener('show.bs.modal', () => {
       form.reset();
+      startDateInput.value = new Date().toISOString().slice(0, 10);
       showError();
 
       refresh().catch(error => {
@@ -166,7 +168,8 @@
           body: JSON.stringify({
             category: categoryInput.value,
             limit: limitInput.value,
-            period: periodInput.value
+            period: periodInput.value,
+            start_date: startDateInput.value
           })
         });
 
@@ -204,13 +207,84 @@
     });
   }
 
+  function initializeAlertThreshold() {
+    const form = document.getElementById('budgetAlertThresholdForm');
+    if (!form) return;
+
+    const input = document.getElementById('budgetAlertThresholdInput');
+    const saveButton = document.getElementById('budgetAlertThresholdSave');
+    const status = document.getElementById('budgetAlertThresholdStatus');
+
+    async function request(options = {}) {
+      const response = await fetch('/api/budget-alerts/settings', {
+        ...options,
+        credentials: 'include'
+      });
+
+      if (response.status === 401) {
+        window.location.href = '/login';
+        throw new Error('Please sign in.');
+      }
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const detail = data?.detail;
+        throw new Error(
+          Array.isArray(detail)
+            ? 'Enter a whole number between 1 and 99.'
+            : typeof detail === 'string'
+              ? detail
+              : `Request failed: HTTP ${response.status}`
+        );
+      }
+
+      return data;
+    }
+
+    request()
+      .then(data => {
+        input.value = data.warning_threshold;
+      })
+      .catch(error => {
+        status.textContent = `Could not load the alert threshold: ${error.message}`;
+      });
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      saveButton.disabled = true;
+      status.textContent = '';
+
+      try {
+        const data = await request({
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ warning_threshold: Number(input.value) })
+        });
+        input.value = data.warning_threshold;
+        status.textContent = `Saved. You will be warned at ${data.warning_threshold}% of each budget.`;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+  }
+
+  function initialize() {
+    initializeBudgetSettings();
+    initializeAlertThreshold();
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener(
       'DOMContentLoaded',
-      initializeBudgetSettings,
+      initialize,
       { once: true }
     );
   } else {
-    initializeBudgetSettings();
+    initialize();
   }
 })();

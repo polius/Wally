@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from pydantic import field_validator
 from sqlalchemy import Column, Numeric
@@ -10,6 +11,7 @@ class BudgetBase(SQLModel):
         sa_column=Column(Numeric(10, 2), nullable=False)
     )
     period: str
+    start_date: date = Field(default_factory=date.today)
 
     @field_validator("period")
     @classmethod
@@ -27,7 +29,8 @@ class BudgetCreate(BudgetBase):
 class BudgetUpdate(SQLModel):
     limit: Decimal | None = Field(default=None, gt=0)
     period: str | None = None
-
+    start_date: date | None = None
+    
     @field_validator("period")
     @classmethod
     def validate_period(cls, value):

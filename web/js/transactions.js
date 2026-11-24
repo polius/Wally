@@ -725,6 +725,7 @@ async function submitRecurringAdd(event) {
 
   const formData = new FormData(event.target);
   const data = Object.fromEntries(formData.entries());
+  data.isSubscription = document.getElementById("subscriptionCheck").checked;
   data.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : [];
 
   // Check if startDate is before endDate

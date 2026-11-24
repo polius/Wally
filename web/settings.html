@@ -58,6 +58,11 @@
             <li class="nav-item ms-2"><a class="nav-link active" href="settings" data-i18n="nav.settings">Settings</a></li>
             <li class="nav-item ms-2"><a class="nav-link" href="/spending-history" data-i18n="nav.spending">Spending History</a></li>
             <li class="nav-item ms-2"><a class="nav-link" href="/budgets.html" data-i18n="nav.budgets">Budgets</a></li>
+          <li class="nav-item ms-2">
+              <a class="nav-link" href="/bills-subscriptions.html">
+                  Bills & Subscriptions
+              </a>
+          </li>
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
             <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
@@ -136,6 +141,23 @@
               role="status"
               aria-live="polite">
             </p>
+            <hr>
+            <form id="budgetAlertThresholdForm" class="budget-alert-threshold-form">
+              <label for="budgetAlertThresholdInput" class="form-label" style="font-size: 0.9rem">
+                Warn me when spending reaches
+              </label>
+              <div class="d-flex gap-2">
+                <div class="input-group" style="max-width: 160px">
+                  <input id="budgetAlertThresholdInput" type="number" class="form-control" min="1" max="99" step="1" required style="font-size: 0.9rem">
+                  <span class="input-group-text" style="font-size: 0.9rem">%</span>
+                </div>
+                <button id="budgetAlertThresholdSave" type="submit" class="btn btn-sm btn-primary">Save</button>
+              </div>
+              <div class="form-text">
+                You also get an over-budget alert at 100%. Each alert fires once per budget period.
+              </div>
+              <p id="budgetAlertThresholdStatus" class="small mt-2 mb-0" role="status" aria-live="polite"></p>
+            </form>
           </div>
         </div>
       </div>
@@ -458,6 +480,14 @@
               <option value="weekly">Weekly</option>
             </select>
           </div>
+          <div>
+            <label for="budgetStartDateInput" class="form-label">Start date</label>
+            <input id="budgetStartDateInput" type="date" class="form-control" required>
+            <div class="form-text">
+                    Weekly budgets count spending in 7-day windows from this date.
+                    Monthly budgets still use the calendar month.
+            </div>
+        </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

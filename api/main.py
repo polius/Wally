@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
-from .database import create_db_and_tables, engine
+from .database import create_db_and_tables, ensure_budget_start_date, engine
 from .demo import generate_demo
 from .routers import (
     transactions,
@@ -17,11 +17,14 @@ from .routers import (
     api_keys,
     budgets,
     spending_history,
+    subscriptions,
+    budget_alerts,
 )
 from .models.app import AppConfig, DEFAULT_CONFIG
 from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 from .models.budgets import Budget
+from .services.budget_alerts import create_scheduler
 
 
 VERSION = "1.16"
@@ -36,6 +39,7 @@ async def lifespan(app: FastAPI):
     # Live version
     else:
         create_db_and_tables()
+        ensure_budget_start_date()
 
     # Init database session
     with Session(engine) as db:
@@ -56,7 +60,13 @@ async def lifespan(app: FastAPI):
                 db.add(Currency(**item))
         db.commit()
 
+    # Start the background job that raises budget alerts
+    scheduler = create_scheduler()
+    scheduler.start()
+
     yield  # App is running
+
+    scheduler.shutdown(wait=False)
 
 
 # Init FastAPI
@@ -70,7 +80,10 @@ app = FastAPI(
 # Allow your dev frontend origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500"],
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://127.0.0.1:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,6 +99,8 @@ app.include_router(auth.router)
 app.include_router(api_keys.router)
 app.include_router(budgets.router)
 app.include_router(spending_history.router)
+app.include_router(subscriptions.router)
+app.include_router(budget_alerts.router)
 
 
 # Add root route

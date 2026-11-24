@@ -58,6 +58,7 @@
             <li class="nav-item ms-2"><a class="nav-link" href="settings" data-i18n="nav.settings">Settings</a></li>
             <li class="nav-item ms-2"><a class="nav-link" href="/spending-history" data-i18n="nav.spending">Spending History</a></li>
             <li class="nav-item ms-2"><a class="nav-link" href="/budgets.html" data-i18n="nav.budgets">Budgets</a></li>
+            <li class="nav-item ms-2"><a class="nav-link" href="/bills-subscriptions.html">Bills & Subscriptions</a></li>
           </ul>
           <ul id="logoutButton" class="navbar-nav ms-auto" style="display: none;">
             <li class="nav-item nav-link ms-2" style="cursor: pointer;" title="Logout" data-i18n-title="nav.logout_title" onclick="logout()">
@@ -214,8 +215,13 @@
                   <option value="daily" data-i18n="transactions.frequency_daily">Daily</option>
                   <option value="weekly" data-i18n="transactions.frequency_weekly">Weekly</option>
                   <option value="monthly" data-i18n="transactions.frequency_monthly">Monthly</option>
+                  <option value="quarterly" data-i18n="transactions.frequency_quarterly">Quarterly</option>
                   <option value="yearly" data-i18n="transactions.frequency_yearly">Yearly</option>
                 </select>
+                <div class="form-check mt-3">
+                  <input class="form-check-input" type="checkbox" id="subscriptionCheck" name="isSubscription">
+                  <label class="form-check-label" for="subscriptionCheck">This is a subscription</label>
+                </div>
               </div>
             </div>
           </div>

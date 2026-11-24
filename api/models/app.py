@@ -9,6 +9,7 @@ DEFAULT_CONFIG = {
     "SELECTED_CURRENCY": "EUR",
     "CURRENCY_POSITION": "right",
     "LANGUAGE": "en",
+    "BUDGET_WARNING_THRESHOLD": "80",
 }
 
 class AppConfig(SQLModel, table=True):

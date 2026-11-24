@@ -131,6 +131,8 @@ def create_transactions_from_recurring(
             current_date = start_date + timedelta(weeks=n)
         elif frequency == "monthly":
             current_date = start_date + relativedelta(months=n)
+        elif frequency == "quarterly":
+            current_date = start_date + relativedelta(months=3 * n)
         elif frequency == "yearly":
             current_date = start_date + relativedelta(years=n)
 
