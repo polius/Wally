@@ -25,6 +25,7 @@ from .models.categories import Category, DEFAULT_CATEGORIES
 from .models.currency import Currency, DEFAULT_CURRENCIES
 from .models.budgets import Budget
 from .services.budget_alerts import create_scheduler
+from .routers import subscription_alerts
 
 
 VERSION = "1.16"
@@ -60,7 +61,7 @@ async def lifespan(app: FastAPI):
                 db.add(Currency(**item))
         db.commit()
 
-    # Start the background job that raises budget alerts
+    # Start the background jobs that raise budget and subscription price alerts
     scheduler = create_scheduler()
     scheduler.start()
 
@@ -92,6 +93,7 @@ app.add_middleware(
 # Add routes
 app.include_router(transactions.router)
 app.include_router(recurring_transactions.router)
+app.include_router(subscription_alerts.router)
 app.include_router(categories.router)
 app.include_router(tags.router)
 app.include_router(currency.router)

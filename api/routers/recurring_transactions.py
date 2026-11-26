@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 
 from ..database import get_session
 from ..models.transactions import Transaction
+from ..models.subscription_alerts import SubscriptionPriceAlert
 from ..models.recurring_transactions import RecurringTransaction, RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionDelete, RecurringTransactionPublic
 from .auth import check_login
 
@@ -91,6 +92,9 @@ def delete_recurring_transaction(
 
     # Delete transactions associated with this recurring transaction
     delete_transactions_from_recurring(recurring_transaction_id, recurring_transaction, db)
+
+    # Remove price alerts of the deleted subscription
+    db.exec(delete(SubscriptionPriceAlert).where(SubscriptionPriceAlert.recurring_id == str(recurring_transaction_id)))
 
     # Commit the changes to the database
     db.commit()

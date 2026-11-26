@@ -12,12 +12,14 @@ from ..models.budget_alerts import BudgetAlert, DEFAULT_WARNING_THRESHOLD, OVER_
 from ..models.budgets import Budget
 from ..models.transactions import Transaction
 from .budget_period import current_window
+from .subscription_alerts import run_subscription_price_check
 
 logger = logging.getLogger(__name__)
 
 WARNING_THRESHOLD_KEY = "BUDGET_WARNING_THRESHOLD"
 OVER_BUDGET_THRESHOLD = 100
 JOB_ID = "budget_alert_check"
+SUBSCRIPTION_JOB_ID = "subscription_price_check"
 
 
 def get_warning_threshold(db: Session) -> int:
@@ -138,6 +140,16 @@ def create_scheduler(interval_minutes: float | None = None) -> BackgroundSchedul
         minutes=interval_minutes,
         id=JOB_ID,
         next_run_time=datetime.now(),  # also check once right after startup
+        max_instances=1,
+        coalesce=True,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_subscription_price_check,
+        "interval",
+        minutes=interval_minutes,
+        id=SUBSCRIPTION_JOB_ID,
+        next_run_time=datetime.now(),
         max_instances=1,
         coalesce=True,
         replace_existing=True,

@@ -62,4 +62,71 @@ async function loadSubscriptions() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", loadSubscriptions);
+async function loadSubscriptionAlerts() {
+    const container = document.getElementById("subscriptionAlertsContainer");
+
+    let alerts;
+    try {
+        const response = await fetch(`${API_URL}/subscription-alerts`, {
+            credentials: "include"
+        });
+        if (!response.ok) return;
+        alerts = await response.json();
+    } catch (error) {
+        console.error("Could not load subscription alerts", error);
+        return;
+    }
+
+    container.replaceChildren();
+
+    alerts.forEach(alert => {
+        const previousAmount = Number(alert.previous_amount);
+        const newAmount = Number(alert.new_amount);
+        const difference = newAmount - previousAmount;
+
+        const box = document.createElement("div");
+        box.className = "alert alert-warning alert-dismissible mb-3";
+        box.setAttribute("role", "alert");
+
+        const title = document.createElement("strong");
+        title.className = "d-block";
+        title.textContent = `Price increase: ${alert.name}`;
+
+        const details = document.createElement("div");
+        details.textContent =
+            `Usual price $${previousAmount.toFixed(2)} → new price $${newAmount.toFixed(2)} ` +
+            `(+$${difference.toFixed(2)}, ${alert.frequency}, charged on ${alert.charge_date}).`;
+
+        const hint = document.createElement("div");
+        hint.className = "small";
+        hint.textContent = "Review this subscription or cancel it if it is no longer worth the price.";
+
+        const closeButton = document.createElement("button");
+        closeButton.type = "button";
+        closeButton.className = "btn-close";
+        closeButton.setAttribute("aria-label", "Dismiss");
+        closeButton.addEventListener("click", () => dismissSubscriptionAlert(alert.id, box));
+
+        box.append(title, details, hint, closeButton);
+        container.appendChild(box);
+    });
+}
+
+async function dismissSubscriptionAlert(alertId, element) {
+    const response = await fetch(`${API_URL}/subscription-alerts/${alertId}/dismiss`, {
+        method: "POST",
+        credentials: "include"
+    });
+
+    if (response.ok) {
+        element.remove();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubscriptions();
+    loadSubscriptionAlerts();
+
+    // Pick up alerts raised by the background job while the page is open
+    setInterval(loadSubscriptionAlerts, 60 * 1000);
+});
